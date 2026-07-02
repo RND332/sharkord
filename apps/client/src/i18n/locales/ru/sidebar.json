@@ -69,5 +69,9 @@
   "deleteCategoryMsg": "Вы уверены, что хотите удалить эту категорию? Это удалит все каналы в этой категории. Это действие невозможно отменить.",
   "categoryDeleted": "Категория удалена",
   "failedDeleteCategory": "Не удалось удалить категорию",
-  "userVolume": "Громкость пользователя"
+  "userVolume": "Громкость пользователя",
+  "viewDemo": "View demo",
+  "stopViewingDemo": "Stop viewing demo",
+  "hideWebcam": "Hide webcam",
+  "showWebcam": "Show webcam"
 }

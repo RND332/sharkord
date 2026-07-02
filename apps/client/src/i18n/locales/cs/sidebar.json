@@ -69,5 +69,9 @@
   "deleteCategoryMsg": "Opravdu chcete odstranit tuto kategorii? Odstraní se tím i VŠECHNY kanály v této kategorii. Tuto akci nelze vrátit zpět.",
   "categoryDeleted": "Kategorie byla odstraněna",
   "failedDeleteCategory": "Kategorii se odstranit nepodařilo",
-  "userVolume": "Hlasitost uživatele"
+  "userVolume": "Hlasitost uživatele",
+  "viewDemo": "View demo",
+  "stopViewingDemo": "Stop viewing demo",
+  "hideWebcam": "Hide webcam",
+  "showWebcam": "Show webcam"
 }

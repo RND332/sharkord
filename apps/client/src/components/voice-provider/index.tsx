@@ -34,6 +34,8 @@ import {
 } from '@sharkord/shared';
 import { Device } from 'mediasoup-client';
 import type {
+  AppData,
+  Consumer,
   ProducerOptions,
   RtpCapabilities,
   RtpCodecCapability
@@ -45,13 +47,15 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
+  type MutableRefObject
 } from 'react';
 import { useDevices } from '../devices-provider/hooks/use-devices';
 import {
   clearVoiceControlsBridge,
   setVoiceControlsBridge
 } from './controls-bridge';
+import { DemoVisibilityProvider } from './demo-visibility-context';
 import { FloatingPinnedCard } from './floating-pinned-card';
 import {
   getRemoteConsumerTypeKey,
@@ -74,7 +78,7 @@ import {
 } from './hooks/use-transport-stats';
 import { useTransports } from './hooks/use-transports';
 import { useVoiceControls } from './hooks/use-voice-controls';
-import { useVoiceEvents } from './hooks/use-voice-events';
+import { RemoteWebcamVisibilityProvider } from './remote-webcam-visibility-context';
 import { SIMULCAST_WEBCAM_MAX_BITRATE } from './statics';
 import { VolumeControlProvider } from './volume-control-context';
 
@@ -110,6 +114,19 @@ export type TVoiceProvider = {
   isScreenShareSupported: boolean;
   getOrCreateRefs: (remoteId: number) => AudioVideoRefs;
   getConsumerCodec: (remoteId: number, kind: StreamKind) => string | undefined;
+  getConsumer: (
+    remoteId: number,
+    kind: StreamKind
+  ) => Consumer<AppData> | undefined;
+  consumeRef: MutableRefObject<
+    | ((
+        remoteId: number,
+        kind: StreamKind,
+        rtps: RtpCapabilities
+      ) => Promise<void>)
+    | null
+  >;
+  rtpCapabilities: RtpCapabilities | undefined;
   getStreamQuality: (remoteId: number, kind: StreamKind) => TStreamQuality;
   getStreamQualityLayers: (
     remoteId: number,
@@ -134,7 +151,12 @@ export type TVoiceProvider = {
 > &
   Pick<
     ReturnType<typeof useRemoteStreams>,
-    'remoteUserStreams' | 'externalStreams'
+    | 'remoteUserStreams'
+    | 'externalStreams'
+    | 'removeRemoteUserStream'
+    | 'removeExternalStreamTrack'
+    | 'removeExternalStream'
+    | 'clearRemoteUserStreamsForUser'
   > &
   ReturnType<typeof useVoiceControls>;
 
@@ -164,6 +186,9 @@ const VoiceProviderContext = createContext<TVoiceProvider>({
     externalVideoRef: { current: null }
   }),
   getConsumerCodec: () => undefined,
+  getConsumer: () => undefined,
+  consumeRef: { current: null },
+  rtpCapabilities: undefined,
   getStreamQuality: () => ({ mode: 'auto' }),
   getStreamQualityLayers: () => [],
   setStreamQuality: () => Promise.resolve(),
@@ -185,7 +210,11 @@ const VoiceProviderContext = createContext<TVoiceProvider>({
   localScreenShareAudioStream: undefined,
 
   remoteUserStreams: {},
-  externalStreams: {}
+  externalStreams: {},
+  removeRemoteUserStream: () => {},
+  removeExternalStreamTrack: () => {},
+  removeExternalStream: () => {},
+  clearRemoteUserStreamsForUser: () => {}
 });
 
 type TVoiceProviderProps = {
@@ -215,6 +244,13 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
   const simulcastEnabled =
     !!webRtcSimulcastEnabled && !!devices.simulcastEnabled;
+
+  // Simulcast for screen-share is split from the webcam setting because
+  // 3-layer simulcast on a publisher's CPU can drop the encoded fps to ~1 on
+  // integrated GPUs / under thermal pressure. Default `false` (see
+  // devices-provider defaults); advanced users can opt back in.
+  const screenShareSimulcastEnabled =
+    !!webRtcSimulcastEnabled && !!devices.screenShareSimulcastEnabled;
 
   const getStreamQuality = useCallback(
     (remoteId: number, kind: StreamKind): TStreamQuality => {
@@ -389,9 +425,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     consumerTransport,
     createProducerTransport,
     createConsumerTransport,
-    consume,
+    consumeRef,
     consumeExistingProducers,
     cleanupTransports,
+    getConsumer,
     getConsumerCodec
   } = useTransports({
     addExternalStreamTrack,
@@ -884,7 +921,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         let preferredCodec: RtpCodecCapability | undefined;
 
         if (
-          !simulcastEnabled &&
+          !screenShareSimulcastEnabled &&
           devices.screenCodec &&
           devices.screenCodec !== VideoCodec.AUTO &&
           routerRtpCapabilities.current?.codecs
@@ -902,7 +939,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         }
 
         const maxBitrateKbps = devices.screenBitrate ?? DEFAULT_BITRATE;
-        const simulcastCodec = simulcastEnabled
+        const simulcastCodec = screenShareSimulcastEnabled
           ? getSimulcastCodec(routerRtpCapabilities.current)
           : undefined;
         const screenCodec = simulcastCodec ?? preferredCodec;
@@ -911,7 +948,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           logVoice('Using VP8 for simulcast screen share', {
             codec: simulcastCodec.mimeType
           });
-        } else if (simulcastEnabled) {
+        } else if (screenShareSimulcastEnabled) {
           logVoice(
             'VP8 is unavailable, creating screen share without simulcast'
           );
@@ -1039,7 +1076,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     devices.screenBitrate,
     devices.restrictOwnAudio,
     devices.suppressLocalAudioPlayback,
-    simulcastEnabled
+    screenShareSimulcastEnabled
   ]);
 
   const cleanup = useCallback(() => {
@@ -1105,7 +1142,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
         await createProducerTransport(device);
         await createConsumerTransport(device);
-        await consumeExistingProducers(recvRtpCapabilities);
+        await consumeExistingProducers(recvRtpCapabilities, {
+          isViewingDemo: () => false
+        });
         await startMicStream();
 
         startMonitoring(producerTransport.current, consumerTransport.current);
@@ -1170,16 +1209,6 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     };
   }, [setMicMutedForBridge, setSoundMutedForBridge]);
 
-  useVoiceEvents({
-    consume,
-    removeRemoteUserStream,
-    removeExternalStreamTrack,
-    removeExternalStream,
-    clearRemoteUserStreamsForUser,
-    rtpCapabilities:
-      deviceRtpCapabilities.current ?? routerRtpCapabilities.current!
-  });
-
   useEffect(() => {
     const previousVoiceChannelId = previousVoiceChannelIdRef.current;
 
@@ -1211,6 +1240,12 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       isScreenShareSupported,
       getOrCreateRefs,
       getConsumerCodec,
+      getConsumer,
+      consumeRef,
+      rtpCapabilities:
+        deviceRtpCapabilities.current ??
+        routerRtpCapabilities.current ??
+        undefined,
       getStreamQuality,
       getStreamQualityLayers,
       setStreamQuality,
@@ -1229,7 +1264,12 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       localScreenShareAudioStream,
 
       remoteUserStreams,
-      externalStreams
+      externalStreams,
+
+      removeRemoteUserStream,
+      removeExternalStreamTrack,
+      removeExternalStream,
+      clearRemoteUserStreamsForUser
     }),
     [
       loading,
@@ -1238,6 +1278,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       isScreenShareSupported,
       getOrCreateRefs,
       getConsumerCodec,
+      getConsumer,
+      consumeRef,
       getStreamQuality,
       getStreamQualityLayers,
       setStreamQuality,
@@ -1255,22 +1297,31 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       localScreenShareStream,
       localScreenShareAudioStream,
       remoteUserStreams,
-      externalStreams
+      externalStreams,
+
+      removeRemoteUserStream,
+      removeExternalStreamTrack,
+      removeExternalStream,
+      clearRemoteUserStreamsForUser
     ]
   );
 
   return (
     <VoiceProviderContext.Provider value={contextValue}>
       <VolumeControlProvider>
-        <div className="relative">
-          <FloatingPinnedCard
-            remoteUserStreams={remoteUserStreams}
-            externalStreams={externalStreams}
-            localScreenShareStream={localScreenShareStream}
-            localVideoStream={localVideoStream}
-          />
-          {children}
-        </div>
+        <RemoteWebcamVisibilityProvider>
+          <DemoVisibilityProvider>
+            <div className="relative">
+              <FloatingPinnedCard
+                remoteUserStreams={remoteUserStreams}
+                externalStreams={externalStreams}
+                localScreenShareStream={localScreenShareStream}
+                localVideoStream={localVideoStream}
+              />
+              {children}
+            </div>
+          </DemoVisibilityProvider>
+        </RemoteWebcamVisibilityProvider>
       </VolumeControlProvider>
     </VoiceProviderContext.Provider>
   );

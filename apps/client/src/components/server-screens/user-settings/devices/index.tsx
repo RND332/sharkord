@@ -569,6 +569,22 @@ const Devices = memo(() => {
               }
             />
           </Group>
+          <Group
+            label={t('screenShareSimulcastLabel')}
+            description={
+              settings?.webRtcSimulcastEnabled
+                ? t('screenShareSimulcastDesc')
+                : t('simulcastDisabledByServerDesc')
+            }
+          >
+            <Switch
+              checked={!!values.screenShareSimulcastEnabled}
+              disabled={!settings?.webRtcSimulcastEnabled}
+              onCheckedChange={(checked) =>
+                onChange('screenShareSimulcastEnabled', checked)
+              }
+            />
+          </Group>
           <Group label={t('screenSharingLabel')}>
             <div className="flex">
               <ResolutionFpsControl

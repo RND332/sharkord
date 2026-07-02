@@ -1,3 +1,4 @@
+import { UserAvatar } from '@/components/user-avatar';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import {
   useCurrentVoiceChannelId,
@@ -13,6 +14,7 @@ import { CardControls } from '../channel-view/voice/card-controls';
 import { PinnedCardType } from '../channel-view/voice/hooks/use-pin-card-controller';
 import { useFloatingCard } from './hooks/use-floating-card';
 import type { TExternalStreamsMap } from './hooks/use-remote-streams';
+import { useRemoteWebcamVisibility } from './remote-webcam-visibility-context';
 
 type TFloatingPinnedCardProps = {
   remoteUserStreams: TRemoteStreams;
@@ -33,6 +35,7 @@ const FloatingPinnedCard = memo(
     const [open, setOpen] = useState(true);
     const pinnedCard = usePinnedCard();
     const ownUserId = useOwnUserId();
+    const { isWebcamHidden } = useRemoteWebcamVisibility();
     const currentVoiceChannelSelected = useCurrentVoiceChannelId();
     const isCurrentVoiceChannelSelected = useIsCurrentVoiceChannelSelected();
     const pinnedUser = useUserById(pinnedCard?.userId || -1);
@@ -86,6 +89,14 @@ const FloatingPinnedCard = memo(
       setOpen(true);
     }, [pinnedCard?.id, isCurrentVoiceChannelSelected]);
 
+    const webcamHiddenForPinnedUser =
+      pinnedCard?.type === PinnedCardType.USER &&
+      !!pinnedCard.userId &&
+      isWebcamHidden(pinnedCard.userId);
+
+    const showWebcamVideo =
+      !!pinnedCardVideoStream && !webcamHiddenForPinnedUser;
+
     if (!pinnedCardVideoStream || isCurrentVoiceChannelSelected || !open) {
       return null;
     }
@@ -127,13 +138,23 @@ const FloatingPinnedCard = memo(
           </div>
         )}
 
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-contain"
-        />
+        {showWebcamVideo ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          pinnedUser && (
+            <UserAvatar
+              userId={pinnedUser.id}
+              className="w-16 h-16 md:w-24 md:h-24"
+              showStatusBadge={false}
+            />
+          )
+        )}
       </div>
     );
   }

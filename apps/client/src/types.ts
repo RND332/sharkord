@@ -64,6 +64,7 @@ export type TDeviceSettings = {
   suppressLocalAudioPlayback: boolean;
   mirrorOwnVideo: boolean;
   simulcastEnabled: boolean;
+  screenShareSimulcastEnabled: boolean;
   screenResolution: Resolution;
   screenFramerate: number;
   screenCodec: VideoCodec;

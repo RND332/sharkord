@@ -1,6 +1,7 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { UserAvatar } from '@/components/user-avatar';
 import { useStreamVolumeControl } from '@/components/voice-provider/hooks/use-stream-volume-control';
+import { useRemoteWebcamVisibility } from '@/components/voice-provider/remote-webcam-visibility-context';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
 import type { TVoiceUser } from '@/features/server/types';
 import { useIsOwnUser } from '@/features/server/users/hooks';
@@ -12,14 +13,16 @@ import {
 import { getFileUrl } from '@/helpers/get-file-url';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@sharkord/shared';
-import { HeadphoneOff, MicOff, Monitor, Video } from 'lucide-react';
+import { HeadphoneOff, MicOff, Video } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { CardControls } from './card-controls';
 import { CardGradient } from './card-gradient';
+import { HideWebcamButton } from './hide-webcam-button';
 import { useVoiceRefs } from './hooks/use-voice-refs';
 import { PictureInPictureButton } from './picture-in-picture-button';
 import { PinButton } from './pin-button';
 import { QualityButton } from './quality-button';
+import { ViewDemoButton } from './view-demo-button';
 import { VolumeButton } from './volume-button';
 
 type TVoiceUserCardProps = {
@@ -51,10 +54,13 @@ const VoiceUserCard = memo(
     const showUserBanners = useShowUserBannersInVoice();
     const { isActivelySpeaking, speakingEffectClass } =
       useSpeakingState(userId);
+    const { isWebcamHidden } = useRemoteWebcamVisibility();
+    const webcamHidden = isWebcamHidden(userId);
     const isSimulcastVideoConsumer =
       !isOwnUser && isSimulcastConsumer(userId, StreamKind.VIDEO);
     const showQualityControl =
-      !isOwnUser && webRtcSimulcastEnabled && hasVideoStream;
+      !isOwnUser && webRtcSimulcastEnabled && hasVideoStream && !webcamHidden;
+    const showWebcamVideo = hasVideoStream && !webcamHidden;
 
     const handlePinToggle = useCallback(() => {
       if (isPinned) {
@@ -95,13 +101,14 @@ const VoiceUserCard = memo(
               disabled={!isSimulcastVideoConsumer}
             />
           )}
-          {hasVideoStream && <PictureInPictureButton videoRef={videoRef} />}
+          {showWebcamVideo && <PictureInPictureButton videoRef={videoRef} />}
           {showPinControls && (
             <PinButton isPinned={isPinned} handlePinToggle={handlePinToggle} />
           )}
+          {!isOwnUser && hasVideoStream && <HideWebcamButton userId={userId} />}
         </CardControls>
 
-        {hasVideoStream && (
+        {showWebcamVideo && (
           <video
             ref={videoRef}
             autoPlay
@@ -113,7 +120,7 @@ const VoiceUserCard = memo(
             )}
           />
         )}
-        {!hasVideoStream && (
+        {!showWebcamVideo && (
           <UserAvatar
             userId={userId}
             className="w-12 h-12 md:w-16 md:h-16 lg:w-24 lg:h-24"
@@ -142,8 +149,8 @@ const VoiceUserCard = memo(
                 <Video className="size-3.5 text-blue-600/80" />
               )}
 
-              {voiceUser.state.sharingScreen && (
-                <Monitor className="size-3.5 text-purple-500/80" />
+              {voiceUser.state.sharingScreen && !isOwnUser && (
+                <ViewDemoButton userId={voiceUser.id} />
               )}
             </div>
           </div>

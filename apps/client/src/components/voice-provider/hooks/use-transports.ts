@@ -16,7 +16,7 @@ import {
   type RtpCapabilities,
   type Transport
 } from 'mediasoup-client/types';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 type TUseTransportParams = {
   addRemoteUserStream: (
@@ -388,11 +388,34 @@ const useTransports = ({
     ]
   );
 
+  // Stable ref pointing at the latest `consume` callback. Long-lived effects
+  // (e.g. the pubsub subscription in `useVoiceEvents`) read `consume` through
+  // this ref so they don't tear down and resubscribe every time `consume`
+  // recreates due to upstream state changes (simulcast quality layers, etc.).
+  const consumeRef = useRef(consume);
+
+  useEffect(() => {
+    consumeRef.current = consume;
+  }, [consume]);
+
+  const getConsumer = useCallback(
+    (remoteId: number, kind: StreamKind): Consumer<AppData> | undefined => {
+      return consumers.current[remoteId]?.[kind];
+    },
+    []
+  );
+
   const consumeExistingProducers = useCallback(
     async (
       rtpCapabilities: RtpCapabilities,
-      externalStreamTracks?: {
-        [streamId: number]: { audio?: boolean; video?: boolean };
+      options?: {
+        externalStreamTracks?: {
+          [streamId: number]: { audio?: boolean; video?: boolean };
+        };
+        // When provided, SCREEN / SCREEN_AUDIO producers for `remoteId` are
+        // only consumed if `isViewingDemo(remoteId)` is true. Used to gate the
+        // demo opt-in flow on channel-join.
+        isViewingDemo?: (remoteId: number) => boolean;
       }
     ) => {
       logVoice('Consuming existing producers', { rtpCapabilities });
@@ -424,15 +447,19 @@ const useTransports = ({
         });
 
         remoteScreenIds.forEach((remoteId) => {
+          if (options?.isViewingDemo && !options.isViewingDemo(remoteId))
+            return;
           consume(remoteId, StreamKind.SCREEN, rtpCapabilities);
         });
 
         remoteScreenAudioIds.forEach((remoteId) => {
+          if (options?.isViewingDemo && !options.isViewingDemo(remoteId))
+            return;
           consume(remoteId, StreamKind.SCREEN_AUDIO, rtpCapabilities);
         });
 
         remoteExternalStreamIds.forEach((streamId: number) => {
-          const tracks = externalStreamTracks?.[streamId];
+          const tracks = options?.externalStreamTracks?.[streamId];
 
           if (tracks?.audio !== false) {
             consume(streamId, StreamKind.EXTERNAL_AUDIO, rtpCapabilities);
@@ -492,11 +519,13 @@ const useTransports = ({
     producerTransport,
     consumerTransport,
     consumers,
+    consumeRef,
     createProducerTransport,
     createConsumerTransport,
     consume,
     consumeExistingProducers,
     cleanupTransports,
+    getConsumer,
     getConsumerCodec
   };
 };

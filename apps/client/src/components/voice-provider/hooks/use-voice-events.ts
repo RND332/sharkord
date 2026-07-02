@@ -5,14 +5,18 @@ import { getTRPCClient } from '@/lib/trpc';
 import type { TRemoteUserStreamKinds } from '@/types';
 import { StreamKind } from '@sharkord/shared';
 import type { RtpCapabilities } from 'mediasoup-client/types';
-import { useEffect } from 'react';
+import { type MutableRefObject, useEffect } from 'react';
 
 type TEvents = {
-  consume: (
-    remoteId: number,
-    kind: StreamKind,
-    rtpCapabilities: RtpCapabilities
-  ) => Promise<void>;
+  consumeRef: MutableRefObject<
+    | ((
+        remoteId: number,
+        kind: StreamKind,
+        rtpCapabilities: RtpCapabilities
+      ) => Promise<void>)
+    | null
+  >;
+  isViewingDemo: (userId: number) => boolean;
   removeRemoteUserStream: (
     userId: number,
     kind: TRemoteUserStreamKinds
@@ -23,23 +27,26 @@ type TEvents = {
   ) => void;
   removeExternalStream: (streamId: number) => void;
   clearRemoteUserStreamsForUser: (userId: number) => void;
-  rtpCapabilities: RtpCapabilities;
+  clearViewedDemo: (userId: number) => void;
+  rtpCapabilities: RtpCapabilities | undefined;
 };
 
 const useVoiceEvents = ({
-  consume,
+  consumeRef,
+  isViewingDemo,
   removeRemoteUserStream,
   removeExternalStreamTrack,
   removeExternalStream,
   clearRemoteUserStreamsForUser,
+  clearViewedDemo,
   rtpCapabilities
 }: TEvents) => {
   const currentVoiceChannelId = useCurrentVoiceChannelId();
   const ownUserId = useOwnUserId();
 
   useEffect(() => {
-    if (!currentVoiceChannelId) {
-      logVoice('Voice events not initialized - missing channelId');
+    if (!currentVoiceChannelId || !rtpCapabilities) {
+      logVoice('Voice events not initialized - missing channelId or rtps');
       return;
     }
 
@@ -70,8 +77,23 @@ const useVoiceEvents = ({
             channelId
           });
 
+          // Demos are opt-in. If this is a SCREEN / SCREEN_AUDIO producer and
+          // the local viewer is not currently viewing this user's demo, do
+          // not consume. The viewer must click "View demo" to start.
+          if (
+            (kind === StreamKind.SCREEN || kind === StreamKind.SCREEN_AUDIO) &&
+            !isViewingDemo(remoteId)
+          ) {
+            logVoice('Skipping demo producer (not viewing)', {
+              remoteId,
+              kind,
+              channelId
+            });
+            return;
+          }
+
           try {
-            consume(remoteId, kind, rtpCapabilities);
+            consumeRef.current?.(remoteId, kind, rtpCapabilities);
           } catch (error) {
             logVoice('Error consuming new producer', {
               error,
@@ -108,6 +130,16 @@ const useVoiceEvents = ({
             } else {
               removeRemoteUserStream(remoteId, kind);
             }
+
+            // If the demo's SCREEN / SCREEN_AUDIO producer just closed,
+            // forget that the viewer was viewing it — they will need to
+            // explicitly click View again if the presenter re-shares.
+            if (
+              kind === StreamKind.SCREEN ||
+              kind === StreamKind.SCREEN_AUDIO
+            ) {
+              clearViewedDemo(remoteId);
+            }
           } catch (error) {
             logVoice('Error removing remote stream for closed producer', {
               error,
@@ -131,6 +163,7 @@ const useVoiceEvents = ({
 
         try {
           clearRemoteUserStreamsForUser(userId);
+          clearViewedDemo(userId);
         } catch (error) {
           logVoice('Error clearing remote streams for user', { error });
         }
@@ -178,11 +211,13 @@ const useVoiceEvents = ({
   }, [
     currentVoiceChannelId,
     ownUserId,
-    consume,
+    consumeRef,
+    isViewingDemo,
     removeRemoteUserStream,
     removeExternalStreamTrack,
     removeExternalStream,
     clearRemoteUserStreamsForUser,
+    clearViewedDemo,
     rtpCapabilities
   ]);
 };

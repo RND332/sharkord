@@ -1,3 +1,4 @@
+import { useDemoVisibility } from '@/components/voice-provider/demo-visibility-context';
 import {
   useVolumeControl,
   type TVolumeKey
@@ -9,7 +10,7 @@ import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { Monitor, ZoomIn, ZoomOut } from 'lucide-react';
+import { Monitor, MonitorOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { memo, useCallback, useMemo, type RefObject } from 'react';
 import { CardControls } from './card-controls';
 import { CardGradient } from './card-gradient';
@@ -33,6 +34,7 @@ type TScreenShareControlsProps = {
   showPinControls: boolean;
   showAudioControl: boolean;
   showQualityControl: boolean;
+  showStopViewing: boolean;
   disableQualityControl: boolean;
   volumeKey: TVolumeKey;
   videoRef: RefObject<HTMLVideoElement | null>;
@@ -50,11 +52,14 @@ const ScreenShareControls = memo(
     showPinControls,
     showAudioControl,
     showQualityControl,
+    showStopViewing,
     disableQualityControl,
     volumeKey,
     videoRef,
     userId
   }: TScreenShareControlsProps) => {
+    const { stopViewingDemo } = useDemoVisibility();
+
     return (
       <CardControls>
         {showAudioControl && <VolumeButton volumeKey={volumeKey} />}
@@ -81,6 +86,15 @@ const ScreenShareControls = memo(
         />
         {showPinControls && (
           <PinButton isPinned={isPinned} handlePinToggle={handlePinToggle} />
+        )}
+        {showStopViewing && (
+          <IconButton
+            icon={MonitorOff}
+            onClick={() => stopViewingDemo(userId)}
+            title="Stop viewing demo"
+            variant="default"
+            size="sm"
+          />
         )}
       </CardControls>
     );
@@ -222,6 +236,7 @@ const ScreenShareCard = memo(
           showPinControls={showPinControls}
           showAudioControl={!isOwnUser && hasScreenShareAudioStream}
           showQualityControl={!isOwnUser && webRtcSimulcastEnabled}
+          showStopViewing={!isOwnUser}
           disableQualityControl={!isSimulcastScreenConsumer}
           volumeKey={volumeKey}
           videoRef={screenShareRef}

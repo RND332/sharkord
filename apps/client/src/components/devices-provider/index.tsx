@@ -38,6 +38,7 @@ const getDefaultDeviceSettings = (): TDeviceSettings => ({
   suppressLocalAudioPlayback: false,
   mirrorOwnVideo: false,
   simulcastEnabled: true,
+  screenShareSimulcastEnabled: false,
   screenResolution: Resolution['720p'],
   screenFramerate: 30,
   screenCodec: VideoCodec.AUTO,
@@ -227,11 +228,21 @@ const DevicesProvider = memo(({ children }: TDevicesProviderProps) => {
           ? (savedSettings.restrictOwnAudio ?? true)
           : false;
 
+        // One-time migration: existing users who had simulcast on for both
+        // webcam and screen-share get the new `screenShareSimulcastEnabled`
+        // lifted from the legacy `simulcastEnabled` flag. New installs get
+        // the default of `false` from `defaultDeviceSettings`.
+        const screenShareSimulcastEnabled =
+          savedSettings.screenShareSimulcastEnabled ??
+          savedSettings.simulcastEnabled ??
+          defaultDeviceSettings.screenShareSimulcastEnabled;
+
         base = {
           ...defaultDeviceSettings,
           ...savedSettings,
           noiseSuppression,
-          restrictOwnAudio
+          restrictOwnAudio,
+          screenShareSimulcastEnabled
         };
       } else {
         base = defaultDeviceSettings;

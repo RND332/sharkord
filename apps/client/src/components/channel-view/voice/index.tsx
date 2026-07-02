@@ -1,3 +1,4 @@
+import { useDemoVisibility } from '@/components/voice-provider/demo-visibility-context';
 import { useVoiceUsersByChannelId } from '@/features/server/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import {
@@ -27,6 +28,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const hideNonVideoParticipants = useHideNonVideoParticipants();
   const hideOwnScreenShare = useHideOwnScreenShare();
   const ownUserId = useOwnUserId();
+  const { isViewingDemo } = useDemoVisibility();
 
   const cards = useMemo(() => {
     const cards: React.ReactNode[] = [];
@@ -64,10 +66,15 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
         );
       }
 
-      // Screen shares always have video, so always show them
+      // Screen shares are opt-in: only render the full ScreenShareCard once the
+      // local viewer has clicked "View demo" for that presenter.
       const shouldHideOwnScreenShare =
         hideOwnScreenShare && voiceUser.id === ownUserId;
-      if (voiceUser.state.sharingScreen && !shouldHideOwnScreenShare) {
+      if (
+        voiceUser.state.sharingScreen &&
+        !shouldHideOwnScreenShare &&
+        isViewingDemo(voiceUser.id)
+      ) {
         const screenShareCardId = `screen-share-${voiceUser.id}`;
 
         cards.push(
@@ -124,7 +131,8 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     unpinCard,
     hideNonVideoParticipants,
     hideOwnScreenShare,
-    ownUserId
+    ownUserId,
+    isViewingDemo
   ]);
 
   if (voiceUsers.length === 0) {
