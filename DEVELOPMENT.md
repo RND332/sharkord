@@ -40,6 +40,40 @@ separately.
 search), `--seed <number>` changes the cast, and `--counting <n>` resizes the numbered channel
 (`0` skips it). The same seed always produces the same server.
 
+## Direct screen sharing
+
+Screen video and captured screen audio can use a direct WebRTC connection for a
+new share with exactly two voice participants. Microphones and webcams still use
+mediasoup. Server-relayed screen sharing remains the default.
+
+To enable the optional path, set `webRtc.directScreenSharing` to `true` in the
+server configuration or start `apps/server` with:
+
+```bash
+SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING=true bun dev
+```
+
+Both participants must also enable **Direct screen sharing (1:1)** in **User
+Settings > Devices** before joining voice. The client preference defaults to off
+and cannot be changed while connected. Direct connections expose each participant's
+network address to the other participant.
+
+The sender displays a connecting status while trying the direct path for up to
+eight seconds, including signalling and ICE gathering. Each ICE gathering attempt
+is limited to two seconds. Success displays a direct status; failure displays a
+server-relayed status and reuses the same captured tracks through mediasoup without
+asking for another capture. A third participant, an external stream, loss of peer
+capability, or a failed direct connection also returns the share to the server.
+Existing relayed shares are never upgraded in place. Canceling a handover stops
+the original capture; late producer cleanup cannot close a newer share.
+
+For peers on different networks, configure `webRtc.directScreenStunUrls` or the
+comma-separated `SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS` environment variable.
+Only `stun:` and `stuns:` URLs are accepted, with no public STUN service enabled by
+default. Some NAT/firewall combinations cannot connect directly. TURN is not used
+for this path: mediasoup is the relay fallback. Group calls and older clients that
+do not advertise direct support continue using the server.
+
 ## Testing
 
 To run tests, use the following command:

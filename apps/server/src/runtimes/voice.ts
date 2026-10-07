@@ -1,7 +1,11 @@
 import {
+  DIRECT_SCREEN_CONNECT_TIMEOUT_MS,
   ServerEvents,
   StreamKind,
   type TChannelState,
+  type TDirectScreenEvent,
+  type TDirectScreenSession,
+  type TDirectScreenSignal,
   type TExternalStreamsMap,
   type TRemoteProducerIds,
   type TStreamQualityLayer,
@@ -21,6 +25,7 @@ import type {
 import { config } from '../config';
 import { logger } from '../logger';
 import { eventBus } from '../plugins/event-bus';
+import { invariant } from '../utils/invariant';
 import {
   mediaSoupWorker,
   webRtcServer,
@@ -137,6 +142,15 @@ type TExternalStreamInternal = {
 
 const EXTERNAL_STREAM_ID_BASE = 1_000_000;
 
+type TDirectScreenRuntimeSession = {
+  id: string;
+  senderId: number;
+  peerId: number;
+  stunUrls: string[];
+  phase: 'pending' | 'offered' | 'answered' | 'ready';
+  deadline?: NodeJS.Timeout;
+};
+
 class VoiceRuntime {
   public readonly id: number;
   private state: TChannelState = { users: [], externalStreams: {} };
@@ -149,6 +163,14 @@ class VoiceRuntime {
   private screenAudioProducers: TProducerMap = {};
   private consumers: TConsumerMap = {};
   private producerQualityLayers: TProducerQualityLayerMap = {};
+  private directScreenSubscriptions = new Map<
+    number,
+    { token: symbol; enabled: boolean }
+  >();
+  private directScreenSessions = new Map<string, TDirectScreenRuntimeSession>();
+  private directScreenOutgoing = new Map<number, string>();
+  private directScreenMovedMembers = new Set<number>();
+  private destroyed = false;
 
   private externalCounter = EXTERNAL_STREAM_ID_BASE;
   private externalStreamsInternal: {
@@ -315,6 +337,11 @@ class VoiceRuntime {
   };
 
   public destroy = async () => {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.endAllDirectScreenSessions('stop');
+    this.directScreenSubscriptions.clear();
+    this.directScreenMovedMembers.clear();
     await this.router?.close();
 
     Object.values(this.consumerTransports).forEach((transport) => {
@@ -412,6 +439,8 @@ class VoiceRuntime {
         ...state
       }
     });
+    if (this.state.users.length !== 2)
+      this.endAllDirectScreenSessions('fallback');
 
     eventBus.emit('user:joined_voice', {
       userId: userId,
@@ -420,7 +449,9 @@ class VoiceRuntime {
   };
 
   public removeUser = (userId: number) => {
+    this.invalidateDirectScreenUser(userId);
     this.state.users = this.state.users.filter((u) => u.userId !== userId);
+    this.directScreenMovedMembers.delete(userId);
 
     this.cleanupUserResources(userId);
 
@@ -486,8 +517,210 @@ class VoiceRuntime {
     const user = this.getUser(userId);
 
     if (!user) return;
+    if (newState.sharingScreen === false) {
+      const sessionId = this.directScreenOutgoing.get(userId);
+      const session = sessionId
+        ? this.directScreenSessions.get(sessionId)
+        : undefined;
+      if (session) this.endDirectScreenSession(session, 'stop');
+    }
 
     user.state = { ...user.state, ...newState };
+  };
+
+  public registerDirectScreenSubscriber = (
+    userId: number,
+    enabled: boolean
+  ) => {
+    const token = Symbol();
+    if (
+      this.destroyed ||
+      this.directScreenMovedMembers.has(userId) ||
+      !this.getUser(userId)
+    ) {
+      return { unregister: () => {}, isCurrent: () => false };
+    }
+    this.directScreenSubscriptions.set(userId, { token, enabled });
+    if (!enabled) this.endDirectScreenSessionsForUser(userId);
+    return {
+      isCurrent: () =>
+        this.directScreenSubscriptions.get(userId)?.token === token,
+      unregister: () => {
+        if (this.directScreenSubscriptions.get(userId)?.token !== token) return;
+        this.directScreenSubscriptions.delete(userId);
+        this.endDirectScreenSessionsForUser(userId);
+      }
+    };
+  };
+
+  public hasDirectScreenCapability = (userId: number) => {
+    return (
+      !this.destroyed &&
+      !this.directScreenMovedMembers.has(userId) &&
+      !!this.getUser(userId) &&
+      this.directScreenSubscriptions.get(userId)?.enabled === true
+    );
+  };
+
+  public invalidateDirectScreenUser = (
+    userId: number,
+    blockUntilRejoin = false
+  ) => {
+    if (blockUntilRejoin && this.getUser(userId))
+      this.directScreenMovedMembers.add(userId);
+    this.directScreenSubscriptions.delete(userId);
+    this.endDirectScreenSessionsForUser(userId);
+  };
+
+  public startDirectScreen = (
+    senderId: number
+  ): TDirectScreenSession | null => {
+    if (
+      !config.webRtc.directScreenSharing ||
+      this.destroyed ||
+      this.state.users.length !== 2 ||
+      Object.keys(this.state.externalStreams).length ||
+      this.screenProducers[senderId] ||
+      this.screenAudioProducers[senderId] ||
+      this.directScreenOutgoing.has(senderId) ||
+      !this.hasDirectScreenCapability(senderId)
+    ) {
+      return null;
+    }
+    const peer = this.state.users.find((user) => user.userId !== senderId);
+    if (!peer || !this.hasDirectScreenCapability(peer.userId)) return null;
+    const session: TDirectScreenRuntimeSession = {
+      id: crypto.randomUUID(),
+      senderId,
+      peerId: peer.userId,
+      stunUrls: [...config.webRtc.directScreenStunUrls],
+      phase: 'pending'
+    };
+    session.deadline = setTimeout(() => {
+      if (this.directScreenSessions.get(session.id) !== session) return;
+      this.endDirectScreenSession(session, 'fallback');
+    }, DIRECT_SCREEN_CONNECT_TIMEOUT_MS);
+    session.deadline.unref();
+    this.directScreenSessions.set(session.id, session);
+    this.directScreenOutgoing.set(senderId, session.id);
+    return {
+      sessionId: session.id,
+      peerId: session.peerId,
+      stunUrls: [...session.stunUrls]
+    };
+  };
+
+  public getDirectScreenSession = (sessionId: string, userId: number) => {
+    const session = this.directScreenSessions.get(sessionId);
+    return session && (session.senderId === userId || session.peerId === userId)
+      ? session
+      : undefined;
+  };
+
+  public signalDirectScreen = (
+    sessionId: string,
+    userId: number,
+    signal: TDirectScreenSignal
+  ) => {
+    if (
+      (signal.type === 'fallback' || signal.type === 'stop') &&
+      !this.directScreenSessions.has(sessionId)
+    )
+      return;
+    const session = this.getDirectScreenSession(sessionId, userId);
+    invariant(session, {
+      code: 'NOT_FOUND',
+      message: 'Direct screen session not found'
+    });
+    if (signal.type === 'fallback' || signal.type === 'stop') {
+      this.endDirectScreenSession(session, signal.type);
+      return;
+    }
+    invariant(config.webRtc.directScreenSharing && !this.destroyed, {
+      code: 'BAD_REQUEST',
+      message: 'Direct screen sharing is disabled'
+    });
+    invariant(
+      this.state.users.length === 2 &&
+        !Object.keys(this.state.externalStreams).length &&
+        this.hasDirectScreenCapability(session.senderId) &&
+        this.hasDirectScreenCapability(session.peerId),
+      {
+        code: 'NOT_FOUND',
+        message: 'Direct screen session not found'
+      }
+    );
+    if (signal.type === 'offer') {
+      invariant(userId === session.senderId && session.phase === 'pending', {
+        code: 'BAD_REQUEST',
+        message: 'Unexpected direct screen offer'
+      });
+      session.phase = 'offered';
+    } else if (signal.type === 'answer') {
+      invariant(userId === session.peerId && session.phase === 'offered', {
+        code: 'BAD_REQUEST',
+        message: 'Unexpected direct screen answer'
+      });
+      session.phase = 'answered';
+    } else {
+      invariant(userId === session.peerId && session.phase === 'answered', {
+        code: 'BAD_REQUEST',
+        message: 'Unexpected direct screen ready signal'
+      });
+      session.phase = 'ready';
+      clearTimeout(session.deadline);
+      session.deadline = undefined;
+    }
+    this.publishDirectScreenSignal(session, userId, signal, [
+      userId === session.senderId ? session.peerId : session.senderId
+    ]);
+  };
+
+  private publishDirectScreenSignal = (
+    session: TDirectScreenRuntimeSession,
+    fromUserId: number,
+    signal: TDirectScreenSignal,
+    recipients: number[]
+  ) => {
+    const event: TDirectScreenEvent = {
+      sessionId: session.id,
+      channelId: this.id,
+      senderId: session.senderId,
+      fromUserId,
+      stunUrls: session.stunUrls,
+      signal
+    };
+    pubsub.publishFor(recipients, ServerEvents.DIRECT_SCREEN_SIGNAL, event);
+  };
+
+  private endDirectScreenSession = (
+    session: TDirectScreenRuntimeSession,
+    type: 'fallback' | 'stop'
+  ) => {
+    if (this.directScreenSessions.get(session.id) !== session) return;
+    this.directScreenSessions.delete(session.id);
+    this.directScreenOutgoing.delete(session.senderId);
+    clearTimeout(session.deadline);
+    this.publishDirectScreenSignal(session, session.peerId, { type }, [
+      session.senderId
+    ]);
+    this.publishDirectScreenSignal(session, session.senderId, { type }, [
+      session.peerId
+    ]);
+  };
+
+  private endDirectScreenSessionsForUser = (userId: number) => {
+    for (const session of this.directScreenSessions.values()) {
+      if (session.senderId === userId || session.peerId === userId) {
+        this.endDirectScreenSession(session, 'fallback');
+      }
+    }
+  };
+
+  private endAllDirectScreenSessions = (type: 'fallback' | 'stop') => {
+    for (const session of this.directScreenSessions.values()) {
+      this.endDirectScreenSession(session, type);
+    }
   };
 
   public getRouter = (): Router<AppData> => {
@@ -640,6 +873,13 @@ class VoiceRuntime {
       qualityLayers
     );
 
+    if (type === StreamKind.SCREEN || type === StreamKind.SCREEN_AUDIO) {
+      const sessionId = this.directScreenOutgoing.get(userId);
+      const session = sessionId
+        ? this.directScreenSessions.get(sessionId)
+        : undefined;
+      if (session) this.endDirectScreenSession(session, 'fallback');
+    }
     this.removeProducer(userId, type);
 
     if (type === StreamKind.VIDEO) {
@@ -813,6 +1053,7 @@ class VoiceRuntime {
         video: !!producers.video
       }
     };
+    this.endAllDirectScreenSessions('fallback');
 
     return streamId;
   };

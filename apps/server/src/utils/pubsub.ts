@@ -5,6 +5,7 @@ import type {
   TChannel,
   TChannelUserPermissionsMap,
   TCommandsMapByPlugin,
+  TDirectScreenEvent,
   TExternalStream,
   TJoinedEmoji,
   TJoinedMessage,
@@ -85,6 +86,7 @@ type Events = {
     userId: number;
     emoji: string;
   };
+  [ServerEvents.DIRECT_SCREEN_SIGNAL]: TDirectScreenEvent;
   [ServerEvents.VOICE_NEW_PRODUCER]: {
     channelId: number;
     remoteId: number;

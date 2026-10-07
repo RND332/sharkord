@@ -23,6 +23,17 @@ const zRateLimiter = z.object({
   windowMs: z.coerce.number().int().positive()
 });
 
+const zStunUrl = z.string().refine((value) => {
+  if (!/^stuns?:[^\s/?#@]+$/.test(value)) return false;
+  const authority = value.slice(value.indexOf(':') + 1);
+  if (authority.endsWith(':')) return false;
+  try {
+    const url = new URL(`http://${authority}`);
+    return !!url.hostname && (!url.port || Number(url.port) > 0);
+  } catch {
+    return false;
+  }
+}, 'Only STUN and STUNS host URLs are allowed');
 const zConfig = z.object({
   server: z.object({
     port: z.coerce.number().int().positive(),
@@ -64,7 +75,21 @@ const zConfig = z.object({
   webRtc: z.object({
     port: z.coerce.number().int().positive(),
     announcedAddress: z.string(),
-    maxBitrate: z.coerce.number().int().positive()
+    maxBitrate: z.coerce.number().int().positive(),
+    directScreenSharing: z
+      .preprocess((value) => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        return value;
+      }, z.boolean())
+      .default(false),
+    directScreenStunUrls: z
+      .preprocess((value) => {
+        if (value === '') return [];
+        if (typeof value === 'string') return value.split(',');
+        return value;
+      }, z.array(zStunUrl).max(8))
+      .default([])
   }),
   rateLimiters: z.object({
     sendAndEditMessage: zRateLimiter,
@@ -124,7 +149,9 @@ const defaultConfig: TConfig = {
   webRtc: {
     port: 40000,
     announcedAddress: '',
-    maxBitrate: 30_000_000 // 30 Mbps
+    maxBitrate: 30_000_000, // 30 Mbps
+    directScreenSharing: false,
+    directScreenStunUrls: []
   },
   rateLimiters: {
     sendAndEditMessage: {
@@ -276,7 +303,9 @@ const envOverridesMap: Record<string, string> = {
   'oidc.disableLocalLogin': 'SHARKORD_OIDC_DISABLE_LOCAL_LOGIN',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
-  'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'
+  'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE',
+  'webRtc.directScreenSharing': 'SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING',
+  'webRtc.directScreenStunUrls': 'SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS'
 };
 
 // validated again after the overrides, otherwise an env var could put a value

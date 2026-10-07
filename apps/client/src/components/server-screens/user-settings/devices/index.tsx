@@ -100,6 +100,11 @@ const Devices = memo(() => {
     []
   );
 
+  const handleDirectScreenSharingChange = useCallback(
+    (enabled: boolean) => onChange('directScreenSharing', enabled),
+    [onChange]
+  );
+
   const {
     testAudioRef,
     permissionState,
@@ -601,6 +606,21 @@ const Devices = memo(() => {
               </Select>
             </div>
           </div>
+
+          <Group
+            label={t('directScreenSharingLabel')}
+            description={t('directScreenSharingDesc')}
+          >
+            <Switch
+              aria-label={t('directScreenSharingLabel')}
+              checked={!!values.directScreenSharing}
+              disabled={
+                currentVoiceChannelId !== undefined ||
+                typeof RTCPeerConnection === 'undefined'
+              }
+              onCheckedChange={handleDirectScreenSharingChange}
+            />
+          </Group>
 
           <Group label={t('screenCursorLabel')}>
             <Select

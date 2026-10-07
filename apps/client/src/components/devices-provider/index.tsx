@@ -42,6 +42,7 @@ const getDefaultDeviceSettings = (): TDeviceSettings => ({
   suppressLocalAudioPlayback: false,
   mirrorOwnVideo: false,
   simulcastEnabled: true,
+  directScreenSharing: false,
   screenResolution: Resolution['720p'],
   screenFramerate: 30,
   screenCodec: VideoCodec.AUTO,

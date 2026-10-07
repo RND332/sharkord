@@ -111,6 +111,8 @@
   "simulcastUserDesc": "Envie camadas separadas de qualidade baixa, média e alta para sua webcam e compartilhamento de tela. Isso usa mais largura de banda e CPU, mas ajuda espectadores com conexões mais lentas a receberem uma transmissão mais suave. Força o uso de VP8 quando ativado.",
   "simulcastDisabledByServerDesc": "Simulcast está desativado neste servidor.",
   "screenSharingLabel": "Compartilhamento de Tela",
+  "directScreenSharingLabel": "Compartilhamento direto de tela (1:1)",
+  "directScreenSharingDesc": "Permite transmitir o vídeo e o áudio da tela diretamente a outro participante quando ambos os clientes e o servidor habilitam a opção. O outro participante pode ver seu endereço IP. Tenta se conectar por até 8 segundos e depois usa o servidor. Saia do canal de voz antes de alterar esta configuração.",
   "restrictOwnAudioLabel": "Restringir Próprio Áudio",
   "restrictOwnAudioDesc": "Excluir o áudio do Sharkord do áudio capturado durante o compartilhamento de tela.",
   "restrictOwnAudioUnsupported": "Seu navegador não suporta a restrição do próprio áudio durante o compartilhamento de tela. O áudio do Sharkord pode ser capturado na transmissão compartilhada, o que pode causar eco ou feedback.",

@@ -101,6 +101,7 @@ const moveUserRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'User is already in that channel'
     });
 
+    currentRuntime.invalidateDirectScreenUser(input.userId, true);
     grantVoiceMove(input.userId, input.channelId);
 
     await publishHiddenChannelToUser(input.userId, input.channelId);

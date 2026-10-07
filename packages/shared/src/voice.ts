@@ -56,3 +56,29 @@ export type TVoiceProducerInfo = {
   producerId: string;
   paused: boolean;
 };
+
+export const DIRECT_SCREEN_CONNECT_TIMEOUT_MS = 8000;
+export const DIRECT_SCREEN_ICE_GATHER_TIMEOUT_MS = 2000;
+export const DIRECT_SCREEN_SDP_MAX_LENGTH = 65536;
+
+export type TDirectScreenSignal =
+  | { type: 'offer'; sdp: string }
+  | { type: 'answer'; sdp: string }
+  | { type: 'ready' }
+  | { type: 'fallback' }
+  | { type: 'stop' };
+
+export type TDirectScreenSession = {
+  sessionId: string;
+  peerId: number;
+  stunUrls: string[];
+};
+
+export type TDirectScreenEvent = {
+  sessionId: string;
+  channelId: number;
+  senderId: number;
+  fromUserId: number;
+  stunUrls: string[];
+  signal: TDirectScreenSignal;
+};

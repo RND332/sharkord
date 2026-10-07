@@ -502,12 +502,13 @@ describe('voice router', () => {
   // close observer on them, so a stand-in is enough to check the route does the bookkeeping:
   // drop it from the runtime and tell the rest of the channel it is gone
   describe('closeProducer', () => {
-    const createFakeProducer = () => {
+    const createFakeProducer = (kind: 'audio' | 'video' = 'audio') => {
       const closeListeners: (() => void)[] = [];
       const state = { closed: false };
 
       const producer = {
-        kind: 'audio',
+        id: crypto.randomUUID(),
+        kind,
         observer: {
           on: (event: string, listener: () => void) => {
             if (event === 'close') closeListeners.push(listener);
@@ -522,18 +523,22 @@ describe('voice router', () => {
       return { producer, state };
     };
 
-    const withProducer = async () => {
+    const withProducer = async (
+      kind: StreamKind.AUDIO | StreamKind.SCREEN = StreamKind.AUDIO
+    ) => {
       const runtime = new VoiceRuntime(2);
-      const { producer, state } = createFakeProducer();
+      const { producer, state } = createFakeProducer(
+        kind === StreamKind.SCREEN ? 'video' : 'audio'
+      );
 
       runtime.addUser(2, { micMuted: false, soundMuted: false });
-      runtime.addProducer(2, StreamKind.AUDIO, producer);
+      runtime.addProducer(2, kind, producer);
 
       const { caller } = await initTest(2, undefined, {
         currentVoiceChannelId: 2
       });
 
-      return { runtime, caller, state };
+      return { runtime, caller, producer, state };
     };
 
     test('should close the producer and tell the rest of the channel', async () => {
@@ -557,6 +562,112 @@ describe('voice router', () => {
         expect(closures).toEqual([{ remoteId: 2, kind: StreamKind.AUDIO }]);
       } finally {
         subscription.unsubscribe();
+        await runtime.destroy();
+      }
+    });
+
+    test('should close the identified screen producer', async () => {
+      const { runtime, caller, producer, state } = await withProducer(
+        StreamKind.SCREEN
+      );
+
+      try {
+        await caller.voice.closeProducer({
+          kind: StreamKind.SCREEN,
+          producerId: producer.id
+        });
+
+        expect(state.closed).toBe(true);
+        expect(runtime.getProducer(StreamKind.SCREEN, 2)).toBeUndefined();
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should ignore late cleanup of replaced screen producers', async () => {
+      const { runtime, caller, producer } = await withProducer(
+        StreamKind.SCREEN
+      );
+      const oldAudio = createFakeProducer();
+      const replacementVideo = createFakeProducer('video');
+      const replacementAudio = createFakeProducer();
+
+      runtime.addProducer(2, StreamKind.SCREEN_AUDIO, oldAudio.producer);
+      runtime.addProducer(2, StreamKind.SCREEN, replacementVideo.producer);
+      runtime.addProducer(
+        2,
+        StreamKind.SCREEN_AUDIO,
+        replacementAudio.producer
+      );
+
+      const closures: { remoteId: number; kind: StreamKind }[] = [];
+      const subscription = pubsub
+        .subscribeForChannel(2, ServerEvents.VOICE_PRODUCER_CLOSED)
+        .subscribe({
+          next: ({ remoteId, kind }) => {
+            closures.push({ remoteId, kind });
+          }
+        });
+
+      try {
+        await caller.voice.closeProducer({
+          kind: StreamKind.SCREEN,
+          producerId: producer.id
+        });
+        await caller.voice.closeProducer({
+          kind: StreamKind.SCREEN_AUDIO,
+          producerId: oldAudio.producer.id
+        });
+
+        expect(replacementVideo.state.closed).toBe(false);
+        expect(replacementAudio.state.closed).toBe(false);
+        expect(runtime.getProducer(StreamKind.SCREEN, 2)?.id).toBe(
+          replacementVideo.producer.id
+        );
+        expect(runtime.getProducer(StreamKind.SCREEN_AUDIO, 2)?.id).toBe(
+          replacementAudio.producer.id
+        );
+        expect(closures).toEqual([]);
+      } finally {
+        subscription.unsubscribe();
+        await runtime.destroy();
+      }
+    });
+
+    test('should reject an invalid producer identity without closing a share', async () => {
+      const { runtime, caller, state } = await withProducer(StreamKind.SCREEN);
+
+      try {
+        await expect(
+          caller.voice.closeProducer({
+            kind: StreamKind.SCREEN,
+            producerId: 'not-a-producer-id'
+          })
+        ).rejects.toThrow('Invalid UUID');
+
+        expect(state.closed).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should require global voice permission for identity-bound cleanup', async () => {
+      const { runtime, caller, producer, state } = await withProducer(
+        StreamKind.SCREEN
+      );
+
+      try {
+        await revokeFromDefaultRole(Permission.JOIN_VOICE_CHANNELS);
+
+        await expect(
+          caller.voice.closeProducer({
+            kind: StreamKind.SCREEN,
+            producerId: producer.id
+          })
+        ).rejects.toThrow('Insufficient permissions');
+
+        expect(state.closed).toBe(false);
+      } finally {
         await runtime.destroy();
       }
     });

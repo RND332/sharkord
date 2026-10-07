@@ -48,7 +48,8 @@ const useVoiceControls = ({
   const isTogglingMic = useRef(false);
   const isTogglingSound = useRef(false);
   const isTogglingWebcam = useRef(false);
-  const isTogglingScreenShare = useRef(false);
+  const pendingScreenShareOperations = useRef(0);
+  const screenShareGeneration = useRef(0);
   const pendingMicRestoreStateRef = useRef<TPendingMicRestoreState | null>(
     null
   );
@@ -245,11 +246,10 @@ const useVoiceControls = ({
   ]);
 
   const toggleScreenShare = useCallback(async () => {
-    if (isTogglingScreenShare.current) return;
-    isTogglingScreenShare.current = true;
-
     const newState = !ownVoiceState.sharingScreen;
-    const trpc = getTRPCClient();
+    if (pendingScreenShareOperations.current > 0 && newState) return;
+    pendingScreenShareOperations.current++;
+    const generation = ++screenShareGeneration.current;
 
     logVoice('screen: toggle requested', { sharing: newState });
 
@@ -262,11 +262,14 @@ const useVoiceControls = ({
     );
 
     try {
+      const trpc = getTRPCClient();
       if (newState) {
         const video = await startScreenShareStream();
+        if (generation !== screenShareGeneration.current) return;
 
         // handle native screen share end
         video.onended = async () => {
+          if (generation !== screenShareGeneration.current) return;
           stopScreenShareStream();
           updateOwnVoiceState({ sharingScreen: false });
 
@@ -286,9 +289,11 @@ const useVoiceControls = ({
         sharingScreen: newState
       });
     } catch (error) {
+      if (generation !== screenShareGeneration.current) return;
       updateOwnVoiceState({ sharingScreen: false });
 
       try {
+        const trpc = getTRPCClient();
         await trpc.voice.updateState.mutate({ sharingScreen: false });
       } catch {
         // ignore
@@ -301,7 +306,7 @@ const useVoiceControls = ({
         getTrpcError(error, t('common:failedUpdateScreenShareState'))
       );
     } finally {
-      isTogglingScreenShare.current = false;
+      pendingScreenShareOperations.current--;
     }
   }, [
     t,

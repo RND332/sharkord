@@ -8,7 +8,8 @@ import { protectedProcedure } from '../../utils/trpc';
 const closeProducerRoute = protectedProcedure
   .input(
     z.object({
-      kind: z.enum(StreamKind)
+      kind: z.enum(StreamKind),
+      producerId: z.uuid().optional()
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -40,6 +41,8 @@ const closeProducerRoute = protectedProcedure
       );
       return;
     }
+
+    if (input.producerId && producer.id !== input.producerId) return;
 
     runtime.removeProducer(ctx.user.id, input.kind);
 

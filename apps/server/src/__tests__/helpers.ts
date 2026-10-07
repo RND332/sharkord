@@ -1,4 +1,5 @@
 import { sha256, UploadHeaders } from '@sharkord/shared';
+import type { DecorateRouterRecord } from '@trpc/server/unstable-core-do-not-import';
 import jwt from 'jsonwebtoken';
 import type WebSocket from 'ws';
 import { appRouter } from '../routers';
@@ -30,6 +31,8 @@ const createFakeSocket = () => {
   } as unknown as TFakeSocket;
 };
 
+type TTestCaller = DecorateRouterRecord<typeof appRouter._def.record>;
+
 const getCaller = async (
   userId: number,
   connection?: Omit<TMockContextOptions, 'customToken'>,
@@ -37,7 +40,7 @@ const getCaller = async (
 ) => {
   const mockedToken = await getMockedToken(userId);
 
-  const caller = appRouter.createCaller({
+  const caller: TTestCaller = appRouter.createCaller({
     ...(await createMockContext({
       ...connection,
       customToken: mockedToken
@@ -107,5 +110,6 @@ export {
   initTest,
   login,
   uploadFile,
-  type TFakeSocket
+  type TFakeSocket,
+  type TTestCaller
 };
