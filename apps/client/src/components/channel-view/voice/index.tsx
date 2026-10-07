@@ -1,3 +1,4 @@
+import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { useVoiceUsersByChannelId } from '@/features/server/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import {
@@ -24,6 +25,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const hideNonVideoParticipants = useHideNonVideoParticipants();
   const hideOwnScreenShare = useHideOwnScreenShare();
   const ownUserId = useOwnUserId();
+  const { devices } = useDevices();
   const isAnyCardPinned = pinnedCard !== undefined;
 
   const cards = useMemo(() => {
@@ -31,9 +33,11 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
 
     // Check if there are any video streams at all
     const hasAnyVideoStreams =
-      voiceUsers.some(
+      !devices.voiceOnlyMode &&
+      (voiceUsers.some(
         (user) => user.state.webcamEnabled || user.state.sharingScreen
-      ) || externalStreams.some((stream) => stream.tracks.video);
+      ) ||
+        externalStreams.some((stream) => stream.tracks.video));
 
     // Only apply the filter if there are some video streams
     const shouldFilterNonVideo = hideNonVideoParticipants && hasAnyVideoStreams;
@@ -58,10 +62,13 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
         );
       }
 
-      // Screen shares always have video, so always show them
       const shouldHideOwnScreenShare =
         hideOwnScreenShare && voiceUser.id === ownUserId;
-      if (voiceUser.state.sharingScreen && !shouldHideOwnScreenShare) {
+      if (
+        !devices.voiceOnlyMode &&
+        voiceUser.state.sharingScreen &&
+        !shouldHideOwnScreenShare
+      ) {
         const screenShareCardId = `screen-share-${voiceUser.id}`;
 
         cards.push(
@@ -80,6 +87,8 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     });
 
     externalStreams.forEach((stream) => {
+      if (devices.voiceOnlyMode) return;
+
       const externalStreamCardId = `external-stream-${stream.streamId}`;
       const hasVideo = stream.tracks.video;
 
@@ -105,6 +114,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   }, [
     voiceUsers,
     externalStreams,
+    devices.voiceOnlyMode,
     isPinned,
     pinCard,
     unpinCard,

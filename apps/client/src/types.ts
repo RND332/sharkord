@@ -71,6 +71,7 @@ export type TDeviceSettings = {
   mirrorOwnVideo: boolean;
   simulcastEnabled: boolean;
   directScreenSharing: boolean;
+  voiceOnlyMode: boolean;
   screenResolution: Resolution;
   screenFramerate: number;
   screenCodec: VideoCodec;

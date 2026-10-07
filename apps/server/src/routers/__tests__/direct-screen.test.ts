@@ -160,6 +160,27 @@ const revoke = async (permission: Permission) => {
     );
 };
 
+test('voice-only mode ends direct media and blocks capability until disabled', async () => {
+  const { runtime, sender, receiver, sending, receiving, session } =
+    await prepared();
+  await receiver.voice.updateState({ voiceOnlyMode: true });
+  expect(runtime.hasDirectScreenCapability(2)).toBe(false);
+  expect(runtime.getDirectScreenSession(session.sessionId, 1)).toBeUndefined();
+  expect(sending.events.map((event) => event.signal.type)).toEqual([
+    'fallback'
+  ]);
+  expect(receiving.events.map((event) => event.signal.type)).toEqual([
+    'fallback'
+  ]);
+  expect(await sender.voice.startDirectScreen({})).toBeNull();
+  const replacement = runtime.registerDirectScreenSubscriber(2, true);
+  expect(runtime.hasDirectScreenCapability(2)).toBe(false);
+  await receiver.voice.updateState({ voiceOnlyMode: false });
+  expect(runtime.hasDirectScreenCapability(2)).toBe(true);
+  expect(await sender.voice.startDirectScreen({})).not.toBeNull();
+  replacement.unregister();
+});
+
 describe('direct screen configuration', () => {
   test('keeps existing deployments on the relayed path', async () => {
     const { sender, receiver } = await pair();

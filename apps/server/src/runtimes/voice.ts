@@ -163,6 +163,8 @@ class VoiceRuntime {
   private screenAudioProducers: TProducerMap = {};
   private consumers: TConsumerMap = {};
   private producerQualityLayers: TProducerQualityLayerMap = {};
+  private nonVoiceMediaGenerations = new Map<number, number>();
+  private nonVoiceMediaSequence = 0;
   private directScreenSubscriptions = new Map<
     number,
     { token: symbol; enabled: boolean }
@@ -342,6 +344,7 @@ class VoiceRuntime {
     this.endAllDirectScreenSessions('stop');
     this.directScreenSubscriptions.clear();
     this.directScreenMovedMembers.clear();
+    this.nonVoiceMediaGenerations.clear();
     await this.router?.close();
 
     Object.values(this.consumerTransports).forEach((transport) => {
@@ -432,6 +435,7 @@ class VoiceRuntime {
   ) => {
     if (this.getUser(userId)) return;
 
+    this.nonVoiceMediaGenerations.set(userId, ++this.nonVoiceMediaSequence);
     this.state.users.push({
       userId,
       state: {
@@ -449,6 +453,7 @@ class VoiceRuntime {
   };
 
   public removeUser = (userId: number) => {
+    this.nonVoiceMediaGenerations.delete(userId);
     this.invalidateDirectScreenUser(userId);
     this.state.users = this.state.users.filter((u) => u.userId !== userId);
     this.directScreenMovedMembers.delete(userId);
@@ -510,6 +515,29 @@ class VoiceRuntime {
     );
   };
 
+  public getNonVoiceMediaGeneration = (userId: number) => {
+    return this.nonVoiceMediaGenerations.get(userId) ?? 0;
+  };
+
+  public assertMediaAllowed = (
+    userId: number,
+    kind: StreamKind,
+    generation?: number
+  ) => {
+    invariant(
+      kind === StreamKind.AUDIO ||
+        (!this.destroyed &&
+          this.nonVoiceMediaGenerations.has(userId) &&
+          !this.getUserState(userId).voiceOnlyMode &&
+          (generation === undefined ||
+            generation === this.getNonVoiceMediaGeneration(userId))),
+      {
+        code: 'FORBIDDEN',
+        message: 'Voice-only mode does not allow this media'
+      }
+    );
+  };
+
   public updateUserState = (
     userId: number,
     newState: Partial<TChannelState['users'][0]['state']>
@@ -517,6 +545,27 @@ class VoiceRuntime {
     const user = this.getUser(userId);
 
     if (!user) return;
+    const voiceOnlyMode = newState.voiceOnlyMode ?? user.state.voiceOnlyMode;
+    user.state = {
+      ...user.state,
+      ...newState,
+      ...(voiceOnlyMode === undefined ? {} : { voiceOnlyMode }),
+      ...(voiceOnlyMode ? { webcamEnabled: false, sharingScreen: false } : {})
+    };
+    if (voiceOnlyMode) {
+      this.nonVoiceMediaGenerations.set(userId, ++this.nonVoiceMediaSequence);
+      this.endDirectScreenSessionsForUser(userId);
+      this.removeProducer(userId, StreamKind.VIDEO);
+      this.removeProducer(userId, StreamKind.SCREEN);
+      this.removeProducer(userId, StreamKind.SCREEN_AUDIO);
+      const consumers = this.consumers[userId];
+      for (const streamKey in consumers) {
+        if (streamKey.slice(streamKey.indexOf('-') + 1) === StreamKind.AUDIO)
+          continue;
+        consumers[streamKey]?.close();
+        delete consumers[streamKey];
+      }
+    }
     if (newState.sharingScreen === false) {
       const sessionId = this.directScreenOutgoing.get(userId);
       const session = sessionId
@@ -524,8 +573,6 @@ class VoiceRuntime {
         : undefined;
       if (session) this.endDirectScreenSession(session, 'stop');
     }
-
-    user.state = { ...user.state, ...newState };
   };
 
   public registerDirectScreenSubscriber = (
@@ -558,6 +605,7 @@ class VoiceRuntime {
       !this.destroyed &&
       !this.directScreenMovedMembers.has(userId) &&
       !!this.getUser(userId) &&
+      !this.getUserState(userId).voiceOnlyMode &&
       this.directScreenSubscriptions.get(userId)?.enabled === true
     );
   };
@@ -866,8 +914,15 @@ class VoiceRuntime {
     userId: number,
     type: StreamKind,
     producer: Producer,
-    qualityLayers?: TStreamQualityLayer[]
+    qualityLayers?: TStreamQualityLayer[],
+    generation?: number
   ) => {
+    try {
+      this.assertMediaAllowed(userId, type, generation);
+    } catch (error) {
+      producer.close();
+      throw error;
+    }
     const validatedQualityLayers = this.validateProducerQualityLayers(
       producer,
       qualityLayers
@@ -970,8 +1025,15 @@ class VoiceRuntime {
     userId: number,
     remoteId: number,
     kind: StreamKind,
-    consumer: Consumer<AppData>
+    consumer: Consumer<AppData>,
+    generation?: number
   ) => {
+    try {
+      this.assertMediaAllowed(userId, kind, generation);
+    } catch (error) {
+      consumer.close();
+      throw error;
+    }
     if (!this.consumers[userId]) {
       this.consumers[userId] = {};
     }

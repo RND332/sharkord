@@ -4,21 +4,23 @@ import { invariant } from '../utils/invariant';
 import type { Context } from '../utils/trpc';
 
 const getCurrentVoiceRuntime = async (ctx: Context) => {
+  const channelId = ctx.currentVoiceChannelId;
+  const runtime = channelId ? VoiceRuntime.findById(channelId) : undefined;
+  const mediaGeneration = runtime?.getNonVoiceMediaGeneration(ctx.user.id);
+
   await ctx.needsPermission(Permission.JOIN_VOICE_CHANNELS);
 
-  invariant(ctx.currentVoiceChannelId, {
+  invariant(channelId && channelId === ctx.currentVoiceChannelId, {
     code: 'BAD_REQUEST',
     message: 'User is not in a voice channel'
   });
 
-  const runtime = VoiceRuntime.findById(ctx.currentVoiceChannelId);
-
-  invariant(runtime, {
+  invariant(runtime && runtime === VoiceRuntime.findById(channelId), {
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Voice runtime not found for this channel'
   });
 
-  return { runtime, channelId: ctx.currentVoiceChannelId };
+  return { runtime, channelId, mediaGeneration };
 };
 
 export { getCurrentVoiceRuntime };

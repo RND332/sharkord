@@ -6,7 +6,7 @@ import { logVoice, logVoiceError } from '@/helpers/browser-logger';
 import { playSound } from '@/helpers/sounds';
 import { getTRPCClient } from '@/lib/trpc';
 import { getTrpcError } from '@sharkord/shared';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -23,6 +23,7 @@ type TVoiceStateUpdate = {
 };
 
 type TUseVoiceControlsParams = {
+  voiceOnlyModeRef: RefObject<boolean>;
   startMicStream: () => Promise<void>;
   localAudioStream: MediaStream | undefined;
 
@@ -34,6 +35,7 @@ type TUseVoiceControlsParams = {
 };
 
 const useVoiceControls = ({
+  voiceOnlyModeRef,
   startMicStream,
   localAudioStream,
   startWebcamStream,
@@ -195,6 +197,7 @@ const useVoiceControls = ({
 
   const toggleWebcam = useCallback(async () => {
     if (!currentVoiceChannelId) return;
+    if (voiceOnlyModeRef.current && !ownVoiceState.webcamEnabled) return;
     if (isTogglingWebcam.current) return;
     isTogglingWebcam.current = true;
 
@@ -218,6 +221,7 @@ const useVoiceControls = ({
         stopWebcamStream();
       }
 
+      if (newState && voiceOnlyModeRef.current) return;
       await trpc.voice.updateState.mutate({
         webcamEnabled: newState
       });
@@ -242,11 +246,13 @@ const useVoiceControls = ({
     ownVoiceState.webcamEnabled,
     currentVoiceChannelId,
     startWebcamStream,
-    stopWebcamStream
+    stopWebcamStream,
+    voiceOnlyModeRef
   ]);
 
   const toggleScreenShare = useCallback(async () => {
     const newState = !ownVoiceState.sharingScreen;
+    if (voiceOnlyModeRef.current && newState) return;
     if (pendingScreenShareOperations.current > 0 && newState) return;
     pendingScreenShareOperations.current++;
     const generation = ++screenShareGeneration.current;
@@ -266,6 +272,7 @@ const useVoiceControls = ({
       if (newState) {
         const video = await startScreenShareStream();
         if (generation !== screenShareGeneration.current) return;
+        if (voiceOnlyModeRef.current) return;
 
         // handle native screen share end
         video.onended = async () => {
@@ -312,7 +319,8 @@ const useVoiceControls = ({
     t,
     ownVoiceState.sharingScreen,
     startScreenShareStream,
-    stopScreenShareStream
+    stopScreenShareStream,
+    voiceOnlyModeRef
   ]);
 
   return {

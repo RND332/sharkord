@@ -42,13 +42,46 @@ const getDefaultDeviceSettings = (): TDeviceSettings => ({
   suppressLocalAudioPlayback: false,
   mirrorOwnVideo: false,
   simulcastEnabled: true,
-  directScreenSharing: false,
+  directScreenSharing: true,
+  voiceOnlyMode: false,
   screenResolution: Resolution['720p'],
   screenFramerate: 30,
   screenCodec: VideoCodec.AUTO,
   screenBitrate: DEFAULT_BITRATE,
   screenCursor: ScreenCursor.ALWAYS
 });
+
+const getInitialDeviceSettings = (): TDeviceSettings => {
+  const defaultDeviceSettings = getDefaultDeviceSettings();
+  const savedSettings = getLocalStorageItemAsJSON<TDeviceSettings>(
+    LocalStorageKey.DEVICES_SETTINGS
+  );
+
+  if (!savedSettings) return defaultDeviceSettings;
+
+  const noiseSuppressionValues = Object.values(NoiseSuppression) as string[];
+  const rawNs = savedSettings.noiseSuppression as unknown;
+  let noiseSuppression: NoiseSuppression;
+
+  if (noiseSuppressionValues.includes(rawNs as string)) {
+    noiseSuppression = rawNs as NoiseSuppression;
+  } else if (rawNs === true) {
+    noiseSuppression = NoiseSuppression.STANDARD;
+  } else {
+    noiseSuppression = NoiseSuppression.NONE;
+  }
+
+  const restrictOwnAudio = defaultDeviceSettings.restrictOwnAudio
+    ? (savedSettings.restrictOwnAudio ?? true)
+    : false;
+
+  return {
+    ...defaultDeviceSettings,
+    ...savedSettings,
+    noiseSuppression,
+    restrictOwnAudio
+  };
+};
 
 const resolveDeviceId = (
   savedId: string | undefined,
@@ -124,8 +157,8 @@ type TDevicesProviderProps = {
 
 const DevicesProvider = memo(({ children }: TDevicesProviderProps) => {
   const [loading, setLoading] = useState(true);
-  const [devices, setDevices] = useState<TDeviceSettings>(() =>
-    getDefaultDeviceSettings()
+  const [devices, setDevices] = useState<TDeviceSettings>(
+    getInitialDeviceSettings
   );
   const [inputDevices, setInputDevices] = useState<
     (MediaDeviceInfo | undefined)[]
@@ -224,55 +257,11 @@ const DevicesProvider = memo(({ children }: TDevicesProviderProps) => {
   useEffect(() => {
     if (!devicesEnumerated) return;
 
-    if (!initializedRef.current) {
+    const isInitialEnumeration = !initializedRef.current;
+
+    if (isInitialEnumeration) {
       initializedRef.current = true;
-
-      const savedSettings = getLocalStorageItemAsJSON<TDeviceSettings>(
-        LocalStorageKey.DEVICES_SETTINGS
-      );
-      const defaultDeviceSettings = getDefaultDeviceSettings();
-
-      let base: TDeviceSettings;
-
-      if (savedSettings) {
-        const noiseSuppressionValues = Object.values(
-          NoiseSuppression
-        ) as string[];
-
-        const rawNs = savedSettings.noiseSuppression as unknown;
-        const noiseSuppression: NoiseSuppression =
-          noiseSuppressionValues.includes(rawNs as string)
-            ? (rawNs as NoiseSuppression)
-            : rawNs === true
-              ? NoiseSuppression.STANDARD
-              : NoiseSuppression.NONE;
-
-        const restrictOwnAudio = defaultDeviceSettings.restrictOwnAudio
-          ? (savedSettings.restrictOwnAudio ?? true)
-          : false;
-
-        base = {
-          ...defaultDeviceSettings,
-          ...savedSettings,
-          noiseSuppression,
-          restrictOwnAudio
-        };
-      } else {
-        base = defaultDeviceSettings;
-      }
-
-      const resolved: TDeviceSettings = {
-        ...base,
-        microphoneId: resolveDeviceId(base.microphoneId, inputDevices),
-        playbackId: resolveDeviceId(base.playbackId, playbackDevices),
-        webcamId: resolveDeviceId(base.webcamId, videoDevices)
-      };
-
-      setDevices(resolved);
-      setLocalStorageItemAsJSON(LocalStorageKey.DEVICES_SETTINGS, resolved);
       setLoading(false);
-
-      return;
     }
 
     const prev = devicesRef.current;
@@ -281,6 +270,7 @@ const DevicesProvider = memo(({ children }: TDevicesProviderProps) => {
     const webcamId = resolveDeviceId(prev.webcamId, videoDevices);
 
     if (
+      !isInitialEnumeration &&
       microphoneId === prev.microphoneId &&
       playbackId === prev.playbackId &&
       webcamId === prev.webcamId

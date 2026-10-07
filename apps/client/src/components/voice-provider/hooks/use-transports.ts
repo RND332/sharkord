@@ -20,10 +20,11 @@ import {
   type RtpCapabilities,
   type Transport
 } from 'mediasoup-client/types';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { getStoredStreamQuality } from '../helpers';
 
 type TUseTransportParams = {
+  voiceOnlyMode: boolean;
   addRemoteUserStream: (
     userId: number,
     stream: MediaStream,
@@ -56,6 +57,7 @@ type TUseTransportParams = {
 };
 
 const useTransports = ({
+  voiceOnlyMode,
   addRemoteUserStream,
   removeRemoteUserStream,
   addExternalStreamTrack,
@@ -72,7 +74,46 @@ const useTransports = ({
     };
   }>({});
   const consumerCodecs = useRef<Map<string, string>>(new Map());
-  const consumeOperationsInProgress = useRef<Set<string>>(new Set());
+  const consumeOperationsInProgress = useRef<Map<string, symbol>>(new Map());
+  const voiceOnlyModeRef = useRef(voiceOnlyMode);
+  const nonVoiceGenerationRef = useRef(0);
+  if (voiceOnlyModeRef.current !== voiceOnlyMode) {
+    voiceOnlyModeRef.current = voiceOnlyMode;
+    nonVoiceGenerationRef.current++;
+    for (const key of consumeOperationsInProgress.current.keys()) {
+      if (key.slice(key.indexOf('-') + 1) !== StreamKind.AUDIO) {
+        consumeOperationsInProgress.current.delete(key);
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!voiceOnlyMode) return;
+    for (const [remoteId, userConsumers] of Object.entries(consumers.current)) {
+      for (const [kind, consumer] of Object.entries(userConsumers)) {
+        if (kind === StreamKind.AUDIO) continue;
+        consumer.close();
+        delete userConsumers[kind];
+        consumerCodecs.current.delete(`${remoteId}-${kind}`);
+        setRemoteConsumerType(+remoteId, kind as StreamKind, undefined);
+        setRemoteStreamQualityLayers(+remoteId, kind as StreamKind, []);
+        if (
+          kind === StreamKind.EXTERNAL_AUDIO ||
+          kind === StreamKind.EXTERNAL_VIDEO
+        ) {
+          removeExternalStreamTrack(+remoteId, kind);
+        } else {
+          removeRemoteUserStream(+remoteId, kind as TRemoteUserStreamKinds);
+        }
+      }
+    }
+  }, [
+    voiceOnlyMode,
+    removeExternalStreamTrack,
+    removeRemoteUserStream,
+    setRemoteConsumerType,
+    setRemoteStreamQualityLayers
+  ]);
 
   const createProducerTransport = useCallback(async (device: Device) => {
     logVoice('producer transport: creating');
@@ -150,12 +191,24 @@ const useTransports = ({
           if (!producerTransport.current) return;
 
           try {
+            if (kind !== StreamKind.AUDIO && voiceOnlyModeRef.current) {
+              throw new Error('Voice-only mode does not allow this media');
+            }
+            const generation = nonVoiceGenerationRef.current;
             const producerId = await trpc.voice.produce.mutate({
               transportId: producerTransport.current.id,
               kind,
               rtpParameters,
               qualityLayers
             });
+            if (
+              kind !== StreamKind.AUDIO &&
+              (voiceOnlyModeRef.current ||
+                generation !== nonVoiceGenerationRef.current)
+            ) {
+              await trpc.voice.closeProducer.mutate({ kind, producerId });
+              throw new Error('Voice-only mode does not allow this media');
+            }
 
             logVoice('producer transport: track produced', {
               kind,
@@ -267,7 +320,10 @@ const useTransports = ({
       kind: StreamKind,
       rtpCapabilities: RtpCapabilities
     ) => {
-      if (!consumerTransport.current) {
+      if (kind !== StreamKind.AUDIO && voiceOnlyModeRef.current) return;
+      const transport = consumerTransport.current;
+      const generation = nonVoiceGenerationRef.current;
+      if (!transport || transport.closed) {
         logVoiceWarn('consumer: skipped, no consumer transport', {
           remoteId,
           kind
@@ -285,7 +341,8 @@ const useTransports = ({
         return;
       }
 
-      consumeOperationsInProgress.current.add(operationKey);
+      const operation = Symbol();
+      consumeOperationsInProgress.current.set(operationKey, operation);
 
       try {
         logVoice('consumer: consuming', { remoteId, kind });
@@ -304,6 +361,15 @@ const useTransports = ({
           remoteId,
           rtpCapabilities
         });
+        if (
+          transport !== consumerTransport.current ||
+          transport?.closed ||
+          (kind !== StreamKind.AUDIO &&
+            (voiceOnlyModeRef.current ||
+              generation !== nonVoiceGenerationRef.current))
+        ) {
+          return;
+        }
 
         logVoice('consumer: parameters received', {
           remoteId,
@@ -330,12 +396,22 @@ const useTransports = ({
           delete consumers.current[remoteId][consumerKind];
         }
 
-        const newConsumer = await consumerTransport.current.consume({
+        const newConsumer = await transport.consume({
           id: consumerId,
           producerId: producerId,
           kind: getMediasoupKind(consumerKind),
           rtpParameters: consumerRtpParameters
         });
+        if (
+          transport !== consumerTransport.current ||
+          transport?.closed ||
+          (kind !== StreamKind.AUDIO &&
+            (voiceOnlyModeRef.current ||
+              generation !== nonVoiceGenerationRef.current))
+        ) {
+          newConsumer.close();
+          return;
+        }
 
         logVoice('consumer: created', {
           remoteId,
@@ -355,6 +431,8 @@ const useTransports = ({
           // @ts-expect-error - YOLO
           newConsumer?.on(event, () => {
             logVoice('consumer: cleanup event', { event, remoteId, kind });
+            if (consumers.current[remoteId]?.[consumerKind] !== newConsumer)
+              return;
 
             if (
               kind === StreamKind.EXTERNAL_VIDEO ||
@@ -406,6 +484,16 @@ const useTransports = ({
             });
           }
         }
+        if (
+          newConsumer.closed ||
+          transport !== consumerTransport.current ||
+          (kind !== StreamKind.AUDIO &&
+            (voiceOnlyModeRef.current ||
+              generation !== nonVoiceGenerationRef.current))
+        ) {
+          newConsumer.close();
+          return;
+        }
 
         const stream = new MediaStream();
 
@@ -422,7 +510,11 @@ const useTransports = ({
       } catch (error) {
         logVoiceError('consumer: consume failed', error, { remoteId, kind });
       } finally {
-        consumeOperationsInProgress.current.delete(operationKey);
+        if (
+          consumeOperationsInProgress.current.get(operationKey) === operation
+        ) {
+          consumeOperationsInProgress.current.delete(operationKey);
+        }
       }
     },
     [
@@ -440,7 +532,8 @@ const useTransports = ({
       rtpCapabilities: RtpCapabilities,
       externalStreamTracks?: {
         [streamId: number]: { audio?: boolean; video?: boolean };
-      }
+      },
+      includeMicrophones = true
     ) => {
       logVoice('session: consuming existing producers');
 
@@ -463,9 +556,11 @@ const useTransports = ({
           remoteExternalStreamIds
         });
 
-        remoteAudioIds.forEach((remoteId) => {
-          consume(remoteId, StreamKind.AUDIO, rtpCapabilities);
-        });
+        if (includeMicrophones) {
+          remoteAudioIds.forEach((remoteId) => {
+            consume(remoteId, StreamKind.AUDIO, rtpCapabilities);
+          });
+        }
 
         remoteVideoIds.forEach((remoteId) => {
           consume(remoteId, StreamKind.VIDEO, rtpCapabilities);
@@ -505,6 +600,7 @@ const useTransports = ({
 
   const cleanupTransports = useCallback(() => {
     logVoice('session: cleaning up transports');
+    nonVoiceGenerationRef.current++;
 
     Object.values(consumers.current).forEach((userConsumers) => {
       Object.values(userConsumers).forEach((consumer) => {

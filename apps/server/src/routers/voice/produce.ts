@@ -53,7 +53,8 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
     })
   )
   .mutation(async ({ input, ctx }) => {
-    const { runtime, channelId } = await getCurrentVoiceRuntime(ctx);
+    const { runtime, channelId, mediaGeneration } =
+      await getCurrentVoiceRuntime(ctx);
 
     const { channel, server } = KIND_PERMISSIONS[input.kind];
 
@@ -62,6 +63,7 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
     if (server) {
       await ctx.needsPermission(server);
     }
+    runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
 
     const producerTransport = runtime.getProducerTransport(ctx.user.id);
 
@@ -76,7 +78,13 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
       appData: { kind: input.kind, userId: ctx.user.id }
     });
 
-    runtime.addProducer(ctx.user.id, input.kind, producer, input.qualityLayers);
+    runtime.addProducer(
+      ctx.user.id,
+      input.kind,
+      producer,
+      input.qualityLayers,
+      mediaGeneration
+    );
 
     ctx.pubsub.publishForChannel(channelId, ServerEvents.VOICE_NEW_PRODUCER, {
       channelId: channelId,

@@ -1,3 +1,4 @@
+import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { Protect } from '@/components/protect';
 import { useIsCurrentVoiceChannelSelected } from '@/features/server/channels/hooks';
 import { useChannelCan } from '@/features/server/hooks';
@@ -38,6 +39,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
     isScreenShareSupported
   } = useVoice();
   const ownVoiceState = useOwnVoiceState();
+  const { devices } = useDevices();
   const channelCan = useChannelCan(channelId);
   const alwaysShowControls = useAlwaysShowVoiceControls();
   const isConnectedToThisChannel = useIsCurrentVoiceChannelSelected();
@@ -104,7 +106,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           disabledIcon={VideoOff}
           enabledClassName="bg-green-500/20 text-green-500 hover:bg-green-500/30 hover:text-green-500"
           onClick={toggleWebcam}
-          disabled={!permissions.canWebcam}
+          disabled={!permissions.canWebcam || devices.voiceOnlyMode}
         />
 
         {isScreenShareSupported && (
@@ -116,7 +118,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             disabledIcon={Monitor}
             enabledClassName="bg-blue-500/20 text-blue-500 hover:bg-blue-500/30 hover:text-blue-500"
             onClick={toggleScreenShare}
-            disabled={!permissions.canShareScreen}
+            disabled={!permissions.canShareScreen || devices.voiceOnlyMode}
           />
         )}
 

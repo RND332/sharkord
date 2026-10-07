@@ -53,17 +53,17 @@ server configuration or start `apps/server` with:
 SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING=true bun dev
 ```
 
-Both participants must also enable **Direct screen sharing (1:1)** in **User
-Settings > Devices** before joining voice. The client preference defaults to off
-and cannot be changed while connected. Direct connections expose each participant's
-network address to the other participant.
+Both participants must have **Direct screen sharing (1:1)** enabled in **User
+Settings > Devices** before joining voice. The client preference defaults to on
+when no value is saved; an existing saved off preference is preserved. It cannot
+be changed while connected. Direct connections expose each participant's network
+address to the other participant.
 
-The sender displays a connecting status while trying the direct path for up to
-eight seconds, including signalling and ICE gathering. Each ICE gathering attempt
-is limited to two seconds. Success displays a direct status; failure displays a
-server-relayed status and reuses the same captured tracks through mediasoup without
-asking for another capture. A third participant, an external stream, loss of peer
-capability, or a failed direct connection also returns the share to the server.
+The direct path is tried for up to eight seconds, including signalling and ICE
+gathering. Each ICE gathering attempt is limited to two seconds. Failure reuses
+the same captured tracks through mediasoup without asking for another capture.
+A third participant, an external stream, loss of peer capability, or a failed
+direct connection also returns the share to the server.
 Existing relayed shares are never upgraded in place. Canceling a handover stops
 the original capture; late producer cleanup cannot close a newer share.
 
@@ -73,6 +73,20 @@ Only `stun:` and `stuns:` URLs are accepted, with no public STUN service enabled
 default. Some NAT/firewall combinations cannot connect directly. TURN is not used
 for this path: mediasoup is the relay fallback. Group calls and older clients that
 do not advertise direct support continue using the server.
+
+## Voice-only mode
+
+Enable **Voice-only mode** in **User Settings > Devices** to send and receive
+microphone audio only. The preference is saved on this device, defaults to off,
+and can be changed during a call. Saving it stops this user's webcam and screen
+sharing, including captured screen audio, and closes incoming camera, screen,
+and external-media consumers on both the client and server. Direct screen
+connections are closed too; microphone connections and mute/deafen settings
+remain unchanged.
+
+Turning the mode off resumes available remote media without restarting this
+user's camera or screen sharing. Camera and screen controls are disabled while
+the saved mode is enabled. No database migration is required.
 
 ## Testing
 

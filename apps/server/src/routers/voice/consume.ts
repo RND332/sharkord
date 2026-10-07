@@ -18,7 +18,9 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
     })
   )
   .mutation(async ({ input, ctx }) => {
-    const { runtime, channelId } = await getCurrentVoiceRuntime(ctx);
+    const { runtime, channelId, mediaGeneration } =
+      await getCurrentVoiceRuntime(ctx);
+    runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
 
     const producer = runtime.getProducer(input.kind, input.remoteId);
 
@@ -51,7 +53,13 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
       paused: false
     });
 
-    runtime.addConsumer(ctx.user.id, input.remoteId, input.kind, consumer);
+    runtime.addConsumer(
+      ctx.user.id,
+      input.remoteId,
+      input.kind,
+      consumer,
+      mediaGeneration
+    );
 
     consumer.on('producerclose', () => {
       if (!channelId) return;

@@ -9,7 +9,8 @@ const updateVoiceStateRoute = protectedProcedure
       micMuted: z.boolean().optional(),
       soundMuted: z.boolean().optional(),
       webcamEnabled: z.boolean().optional(),
-      sharingScreen: z.boolean().optional()
+      sharingScreen: z.boolean().optional(),
+      voiceOnlyMode: z.boolean().optional()
     })
   )
   .mutation(async ({ input, ctx }) => {

@@ -1,10 +1,9 @@
-import { logVoiceError } from '@/helpers/browser-logger';
+import { logVoice, logVoiceError } from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
 import { StreamKind } from '@sharkord/shared';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { DirectScreenShare } from '../direct-screen-share';
 
-type TScreenSharePath = 'idle' | 'connecting' | 'direct' | 'relayed';
 type TScreenKind = StreamKind.SCREEN | StreamKind.SCREEN_AUDIO;
 
 type TDirectScreenShareParams = {
@@ -30,14 +29,14 @@ const useDirectScreenShare = ({
   addRemoteUserStream,
   removeRemoteUserStream
 }: TDirectScreenShareParams) => {
-  const [screenSharePath, setScreenSharePath] =
-    useState<TScreenSharePath>('idle');
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
   const subscribed = useRef(false);
   const directScreenShare = useMemo(
     () =>
       new DirectScreenShare({
         prepare: async () => {
-          if (!subscribed.current) return null;
+          if (!enabledRef.current || !subscribed.current) return null;
           const trpc = getTRPCClient();
           return trpc.voice.startDirectScreen.mutate({});
         },
@@ -45,9 +44,16 @@ const useDirectScreenShare = ({
           const trpc = getTRPCClient();
           await trpc.voice.signalDirectScreen.mutate({ sessionId, signal });
         },
-        onStream: addRemoteUserStream,
+        onStream: (userId, stream, kind) => {
+          if (!enabledRef.current) {
+            stream.getTracks().forEach((track) => track.stop());
+            return;
+          }
+          addRemoteUserStream(userId, stream, kind);
+        },
         onRemoveStream: removeRemoteUserStream,
-        onStatus: setScreenSharePath,
+        onStatus: (status) =>
+          logVoice('screen: direct path changed', { status }),
         onError: (error) => logVoiceError('screen: direct media failed', error)
       }),
     [addRemoteUserStream, removeRemoteUserStream]
@@ -72,7 +78,8 @@ const useDirectScreenShare = ({
           if (active) subscribed.current = true;
         },
         onData: (event) => {
-          if (!active || event.channelId !== channelId) return;
+          if (!active || !enabledRef.current || event.channelId !== channelId)
+            return;
           directScreenShare.handleSignal(event).catch((error) => {
             logVoiceError('screen: direct signalling failed', error);
           });
@@ -92,7 +99,7 @@ const useDirectScreenShare = ({
     };
   }, [channelId, enabled, isVoiceSessionActive, directScreenShare]);
 
-  return { directScreenShare, screenSharePath, setScreenSharePath };
+  return { directScreenShare };
 };
 
-export { useDirectScreenShare, type TScreenSharePath };
+export { useDirectScreenShare };

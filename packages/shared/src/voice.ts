@@ -8,6 +8,7 @@ export type TVoiceUserState = {
   soundMuted: boolean;
   webcamEnabled: boolean;
   sharingScreen: boolean;
+  voiceOnlyMode?: boolean;
 };
 
 export type TVoiceUser = {

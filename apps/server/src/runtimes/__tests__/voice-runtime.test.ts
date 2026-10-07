@@ -81,6 +81,7 @@ describe('VoiceRuntime producer and consumer maps', () => {
 
   test('should keep producers of other kinds when one is replaced', () => {
     const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
     const audio = createProducerStub();
     const screenAudio = createProducerStub();
     const replacement = createProducerStub();
@@ -174,6 +175,7 @@ describe('VoiceRuntime external streams', () => {
 describe('VoiceRuntime producer listing', () => {
   test('should list every kind with the id a consumer needs', () => {
     const runtime = createRuntime();
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
     const audio = createProducerStub();
     const screen = createProducerStub();
 
@@ -299,5 +301,264 @@ describe('VoiceRuntime producer events', () => {
         producerId: first.id
       }
     ]);
+  });
+});
+
+describe('VoiceRuntime voice-only mode', () => {
+  test('closes non-microphone media without changing microphone or sound state', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: true, soundMuted: true });
+    const microphone = createProducerStub();
+    const voice = createConsumerStub();
+    const mediaKinds = [
+      StreamKind.VIDEO,
+      StreamKind.SCREEN,
+      StreamKind.SCREEN_AUDIO
+    ];
+    const producers = mediaKinds.map(() => createProducerStub());
+    const consumerKinds = [
+      ...mediaKinds,
+      StreamKind.EXTERNAL_AUDIO,
+      StreamKind.EXTERNAL_VIDEO
+    ];
+    const consumers = consumerKinds.map(() => createConsumerStub());
+    runtime.addProducer(1, StreamKind.AUDIO, microphone as unknown as Producer);
+    runtime.addConsumer(1, 2, StreamKind.AUDIO, voice as unknown as Consumer);
+    mediaKinds.forEach((kind, index) => {
+      runtime.addProducer(1, kind, producers[index] as unknown as Producer);
+    });
+    consumerKinds.forEach((kind, index) => {
+      runtime.addConsumer(1, 2, kind, consumers[index] as unknown as Consumer);
+    });
+
+    try {
+      runtime.updateUserState(1, {
+        voiceOnlyMode: true,
+        webcamEnabled: true,
+        sharingScreen: true
+      });
+      expect(runtime.getUserState(1)).toMatchObject({
+        voiceOnlyMode: true,
+        micMuted: true,
+        soundMuted: true,
+        webcamEnabled: false,
+        sharingScreen: false
+      });
+      expect(microphone.closed).toBe(false);
+      expect(voice.closed).toBe(false);
+      expect(runtime.getConsumer(1, 2, StreamKind.AUDIO)).toBe(
+        voice as unknown as Consumer
+      );
+      producers.forEach((producer) => expect(producer.closed).toBe(true));
+      consumers.forEach((consumer, index) => {
+        expect(consumer.closed).toBe(true);
+        expect(
+          runtime.getConsumer(1, 2, consumerKinds[index]!)
+        ).toBeUndefined();
+      });
+      runtime.updateUserState(1, { webcamEnabled: true, sharingScreen: true });
+      expect(runtime.getUserState(1)).toMatchObject({
+        webcamEnabled: false,
+        sharingScreen: false
+      });
+      runtime.updateUserState(1, { voiceOnlyMode: undefined, micMuted: false });
+      expect(runtime.getUserState(1)).toMatchObject({
+        voiceOnlyMode: true,
+        micMuted: false,
+        soundMuted: true
+      });
+      expect(() => runtime.assertMediaAllowed(1, StreamKind.SCREEN)).toThrow();
+    } finally {
+      await runtime.destroy();
+    }
+  });
+
+  test('rejects non-microphone attachments and accepts them again when disabled', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.updateUserState(1, { voiceOnlyMode: true });
+    try {
+      for (const kind of [
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO,
+        StreamKind.EXTERNAL_VIDEO,
+        StreamKind.EXTERNAL_AUDIO
+      ]) {
+        const consumer = createConsumerStub();
+        expect(() =>
+          runtime.addConsumer(1, 2, kind, consumer as unknown as Consumer)
+        ).toThrow('Voice-only mode');
+        expect(consumer.closed).toBe(true);
+        expect(runtime.getConsumer(1, 2, kind)).toBeUndefined();
+      }
+      for (const kind of [
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO
+      ]) {
+        const producer = createProducerStub();
+        expect(() =>
+          runtime.addProducer(1, kind, producer as unknown as Producer)
+        ).toThrow('Voice-only mode');
+        expect(producer.closed).toBe(true);
+        expect(runtime.getProducer(kind, 1)).toBeUndefined();
+      }
+      const microphone = createProducerStub();
+      runtime.addProducer(
+        1,
+        StreamKind.AUDIO,
+        microphone as unknown as Producer
+      );
+      expect(microphone.closed).toBe(false);
+      runtime.updateUserState(1, { voiceOnlyMode: false });
+      const screen = createProducerStub();
+      const externalAudio = createConsumerStub();
+      runtime.addProducer(1, StreamKind.SCREEN, screen as unknown as Producer);
+      runtime.addConsumer(
+        1,
+        2,
+        StreamKind.EXTERNAL_AUDIO,
+        externalAudio as unknown as Consumer
+      );
+      expect(screen.closed).toBe(false);
+      expect(externalAudio.closed).toBe(false);
+    } finally {
+      await runtime.destroy();
+    }
+  });
+
+  test('closes stale native resources even after voice-only mode is disabled again', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    const generation = runtime.getNonVoiceMediaGeneration(1);
+    runtime.updateUserState(1, { voiceOnlyMode: true });
+    runtime.updateUserState(1, { voiceOnlyMode: false });
+    const producer = createProducerStub();
+    const consumer = createConsumerStub();
+    try {
+      expect(() =>
+        runtime.addProducer(
+          1,
+          StreamKind.SCREEN,
+          producer as unknown as Producer,
+          undefined,
+          generation
+        )
+      ).toThrow('Voice-only mode');
+      expect(() =>
+        runtime.addConsumer(
+          1,
+          2,
+          StreamKind.EXTERNAL_AUDIO,
+          consumer as unknown as Consumer,
+          generation
+        )
+      ).toThrow('Voice-only mode');
+      expect(producer.closed).toBe(true);
+      expect(consumer.closed).toBe(true);
+      expect(runtime.getProducer(StreamKind.SCREEN, 1)).toBeUndefined();
+      expect(
+        runtime.getConsumer(1, 2, StreamKind.EXTERNAL_AUDIO)
+      ).toBeUndefined();
+    } finally {
+      await runtime.destroy();
+    }
+  });
+
+  test('rejects nonvoice attachments after departure even without a captured token', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.removeUser(1);
+    const producer = createProducerStub();
+    const consumer = createConsumerStub();
+    try {
+      expect(() =>
+        runtime.addProducer(
+          1,
+          StreamKind.SCREEN,
+          producer as unknown as Producer
+        )
+      ).toThrow('Voice-only mode');
+      expect(() =>
+        runtime.addConsumer(
+          1,
+          2,
+          StreamKind.EXTERNAL_AUDIO,
+          consumer as unknown as Consumer
+        )
+      ).toThrow('Voice-only mode');
+      expect(producer.closed).toBe(true);
+      expect(consumer.closed).toBe(true);
+      expect(runtime.getProducer(StreamKind.SCREEN, 1)).toBeUndefined();
+      expect(
+        runtime.getConsumer(1, 2, StreamKind.EXTERNAL_AUDIO)
+      ).toBeUndefined();
+    } finally {
+      await runtime.destroy();
+    }
+  });
+
+  test('never lets a departed membership replace a rejoined users media', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    const departedGeneration = runtime.getNonVoiceMediaGeneration(1);
+    runtime.removeUser(1);
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const otherGeneration = runtime.getNonVoiceMediaGeneration(2);
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    const currentGeneration = runtime.getNonVoiceMediaGeneration(1);
+    const producer = createProducerStub();
+    const consumer = createConsumerStub();
+    const staleProducer = createProducerStub();
+    const staleConsumer = createConsumerStub();
+    try {
+      expect(currentGeneration).toBeGreaterThan(departedGeneration);
+      expect(currentGeneration).toBeGreaterThan(otherGeneration);
+      runtime.addProducer(
+        1,
+        StreamKind.SCREEN,
+        producer as unknown as Producer,
+        undefined,
+        currentGeneration
+      );
+      runtime.addConsumer(
+        1,
+        2,
+        StreamKind.EXTERNAL_AUDIO,
+        consumer as unknown as Consumer,
+        currentGeneration
+      );
+      expect(() =>
+        runtime.addProducer(
+          1,
+          StreamKind.SCREEN,
+          staleProducer as unknown as Producer,
+          undefined,
+          departedGeneration
+        )
+      ).toThrow('Voice-only mode');
+      expect(() =>
+        runtime.addConsumer(
+          1,
+          2,
+          StreamKind.EXTERNAL_AUDIO,
+          staleConsumer as unknown as Consumer,
+          departedGeneration
+        )
+      ).toThrow('Voice-only mode');
+      expect(staleProducer.closed).toBe(true);
+      expect(staleConsumer.closed).toBe(true);
+      expect(runtime.getProducer(StreamKind.SCREEN, 1)).toBe(
+        producer as unknown as Producer
+      );
+      expect(runtime.getConsumer(1, 2, StreamKind.EXTERNAL_AUDIO)).toBe(
+        consumer as unknown as Consumer
+      );
+      expect(producer.closed).toBe(false);
+      expect(consumer.closed).toBe(false);
+    } finally {
+      await runtime.destroy();
+    }
   });
 });

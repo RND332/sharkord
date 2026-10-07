@@ -14,6 +14,7 @@ import {
   getRestrictOwnAudioSupport,
   getSuppressLocalAudioPlaybackSupport
 } from '@/helpers/get-display-media-support';
+import { getTRPCClient } from '@/lib/trpc';
 import {
   NoiseSuppression,
   Resolution,
@@ -76,8 +77,20 @@ const Devices = memo(() => {
     loadDevices
   } = useDevices();
   const onSave = useCallback(
-    async (values: TDeviceSettings) => saveDevices(values),
-    [saveDevices]
+    async (values: TDeviceSettings) => {
+      if (
+        currentVoiceChannelId !== undefined &&
+        values.voiceOnlyMode !== devices.voiceOnlyMode
+      ) {
+        const trpc = getTRPCClient();
+        await trpc.voice.updateState.mutate({
+          voiceOnlyMode: values.voiceOnlyMode
+        });
+      }
+
+      return saveDevices(values);
+    },
+    [currentVoiceChannelId, devices.voiceOnlyMode, saveDevices]
   );
   const { values, onChange, reset } = useSettingsForm<TDeviceSettings>({
     initialValues: devices,
@@ -98,6 +111,11 @@ const Devices = memo(() => {
   const isSuppressLocalAudioPlaybackSupported = useMemo(
     () => getSuppressLocalAudioPlaybackSupport(),
     []
+  );
+
+  const handleVoiceOnlyModeChange = useCallback(
+    (enabled: boolean) => onChange('voiceOnlyMode', enabled),
+    [onChange]
   );
 
   const handleDirectScreenSharingChange = useCallback(
@@ -276,6 +294,17 @@ const Devices = memo(() => {
         </Alert>
       )}
       <div className="space-y-6">
+        <Group
+          label={t('voiceOnlyModeLabel')}
+          description={t('voiceOnlyModeDesc')}
+        >
+          <Switch
+            aria-label={t('voiceOnlyModeLabel')}
+            checked={!!values.voiceOnlyMode}
+            onCheckedChange={handleVoiceOnlyModeChange}
+          />
+        </Group>
+
         <Group label={t('playbackLabel')}>
           <Select
             onValueChange={(value) => onChange('playbackId', value)}
