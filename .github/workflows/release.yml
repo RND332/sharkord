@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
   pull-requests: write
 
 jobs:
@@ -41,6 +42,10 @@ jobs:
         id: get_version
         run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
 
+      - name: Get container image name
+        id: get_image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Identify user
         run: |
           git config user.name "github-actions[bot]"
@@ -49,16 +54,17 @@ jobs:
       - name: Build and publish Docker image
         uses: ./.github/actions/docker-build-publish
         with:
-          docker_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          docker_username: ${{ github.actor }}
+          docker_password: ${{ secrets.GITHUB_TOKEN }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/sharkord:latest
-            ${{ secrets.DOCKER_USERNAME }}/sharkord:v${{ steps.get_version.outputs.version }}
+            ${{ steps.get_image.outputs.name }}:latest
+            ${{ steps.get_image.outputs.name }}:v${{ steps.get_version.outputs.version }}
           labels: |
             org.opencontainers.image.title=Sharkord
             org.opencontainers.image.description=Sharkord Server
             org.opencontainers.image.version=${{ steps.get_version.outputs.version }}
-            org.opencontainers.image.source=https://github.com/Sharkord/sharkord
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -79,7 +85,7 @@ jobs:
 
             ## Docker Image
             ```bash
-            docker pull ${{ secrets.DOCKER_USERNAME }}/sharkord:v${{ steps.get_version.outputs.version }}
+            docker pull ${{ steps.get_image.outputs.name }}:v${{ steps.get_version.outputs.version }}
             ```
       - name: Commit version bump
         if: ${{ inputs.bump != 'none' }}
