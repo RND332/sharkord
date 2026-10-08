@@ -30,7 +30,10 @@ const AppRail = memo(() => {
     setSelectedChannelId(undefined);
   }, []);
 
-  const openDirectMessages = useCallback(() => setDmsOpen(true), []);
+  const toggleDirectMessages = useCallback(
+    () => setDmsOpen(!dmsOpen),
+    [dmsOpen]
+  );
   const openSettings = useCallback(
     () => openServerScreen(ServerScreen.USER_SETTINGS),
     []
@@ -69,7 +72,7 @@ const AppRail = memo(() => {
             type="button"
             aria-label={t('directMessages')}
             aria-current={dmsOpen ? 'page' : undefined}
-            onClick={openDirectMessages}
+            onClick={toggleDirectMessages}
             className={cn(
               'relative flex size-11 items-center justify-center rounded-[15px] bg-raised text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               dmsOpen && 'border border-primary bg-primary/10 text-foreground'
