@@ -11,9 +11,9 @@ const SaveBar = memo(({ isSaving, save }: TSaveBarProps) => {
   const { t } = useTranslation('settings');
 
   return (
-    <div className="pointer-events-none sticky bottom-4 z-20 px-4 md:px-6">
-      <div className="pointer-events-auto mx-auto flex max-w-4xl items-center justify-between gap-4 rounded-xl border bg-card px-4 py-3 shadow-lg">
-        <span className="text-sm font-medium">{t('unsavedChanges')}</span>
+    <div className="pointer-events-none sticky bottom-5 z-20 px-4">
+      <div className="pointer-events-auto mx-auto flex w-full max-w-[730px] items-center justify-between gap-4 rounded-[10px] border border-line bg-rail px-4 py-3 shadow-2xl">
+        <span className="text-sm font-semibold">{t('unsavedChanges')}</span>
         <Button onClick={save} disabled={isSaving}>
           {isSaving && <Spinner size="xxs" />}
           {isSaving ? t('saving') : t('saveChanges')}

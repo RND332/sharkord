@@ -22,27 +22,27 @@ const ReconnectingOverlay = memo(() => {
       role="alertdialog"
       aria-modal="true"
       aria-live="polite"
-      className="fixed inset-0 z-40 flex items-center justify-center bg-background/40 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-canvas"
     >
-      <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-lg border border-border bg-background/95 p-6 text-center shadow-lg">
-        <div className="flex size-12 items-center justify-center rounded-full bg-yellow-500/15">
+      <div className="flex w-full max-w-sm flex-col items-center gap-5 px-6 text-center">
+        <div className="flex size-14 items-center justify-center rounded-full border border-line bg-panel">
           {isAttemptInFlight ? (
-            <Loader2 className="size-6 animate-spin text-yellow-500" />
+            <Loader2 className="size-6 animate-spin text-primary" />
           ) : (
-            <WifiOff className="size-6 text-yellow-500" />
+            <WifiOff className="size-6 text-primary" />
           )}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <p className="text-base font-semibold">{t('reconnectingTitle')}</p>
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xl font-semibold">{t('reconnectingTitle')}</p>
+          <p className="text-[13px] text-muted-foreground">
             {isAttemptInFlight
               ? t('reconnectingNow')
               : t('reconnectingIn', { count: secondsLeft })}
           </p>
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-subtle-foreground">
           {t('reconnectingAttempt', {
             attempt: reconnect.attempt,
             total: reconnect.maxAttempts
@@ -50,20 +50,22 @@ const ReconnectingOverlay = memo(() => {
         </p>
 
         <div
-          className="h-1 w-full overflow-hidden rounded-full bg-muted"
+          className="h-1 w-full max-w-[260px] overflow-hidden rounded-full bg-raised"
           role="presentation"
         >
           <div
-            className="h-full bg-yellow-500 transition-all duration-500"
+            className="h-full bg-primary transition-[width] duration-500"
             style={{
               width: `${(reconnect.attempt / reconnect.maxAttempts) * 100}%`
             }}
           />
         </div>
 
-        <p className="text-xs text-muted-foreground">{t('reconnectingHint')}</p>
+        <p className="text-xs text-subtle-foreground">
+          {t('reconnectingHint')}
+        </p>
 
-        <Button variant="ghost" size="sm" onClick={handleAbort}>
+        <Button variant="outline" size="sm" onClick={handleAbort}>
           {t('reconnectingAbort')}
         </Button>
       </div>

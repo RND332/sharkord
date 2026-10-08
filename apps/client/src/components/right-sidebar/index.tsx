@@ -14,9 +14,9 @@ import { useTranslation } from 'react-i18next';
 import { UserPopover } from '../user-popover';
 
 const MAX_USERS_TO_SHOW = 100;
-const MIN_WIDTH = 180;
-const MAX_WIDTH = 360;
-const DEFAULT_WIDTH = 240; // w-60 = 240px
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 420;
+const DEFAULT_WIDTH = 292;
 
 type TUserProps = {
   userId: number;
@@ -83,9 +83,9 @@ const RightSidebar = memo(
         defaultWidth={DEFAULT_WIDTH}
         edge="left"
         isOpen={isOpen}
-        className={cn('h-full', className)}
+        className={cn('h-full bg-nav', className)}
       >
-        <div className="flex h-12 items-center border-b border-border px-4">
+        <div className="flex h-14 items-center border-b border-line px-5">
           <h3 className="text-sm font-semibold text-foreground">
             {t('membersHeader', { count: usersCount })}
           </h3>

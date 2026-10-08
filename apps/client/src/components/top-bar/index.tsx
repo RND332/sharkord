@@ -1,10 +1,11 @@
+import { LanguageSwitcher } from '@/components/language-switcher';
 import {
   useCurrentVoiceChannelId,
   useIsCurrentVoiceChannelSelected
 } from '@/features/server/channels/hooks';
 import { usePublicServerSettings } from '@/features/server/hooks';
 import { PluginSlot } from '@sharkord/shared';
-import { Button, Tooltip } from '@sharkord/ui';
+import { Button } from '@sharkord/ui';
 import { PanelRight, PanelRightClose } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,8 +25,13 @@ const TopBar = memo(({ onToggleRightSidebar, isOpen }: TTopBarProps) => {
   const settings = usePublicServerSettings();
 
   return (
-    <div className="hidden lg:grid h-12 w-full grid-cols-[1fr_minmax(320px,1.4fr)_1fr] items-center border-b border-border bg-card px-4 transition-all duration-300 ease-in-out gap-2">
-      <div className="flex min-w-0 items-center gap-2" />
+    <header className="hidden h-16 w-full shrink-0 grid-cols-[minmax(160px,1fr)_minmax(180px,550px)_max-content] items-center gap-5 border-b border-line bg-rail px-5 lg:grid">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <img src="/logo.webp" alt="" className="size-8 object-contain" />
+        <span className="text-lg font-bold tracking-tight text-foreground">
+          sharkord
+        </span>
+      </div>
 
       <div className="flex items-center justify-center">
         {settings?.enableSearch && <ServerSearch />}
@@ -36,28 +42,26 @@ const TopBar = memo(({ onToggleRightSidebar, isOpen }: TTopBarProps) => {
         {isCurrentVoiceChannelSelected && currentVoiceChannelId && (
           <VoiceButtons currentVoiceChannelId={currentVoiceChannelId} />
         )}
+        <LanguageSwitcher
+          variant="full"
+          className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
+        />
         <Button
           variant="ghost"
-          size="sm"
+          size="icon-sm"
           onClick={onToggleRightSidebar}
-          className="h-7 px-2 transition-all duration-200 ease-in-out"
+          aria-label={
+            isOpen ? t('closeMembersSidebar') : t('openMembersSidebar')
+          }
         >
           {isOpen ? (
-            <Tooltip content={t('closeMembersSidebar')}>
-              <div>
-                <PanelRightClose className="w-4 h-4 transition-transform duration-200 ease-in-out" />
-              </div>
-            </Tooltip>
+            <PanelRightClose className="size-4" />
           ) : (
-            <Tooltip content={t('openMembersSidebar')}>
-              <div>
-                <PanelRight className="w-4 h-4 transition-transform duration-200 ease-in-out" />
-              </div>
-            </Tooltip>
+            <PanelRight className="size-4" />
           )}
         </Button>
       </div>
-    </div>
+    </header>
   );
 });
 

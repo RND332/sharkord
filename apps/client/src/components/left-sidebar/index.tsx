@@ -18,9 +18,9 @@ import { ServerDropdownMenu } from './server-dropdown';
 import { UserControl } from './user-control';
 import { VoiceControl } from './voice-control';
 
-const MIN_WIDTH = 200;
-const MAX_WIDTH = 400;
-const DEFAULT_WIDTH = 288; // w-72 = 288px
+const MIN_WIDTH = 252;
+const MAX_WIDTH = 360;
+const DEFAULT_WIDTH = 252;
 
 type TLeftSidebarProps = {
   className?: string;
@@ -41,12 +41,12 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       maxWidth={MAX_WIDTH}
       defaultWidth={DEFAULT_WIDTH}
       edge="right"
-      className={cn('h-full', className)}
+      className={cn('h-full bg-nav', className)}
       data-testid={TestId.LEFT_SIDEBAR}
     >
-      <div className="flex w-full justify-between h-12 items-center border-b border-border px-4">
+      <div className="flex h-14 w-full items-center justify-between border-b border-line px-4">
         <h2
-          className="font-semibold text-foreground truncate cursor-pointer"
+          className="truncate text-base font-semibold text-foreground"
           onClick={() => setSelectedChannelId(undefined)}
           data-testid={TestId.LEFT_SIDEBAR_SERVER_NAME}
         >

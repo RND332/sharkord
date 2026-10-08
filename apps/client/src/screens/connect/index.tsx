@@ -157,23 +157,32 @@ const Connect = memo(() => {
   }
 
   return (
-    <div className="flex flex-col gap-2 justify-center items-center h-full relative">
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
-        <LanguageSwitcher variant="icon" />
-      </div>
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="flex flex-col items-center gap-2 text-center">
+    <div className="relative flex h-full flex-col items-center justify-center bg-canvas px-6 py-12 dark">
+      <header className="absolute inset-x-0 top-0 flex h-16 items-center justify-between border-b border-line bg-rail px-7">
+        <span className="text-[17px] font-bold tracking-tight">sharkord</span>
+        <LanguageSwitcher
+          variant="full"
+          className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
+        />
+      </header>
+      <Card className="w-full max-w-[430px] gap-0 bg-nav py-8">
+        <CardHeader className="pb-5">
+          <CardTitle className="flex flex-row items-center gap-3.5 text-left">
             <img
               src={logoSrc}
-              alt="Sharkord"
-              className="block max-h-32 max-w-full rounded-[5px]"
+              alt=""
+              className="size-12 shrink-0 rounded-md object-contain"
             />
-            {info?.name && (
-              <span className="text-xl font-bold leading-tight">
-                {info.name}
-              </span>
-            )}
+            <div className="min-w-0">
+              {info?.name && (
+                <div className="truncate text-xl font-bold leading-7">
+                  {info.name}
+                </div>
+              )}
+              <div className="text-[13px] font-normal leading-[18px] text-muted-foreground">
+                Connect to this Sharkord server
+              </div>
+            </div>
           </CardTitle>
           <PluginSlotRenderer slotId={PluginSlot.CONNECT_SCREEN} />
         </CardHeader>
@@ -186,7 +195,7 @@ const Connect = memo(() => {
 
           {oidc.isLocalLoginAllowed && (
             <form
-              className="flex flex-col gap-2"
+              className="flex flex-col gap-4"
               onSubmit={onFormSubmit}
               data-testid={TestId.CONNECT_FORM}
             >
@@ -194,6 +203,7 @@ const Connect = memo(() => {
                 <Input
                   {...r('identity')}
                   autoComplete="username"
+                  aria-label={t('identityLabel')}
                   data-testid={TestId.CONNECT_IDENTITY_INPUT}
                 />
               </Group>
@@ -202,6 +212,7 @@ const Connect = memo(() => {
                   {...r('password')}
                   type="password"
                   autoComplete="current-password"
+                  aria-label={t('passwordLabel')}
                   onEnter={onConnectClick}
                   data-testid={TestId.CONNECT_PASSWORD_INPUT}
                 />
@@ -214,7 +225,10 @@ const Connect = memo(() => {
             data-testid={TestId.CONNECT_AUTO_LOGIN_SWITCH}
             onClick={onAutoLoginToggle}
           >
-            <Switch checked={values.autoLogin} />
+            <Switch
+              checked={values.autoLogin}
+              aria-label={t('autoLoginLabel')}
+            />
             <Label className="text-sm cursor-pointer">
               {t('autoLoginLabel')}
             </Label>
@@ -230,8 +244,7 @@ const Connect = memo(() => {
 
             {oidc.isLocalLoginAllowed && (
               <Button
-                className="w-full"
-                variant="outline"
+                className="h-11 w-full"
                 onClick={onConnectClick}
                 disabled={loading || !values.identity || !values.password}
                 data-testid={TestId.CONNECT_BUTTON}
@@ -242,8 +255,8 @@ const Connect = memo(() => {
 
             {oidc.isEnabled && (
               <Button
-                className="w-full"
-                variant="secondary"
+                className="h-10 w-full"
+                variant="outline"
                 onClick={oidc.startLogin}
                 disabled={loading}
                 data-testid={TestId.CONNECT_OIDC_BUTTON}
@@ -274,7 +287,7 @@ const Connect = memo(() => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground select-none">
+      <div className="absolute bottom-5 flex items-center justify-center gap-2 text-xs text-subtle-foreground select-none">
         <span>v{VITE_APP_VERSION}</span>
         <a
           href="https://github.com/sharkord/sharkord"

@@ -135,7 +135,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
 
   if (voiceUsers.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center bg-canvas">
         <div className="text-center">
           <p className="text-muted-foreground text-lg mb-2">
             No one in the voice channel
@@ -149,7 +149,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   }
 
   return (
-    <div className="flex flex-col size-full relative bg-background overflow-hidden group/voice-stage">
+    <div className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-canvas">
       <VoiceGrid pinnedCardId={pinnedCard?.id}>{cards}</VoiceGrid>
       <ControlsBar channelId={channelId} />
     </div>

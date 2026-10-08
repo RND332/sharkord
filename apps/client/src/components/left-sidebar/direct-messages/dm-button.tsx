@@ -17,7 +17,7 @@ const DmButton = memo(() => {
   }, [dmsOpen]);
 
   return (
-    <div className="border-b border-border px-2 py-2">
+    <div className="border-b border-border px-2 py-2 md:hidden">
       <Tooltip
         content={dmsOpen ? t('closeDirectMessages') : t('openDirectMessages')}
       >

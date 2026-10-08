@@ -26,8 +26,8 @@ const SidebarEntry = memo(
         data-testid={TestId.SETTINGS_SIDEBAR_ENTRY}
         onClick={handleClick}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
-          isSelected && 'bg-accent font-medium'
+          'flex h-[42px] w-full items-center gap-2.5 rounded-md px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          isSelected && 'bg-raised font-medium text-foreground'
         )}
       >
         {logo ? (
@@ -73,7 +73,7 @@ const SettingsSidebar = memo(
     return (
       <nav
         className={cn(
-          'w-60 shrink-0 space-y-1 overflow-y-auto border-r bg-background p-3',
+          'w-[252px] shrink-0 space-y-1 overflow-y-auto border-r border-line bg-nav p-3',
           className
         )}
       >

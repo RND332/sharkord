@@ -1,3 +1,4 @@
+import { AppRail } from '@/components/app-rail';
 import { LeftSidebar } from '@/components/left-sidebar';
 import { ModViewSheet } from '@/components/mod-view-sheet';
 import { Protect } from '@/components/protect';
@@ -106,6 +107,7 @@ const ServerView = memo(() => {
             />
           )}
 
+          <AppRail />
           <LeftSidebar
             className={cn(
               'md:relative md:flex fixed inset-0 left-0 h-full z-40 md:z-0 transition-transform duration-300 ease-in-out',

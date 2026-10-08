@@ -260,12 +260,12 @@ const MessageCompose = memo(
     return (
       <div
         ref={containerRef}
-        className="compose-container relative shrink-0 min-h-14 flex flex-col pb-[env(safe-area-inset-bottom)] bg-white/[0.03]"
+        className="compose-container relative flex min-h-20 shrink-0 flex-col bg-canvas px-6 pb-[max(20px,env(safe-area-inset-bottom))] pt-2"
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
 
         <div
-          className={`compose-scroll-row flex items-start flex-1 overflow-y-auto cursor-text${uploading ? ' bg-muted' : ''}`}
+          className={`compose-scroll-row flex min-h-[54px] flex-1 cursor-text items-start overflow-y-auto rounded-lg border border-line bg-panel${uploading ? ' bg-muted' : ''}`}
           onClick={focusInputOnBackdropClick}
         >
           <div className="flex flex-1 flex-col">

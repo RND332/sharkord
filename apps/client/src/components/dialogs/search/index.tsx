@@ -42,12 +42,12 @@ const SearchDialog = memo(({ isOpen, close }: TSearchDialogProps) => {
   return (
     <Dialog open={isOpen}>
       <DialogContent
-        className="h-[86vh] max-h-[94vh] lg:min-w-7xl gap-0 overflow-hidden p-0"
+        className="h-[680px] max-h-[90vh] w-[920px] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[calc(100vw-2rem)] lg:max-w-[920px]"
         onInteractOutside={close}
         close={close}
       >
         <div className="flex h-full min-h-0 flex-col">
-          <DialogHeader className="border-b border-border bg-card/70 px-5 py-4 text-left">
+          <DialogHeader className="border-b border-line bg-nav px-6 py-5 text-left">
             <DialogTitle className="text-base">{t('searchTitle')}</DialogTitle>
             <DialogDescription>{t('searchDesc')}</DialogDescription>
             <div className="mt-3">
@@ -57,12 +57,12 @@ const SearchDialog = memo(({ isOpen, close }: TSearchDialogProps) => {
                 placeholder={t('searchPlaceholder')}
                 data-testid={TestId.SEARCH_INPUT}
                 autoFocus
-                className="h-10"
+                className="h-11"
               />
             </div>
           </DialogHeader>
 
-          <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
+          <div className="flex min-h-0 flex-1 flex-col bg-canvas px-5 py-4">
             {!canSearch && !loading && (
               <div className="flex h-full min-h-55 items-center justify-center rounded-lg bg-muted/20 px-6 text-sm text-muted-foreground">
                 {t('searchHint')}

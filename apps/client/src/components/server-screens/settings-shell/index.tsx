@@ -1,3 +1,4 @@
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { useModViewOpen } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { useDialogInfo } from '@/features/dialogs/hooks';
@@ -99,19 +100,34 @@ const SettingsShell = memo(
 
     return (
       <SettingsFormContext.Provider value={setForm}>
-        <div className="flex h-dvh flex-col bg-background text-foreground dark">
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <ChevronLeft className="h-5 w-5" />
+        <div className="flex h-dvh flex-col bg-canvas text-foreground dark">
+          <header className="flex h-16 shrink-0 items-center gap-3 border-b border-line bg-rail px-5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleClose}
+              aria-label="Close"
+            >
+              <ChevronLeft className="size-5" />
             </Button>
-            <h1 className="flex-1 truncate text-lg font-semibold">{title}</h1>
+            <div className="h-[22px] w-px bg-line" />
+            <h1 className="flex-1 truncate text-[15px] font-semibold">
+              {title}
+            </h1>
+            <span className="hidden text-xs text-subtle-foreground sm:inline">
+              Esc to close
+            </span>
+            <LanguageSwitcher
+              variant="full"
+              className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
+            />
             <IconButton
               icon={Menu}
               variant="ghost"
               className="md:hidden"
               onClick={toggleDrawer}
             />
-          </div>
+          </header>
 
           <div className="relative flex min-h-0 flex-1">
             {isDrawerOpen && (
@@ -132,8 +148,8 @@ const SettingsShell = memo(
               )}
             />
 
-            <main className="flex-1 overflow-y-auto">
-              <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
+            <main className="flex-1 overflow-y-auto bg-canvas">
+              <div className="mx-auto max-w-[1120px] space-y-8 p-5 md:p-8 lg:px-[60px]">
                 {selectedEntry?.content}
               </div>
 

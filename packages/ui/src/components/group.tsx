@@ -34,15 +34,17 @@ const Group = memo(
 
     return (
       <div className={cn('flex flex-col gap-2', className)}>
-        <div className="flex flex-col">
-          <div className="flex">
-            <Label>
-              {label} {required && <span className="text-red-500">*</span>}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center">
+            <Label className="text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+              {label} {required && <span className="text-destructive">*</span>}
             </Label>
             {helpComponent}
           </div>
           {description && (
-            <span className="text-sm text-muted-foreground">{description}</span>
+            <span className="text-[13px] text-subtle-foreground">
+              {description}
+            </span>
           )}
         </div>
         <div className="flex flex-col gap-2">{children}</div>

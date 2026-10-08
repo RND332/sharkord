@@ -97,17 +97,17 @@ const VoiceUserCard = memo(
     return (
       <div
         className={cn(
-          'relative bg-card rounded overflow-hidden group/voice-user-card',
+          'relative overflow-hidden rounded-lg bg-panel group/voice-user-card',
           'flex items-center justify-center',
           'size-full',
-          'border border-border',
+          'border border-line',
           isActivelySpeaking && speakingEffectClass,
           className
         )}
       >
         {voiceUser.banner && showUserBanners ? (
           <div
-            className="h-full w-full rounded bg-center bg-cover blur-sm brightness-50 bg-no-repeat absolute inset-0"
+            className="absolute inset-0 h-full w-full rounded-lg bg-cover bg-center bg-no-repeat blur-sm brightness-50"
             style={backgroundStyle}
           />
         ) : (

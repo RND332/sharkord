@@ -64,15 +64,14 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
   return (
     <div
       className={cn(
-        'flex justify-center items-center pointer-events-none gap-2 p-3',
+        'flex h-[88px] items-center justify-center gap-3 border-t border-line bg-nav px-4 pointer-events-none',
         barClass
       )}
     >
       <div
         className={cn(
-          'flex items-center pointer-events-auto p-1.5',
-          'gap-2 rounded border shadow-xl',
-          'bg-card border-border/50 backdrop-blur-md'
+          'flex items-center rounded-full border border-line bg-panel p-1.5 pointer-events-auto',
+          'gap-2'
         )}
       >
         <ControlToggleButton
@@ -96,7 +95,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           onClick={toggleSound}
         />
 
-        <div className="h-8 border-r-2 border-border" />
+        <div className="h-7 border-r border-line" />
 
         <ControlToggleButton
           enabled={ownVoiceState.webcamEnabled}
@@ -124,7 +123,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
 
         {isConnectedToThisChannel && (
           <Protect permission={Permission.SEND_VOICE_REACTION}>
-            <div className="h-8 border-r-2 border-border" />
+            <div className="h-7 border-r border-line" />
 
             <ReactionsButton />
           </Protect>
@@ -133,9 +132,8 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
       <Tooltip content="Disconnect">
         <Button
           className={cn(
-            'inline-flex h-auto self-stretch min-w-11 items-center justify-center rounded px-3 border border-border',
-            'pointer-events-auto text-white shadow-xl transition-all',
-            'bg-[#ec4245] hover:bg-[#da373c]'
+            'inline-flex min-w-11 self-stretch items-center justify-center rounded-full border border-destructive/50 px-3',
+            'pointer-events-auto bg-danger-solid text-white hover:bg-destructive/80'
           )}
           onClick={handleLeaveVoice}
           aria-label="Disconnect"

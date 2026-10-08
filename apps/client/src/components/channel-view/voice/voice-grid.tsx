@@ -177,7 +177,7 @@ const VoiceGrid = memo(
     return (
       <div
         ref={containerRef}
-        className={cn('grid size-full gap-3 p-3', className)}
+        className={cn('grid size-full gap-4 bg-canvas p-7', className)}
         style={{
           gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
           gridTemplateRows: `repeat(${rows}, 1fr)`
