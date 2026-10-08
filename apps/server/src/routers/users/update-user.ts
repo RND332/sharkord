@@ -1,9 +1,14 @@
-import { DELETED_USER_IDENTITY_AND_NAME } from '@sharkord/shared';
+import {
+  DELETED_USER_IDENTITY_AND_NAME,
+  HEX_COLOR_REGEX,
+  MAX_USER_NAME_LENGTH
+} from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
 import { publishUser } from '../../db/publishers';
 import { users } from '../../db/schema';
+import { eventBus } from '../../plugins/event-bus';
 import { protectedProcedure } from '../../utils/trpc';
 
 const updateUserRoute = protectedProcedure
@@ -11,14 +16,13 @@ const updateUserRoute = protectedProcedure
     z.object({
       name: z
         .string()
+        .trim()
         .min(1)
-        .max(24)
+        .max(MAX_USER_NAME_LENGTH)
         .refine((val) => val !== DELETED_USER_IDENTITY_AND_NAME, {
           message: 'Protected username'
         }),
-      bannerColor: z
-        .string()
-        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid hex color'),
+      profileColor: z.string().regex(HEX_COLOR_REGEX, 'Invalid hex color'),
       bio: z.string().max(160).optional()
     })
   )
@@ -27,7 +31,7 @@ const updateUserRoute = protectedProcedure
       .update(users)
       .set({
         name: input.name,
-        bannerColor: input.bannerColor,
+        profileColor: input.profileColor,
         bio: input.bio ?? null
       })
       .where(eq(users.id, ctx.userId))
@@ -35,6 +39,11 @@ const updateUserRoute = protectedProcedure
       .get();
 
     publishUser(updatedUser.id, 'update');
+
+    eventBus.emit('user:updated', {
+      userId: updatedUser.id,
+      username: updatedUser.name
+    });
   });
 
 export { updateUserRoute };

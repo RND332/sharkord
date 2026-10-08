@@ -41,6 +41,12 @@ export enum VideoCodec {
   AV1 = 'video/AV1'
 }
 
+export enum ScreenCursor {
+  ALWAYS = 'always',
+  MOTION = 'motion',
+  NEVER = 'never'
+}
+
 export enum NoiseSuppression {
   NONE = 'none',
   STANDARD = 'standard',
@@ -65,10 +71,13 @@ export type TDeviceSettings = {
   mirrorOwnVideo: boolean;
   simulcastEnabled: boolean;
   screenShareSimulcastEnabled: boolean;
+  directScreenSharing: boolean;
+  voiceOnlyMode: boolean;
   screenResolution: Resolution;
   screenFramerate: number;
   screenCodec: VideoCodec;
   screenBitrate: number;
+  screenCursor: ScreenCursor;
 };
 
 export type TRemoteUserStreamKinds =

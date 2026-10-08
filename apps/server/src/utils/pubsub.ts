@@ -5,13 +5,16 @@ import type {
   TChannel,
   TChannelUserPermissionsMap,
   TCommandsMapByPlugin,
+  TDirectScreenEvent,
   TExternalStream,
   TJoinedEmoji,
   TJoinedMessage,
   TJoinedPublicUser,
   TJoinedRole,
   TLogEntry,
+  TPluginCapabilityAccessRule,
   TPluginMetadata,
+  TPluginPushEvent,
   TPublicServerSettings,
   TVoiceUserState
 } from '@sharkord/shared';
@@ -74,7 +77,16 @@ type Events = {
     userId: number;
     state: TVoiceUserState;
   };
-
+  [ServerEvents.USER_VOICE_MOVED]: {
+    channelId: number;
+    fromChannelId: number;
+  };
+  [ServerEvents.USER_VOICE_REACTION]: {
+    channelId: number;
+    userId: number;
+    emoji: string;
+  };
+  [ServerEvents.DIRECT_SCREEN_SIGNAL]: TDirectScreenEvent;
   [ServerEvents.VOICE_NEW_PRODUCER]: {
     channelId: number;
     remoteId: number;
@@ -103,6 +115,8 @@ type Events = {
   [ServerEvents.PLUGIN_LOG]: TLogEntry;
   [ServerEvents.PLUGIN_COMMANDS_CHANGE]: TCommandsMapByPlugin;
   [ServerEvents.PLUGIN_COMPONENTS_CHANGE]: string[]; // list of plugin ids that have components enabled
+  [ServerEvents.PLUGIN_CAPABILITY_ACCESS_CHANGE]: TPluginCapabilityAccessRule[];
+  [ServerEvents.PLUGIN_PUSH]: TPluginPushEvent;
   [ServerEvents.PLUGIN_METADATA_CHANGE]: TPluginMetadata[];
 
   [ServerEvents.EMOJI_CREATE]: TJoinedEmoji;

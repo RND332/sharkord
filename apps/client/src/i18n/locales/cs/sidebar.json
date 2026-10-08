@@ -20,6 +20,7 @@
   "stopScreenShare": "Zastavit sdílení obrazovky",
   "startScreenShare": "Spustit sdílení obrazovky",
   "transportStats": "Statistiky přenosu",
+  "voiceDiagnostics": "Diagnostika hlasu",
   "outgoing": "Odchozí",
   "incoming": "Příchozí",
   "noData": "Žádná data",
@@ -42,6 +43,7 @@
   "createChannel": "Vytvořit kanál",
   "failedReorderChannels": "Nepodařilo se změnit pořadí kanálů",
   "failedReorderCategories": "Nepodařilo se změnit pořadí kategorií",
+  "failedMoveUser": "Nepodařilo se přesunout uživatele",
   "directMessages": "Přímé zprávy",
   "failedLoadDMs": "Nepodařilo se načíst přímé zprávy",
   "couldNotOpenDM": "Nepodařilo se otevřít přímou zprávu",
@@ -70,8 +72,10 @@
   "categoryDeleted": "Kategorie byla odstraněna",
   "failedDeleteCategory": "Kategorii se odstranit nepodařilo",
   "userVolume": "Hlasitost uživatele",
-  "viewDemo": "View demo",
-  "stopViewingDemo": "Stop viewing demo",
-  "hideWebcam": "Hide webcam",
-  "showWebcam": "Show webcam"
+  "viewDemo": "Zobrazit prezentaci",
+  "stopViewingDemo": "Přestat sledovat prezentaci",
+  "hideWebcam": "Skrýt webkameru",
+  "showWebcam": "Zobrazit webkameru",
+  "microphone": "Mikrofon",
+  "noiseSuppression": "Potlačení šumu"
 }

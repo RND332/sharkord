@@ -1,22 +1,20 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
-import { logVoice } from '@/helpers/browser-logger';
-import { getTRPCClient } from '@/lib/trpc';
+import { voiceChannelStateSelector } from '@/features/server/voice/selectors';
+import type { IRootState } from '@/features/store';
+import { logVoiceError } from '@/helpers/browser-logger';
 import { StreamKind } from '@sharkord/shared';
-import type {
-  AppData,
-  Consumer,
-  RtpCapabilities
-} from 'mediasoup-client/types';
 import {
   createContext,
   memo,
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode
 } from 'react';
+import { useSelector } from 'react-redux';
 import { useVoiceEvents } from './hooks/use-voice-events';
 
 type TViewedRemoteDemos = Record<number, true>;
@@ -38,206 +36,102 @@ type TDemoVisibilityProviderProps = {
   children: ReactNode;
 };
 
-// Pause/resume a screen-share consumer instead of closing+reopening it on
-// every View toggle. This saves inbound bandwidth while the local viewer is
-// not actively watching, and re-Viewing is instant.
-const ensureConsumer = async (
-  remoteId: number,
-  kind: StreamKind.SCREEN | StreamKind.SCREEN_AUDIO,
-  opts: {
-    consume: (
-      remoteId: number,
-      kind: StreamKind,
-      rtps: RtpCapabilities
-    ) => Promise<void>;
-    getConsumer: (
-      remoteId: number,
-      kind: StreamKind
-    ) => Consumer<AppData> | undefined;
-    pauseServer: (
-      remoteId: number,
-      kind: StreamKind.SCREEN | StreamKind.SCREEN_AUDIO
-    ) => Promise<void>;
-    resumeServer: (
-      remoteId: number,
-      kind: StreamKind.SCREEN | StreamKind.SCREEN_AUDIO
-    ) => Promise<void>;
-    rtps: RtpCapabilities;
-  }
-) => {
-  const existing = opts.getConsumer(remoteId, kind);
-
-  if (existing) {
-    if (existing.paused) {
-      try {
-        await existing.resume();
-      } catch (error) {
-        logVoice('Failed to resume consumer locally', {
-          remoteId,
-          kind,
-          error
-        });
-      }
-      try {
-        await opts.resumeServer(remoteId, kind);
-      } catch (error) {
-        logVoice('Failed to resume consumer on server', {
-          remoteId,
-          kind,
-          error
-        });
-      }
-    }
-
-    return;
-  }
-
-  await opts.consume(remoteId, kind, opts.rtps);
-};
-
 const DemoVisibilityProvider = memo(
   ({ children }: TDemoVisibilityProviderProps) => {
     const voice = useVoice();
-    const consumeRef = voice.consumeRef;
-    const getConsumer = voice.getConsumer;
-    const rtps = voice.rtpCapabilities;
     const {
+      consumeRef,
+      rtpCapabilitiesRef,
+      isViewingDemoRef,
+      clearViewedDemoRef,
+      voiceOnlyModeRef,
+      canConsumeScreen,
+      startReceivingDemo,
+      stopReceivingDemo,
       removeRemoteUserStream,
       removeExternalStreamTrack,
       removeExternalStream,
       clearRemoteUserStreamsForUser
     } = voice;
     const currentVoiceChannelId = useCurrentVoiceChannelId();
-
+    const voiceChannelState = useSelector((state: IRootState) =>
+      currentVoiceChannelId === undefined
+        ? undefined
+        : voiceChannelStateSelector(state, currentVoiceChannelId)
+    );
+    const previousVoiceChannelStateRef = useRef(voiceChannelState);
     const [viewedRemoteDemos, setViewedRemoteDemos] =
       useState<TViewedRemoteDemos>({});
-
+    const viewedRemoteDemosRef = useRef<TViewedRemoteDemos>({});
     const isViewingDemo = useCallback(
-      (userId: number) => !!viewedRemoteDemos[userId],
-      [viewedRemoteDemos]
+      (userId: number) => !!viewedRemoteDemosRef.current[userId],
+      []
     );
+    isViewingDemoRef.current = isViewingDemo;
 
     const viewDemo = useCallback(
       async (userId: number) => {
-        if (!rtps) {
-          logVoice('Cannot view demo — rtpCapabilities not yet available');
-          return;
-        }
+        const rtps = rtpCapabilitiesRef.current;
+        if (!rtps || voiceOnlyModeRef.current) return;
+        const next = {
+          ...viewedRemoteDemosRef.current,
+          [userId]: true as const
+        };
+        viewedRemoteDemosRef.current = next;
+        setViewedRemoteDemos(next);
+        if (startReceivingDemo(userId)) return;
 
-        setViewedRemoteDemos((prev) =>
-          prev[userId] ? prev : { ...prev, [userId]: true }
-        );
-
-        const trpc = getTRPCClient();
-
-        await ensureConsumer(userId, StreamKind.SCREEN, {
-          consume: async (r, k, caps) => {
-            await consumeRef.current?.(r, k, caps);
-          },
-          getConsumer: (r, k) => getConsumer(r, k),
-          pauseServer: async (r, k) => {
-            await trpc.voice.pauseConsumer.mutate({ remoteId: r, kind: k });
-          },
-          resumeServer: async (r, k) => {
-            await trpc.voice.resumeConsumer.mutate({ remoteId: r, kind: k });
-          },
-          rtps
-        });
-
-        // SCREEN_AUDIO may not exist (user didn't tick "share tab audio").
-        // Try to consume it; if the server says "no producer", swallow.
-        try {
-          await ensureConsumer(userId, StreamKind.SCREEN_AUDIO, {
-            consume: async (r, k, caps) => {
-              await consumeRef.current?.(r, k, caps);
-            },
-            getConsumer: (r, k) => getConsumer(r, k),
-            pauseServer: async (r, k) => {
-              await trpc.voice.pauseConsumer.mutate({ remoteId: r, kind: k });
-            },
-            resumeServer: async (r, k) => {
-              await trpc.voice.resumeConsumer.mutate({ remoteId: r, kind: k });
-            },
-            rtps
-          });
-        } catch {
-          // no screen-audio producer; ignore
-        }
+        // pause/resume keeps the existing SFU consumer and saves inbound bandwidth.
+        // the transport checks the same opt-in guard after each asynchronous step.
+        await consumeRef.current?.(userId, StreamKind.SCREEN, rtps);
+        if (!canConsumeScreen(userId)) return;
+        await consumeRef.current?.(userId, StreamKind.SCREEN_AUDIO, rtps);
       },
-      [consumeRef, getConsumer, rtps]
+      [
+        consumeRef,
+        rtpCapabilitiesRef,
+        voiceOnlyModeRef,
+        canConsumeScreen,
+        startReceivingDemo
+      ]
     );
 
     const stopViewingDemo = useCallback(
       async (userId: number) => {
-        setViewedRemoteDemos((prev) => {
-          if (!prev[userId]) return prev;
-
-          const next = { ...prev };
-          delete next[userId];
-
-          return next;
-        });
-
-        const trpc = getTRPCClient();
-
-        const pauseIfPresent = async (
-          kind: StreamKind.SCREEN | StreamKind.SCREEN_AUDIO
-        ) => {
-          const consumer = getConsumer(userId, kind);
-
-          if (!consumer) return;
-
-          try {
-            if (!consumer.paused) {
-              await consumer.pause();
-            }
-          } catch (error) {
-            logVoice('Failed to pause consumer locally', {
-              userId,
-              kind,
-              error
-            });
-          }
-
-          try {
-            await trpc.voice.pauseConsumer.mutate({
-              remoteId: userId,
-              kind
-            });
-          } catch (error) {
-            logVoice('Failed to pause consumer on server', {
-              userId,
-              kind,
-              error
-            });
-          }
-        };
-
-        await pauseIfPresent(StreamKind.SCREEN);
-        await pauseIfPresent(StreamKind.SCREEN_AUDIO);
+        const next = { ...viewedRemoteDemosRef.current };
+        delete next[userId];
+        viewedRemoteDemosRef.current = next;
+        setViewedRemoteDemos(next);
+        await stopReceivingDemo(userId);
       },
-      [getConsumer]
+      [stopReceivingDemo]
     );
 
     const clearViewedDemos = useCallback(() => {
+      const userIds = Object.keys(viewedRemoteDemosRef.current);
+      viewedRemoteDemosRef.current = {};
       setViewedRemoteDemos({});
-    }, []);
+      for (const userId of userIds) {
+        stopReceivingDemo(+userId).catch((error) => {
+          logVoiceError('demo: clearing viewed media failed', error);
+        });
+      }
+    }, [stopReceivingDemo]);
 
-    const clearViewedDemo = useCallback((userId: number) => {
-      setViewedRemoteDemos((prev) => {
-        if (!prev[userId]) return prev;
+    const clearViewedDemo = useCallback(
+      (userId: number) => {
+        if (!viewedRemoteDemosRef.current[userId]) return;
+        stopViewingDemo(userId).catch((error) => {
+          logVoiceError('demo: stopping viewed media failed', error, {
+            userId
+          });
+        });
+      },
+      [stopViewingDemo]
+    );
+    clearViewedDemoRef.current = clearViewedDemo;
 
-        const next = { ...prev };
-        delete next[userId];
-
-        return next;
-      });
-    }, []);
-
-    // Subscribe to VOICE_NEW_PRODUCER / VOICE_PRODUCER_CLOSED / etc. here so
-    // the gate on SCREEN / SCREEN_AUDIO can read `isViewingDemo`. The
-    // effect early-returns until both `currentVoiceChannelId` and
-    // `rtpCapabilities` are available.
+    // keep the subscription stable while the opt-in ref changes independently.
     useVoiceEvents({
       consumeRef,
       isViewingDemo,
@@ -246,18 +140,34 @@ const DemoVisibilityProvider = memo(
       removeExternalStream,
       clearRemoteUserStreamsForUser,
       clearViewedDemo,
-      rtpCapabilities: rtps
+      rtpCapabilitiesRef,
+      isVoiceSessionActive:
+        voice.connectionStatus === 'connecting' ||
+        voice.connectionStatus === 'connected'
     });
 
-    // Reset session-scoped demo state when the user leaves voice entirely.
-    // Switching text channels while in voice should NOT reset — only leaving
-    // voice (currentVoiceChannelId becomes undefined).
+    // reset session-scoped demo choices only when leaving voice, not text channels.
     useEffect(() => {
       if (currentVoiceChannelId !== undefined) return;
-      setViewedRemoteDemos((prev) =>
-        Object.keys(prev).length === 0 ? prev : {}
-      );
-    }, [currentVoiceChannelId]);
+      clearViewedDemos();
+    }, [currentVoiceChannelId, clearViewedDemos]);
+
+    // state also covers a direct share stopped while its SFU fallback was pending.
+    useEffect(() => {
+      const previousState = previousVoiceChannelStateRef.current;
+      previousVoiceChannelStateRef.current = voiceChannelState;
+      if (currentVoiceChannelId === undefined) return;
+      for (const userId of Object.keys(viewedRemoteDemosRef.current)) {
+        const previousPresenter = previousState?.users[+userId];
+        const presenter = voiceChannelState?.users[+userId];
+        if (
+          (previousPresenter?.sharingScreen && !presenter?.sharingScreen) ||
+          (previousPresenter && !presenter)
+        ) {
+          clearViewedDemo(+userId);
+        }
+      }
+    }, [currentVoiceChannelId, voiceChannelState, clearViewedDemo]);
 
     return (
       <DemoVisibilityContext.Provider
@@ -278,13 +188,11 @@ const DemoVisibilityProvider = memo(
 
 const useDemoVisibility = () => {
   const context = useContext(DemoVisibilityContext);
-
   if (!context) {
     throw new Error(
       'useDemoVisibility must be used within DemoVisibilityProvider'
     );
   }
-
   return context;
 };
 

@@ -1,9 +1,9 @@
 import type { IRootState } from '@/features/store';
 import { createCachedSelector } from 're-reselect';
+import type { TVoiceReaction } from '../types';
 
 const DEFAULT_OBJECT = {};
-
-export const voiceMapSelector = (state: IRootState) => state.server.voiceMap;
+const DEFAULT_ARRAY: TVoiceReaction[] = [];
 
 export const ownVoiceStateSelector = (state: IRootState) => {
   return state.server.ownVoiceState;
@@ -11,6 +11,9 @@ export const ownVoiceStateSelector = (state: IRootState) => {
 
 export const pinnedCardSelector = (state: IRootState) =>
   state.server.pinnedCard;
+
+export const voiceMoveTargetChannelIdSelector = (state: IRootState) =>
+  state.server.voiceMoveTargetChannelId;
 
 export const voiceChannelStateSelector = (
   state: IRootState,
@@ -40,11 +43,8 @@ export const voiceChannelAudioExternalStreamsSelector = createCachedSelector(
     externalStreams.filter((stream) => stream.tracks?.audio === true)
 )((_state: IRootState, channelId: number) => channelId);
 
-export const voiceChannelVideoExternalStreamsSelector = createCachedSelector(
-  voiceChannelExternalStreamsListSelector,
-  (externalStreams) =>
-    externalStreams.filter((stream) => stream.tracks?.video === true)
-)((_state: IRootState, channelId: number) => channelId);
+export const voiceReactionsSelector = (state: IRootState, userId: number) =>
+  state.server.voiceReactions[userId] || DEFAULT_ARRAY;
 
 export const hideNonVideoParticipantsSelector = (state: IRootState) =>
   state.server.hideNonVideoParticipants;
@@ -54,3 +54,6 @@ export const showUserBannersInVoiceSelector = (state: IRootState) =>
 
 export const hideOwnScreenShareSelector = (state: IRootState) =>
   state.server.hideOwnScreenShare;
+
+export const alwaysShowVoiceControlsSelector = (state: IRootState) =>
+  state.server.alwaysShowVoiceControls;

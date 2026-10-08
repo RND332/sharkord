@@ -1,6 +1,6 @@
-import { Permission, StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@sharkord/shared';
 import { z } from 'zod';
-import { VoiceRuntime } from '../../runtimes/voice';
+import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
 
@@ -12,19 +12,8 @@ const pauseConsumerRoute = protectedProcedure
     })
   )
   .mutation(async ({ input, ctx }) => {
-    await ctx.needsPermission(Permission.JOIN_VOICE_CHANNELS);
-
-    invariant(ctx.currentVoiceChannelId, {
-      code: 'BAD_REQUEST',
-      message: 'User is not in a voice channel'
-    });
-
-    const runtime = VoiceRuntime.findById(ctx.currentVoiceChannelId);
-
-    invariant(runtime, {
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Voice runtime not found for this channel'
-    });
+    const { runtime, mediaGeneration } = await getCurrentVoiceRuntime(ctx);
+    runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
 
     const consumer = runtime.getConsumer(
       ctx.user.id,

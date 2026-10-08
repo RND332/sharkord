@@ -1,11 +1,17 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
-import { logVoice } from '@/helpers/browser-logger';
+import {
+  logVoice,
+  logVoiceError,
+  logVoiceWarn
+} from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TRemoteUserStreamKinds } from '@/types';
 import { StreamKind } from '@sharkord/shared';
 import type { RtpCapabilities } from 'mediasoup-client/types';
+import type { RefObject } from 'react';
 import { type MutableRefObject, useEffect } from 'react';
+import { isOwnProducerEvent } from '../helpers';
 
 type TEvents = {
   consumeRef: MutableRefObject<
@@ -28,7 +34,8 @@ type TEvents = {
   removeExternalStream: (streamId: number) => void;
   clearRemoteUserStreamsForUser: (userId: number) => void;
   clearViewedDemo: (userId: number) => void;
-  rtpCapabilities: RtpCapabilities | undefined;
+  rtpCapabilitiesRef: RefObject<RtpCapabilities | null | undefined>;
+  isVoiceSessionActive: boolean;
 };
 
 const useVoiceEvents = ({
@@ -39,14 +46,20 @@ const useVoiceEvents = ({
   removeExternalStream,
   clearRemoteUserStreamsForUser,
   clearViewedDemo,
-  rtpCapabilities
+  rtpCapabilitiesRef,
+  isVoiceSessionActive
 }: TEvents) => {
   const currentVoiceChannelId = useCurrentVoiceChannelId();
   const ownUserId = useOwnUserId();
 
   useEffect(() => {
-    if (!currentVoiceChannelId || !rtpCapabilities) {
-      logVoice('Voice events not initialized - missing channelId or rtps');
+    if (!currentVoiceChannelId) {
+      logVoice('events: not subscribed, no voice channel');
+      return;
+    }
+
+    if (!isVoiceSessionActive) {
+      logVoice('events: not subscribed, voice session not established yet');
       return;
     }
 
@@ -60,22 +73,26 @@ const useVoiceEvents = ({
         onData: ({ remoteId, kind, channelId }) => {
           if (currentVoiceChannelId !== channelId || isCleaningUp) return;
 
-          if (remoteId === ownUserId) {
-            logVoice('Ignoring own producer event', {
-              remoteId,
-              ownUserId,
-              kind,
-              channelId
-            });
+          if (isOwnProducerEvent(remoteId, ownUserId, kind)) {
+            logVoice('events: ignoring own new producer', { kind, channelId });
 
             return;
           }
 
-          logVoice('New producer event received', {
-            remoteId,
-            kind,
-            channelId
-          });
+          logVoice('events: new producer', { remoteId, kind, channelId });
+
+          const rtpCapabilities = rtpCapabilitiesRef.current;
+
+          // init sets the ref before it consumes the existing producers, so anything that
+          // lands in the gap is picked up by that pass instead
+          if (!rtpCapabilities) {
+            logVoiceWarn('events: new producer ignored, no rtp capabilities', {
+              remoteId,
+              kind
+            });
+
+            return;
+          }
 
           // Demos are opt-in. If this is a SCREEN / SCREEN_AUDIO producer and
           // the local viewer is not currently viewing this user's demo, do
@@ -91,12 +108,10 @@ const useVoiceEvents = ({
             });
             return;
           }
-
           try {
             consumeRef.current?.(remoteId, kind, rtpCapabilities);
           } catch (error) {
-            logVoice('Error consuming new producer', {
-              error,
+            logVoiceError('events: consuming new producer failed', error, {
               remoteId,
               kind,
               channelId
@@ -104,7 +119,7 @@ const useVoiceEvents = ({
           }
         },
         onError: (error) => {
-          logVoice('onVoiceNewProducer subscription error', { error });
+          logVoiceError('events: new producer subscription error', error);
         }
       }
     );
@@ -115,11 +130,7 @@ const useVoiceEvents = ({
         onData: ({ channelId, remoteId, kind }) => {
           if (currentVoiceChannelId !== channelId || isCleaningUp) return;
 
-          logVoice('Producer closed event received', {
-            remoteId,
-            kind,
-            channelId
-          });
+          logVoice('events: producer closed', { remoteId, kind, channelId });
 
           try {
             if (
@@ -131,26 +142,20 @@ const useVoiceEvents = ({
               removeRemoteUserStream(remoteId, kind);
             }
 
-            // If the demo's SCREEN / SCREEN_AUDIO producer just closed,
-            // forget that the viewer was viewing it — they will need to
-            // explicitly click View again if the presenter re-shares.
-            if (
-              kind === StreamKind.SCREEN ||
-              kind === StreamKind.SCREEN_AUDIO
-            ) {
+            // a stopped presentation requires a new opt-in; losing audio alone does not.
+            if (kind === StreamKind.SCREEN) {
               clearViewedDemo(remoteId);
             }
           } catch (error) {
-            logVoice('Error removing remote stream for closed producer', {
+            logVoiceError(
+              'events: removing stream for closed producer failed',
               error,
-              remoteId,
-              kind,
-              channelId
-            });
+              { remoteId, kind, channelId }
+            );
           }
         },
         onError: (error) => {
-          logVoice('onVoiceProducerClosed subscription error', { error });
+          logVoiceError('events: producer closed subscription error', error);
         }
       }
     );
@@ -159,17 +164,19 @@ const useVoiceEvents = ({
       onData: ({ channelId, userId }) => {
         if (currentVoiceChannelId !== channelId || isCleaningUp) return;
 
-        logVoice('User leave event received', { userId, channelId });
+        logVoice('events: user left voice', { userId, channelId });
 
         try {
           clearRemoteUserStreamsForUser(userId);
           clearViewedDemo(userId);
         } catch (error) {
-          logVoice('Error clearing remote streams for user', { error });
+          logVoiceError('events: clearing streams for user failed', error, {
+            userId
+          });
         }
       },
       onError: (error) => {
-        logVoice('onVoiceUserLeave subscription error', { error });
+        logVoiceError('events: user leave subscription error', error);
       }
     });
 
@@ -178,7 +185,7 @@ const useVoiceEvents = ({
         onData: ({ channelId, streamId }) => {
           if (currentVoiceChannelId !== channelId || isCleaningUp) return;
 
-          logVoice('External stream removed event received', {
+          logVoice('events: external stream removed', {
             streamId,
             channelId
           });
@@ -186,20 +193,19 @@ const useVoiceEvents = ({
           try {
             removeExternalStream(streamId);
           } catch (error) {
-            logVoice('Error removing external stream', {
-              error,
+            logVoiceError('events: removing external stream failed', error, {
               streamId,
               channelId
             });
           }
         },
         onError: (error) => {
-          logVoice('onVoiceRemoveExternalStream subscription error', { error });
+          logVoiceError('events: external stream subscription error', error);
         }
       });
 
     return () => {
-      logVoice('Cleaning up voice events');
+      logVoice('events: unsubscribing');
 
       isCleaningUp = true;
 
@@ -218,7 +224,8 @@ const useVoiceEvents = ({
     removeExternalStream,
     clearRemoteUserStreamsForUser,
     clearViewedDemo,
-    rtpCapabilities
+    rtpCapabilitiesRef,
+    isVoiceSessionActive
   ]);
 };
 

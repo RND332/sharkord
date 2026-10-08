@@ -1,3 +1,4 @@
+import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { useDemoVisibility } from '@/components/voice-provider/demo-visibility-context';
 import { useVoiceUsersByChannelId } from '@/features/server/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
@@ -9,10 +10,7 @@ import {
 import { memo, useMemo } from 'react';
 import { ControlsBar } from './controls-bar';
 import { ExternalStreamCard } from './external-stream-card';
-import {
-  PinnedCardType,
-  usePinCardController
-} from './hooks/use-pin-card-controller';
+import { usePinCardController } from './hooks/use-pin-card-controller';
 import { ScreenShareCard } from './screen-share-card';
 import { VoiceGrid } from './voice-grid';
 import { VoiceUserCard } from './voice-user-card';
@@ -28,16 +26,20 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const hideNonVideoParticipants = useHideNonVideoParticipants();
   const hideOwnScreenShare = useHideOwnScreenShare();
   const ownUserId = useOwnUserId();
-  const { isViewingDemo } = useDemoVisibility();
+  const { viewedRemoteDemos } = useDemoVisibility();
+  const { devices } = useDevices();
+  const isAnyCardPinned = pinnedCard !== undefined;
 
   const cards = useMemo(() => {
     const cards: React.ReactNode[] = [];
 
     // Check if there are any video streams at all
     const hasAnyVideoStreams =
-      voiceUsers.some(
+      !devices.voiceOnlyMode &&
+      (voiceUsers.some(
         (user) => user.state.webcamEnabled || user.state.sharingScreen
-      ) || externalStreams.some((stream) => stream.tracks.video);
+      ) ||
+        externalStreams.some((stream) => stream.tracks.video));
 
     // Only apply the filter if there are some video streams
     const shouldFilterNonVideo = hideNonVideoParticipants && hasAnyVideoStreams;
@@ -45,35 +47,35 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     voiceUsers.forEach((voiceUser) => {
       const userCardId = `user-${voiceUser.id}`;
       const hasVideo = voiceUser.state.webcamEnabled;
+      const needsDemoControl =
+        voiceUser.id !== ownUserId &&
+        voiceUser.state.sharingScreen &&
+        !viewedRemoteDemos[voiceUser.id];
 
-      // Only show user card if not filtering, or if they have video
-      if (!shouldFilterNonVideo || hasVideo) {
+      // keep the opt-in control reachable until its screen share tile is shown
+      if (!shouldFilterNonVideo || hasVideo || needsDemoControl) {
         cards.push(
           <VoiceUserCard
             key={userCardId}
             userId={voiceUser.id}
             isPinned={isPinned(userCardId)}
-            onPin={() =>
-              pinCard({
-                id: userCardId,
-                type: PinnedCardType.USER,
-                userId: voiceUser.id
-              })
-            }
+            isAnyCardPinned={isAnyCardPinned}
+            cardId={userCardId}
+            onPin={pinCard}
             onUnpin={unpinCard}
             voiceUser={voiceUser}
           />
         );
       }
 
-      // Screen shares are opt-in: only render the full ScreenShareCard once the
-      // local viewer has clicked "View demo" for that presenter.
+      // remote shares require opt-in; your own preview does not.
       const shouldHideOwnScreenShare =
         hideOwnScreenShare && voiceUser.id === ownUserId;
       if (
+        !devices.voiceOnlyMode &&
         voiceUser.state.sharingScreen &&
         !shouldHideOwnScreenShare &&
-        isViewingDemo(voiceUser.id)
+        (voiceUser.id === ownUserId || viewedRemoteDemos[voiceUser.id])
       ) {
         const screenShareCardId = `screen-share-${voiceUser.id}`;
 
@@ -82,13 +84,9 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             key={screenShareCardId}
             userId={voiceUser.id}
             isPinned={isPinned(screenShareCardId)}
-            onPin={() =>
-              pinCard({
-                id: screenShareCardId,
-                type: PinnedCardType.SCREEN_SHARE,
-                userId: voiceUser.id
-              })
-            }
+            isAnyCardPinned={isAnyCardPinned}
+            cardId={screenShareCardId}
+            onPin={pinCard}
             onUnpin={unpinCard}
             showPinControls
           />
@@ -97,6 +95,8 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     });
 
     externalStreams.forEach((stream) => {
+      if (devices.voiceOnlyMode) return;
+
       const externalStreamCardId = `external-stream-${stream.streamId}`;
       const hasVideo = stream.tracks.video;
 
@@ -108,13 +108,9 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             streamId={stream.streamId}
             stream={stream}
             isPinned={isPinned(externalStreamCardId)}
-            onPin={() =>
-              pinCard({
-                id: externalStreamCardId,
-                type: PinnedCardType.EXTERNAL_STREAM,
-                userId: stream.streamId
-              })
-            }
+            isAnyCardPinned={isAnyCardPinned}
+            cardId={externalStreamCardId}
+            onPin={pinCard}
             onUnpin={unpinCard}
             showPinControls
           />
@@ -126,13 +122,15 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   }, [
     voiceUsers,
     externalStreams,
+    devices.voiceOnlyMode,
     isPinned,
     pinCard,
     unpinCard,
     hideNonVideoParticipants,
     hideOwnScreenShare,
     ownUserId,
-    isViewingDemo
+    viewedRemoteDemos,
+    isAnyCardPinned
   ]);
 
   if (voiceUsers.length === 0) {
@@ -151,10 +149,8 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   }
 
   return (
-    <div className="flex-1 relative bg-background overflow-hidden">
-      <VoiceGrid pinnedCardId={pinnedCard?.id} className="h-full">
-        {cards}
-      </VoiceGrid>
+    <div className="flex flex-col size-full relative bg-background overflow-hidden group/voice-stage">
+      <VoiceGrid pinnedCardId={pinnedCard?.id}>{cards}</VoiceGrid>
       <ControlsBar channelId={channelId} />
     </div>
   );

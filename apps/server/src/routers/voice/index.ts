@@ -6,9 +6,12 @@ import { consumeRoute } from './consume';
 import { createConsumerTransportRoute } from './create-consumer-transport';
 import { createProducerTransportRoute } from './create-producer-transport';
 import {
+  onDirectScreenSignalRoute,
   onUserJoinVoiceRoute,
   onUserLeaveVoiceRoute,
   onUserUpdateVoiceStateRoute,
+  onUserVoiceMovedRoute,
+  onUserVoiceReactionRoute,
   onVoiceAddExternalStreamRoute,
   onVoiceNewProducerRoute,
   onVoiceProducerClosedRoute,
@@ -18,16 +21,25 @@ import {
 import { getProducersRoute } from './get-producers';
 import { joinVoiceRoute } from './join';
 import { leaveVoiceRoute } from './leave';
+import { moveUserRoute } from './move';
 import { pauseConsumerRoute } from './pause-consumer';
 import { produceRoute } from './produce';
 import { resumeConsumerRoute } from './resume-consumer';
+import { sendVoiceReactionRoute } from './send-reaction';
 import { setConsumerQualityRoute } from './set-consumer-quality';
+import { signalDirectScreenRoute } from './signal-direct-screen';
+import { startDirectScreenRoute } from './start-direct-screen';
 import { updateVoiceStateRoute } from './update-state';
 
 export const voiceRouter = t.router({
   join: joinVoiceRoute,
   leave: leaveVoiceRoute,
+  moveUser: moveUserRoute,
   updateState: updateVoiceStateRoute,
+  sendReaction: sendVoiceReactionRoute,
+  startDirectScreen: startDirectScreenRoute,
+  signalDirectScreen: signalDirectScreenRoute,
+  onDirectScreenSignal: onDirectScreenSignalRoute,
   createProducerTransport: createProducerTransportRoute,
   connectProducerTransport: connectProducerTransportRoute,
   createConsumerTransport: createConsumerTransportRoute,
@@ -42,6 +54,8 @@ export const voiceRouter = t.router({
   onJoin: onUserJoinVoiceRoute,
   onLeave: onUserLeaveVoiceRoute,
   onUpdateState: onUserUpdateVoiceStateRoute,
+  onMoved: onUserVoiceMovedRoute,
+  onReaction: onUserVoiceReactionRoute,
   onNewProducer: onVoiceNewProducerRoute,
   onProducerClosed: onVoiceProducerClosedRoute,
   onAddExternalStream: onVoiceAddExternalStreamRoute,

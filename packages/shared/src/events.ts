@@ -18,12 +18,15 @@ export enum ServerEvents {
   USER_JOIN_VOICE = 'userJoinVoice',
   USER_LEAVE_VOICE = 'userLeaveVoice',
   USER_VOICE_STATE_UPDATE = 'userVoiceStateUpdate',
+  USER_VOICE_MOVED = 'userVoiceMoved',
+  USER_VOICE_REACTION = 'userVoiceReaction',
 
   VOICE_ADD_EXTERNAL_STREAM = 'voiceAddExternalStream',
   VOICE_UPDATE_EXTERNAL_STREAM = 'voiceUpdateExternalStream',
   VOICE_REMOVE_EXTERNAL_STREAM = 'voiceRemoveExternalStream',
   VOICE_NEW_PRODUCER = 'voiceNewProducer',
   VOICE_PRODUCER_CLOSED = 'voiceProducerClosed',
+  DIRECT_SCREEN_SIGNAL = 'directScreenSignal',
 
   EMOJI_CREATE = 'emojiCreate',
   EMOJI_UPDATE = 'emojiUpdate',
@@ -42,7 +45,9 @@ export enum ServerEvents {
   PLUGIN_LOG = 'pluginLog',
   PLUGIN_COMMANDS_CHANGE = 'pluginCommandsChange',
   PLUGIN_COMPONENTS_CHANGE = 'pluginComponentsChange',
+  PLUGIN_CAPABILITY_ACCESS_CHANGE = 'pluginCapabilityAccessChange',
   PLUGIN_METADATA_CHANGE = 'pluginMetadataChange',
+  PLUGIN_PUSH = 'pluginPush',
 
   CATEGORY_CREATE = 'categoryCreate',
   CATEGORY_UPDATE = 'categoryUpdate',

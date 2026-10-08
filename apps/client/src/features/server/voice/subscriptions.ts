@@ -1,10 +1,15 @@
+import { store } from '@/features/store';
 import { logDebug } from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
+import { currentVoiceChannelIdSelector } from '../channels/selectors';
+import { handleSubscriptionError } from '../subscription-error';
 import {
   addExternalStreamToVoiceChannel,
   addUserToVoiceChannel,
   removeExternalStreamFromVoiceChannel,
   removeUserFromVoiceChannel,
+  setVoiceMoveTargetChannelId,
+  showVoiceReaction,
   updateExternalStreamInVoiceChannel,
   updateVoiceUserState
 } from './actions';
@@ -17,7 +22,7 @@ const subscribeToVoice = () => {
       logDebug('[EVENTS] voice.onJoin', { channelId, userId, state });
       addUserToVoiceChannel(userId, channelId, state);
     },
-    onError: (err) => console.error('onUserJoinVoice subscription error:', err)
+    onError: handleSubscriptionError('onUserJoinVoice')
   });
 
   const onUserLeaveVoiceSub = trpc.voice.onLeave.subscribe(undefined, {
@@ -25,7 +30,7 @@ const subscribeToVoice = () => {
       logDebug('[EVENTS] voice.onLeave', { channelId, userId });
       removeUserFromVoiceChannel(userId, channelId);
     },
-    onError: (err) => console.error('onUserLeaveVoice subscription error:', err)
+    onError: handleSubscriptionError('onUserLeaveVoice')
   });
 
   const onUserUpdateVoiceSub = trpc.voice.onUpdateState.subscribe(undefined, {
@@ -33,8 +38,7 @@ const subscribeToVoice = () => {
       logDebug('[EVENTS] voice.onUpdateState', { channelId, userId, state });
       updateVoiceUserState(userId, channelId, state);
     },
-    onError: (err) =>
-      console.error('onUserUpdateVoice subscription error:', err)
+    onError: handleSubscriptionError('onUserUpdateVoice')
   });
 
   const onVoiceAddExternalStreamSub = trpc.voice.onAddExternalStream.subscribe(
@@ -48,8 +52,7 @@ const subscribeToVoice = () => {
         });
         addExternalStreamToVoiceChannel(channelId, streamId, stream);
       },
-      onError: (err) =>
-        console.error('onVoiceAddExternalStreamSub subscription error:', err)
+      onError: handleSubscriptionError('onVoiceAddExternalStreamSub')
     }
   );
 
@@ -63,8 +66,7 @@ const subscribeToVoice = () => {
         });
         updateExternalStreamInVoiceChannel(channelId, streamId, stream);
       },
-      onError: (err) =>
-        console.error('onVoiceUpdateExternalStreamSub subscription error:', err)
+      onError: handleSubscriptionError('onVoiceUpdateExternalStreamSub')
     });
 
   const onVoiceRemoveExternalStreamSub =
@@ -76,9 +78,30 @@ const subscribeToVoice = () => {
         });
         removeExternalStreamFromVoiceChannel(channelId, streamId);
       },
-      onError: (err) =>
-        console.error('onVoiceRemoveExternalStreamSub subscription error:', err)
+      onError: handleSubscriptionError('onVoiceRemoveExternalStreamSub')
     });
+
+  const onReactionSub = trpc.voice.onReaction.subscribe(undefined, {
+    onData: ({ channelId, userId, emoji }) => {
+      logDebug('[EVENTS] voice.onReaction', { channelId, userId, emoji });
+      showVoiceReaction(userId, emoji);
+    },
+    onError: handleSubscriptionError('onVoiceReaction')
+  });
+
+  const onMovedSub = trpc.voice.onMoved.subscribe(undefined, {
+    onData: ({ channelId, fromChannelId }) => {
+      logDebug('[EVENTS] voice.onMoved', { channelId, fromChannelId });
+
+      const state = store.getState();
+      const currentVoiceChannelId = currentVoiceChannelIdSelector(state);
+
+      if (currentVoiceChannelId !== fromChannelId) return;
+
+      setVoiceMoveTargetChannelId(channelId);
+    },
+    onError: handleSubscriptionError('onMoved')
+  });
 
   return () => {
     onUserJoinVoiceSub.unsubscribe();
@@ -87,6 +110,8 @@ const subscribeToVoice = () => {
     onVoiceAddExternalStreamSub.unsubscribe();
     onVoiceUpdateExternalStreamSub.unsubscribe();
     onVoiceRemoveExternalStreamSub.unsubscribe();
+    onReactionSub.unsubscribe();
+    onMovedSub.unsubscribe();
   };
 };
 

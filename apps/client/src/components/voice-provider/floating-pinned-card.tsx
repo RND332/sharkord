@@ -1,3 +1,4 @@
+import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { UserAvatar } from '@/components/user-avatar';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import {
@@ -11,7 +12,10 @@ import { IconButton } from '@sharkord/ui';
 import { ArrowDownLeft, SendToBack, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CardControls } from '../channel-view/voice/card-controls';
+import { HideWebcamButton } from '../channel-view/voice/hide-webcam-button';
 import { PinnedCardType } from '../channel-view/voice/hooks/use-pin-card-controller';
+import { ViewDemoButton } from '../channel-view/voice/view-demo-button';
+import { useDemoVisibility } from './demo-visibility-context';
 import { useFloatingCard } from './hooks/use-floating-card';
 import type { TExternalStreamsMap } from './hooks/use-remote-streams';
 import { useRemoteWebcamVisibility } from './remote-webcam-visibility-context';
@@ -35,32 +39,39 @@ const FloatingPinnedCard = memo(
     const [open, setOpen] = useState(true);
     const pinnedCard = usePinnedCard();
     const ownUserId = useOwnUserId();
+    const { devices } = useDevices();
+    const { viewedRemoteDemos } = useDemoVisibility();
     const { isWebcamHidden } = useRemoteWebcamVisibility();
     const currentVoiceChannelSelected = useCurrentVoiceChannelId();
     const isCurrentVoiceChannelSelected = useIsCurrentVoiceChannelSelected();
     const pinnedUser = useUserById(pinnedCard?.userId || -1);
 
-    const isExternalStream =
-      pinnedCard?.type === PinnedCardType.EXTERNAL_STREAM;
-
     const pinnedCardVideoStream = useMemo(() => {
-      if (!pinnedCard) return undefined;
+      if (!pinnedCard || devices.voiceOnlyMode) return undefined;
 
-      if (isExternalStream) {
+      if (pinnedCard.type === PinnedCardType.EXTERNAL_STREAM) {
         const externalStream = externalStreams[pinnedCard.userId];
 
         return externalStream?.videoStream;
       }
 
+      const isScreenShare = pinnedCard.type === PinnedCardType.SCREEN_SHARE;
+
+      if (
+        isScreenShare &&
+        pinnedCard.userId !== ownUserId &&
+        !viewedRemoteDemos[pinnedCard.userId]
+      ) {
+        return undefined;
+      }
+
       if (pinnedCard.userId === ownUserId) {
-        return localScreenShareStream || localVideoStream || undefined;
+        return isScreenShare ? localScreenShareStream : localVideoStream;
       }
 
       const streamInfo = remoteUserStreams[pinnedCard.userId];
 
-      if (!streamInfo) return undefined;
-
-      return streamInfo.screen || streamInfo.video || undefined;
+      return isScreenShare ? streamInfo?.screen : streamInfo?.video;
     }, [
       pinnedCard,
       remoteUserStreams,
@@ -68,7 +79,8 @@ const FloatingPinnedCard = memo(
       ownUserId,
       localVideoStream,
       localScreenShareStream,
-      isExternalStream
+      devices.voiceOnlyMode,
+      viewedRemoteDemos
     ]);
 
     const onCloseClick = useCallback(() => {
@@ -80,8 +92,8 @@ const FloatingPinnedCard = memo(
     }, [currentVoiceChannelSelected]);
 
     useEffect(() => {
-      if (videoRef.current && pinnedCardVideoStream) {
-        videoRef.current.srcObject = pinnedCardVideoStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = pinnedCardVideoStream ?? null;
       }
     }, [pinnedCardVideoStream, isCurrentVoiceChannelSelected]);
 
@@ -97,7 +109,14 @@ const FloatingPinnedCard = memo(
     const showWebcamVideo =
       !!pinnedCardVideoStream && !webcamHiddenForPinnedUser;
 
-    if (!pinnedCardVideoStream || isCurrentVoiceChannelSelected || !open) {
+    if (
+      !pinnedCard ||
+      isCurrentVoiceChannelSelected ||
+      !open ||
+      (pinnedCard.type === PinnedCardType.USER
+        ? !pinnedUser
+        : !pinnedCardVideoStream)
+    ) {
       return null;
     }
 
@@ -105,7 +124,7 @@ const FloatingPinnedCard = memo(
       <div
         ref={cardRef}
         onMouseDown={handleMouseDown}
-        className="absolute z-50 cursor-move select-none w-96 aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg group"
+        className="absolute z-50 cursor-move select-none w-96 aspect-video rounded-lg overflow-hidden border border-border bg-black shadow-lg group flex items-center justify-center"
         style={getStyle()}
       >
         <CardControls>
@@ -130,6 +149,16 @@ const FloatingPinnedCard = memo(
             title="Close"
             onClick={onCloseClick}
           />
+          {pinnedCard.type === PinnedCardType.USER &&
+            pinnedCard.userId !== ownUserId &&
+            !devices.voiceOnlyMode &&
+            pinnedCardVideoStream && (
+              <HideWebcamButton userId={pinnedCard.userId} />
+            )}
+          {pinnedCard.type === PinnedCardType.SCREEN_SHARE &&
+            pinnedCard.userId !== ownUserId && (
+              <ViewDemoButton userId={pinnedCard.userId} />
+            )}
         </CardControls>
 
         {pinnedUser && (
@@ -138,22 +167,22 @@ const FloatingPinnedCard = memo(
           </div>
         )}
 
-        {showWebcamVideo ? (
+        {pinnedCardVideoStream && (
           <video
             ref={videoRef}
+            hidden={!showWebcamVideo}
             autoPlay
             playsInline
             muted
             className="w-full h-full object-contain"
           />
-        ) : (
-          pinnedUser && (
-            <UserAvatar
-              userId={pinnedUser.id}
-              className="w-16 h-16 md:w-24 md:h-24"
-              showStatusBadge={false}
-            />
-          )
+        )}
+        {!showWebcamVideo && pinnedUser && (
+          <UserAvatar
+            userId={pinnedUser.id}
+            className="w-16 h-16 md:w-24 md:h-24"
+            showStatusBadge={false}
+          />
         )}
       </div>
     );

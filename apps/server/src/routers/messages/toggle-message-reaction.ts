@@ -1,14 +1,14 @@
-import { Permission } from '@sharkord/shared';
+import { Permission, REACTION_EMOJI_MAX_LENGTH } from '@sharkord/shared';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { publishMessage } from '../../db/publishers';
-import { getEmojiFileIdByEmojiName } from '../../db/queries/emojis';
 import { getReaction } from '../../db/queries/messages';
-import { messageReactions, messages } from '../../db/schema';
-import { assertChannelAccess } from '../../helpers/assert-channel-access';
-import { invariant } from '../../utils/invariant';
+import { messageReactions } from '../../db/schema';
+import { loadMessageForWrite } from '../../helpers/load-message-for-write';
+import { resolveKnownEmojiFileId } from '../../helpers/resolve-known-emoji-file-id';
+import { eventBus } from '../../plugins/event-bus';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
@@ -19,24 +19,13 @@ const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
   .input(
     z.object({
       messageId: z.number(),
-      emoji: z.string()
+      emoji: z.string().min(1).max(REACTION_EMOJI_MAX_LENGTH)
     })
   )
   .mutation(async ({ input, ctx }) => {
     await ctx.needsPermission(Permission.REACT_TO_MESSAGES);
 
-    const message = await db
-      .select()
-      .from(messages)
-      .where(eq(messages.id, input.messageId))
-      .get();
-
-    invariant(message, {
-      code: 'NOT_FOUND',
-      message: 'Message not found'
-    });
-
-    await assertChannelAccess(ctx, message.channelId);
+    const message = await loadMessageForWrite(ctx, input.messageId);
 
     const reaction = await getReaction(
       input.messageId,
@@ -45,7 +34,7 @@ const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
     );
 
     if (!reaction) {
-      const emojiFileId = await getEmojiFileIdByEmojiName(input.emoji);
+      const emojiFileId = await resolveKnownEmojiFileId(input.emoji);
 
       await db.insert(messageReactions).values({
         messageId: input.messageId,
@@ -67,6 +56,13 @@ const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
     }
 
     publishMessage(input.messageId, message.channelId, 'update');
+
+    eventBus.emit(reaction ? 'reaction:removed' : 'reaction:added', {
+      messageId: input.messageId,
+      channelId: message.channelId,
+      userId: ctx.user.id,
+      emoji: input.emoji
+    });
   });
 
 export { toggleMessageReactionRoute };

@@ -1,6 +1,14 @@
-import { ServerEvents, type StreamKind } from '@sharkord/shared';
+import {
+  ServerEvents,
+  type StreamKind,
+  type TDirectScreenEvent
+} from '@sharkord/shared';
 import { observable } from '@trpc/server/observable';
-import { protectedProcedure } from '../../utils/trpc';
+import { z } from 'zod';
+import { config } from '../../config';
+import { getDirectScreenRuntime } from '../../helpers/get-direct-screen-runtime';
+import { VoiceRuntime } from '../../runtimes/voice';
+import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 type TVoiceProducerEvent = {
   channelId: number;
@@ -24,6 +32,20 @@ const onUserLeaveVoiceRoute = protectedProcedure.subscription(
 const onUserUpdateVoiceStateRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
     return ctx.pubsub.subscribe(ServerEvents.USER_VOICE_STATE_UPDATE);
+  }
+);
+
+// broadcast too: reactions render on the voice cards of whichever channel the user is
+// looking at, which is not necessarily the one they are connected to
+const onUserVoiceReactionRoute = protectedProcedure.subscription(
+  async ({ ctx }) => {
+    return ctx.pubsub.subscribe(ServerEvents.USER_VOICE_REACTION);
+  }
+);
+
+const onUserVoiceMovedRoute = protectedProcedure.subscription(
+  async ({ ctx }) => {
+    return ctx.pubsub.subscribeFor(ctx.user.id, ServerEvents.USER_VOICE_MOVED);
   }
 );
 
@@ -74,10 +96,59 @@ const onVoiceProducerClosedRoute = protectedProcedure.subscription(
   }
 );
 
+const onDirectScreenSignalRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.voiceStream.maxRequests,
+  windowMs: config.rateLimiters.voiceStream.windowMs,
+  logLabel: 'onDirectScreenSignal'
+})
+  .input(z.strictObject({ enabled: z.boolean() }))
+  .subscription(async ({ ctx, input }) => {
+    const { runtime, channelId } = await getDirectScreenRuntime(ctx);
+    const member = runtime.getUser(ctx.user.id);
+    return observable<TDirectScreenEvent>((observer) => {
+      if (
+        ctx.currentVoiceChannelId !== channelId ||
+        VoiceRuntime.findById(channelId) !== runtime ||
+        runtime.getUser(ctx.user.id) !== member
+      )
+        return () => {};
+      const registration = runtime.registerDirectScreenSubscriber(
+        ctx.user.id,
+        input.enabled
+      );
+      const subscription = ctx.pubsub
+        .subscribeFor(ctx.user.id, ServerEvents.DIRECT_SCREEN_SIGNAL)
+        .subscribe({
+          next: (event) => {
+            if (event.channelId !== channelId) return;
+            const terminal =
+              event.signal.type === 'fallback' || event.signal.type === 'stop';
+            if (
+              !terminal &&
+              (!input.enabled ||
+                !registration.isCurrent() ||
+                ctx.currentVoiceChannelId !== channelId ||
+                runtime.getUser(ctx.user.id) !== member)
+            )
+              return;
+            observer.next(event);
+          },
+          error: (error) => observer.error(error)
+        });
+      return () => {
+        subscription.unsubscribe();
+        registration.unregister();
+      };
+    });
+  });
+
 export {
+  onDirectScreenSignalRoute,
   onUserJoinVoiceRoute,
   onUserLeaveVoiceRoute,
   onUserUpdateVoiceStateRoute,
+  onUserVoiceMovedRoute,
+  onUserVoiceReactionRoute,
   onVoiceAddExternalStreamRoute,
   onVoiceNewProducerRoute,
   onVoiceProducerClosedRoute,

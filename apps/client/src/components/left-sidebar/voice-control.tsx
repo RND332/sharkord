@@ -1,3 +1,4 @@
+import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useChannelCan } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
@@ -24,6 +25,7 @@ import { StatsPopover } from './stats-popover';
 
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
+  const { devices } = useDevices();
   const voiceChannelId = useCurrentVoiceChannelId();
   const channelCan = useChannelCan(voiceChannelId);
   const {
@@ -108,7 +110,9 @@ const VoiceControl = memo(() => {
                   ? t('turnOffCamera')
                   : t('turnOnCamera')
               }
-              disabled={!channelCan(ChannelPermission.WEBCAM)}
+              disabled={
+                devices.voiceOnlyMode || !channelCan(ChannelPermission.WEBCAM)
+              }
             >
               {ownVoiceState.webcamEnabled ? (
                 <Video className="h-4 w-4" />
@@ -133,7 +137,10 @@ const VoiceControl = memo(() => {
                     ? t('stopScreenShare')
                     : t('startScreenShare')
                 }
-                disabled={!channelCan(ChannelPermission.SHARE_SCREEN)}
+                disabled={
+                  devices.voiceOnlyMode ||
+                  !channelCan(ChannelPermission.SHARE_SCREEN)
+                }
               >
                 {ownVoiceState.sharingScreen ? (
                   <Monitor className="h-4 w-4" />

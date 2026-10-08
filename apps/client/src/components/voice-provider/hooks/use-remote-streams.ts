@@ -122,9 +122,15 @@ const useRemoteStreams = () => {
   );
 
   const removeRemoteUserStream = useCallback(
-    (userId: number, kind: TRemoteUserStreamKinds) => {
+    (
+      userId: number,
+      kind: TRemoteUserStreamKinds,
+      expectedStream?: MediaStream
+    ) => {
       setRemoteUserStreams((prev) => {
         const streamToRemove = prev[userId]?.[kind];
+
+        if (expectedStream && streamToRemove !== expectedStream) return prev;
 
         if (streamToRemove) {
           streamToRemove?.getTracks()?.forEach((track) => track?.stop?.());

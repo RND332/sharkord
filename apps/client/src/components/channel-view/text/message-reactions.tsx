@@ -1,6 +1,5 @@
-import { isTextPresentation } from '@/components/tiptap-input/helpers';
-import { useOwnUserId, useUsernames } from '@/features/server/users/hooks';
-import { getFileUrl } from '@/helpers/get-file-url';
+import { Emoji } from '@/components/emoji';
+import { useOwnUserId } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
@@ -9,12 +8,10 @@ import {
   type TJoinedMessageReaction
 } from '@sharkord/shared';
 import { Button, Tooltip } from '@sharkord/ui';
-import { gitHubEmojis } from '@tiptap/extension-emoji';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-
-const MAX_REACTORS_PREVIEW = 4;
+import { useReactorNames } from './hooks/use-reactor-names';
 
 type TTooltipPreviewProps = {
   emojiName: string;
@@ -38,82 +35,28 @@ const TooltipPreview = memo(
   }
 );
 
-type TEmojiProps = {
-  emoji: string;
-  file: TFile | null;
-  className?: string;
-  nativeEmojiClassName?: string;
-};
-
-const Emoji = memo(
-  ({ emoji, file, className, nativeEmojiClassName }: TEmojiProps) => {
-    const gitHubEmoji = useMemo(
-      () =>
-        gitHubEmojis.find(
-          (e) => e.name === emoji || e.shortcodes.includes(emoji)
-        ),
-      [emoji]
-    );
-
-    const onError = useCallback(
-      (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        const target = e.target as HTMLImageElement;
-
-        target.outerHTML = `<span class="text-xs text-muted-foreground">:${emoji}:</span>`;
-      },
-      [emoji]
-    );
-
-    const imgSrc = useMemo(
-      () => gitHubEmoji?.fallbackImage ?? getFileUrl(file),
-      [gitHubEmoji, file]
-    );
-
-    if (gitHubEmoji?.emoji && !isTextPresentation(gitHubEmoji.emoji)) {
-      return (
-        <span className={cn('text-sm', nativeEmojiClassName)}>
-          {gitHubEmoji.emoji}
-        </span>
-      );
-    }
-
-    return (
-      <img
-        src={imgSrc}
-        alt={`:${emoji}:`}
-        className={cn('w-5 h-5 object-contain', className)}
-        onError={onError}
-      />
-    );
-  }
-);
-
 type TReactionProps = {
   emoji: string;
   count: number;
   isUserReacted: boolean;
-  onClick: () => void;
+  onSelect: (emoji: string) => void;
   file: TFile | null;
   userIds: number[];
+  pluginIds: string[];
 };
 
 const Reaction = memo(
-  ({ emoji, count, isUserReacted, onClick, file, userIds }: TReactionProps) => {
-    const { t } = useTranslation('common');
-    const usernames = useUsernames();
-    const tooltipContent = useMemo(() => {
-      const names = userIds
-        .slice(0, MAX_REACTORS_PREVIEW)
-        .map((userId) => usernames[userId] || 'Unknown');
-
-      if (userIds.length > MAX_REACTORS_PREVIEW) {
-        names.push(
-          t('andMore', { count: userIds.length - MAX_REACTORS_PREVIEW })
-        );
-      }
-
-      return names.join(', ');
-    }, [userIds, usernames, t]);
+  ({
+    emoji,
+    count,
+    isUserReacted,
+    onSelect,
+    file,
+    userIds,
+    pluginIds
+  }: TReactionProps) => {
+    const handleClick = useCallback(() => onSelect(emoji), [onSelect, emoji]);
+    const tooltipContent = useReactorNames(userIds, pluginIds);
 
     return (
       <Tooltip
@@ -135,7 +78,7 @@ const Reaction = memo(
         <Button
           size="sm"
           variant="outline"
-          onClick={onClick}
+          onClick={handleClick}
           className={cn(
             'flex items-center gap-1 h-9',
             isUserReacted ? 'border-border' : 'border-none'
@@ -158,6 +101,7 @@ type TAggregatedReaction = {
   emoji: string;
   count: number;
   userIds: number[];
+  pluginIds: string[];
   isUserReacted: boolean;
   createdAt: number;
   file: TFile | null;
@@ -195,6 +139,7 @@ const MessageReactions = memo(
             emoji: reaction.emoji,
             count: 0,
             userIds: [],
+            pluginIds: [],
             isUserReacted: false,
             createdAt: reaction.createdAt,
             file: reaction.file
@@ -204,7 +149,12 @@ const MessageReactions = memo(
         const aggregated = reactionMap.get(reaction.emoji)!;
 
         aggregated.count++;
-        aggregated.userIds.push(reaction.userId);
+
+        if (reaction.pluginId) {
+          aggregated.pluginIds.push(reaction.pluginId);
+        } else if (reaction.userId !== null) {
+          aggregated.userIds.push(reaction.userId);
+        }
 
         if (ownUserId && reaction.userId === ownUserId) {
           aggregated.isUserReacted = true;
@@ -213,7 +163,7 @@ const MessageReactions = memo(
 
       // sort by first reaction createdAt desc
       return Array.from(reactionMap.values()).sort(
-        (a, b) => b.createdAt + a.createdAt
+        (a, b) => b.createdAt - a.createdAt
       );
     }, [reactions, ownUserId]);
 
@@ -227,8 +177,9 @@ const MessageReactions = memo(
             emoji={reaction.emoji}
             count={reaction.count}
             userIds={reaction.userIds}
+            pluginIds={reaction.pluginIds}
             isUserReacted={reaction.isUserReacted}
-            onClick={() => handleReactionClick(reaction.emoji)}
+            onSelect={handleReactionClick}
             file={reaction.file}
           />
         ))}

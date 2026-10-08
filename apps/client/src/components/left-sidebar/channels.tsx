@@ -15,16 +15,10 @@ import {
   useVoiceUsersByChannelId
 } from '@/features/server/hooks';
 import { useVoiceChannelExternalStreamsList } from '@/features/server/voice/hooks';
+import { useSelectChannel } from '@/hooks/use-select-channel';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import {
-  DndContext,
-  type DragEndEvent,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors
-} from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
   useSortable,
@@ -39,13 +33,19 @@ import {
   getTrpcError
 } from '@sharkord/shared';
 import { Hash, Volume2 } from 'lucide-react';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ChannelContextMenu } from '../context-menus/channel';
 import { UnreadCount } from '../unread-count';
 import { ExternalStream } from './external-stream';
-import { useSelectChannel } from './hooks';
+import {
+  VOICE_USER_DND_MIME,
+  applyChannelDragPreview,
+  categoryDropDndId,
+  channelDndId
+} from './helpers';
+import { useChannelDragPreview } from './use-sidebar-dnd';
 import { VoiceUser } from './voice-user';
 import { Waveform } from './waveform';
 
@@ -59,6 +59,7 @@ const Voice = memo(
     isSelected,
     ...props
   }: TVoiceProps & { isSelected: boolean }) => {
+    const { t } = useTranslation('sidebar');
     const users = useVoiceUsersByChannelId(channel.id);
     const externalStreams = useVoiceChannelExternalStreamsList(channel.id);
     const unreadCount = useUnreadMessagesCount(channel.id);
@@ -66,14 +67,55 @@ const Voice = memo(
     const currentVoiceChannelId = useCurrentVoiceChannelId();
     const someoneIsSharingScreen = useHasSharingScreenUsers(channel.id);
 
+    const [isDragOver, setIsDragOver] = useState(false);
+
     const isVoiceActive = users.length > 0 || externalStreams.length > 0;
     const isOwnChannel = currentVoiceChannelId === channel.id;
+
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+      if (!e.dataTransfer.types.includes(VOICE_USER_DND_MIME)) return;
+
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      setIsDragOver(true);
+    }, []);
+
+    const handleDragLeave = useCallback(() => setIsDragOver(false), []);
+
+    const handleDrop = useCallback(
+      async (e: React.DragEvent<HTMLDivElement>) => {
+        setIsDragOver(false);
+
+        const raw = e.dataTransfer.getData(VOICE_USER_DND_MIME);
+
+        if (!raw) return;
+
+        e.preventDefault();
+
+        const userId = Number(raw);
+
+        if (!userId || users.some((user) => user.id === userId)) return;
+
+        try {
+          const trpc = getTRPCClient();
+
+          await trpc.voice.moveUser.mutate({ userId, channelId: channel.id });
+        } catch (error) {
+          toast.error(getTrpcError(error, t('failedMoveUser')));
+        }
+      },
+      [channel.id, users, t]
+    );
 
     return (
       <>
         <ItemWrapper
           {...props}
           isSelected={isSelected}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           className={cn(props.className, {
             'text-blue-500':
               someoneIsSharingScreen && (isOwnChannel || isSelected),
@@ -82,7 +124,8 @@ const Voice = memo(
               (isSelected &&
                 !someoneIsSharingScreen &&
                 !isOwnChannel &&
-                isVoiceActive)
+                isVoiceActive),
+            'ring-1 ring-primary bg-accent/40': isDragOver
           })}
         >
           {isVoiceActive ? (
@@ -162,6 +205,9 @@ type TItemWrapperProps = {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   style?: React.CSSProperties;
   disabled?: boolean;
+  onDragOver?: React.DragEventHandler<HTMLDivElement>;
+  onDragLeave?: React.DragEventHandler<HTMLDivElement>;
+  onDrop?: React.DragEventHandler<HTMLDivElement>;
 };
 
 const ItemWrapper = memo(
@@ -172,13 +218,19 @@ const ItemWrapper = memo(
     className,
     dragHandleProps,
     style,
-    disabled = false
+    disabled = false,
+    onDragOver,
+    onDragLeave,
+    onDrop
   }: TItemWrapperProps) => {
     return (
       <div
         {...dragHandleProps}
         data-testid={TestId.CHANNEL_ITEM}
         style={style}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
         className={cn(
           'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground select-none cursor-pointer',
           {
@@ -198,152 +250,148 @@ const ItemWrapper = memo(
 
 type TChannelProps = {
   channelId: number;
+  categoryId: number;
   isSelected: boolean;
-  onClick: () => void;
+  onSelect: (channelId: number) => void;
 };
 
-const Channel = memo(({ channelId, isSelected, onClick }: TChannelProps) => {
-  const channel = useChannelById(channelId);
-  const channelCan = useChannelCan(channelId);
-  const can = useCan();
+const Channel = memo(
+  ({ channelId, categoryId, isSelected, onSelect }: TChannelProps) => {
+    const onClick = useCallback(
+      () => onSelect(channelId),
+      [onSelect, channelId]
+    );
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: channelId });
+    const channel = useChannelById(channelId);
+    const channelCan = useChannelCan(channelId);
+    const can = useCan();
+    const currentVoiceChannelId = useCurrentVoiceChannelId();
 
-  if (!channel) {
-    return null;
+    const isConnectedVoiceChannel = currentVoiceChannelId === channelId;
+
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging
+    } = useSortable({
+      id: channelDndId(channelId),
+      data: { type: 'channel', channelId, categoryId }
+    });
+
+    if (!channel) {
+      return null;
+    }
+
+    if (
+      !isConnectedVoiceChannel &&
+      !channelCan(ChannelPermission.VIEW_CHANNEL) &&
+      !can(Permission.MANAGE_CHANNELS)
+    ) {
+      return null;
+    }
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Transform.toString(
+            transform && { ...transform, x: 0 }
+          ),
+          transition,
+          opacity: isDragging ? 0.5 : 1
+        }}
+      >
+        <ChannelContextMenu channelId={channelId}>
+          <div>
+            {channel.type === 'TEXT' && (
+              <Text
+                channel={channel}
+                isSelected={isSelected}
+                onClick={onClick}
+                dragHandleProps={{ ...attributes, ...listeners }}
+              />
+            )}
+            {channel.type === 'VOICE' && (
+              <Voice
+                channel={channel}
+                isSelected={isSelected}
+                onClick={onClick}
+                dragHandleProps={{ ...attributes, ...listeners }}
+                disabled={
+                  !isConnectedVoiceChannel &&
+                  (!channelCan(ChannelPermission.JOIN) ||
+                    !can(Permission.JOIN_VOICE_CHANNELS))
+                }
+              />
+            )}
+          </div>
+        </ChannelContextMenu>
+      </div>
+    );
   }
-
-  if (
-    !channelCan(ChannelPermission.VIEW_CHANNEL) &&
-    !can(Permission.MANAGE_CHANNELS)
-  ) {
-    return null;
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform && { ...transform, x: 0 }),
-        transition,
-        opacity: isDragging ? 0.5 : 1
-      }}
-    >
-      <ChannelContextMenu channelId={channelId}>
-        <div>
-          {channel.type === 'TEXT' && (
-            <Text
-              channel={channel}
-              isSelected={isSelected}
-              onClick={onClick}
-              dragHandleProps={{ ...attributes, ...listeners }}
-            />
-          )}
-          {channel.type === 'VOICE' && (
-            <Voice
-              channel={channel}
-              isSelected={isSelected}
-              onClick={onClick}
-              dragHandleProps={{ ...attributes, ...listeners }}
-              disabled={
-                !channelCan(ChannelPermission.JOIN) ||
-                !can(Permission.JOIN_VOICE_CHANNELS)
-              }
-            />
-          )}
-        </div>
-      </ChannelContextMenu>
-    </div>
-  );
-});
+);
 
 type TChannelsProps = {
   categoryId: number;
 };
 
 const Channels = memo(({ categoryId }: TChannelsProps) => {
-  const { t } = useTranslation('sidebar');
   const channels = useChannelsByCategoryId(categoryId);
   const selectedChannelId = useSelectedChannelId();
   const can = useCan();
+  const dragPreview = useChannelDragPreview();
+
   const channelIds = useMemo(
-    () => channels.map((channel) => channel.id),
-    [channels]
+    () =>
+      applyChannelDragPreview(
+        channels.map((channel) => channel.id),
+        categoryId,
+        dragPreview
+      ),
+    [channels, categoryId, dragPreview]
   );
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8
-      }
-    })
-  );
+  const sortableIds = useMemo(() => channelIds.map(channelDndId), [channelIds]);
 
   const onChannelClick = useSelectChannel();
 
-  const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
-      const { active, over } = event;
+  const isEmpty = channelIds.length === 0;
 
-      if (!over || active.id === over.id) {
-        return;
-      }
-
-      const oldIndex = channelIds.indexOf(active.id as number);
-      const newIndex = channelIds.indexOf(over.id as number);
-
-      if (oldIndex === -1 || newIndex === -1) {
-        return;
-      }
-
-      const reorderedIds = [...channelIds];
-      const [movedId] = reorderedIds.splice(oldIndex, 1);
-
-      reorderedIds.splice(newIndex, 0, movedId);
-
-      try {
-        const trpc = getTRPCClient();
-
-        await trpc.channels.reorder.mutate({
-          categoryId,
-          channelIds: reorderedIds
-        });
-      } catch (error) {
-        toast.error(getTrpcError(error, t('failedReorderChannels')));
-      }
-    },
-    [categoryId, channelIds, t]
-  );
+  // only an empty category needs a container droppable: with channels in it, the
+  // container rect encloses them and closestCenter would resolve mid-list drops
+  // to the container instead of the channel actually hovered
+  const { setNodeRef, isOver } = useDroppable({
+    id: categoryDropDndId(categoryId),
+    data: { type: 'category-drop', categoryId },
+    disabled: !isEmpty
+  });
 
   return (
-    <div className="space-y-0.5">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+    <div
+      ref={setNodeRef}
+      className={cn('space-y-0.5 rounded', {
+        'min-h-6': isEmpty,
+        'bg-accent/40': isOver
+      })}
+    >
+      <SortableContext
+        items={sortableIds}
+        strategy={verticalListSortingStrategy}
+        disabled={!can(Permission.MANAGE_CHANNELS)}
       >
-        <SortableContext
-          items={channelIds}
-          strategy={verticalListSortingStrategy}
-          disabled={!can(Permission.MANAGE_CHANNELS)}
-        >
-          {channels.map((channel) => (
-            <Channel
-              key={channel.id}
-              channelId={channel.id}
-              isSelected={selectedChannelId === channel.id}
-              onClick={() => onChannelClick(channel.id)}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+        {channelIds.map((channelId) => (
+          <Channel
+            key={channelId}
+            channelId={channelId}
+            categoryId={categoryId}
+            isSelected={selectedChannelId === channelId}
+            onSelect={onChannelClick}
+          />
+        ))}
+      </SortableContext>
     </div>
   );
 });

@@ -1,12 +1,18 @@
 import { Database } from 'bun:sqlite';
 import { afterAll, afterEach, beforeAll, beforeEach, mock } from 'bun:test';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import fs from 'fs/promises';
+import path from 'path';
+import { migrateDatabase } from '../db/migrate';
 import { DATA_PATH } from '../helpers/paths';
+import { clearVoiceMoveGrantsForTests } from '../helpers/voice-move-grants';
 import { createHttpServer } from '../http';
+import { pluginManager } from '../plugins';
+import { drainActivityLogQueue } from '../queues/activity-log';
+import { drainLoginsQueue } from '../queues/logins';
 import { loadMediasoup } from '../utils/mediasoup';
 import { clearRateLimitersForTests } from '../utils/rate-limiters/rate-limiter';
+import { clearUserSocketsForTests } from '../utils/wss';
 import { DRIZZLE_PATH, setTestDb } from './mock-db';
 import { seedTestDb } from './seed';
 
@@ -25,6 +31,21 @@ import { seedTestDb } from './seed';
 const DISABLE_CONSOLE = true;
 const CLEANUP_AFTER_FINISH = true;
 
+type TTestLogEntry = {
+  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal';
+  message: string;
+};
+
+// the suite silences the logger, which used to make "caught the error, logged it and carried
+// on" indistinguishable from success. entries are collected here so a test can assert that a
+// path really did fail quietly. cleared before every test by the beforeEach below
+const testLogs: TTestLogEntry[] = [];
+
+const findTestLog = (level: TTestLogEntry['level'], substring: string) =>
+  testLogs.find(
+    (entry) => entry.level === level && entry.message.includes(substring)
+  );
+
 if (DISABLE_CONSOLE) {
   const noop = () => {};
 
@@ -33,14 +54,20 @@ if (DISABLE_CONSOLE) {
   global.console.warn = noop;
   global.console.debug = noop;
 
+  const record =
+    (level: TTestLogEntry['level']) =>
+    (...args: unknown[]) => {
+      testLogs.push({ level, message: args.map(String).join(' ') });
+    };
+
   mock.module('../logger', () => ({
     logger: {
-      info: noop,
-      warn: noop,
-      error: noop,
-      debug: noop,
-      trace: noop,
-      fatal: noop
+      info: record('info'),
+      warn: record('warn'),
+      error: record('error'),
+      debug: record('debug'),
+      trace: record('trace'),
+      fatal: record('fatal')
     }
   }));
 }
@@ -50,14 +77,24 @@ let sqlite: Database | null = null;
 let testsBaseUrl: string;
 
 beforeAll(async () => {
-  await createHttpServer(9999);
+  const server = await createHttpServer(0);
+  const address = server.address();
+
+  if (!address || typeof address === 'string') {
+    throw new Error('Test HTTP server did not bind to a TCP port');
+  }
+
   await loadMediasoup();
 
-  testsBaseUrl = 'http://localhost:9999';
+  testsBaseUrl = `http://localhost:${address.port}`;
 });
 
 beforeEach(async () => {
+  testLogs.length = 0;
+
   clearRateLimitersForTests();
+  clearVoiceMoveGrantsForTests();
+  clearUserSocketsForTests();
 
   if (sqlite) {
     try {
@@ -68,19 +105,34 @@ beforeEach(async () => {
   }
 
   sqlite = new Database(':memory:', { create: true, strict: true });
-  sqlite.run('PRAGMA foreign_keys = ON;');
 
   tdb = drizzle({ client: sqlite });
 
   // updates the mocked db to use this new test database
   setTestDb(tdb);
 
-  // apply migrations and seed data for this test
-  await migrate(tdb, { migrationsFolder: DRIZZLE_PATH });
+  await migrateDatabase(sqlite, tdb, DRIZZLE_PATH);
   await seedTestDb(tdb);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // the plugin manager is a process wide singleton, so a plugin a test loaded would otherwise
+  // keep its hooks running in every test file after it (a beforeFileSave hook rewriting uploads)
+  await pluginManager.unloadPlugins();
+
+  // a test that turns rate limiting off and fails before turning it back on would leave it off
+  globalThis.disableRateLimiting = false;
+
+  // spies replace exports on the shared module objects, so they have to be undone before the
+  // next test, or the next test file, imports the stub instead of the real function
+  mock.restore();
+
+  // the queues outlive the test, so a job still in flight here would land in whichever database
+  // the next test creates, or throw against a closed one. draining first is what keeps a queued
+  // side effect inside the test that caused it
+  await drainLoginsQueue();
+  await drainActivityLogQueue();
+
   if (sqlite) {
     try {
       sqlite.close();
@@ -94,6 +146,10 @@ afterEach(() => {
 afterAll(async () => {
   if (!CLEANUP_AFTER_FINISH) return;
 
+  const expectedTestPath = path.resolve(process.cwd(), './data-test');
+
+  if (path.resolve(DATA_PATH) !== expectedTestPath) return;
+
   try {
     await fs.rm(DATA_PATH, { recursive: true });
   } catch {
@@ -101,4 +157,4 @@ afterAll(async () => {
   }
 });
 
-export { tdb, testsBaseUrl };
+export { findTestLog, tdb, testLogs, testsBaseUrl };

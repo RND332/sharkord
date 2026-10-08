@@ -20,6 +20,7 @@
   "stopScreenShare": "Stop screen share",
   "startScreenShare": "Start screen share",
   "transportStats": "Transport Statistics",
+  "voiceDiagnostics": "Voice diagnostics",
   "outgoing": "Outgoing",
   "incoming": "Incoming",
   "noData": "No data",
@@ -44,6 +45,7 @@
   "createChannel": "Create channel",
   "failedReorderChannels": "Failed to reorder channels",
   "failedReorderCategories": "Failed to reorder categories",
+  "failedMoveUser": "Failed to move user",
   "directMessages": "Direct Messages",
   "failedLoadDMs": "Failed to load direct messages",
   "couldNotOpenDM": "Could not open direct message",
@@ -75,5 +77,7 @@
   "viewDemo": "View demo",
   "stopViewingDemo": "Stop viewing demo",
   "hideWebcam": "Hide webcam",
-  "showWebcam": "Show webcam"
+  "showWebcam": "Show webcam",
+  "microphone": "Microphone",
+  "noiseSuppression": "Noise suppression"
 }

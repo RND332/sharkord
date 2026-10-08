@@ -1,8 +1,7 @@
+import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { useDemoVisibility } from '@/components/voice-provider/demo-visibility-context';
-import {
-  useVolumeControl,
-  type TVolumeKey
-} from '@/components/voice-provider/volume-control-context';
+import { useVoiceStats } from '@/components/voice-provider/stats-context';
+import { useVolumeControl } from '@/components/voice-provider/volume-control-context';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
 import { useOwnUserId, useUserById } from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
@@ -10,121 +9,63 @@ import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { Monitor, MonitorOff, ZoomIn, ZoomOut } from 'lucide-react';
-import { memo, useCallback, useMemo, type RefObject } from 'react';
-import { CardControls } from './card-controls';
-import { CardGradient } from './card-gradient';
+import { Monitor, ZoomIn, ZoomOut } from 'lucide-react';
+import { memo, useCallback, useMemo } from 'react';
+import { CardTheme } from './card-theme';
 import { FullscreenButton } from './fullscreen-button';
+import {
+  cardBadgeClass,
+  cardControlClass,
+  cardControlsClass,
+  cardDensity
+} from './helpers';
 import { useFullscreen } from './hooks/use-fullscreen';
+import {
+  PinnedCardType,
+  type TPinnedCard
+} from './hooks/use-pin-card-controller';
 import { useScreenShareZoom } from './hooks/use-screen-share-zoom';
 import { useVideoStats } from './hooks/use-video-stats';
 import { useVoiceRefs } from './hooks/use-voice-refs';
 import { PictureInPictureButton } from './picture-in-picture-button';
 import { PinButton } from './pin-button';
 import { QualityButton } from './quality-button';
+import { ViewDemoButton } from './view-demo-button';
 import { VolumeButton } from './volume-button';
-
-type TScreenShareControlsProps = {
-  isPinned: boolean;
-  isFullscreen: boolean;
-  isZoomEnabled: boolean;
-  handlePinToggle: () => void;
-  handleToggleFullscreen: () => void;
-  handleToggleZoom: () => void;
-  showPinControls: boolean;
-  showAudioControl: boolean;
-  showQualityControl: boolean;
-  showStopViewing: boolean;
-  disableQualityControl: boolean;
-  volumeKey: TVolumeKey;
-  videoRef: RefObject<HTMLVideoElement | null>;
-  userId: number;
-};
-
-const ScreenShareControls = memo(
-  ({
-    isPinned,
-    isFullscreen,
-    isZoomEnabled,
-    handlePinToggle,
-    handleToggleFullscreen,
-    handleToggleZoom,
-    showPinControls,
-    showAudioControl,
-    showQualityControl,
-    showStopViewing,
-    disableQualityControl,
-    volumeKey,
-    videoRef,
-    userId
-  }: TScreenShareControlsProps) => {
-    const { stopViewingDemo } = useDemoVisibility();
-
-    return (
-      <CardControls>
-        {showAudioControl && <VolumeButton volumeKey={volumeKey} />}
-        {showQualityControl && (
-          <QualityButton
-            streamId={userId}
-            kind={StreamKind.SCREEN}
-            disabled={disableQualityControl}
-          />
-        )}
-        <PictureInPictureButton videoRef={videoRef} />
-        {showPinControls && isPinned && (
-          <IconButton
-            variant={isZoomEnabled ? 'default' : 'ghost'}
-            icon={isZoomEnabled ? ZoomOut : ZoomIn}
-            onClick={handleToggleZoom}
-            title={isZoomEnabled ? 'Disable Zoom' : 'Enable Zoom'}
-            size="sm"
-          />
-        )}
-        <FullscreenButton
-          isFullscreen={isFullscreen}
-          handleToggleFullscreen={handleToggleFullscreen}
-        />
-        {showPinControls && (
-          <PinButton isPinned={isPinned} handlePinToggle={handlePinToggle} />
-        )}
-        {showStopViewing && (
-          <IconButton
-            icon={MonitorOff}
-            onClick={() => stopViewingDemo(userId)}
-            title="Stop viewing demo"
-            variant="default"
-            size="sm"
-          />
-        )}
-      </CardControls>
-    );
-  }
-);
 
 type TScreenShareCardProps = {
   userId: number;
   isPinned?: boolean;
-  onPin: () => void;
+  cardId: string;
+  onPin: (card: TPinnedCard) => void;
   onUnpin: () => void;
   className?: string;
   showPinControls: boolean;
+  isAnyCardPinned?: boolean;
 };
 
 const ScreenShareCard = memo(
   ({
     userId,
     isPinned = false,
+    cardId,
     onPin,
     onUnpin,
     className,
-    showPinControls = true
+    showPinControls = true,
+    isAnyCardPinned = false
   }: TScreenShareCardProps) => {
     const user = useUserById(userId);
     const ownUserId = useOwnUserId();
+    const { devices } = useDevices();
+    const { isViewingDemo } = useDemoVisibility();
     const { getUserScreenVolumeKey } = useVolumeControl();
     const isOwnUser = ownUserId === userId;
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
     const volumeKey = getUserScreenVolumeKey(userId);
+
+    const isCompact = isAnyCardPinned && !isPinned;
+    const density = cardDensity(isCompact);
 
     const {
       screenShareRef,
@@ -133,7 +74,8 @@ const ScreenShareCard = memo(
       hasScreenShareAudioStream
     } = useVoiceRefs(userId);
 
-    const { transportStats, getConsumerCodec } = useVoice();
+    const { getConsumerCodec } = useVoice();
+    const transportStats = useVoiceStats();
 
     const videoStats = useVideoStats(screenShareRef, hasScreenShareStream);
 
@@ -195,23 +137,33 @@ const ScreenShareCard = memo(
         onUnpin?.();
         resetZoom();
       } else {
-        onPin?.();
+        onPin({
+          id: cardId,
+          type: PinnedCardType.SCREEN_SHARE,
+          userId: userId
+        });
       }
-    }, [isPinned, onPin, onUnpin, resetZoom]);
+    }, [isPinned, onPin, onUnpin, cardId, userId, resetZoom]);
 
-    if (!user || !hasScreenShareStream) return null;
+    if (
+      !user ||
+      !hasScreenShareStream ||
+      devices.voiceOnlyMode ||
+      (!isOwnUser && !isViewingDemo(userId))
+    ) {
+      return null;
+    }
 
     return (
       <div
         ref={containerRef}
         className={cn(
-          'relative bg-card',
+          'relative bg-black group/screen-share-card',
           'flex items-center justify-center',
-          'w-full h-full',
+          'size-full',
           isFullscreen
             ? 'rounded-none border-none'
-            : 'rounded-lg overflow-hidden border border-border',
-          (!isFullscreen || isOverlayVisible) && 'group',
+            : 'rounded overflow-hidden border border-border',
           className
         )}
         onWheel={handleWheel}
@@ -224,24 +176,7 @@ const ScreenShareCard = memo(
           cursor: isFullscreen && !isOverlayVisible ? 'none' : getCursor()
         }}
       >
-        <CardGradient />
-
-        <ScreenShareControls
-          isPinned={isPinned}
-          isFullscreen={isFullscreen}
-          isZoomEnabled={isZoomEnabled}
-          handlePinToggle={handlePinToggle}
-          handleToggleFullscreen={handleToggleFullscreen}
-          handleToggleZoom={handleToggleZoom}
-          showPinControls={showPinControls}
-          showAudioControl={!isOwnUser && hasScreenShareAudioStream}
-          showQualityControl={!isOwnUser && webRtcSimulcastEnabled}
-          showStopViewing={!isOwnUser}
-          disableQualityControl={!isSimulcastScreenConsumer}
-          volumeKey={volumeKey}
-          videoRef={screenShareRef}
-          userId={userId}
-        />
+        <CardTheme />
 
         <video
           ref={screenShareRef}
@@ -262,31 +197,102 @@ const ScreenShareCard = memo(
           playsInline
         />
 
-        <div className="absolute bottom-0 left-0 right-0 p-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="flex items-center gap-2 min-w-0">
-            <Monitor className="size-3.5 text-purple-400 shrink-0" />
-            <span className="text-white font-medium text-xs truncate">
+        <div
+          className={cn(
+            'absolute top-0 right-0 z-10 justify-end',
+            density.inset,
+            'hidden group-hover/screen-share-card:flex',
+            'has-[[data-state=open]]:flex'
+          )}
+        >
+          <div className={cardControlsClass(isCompact)}>
+            <PictureInPictureButton
+              videoRef={screenShareRef}
+              size={density.icon}
+              className={cardControlClass()}
+            />
+            {!isOwnUser && hasScreenShareAudioStream && (
+              <VolumeButton
+                volumeKey={volumeKey}
+                size={density.icon}
+                className={cardControlClass()}
+              />
+            )}
+            {!isOwnUser && webRtcSimulcastEnabled && (
+              <QualityButton
+                streamId={userId}
+                kind={StreamKind.SCREEN}
+                disabled={!isSimulcastScreenConsumer}
+                size={density.icon}
+                className={cardControlClass()}
+              />
+            )}
+            <FullscreenButton
+              isFullscreen={isFullscreen}
+              handleToggleFullscreen={handleToggleFullscreen}
+              size={density.icon}
+              className={cardControlClass(isFullscreen)}
+            />
+            {showPinControls && isPinned && (
+              <IconButton
+                variant={isZoomEnabled ? 'default' : 'ghost'}
+                icon={isZoomEnabled ? ZoomOut : ZoomIn}
+                onClick={handleToggleZoom}
+                title={isZoomEnabled ? 'Disable Zoom' : 'Enable Zoom'}
+                size={density.icon}
+                className={cardControlClass(isZoomEnabled)}
+              />
+            )}
+            {showPinControls && (
+              <PinButton
+                isPinned={isPinned}
+                handlePinToggle={handlePinToggle}
+                size={density.icon}
+                className={cardControlClass(isPinned)}
+              />
+            )}
+            {!isOwnUser && (
+              <ViewDemoButton
+                userId={userId}
+                size={density.icon}
+                className={cardControlClass(true)}
+              />
+            )}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            'absolute bottom-0 left-0 right-0',
+            density.inset,
+            'hidden group-hover/screen-share-card:flex'
+          )}
+        >
+          <div className={cardBadgeClass(isCompact)}>
+            <Monitor className="text-white shrink-0 size-3" />
+            <p className={cn('leading-none truncate', density.label)}>
               {user.name}'s screen
-            </span>
-            {(videoStats || codec || qualityLabel) && (
-              <span className="text-white/50 text-xs shrink-0">
-                {codec}
-                {codec && videoStats && ' '}
-                {videoStats && (
-                  <>
-                    {videoStats.width}x{videoStats.height}
-                    {videoStats.frameRate > 0 && ` ${videoStats.frameRate}fps`}
-                  </>
-                )}
-                {(codec || videoStats) && qualityLabel && ' '}
-                {qualityLabel && `(${qualityLabel})`}
-              </span>
-            )}
-            {isZoomEnabled && zoom > 1 && (
-              <span className="text-white/70 text-xs ml-auto shrink-0">
-                {Math.round(zoom * 100)}%
-              </span>
-            )}
+              {(videoStats || codec) && (
+                <span className="text-muted-foreground text-xs ml-2 leading-none">
+                  {codec}
+                  {codec && videoStats && ' '}
+                  {videoStats && (
+                    <>
+                      {videoStats.width}x{videoStats.height}
+                      {videoStats.frameRate > 0 &&
+                        ` ${videoStats.frameRate}fps`}
+                    </>
+                  )}
+                  {(codec || videoStats) && qualityLabel && ' '}
+                  {qualityLabel && `(${qualityLabel})`}
+                </span>
+              )}
+              {isZoomEnabled && zoom > 1 && (
+                <span className="text-white/70 text-xs ml-2 leading-none">
+                  {Math.round(zoom * 100)}%
+                </span>
+              )}
+            </p>
           </div>
         </div>
       </div>

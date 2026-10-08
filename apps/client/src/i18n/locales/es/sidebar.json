@@ -20,6 +20,7 @@
   "stopScreenShare": "Dejar de compartir pantalla",
   "startScreenShare": "Compartir pantalla",
   "transportStats": "Estadísticas de transporte",
+  "voiceDiagnostics": "Diagnóstico de voz",
   "outgoing": "Saliente",
   "incoming": "Entrante",
   "noData": "Sin datos",
@@ -42,6 +43,7 @@
   "createChannel": "Crear canal",
   "failedReorderChannels": "Error al reordenar los canales",
   "failedReorderCategories": "Error al reordenar las categorías",
+  "failedMoveUser": "Error al mover al usuario",
   "directMessages": "Mensajes directos",
   "failedLoadDMs": "Error al cargar los mensajes directos",
   "couldNotOpenDM": "No se pudo abrir el mensaje directo",
@@ -70,8 +72,10 @@
   "categoryDeleted": "Categoría eliminada",
   "failedDeleteCategory": "Error al eliminar la categoría",
   "userVolume": "Volumen del usuario",
-  "viewDemo": "View demo",
-  "stopViewingDemo": "Stop viewing demo",
-  "hideWebcam": "Hide webcam",
-  "showWebcam": "Show webcam"
+  "viewDemo": "Ver presentación",
+  "stopViewingDemo": "Dejar de ver la presentación",
+  "hideWebcam": "Ocultar cámara web",
+  "showWebcam": "Mostrar cámara web",
+  "microphone": "Micrófono",
+  "noiseSuppression": "Supresión de ruido"
 }
