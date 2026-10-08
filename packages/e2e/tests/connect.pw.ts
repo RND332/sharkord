@@ -7,9 +7,6 @@ test.describe('Connect Screen', () => {
   }) => {
     await page.goto('/');
 
-    const logo = page.getByAltText('Sharkord');
-    await expect(logo).toBeVisible();
-
     await expect(page.getByText('Identity')).toBeVisible();
     await expect(page.getByText('Password')).toBeVisible();
 

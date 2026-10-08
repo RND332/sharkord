@@ -1,7 +1,6 @@
 import { setDmsOpen } from '@/features/server/actions';
 import { useDirectMessagesUnreadCount } from '@/features/server/channels/hooks';
 import { useDmsOpen } from '@/features/server/hooks';
-import { TestId } from '@sharkord/shared';
 import { cn, Tooltip } from '@sharkord/ui';
 import { MessageCircleMore, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
@@ -22,7 +21,6 @@ const DmButton = memo(() => {
         content={dmsOpen ? t('closeDirectMessages') : t('openDirectMessages')}
       >
         <button
-          data-testid={TestId.DM_TOGGLE}
           type="button"
           onClick={onToggleDmMode}
           className={cn(

@@ -9,6 +9,7 @@ import {
 } from '@/features/server/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import { cn } from '@/lib/utils';
+import { TestId } from '@sharkord/shared';
 import { Tooltip } from '@sharkord/ui';
 import { MessageCircleMore, Settings } from 'lucide-react';
 import { memo, useCallback } from 'react';
@@ -64,6 +65,7 @@ const AppRail = memo(() => {
       {settings?.directMessagesEnabled && (
         <Tooltip content={t('directMessages')}>
           <button
+            data-testid={TestId.DM_TOGGLE}
             type="button"
             aria-label={t('directMessages')}
             aria-current={dmsOpen ? 'page' : undefined}
