@@ -16,8 +16,8 @@ const chatActionSlot = (page: Page) =>
 
 const openUserSettings = (page: Page) =>
   page
-    .getByTestId(TestId.LEFT_SIDEBAR)
     .getByTestId(TestId.USER_SETTINGS_TRIGGER)
+    .filter({ visible: true })
     .click();
 
 const openPluginUserSettings = async (page: Page) => {
