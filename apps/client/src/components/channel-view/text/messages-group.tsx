@@ -2,7 +2,7 @@ import { PluginAvatar } from '@/components/plugin-avatar';
 import { RelativeTime } from '@/components/relative-time';
 import { UserAvatar } from '@/components/user-avatar';
 import { usePluginMetadata } from '@/features/server/plugins/hooks';
-import { useIsOwnUser, useUserById } from '@/features/server/users/hooks';
+import { useUserById } from '@/features/server/users/hooks';
 import { cn } from '@/lib/utils';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
@@ -16,6 +16,7 @@ import { Message } from './message';
 import { MessageReplyPreviewWrapper } from './message-reply-preview-wrapper';
 
 type TMessagesGroupProps = {
+  showClockTime?: boolean;
   group: TJoinedMessage[];
   disableActions?: boolean;
   disableFiles?: boolean;
@@ -29,6 +30,7 @@ type TMessagesGroupProps = {
 
 const MessagesGroup = memo(
   ({
+    showClockTime = false,
     group,
     disableActions,
     disableFiles,
@@ -43,7 +45,6 @@ const MessagesGroup = memo(
     const pluginMetadata = usePluginMetadata(firstMessage.pluginId);
     const user = useUserById(firstMessage.userId);
     const date = new Date(firstMessage.createdAt);
-    const isOwnUser = useIsOwnUser(firstMessage.userId);
     const authorName = useMessageAuthorName(firstMessage);
     const isDeletedUser = user?.name === DELETED_USER_IDENTITY_AND_NAME;
     const isPluginMessage = !!firstMessage.pluginId;
@@ -52,21 +53,25 @@ const MessagesGroup = memo(
       group.length === 1 && !!firstMessage.replyToMessageId;
 
     const groupContent = (
-      <div className="flex min-w-0 max-w-dvw gap-1 pl-2 pt-2 pr-2">
+      <div className="flex min-w-0 max-w-dvw gap-3 py-3">
         {isPluginMessage ? (
           <PluginAvatar
             name={pluginMetadata?.name}
             avatarUrl={pluginMetadata?.avatarUrl}
-            className="h-10 w-10"
+            className="h-[38px] w-[38px]"
           />
         ) : (
-          <UserAvatar userId={user!.id} className="h-10 w-10" showUserPopover />
+          <UserAvatar
+            userId={user!.id}
+            className="h-[38px] w-[38px]"
+            showUserPopover
+          />
         )}
-        <div className="flex min-w-0 flex-col w-full">
-          <div className="flex gap-2 items-baseline pl-1 select-none">
+        <div className="flex min-w-0 flex-col gap-1 w-full">
+          <div className="flex gap-[9px] items-baseline select-none">
             <span
               className={cn(
-                isOwnUser && 'font-bold',
+                'text-sm font-semibold leading-5',
                 isDeletedUser && 'line-through text-muted-foreground',
                 isPluginMessage && 'text-primary/80'
               )}
@@ -78,16 +83,26 @@ const MessagesGroup = memo(
                 bot
               </span>
             )}
-            <RelativeTime date={date}>
-              {(relativeTime) => (
-                <span
-                  className="text-primary/60 text-xs"
-                  title={format(date, 'PPpp')}
-                >
-                  {relativeTime}
-                </span>
-              )}
-            </RelativeTime>
+            {showClockTime ? (
+              <time
+                className="text-subtle-foreground dark:text-[#8f949e] text-xs leading-4"
+                dateTime={date.toISOString()}
+                title={format(date, 'PPpp')}
+              >
+                {format(date, 'h:mm a')}
+              </time>
+            ) : (
+              <RelativeTime date={date}>
+                {(relativeTime) => (
+                  <span
+                    className="text-subtle-foreground dark:text-[#8f949e] text-xs"
+                    title={format(date, 'PPpp')}
+                  >
+                    {relativeTime}
+                  </span>
+                )}
+              </RelativeTime>
+            )}
           </div>
           <div className="flex min-w-0 flex-col">
             {group.map((message) => (

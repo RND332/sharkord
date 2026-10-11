@@ -35,12 +35,6 @@ const ServerScreensProvider = memo(() => {
 
   const realIsOpen = isOpen && !!component;
 
-  if (realIsOpen) {
-    portalRoot.style.display = 'block';
-  } else {
-    portalRoot.style.display = 'none';
-  }
-
   if (!realIsOpen) return null;
 
   return createPortal(component, portalRoot);

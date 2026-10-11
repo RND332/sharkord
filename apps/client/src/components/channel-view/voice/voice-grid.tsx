@@ -121,8 +121,13 @@ const VoiceGrid = memo(
 
     if (pinnedCardId && pinnedCard) {
       return (
-        <div className={cn('flex flex-col h-full', className)}>
-          <div className="flex-1 p-3 min-h-0 relative">
+        <div
+          className={cn(
+            'flex h-full flex-col gap-3 bg-canvas px-7 py-6',
+            className
+          )}
+        >
+          <div className="relative min-h-0 flex-1">
             {pinnedCard}
             <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 pointer-events-none">
               <Tooltip content={t('toggleParticipants')}>
@@ -150,15 +155,15 @@ const VoiceGrid = memo(
           {regularCards.length > 0 && (
             <div
               className={cn(
-                'flex shrink-0 justify-center-safe gap-2 p-3 overflow-x-auto',
-                'transition-all duration-300 ease-in-out',
+                'flex h-[114px] shrink-0 justify-center-safe gap-3 overflow-x-auto',
+                'transition-[max-height,opacity] duration-300 ease-in-out',
                 hideParticipants
-                  ? 'max-h-0 p-0 mt-0 opacity-0'
-                  : 'max-h-full p-3 -mt-3 opacity-100'
+                  ? 'max-h-0 opacity-0'
+                  : 'max-h-[114px] opacity-100'
               )}
             >
               {regularCards.map((card, index) => (
-                <div key={index} className="shrink-0 w-40 h-24">
+                <div key={index} className="h-[114px] w-64 shrink-0">
                   {card}
                 </div>
               ))}
@@ -177,7 +182,7 @@ const VoiceGrid = memo(
     return (
       <div
         ref={containerRef}
-        className={cn('grid size-full gap-4 bg-canvas p-7', className)}
+        className={cn('grid size-full gap-3 bg-canvas px-7 py-6', className)}
         style={{
           gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
           gridTemplateRows: `repeat(${rows}, 1fr)`

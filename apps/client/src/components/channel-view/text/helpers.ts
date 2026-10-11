@@ -7,6 +7,7 @@ const RESET_THRESHOLD_PX = 10;
 const DEFAULT_MAX_HEIGHT_VH = 35;
 
 type TMessagesGroupComparatorProps = {
+  showClockTime?: boolean;
   group: TJoinedMessage[];
   disableActions?: boolean;
   disableFiles?: boolean;
@@ -34,6 +35,7 @@ const areGroupsEqual = (
   nextProps: TMessagesGroupComparatorProps
 ) => {
   if (
+    prevProps.showClockTime !== nextProps.showClockTime ||
     prevProps.disableActions !== nextProps.disableActions ||
     prevProps.disableFiles !== nextProps.disableFiles ||
     prevProps.disableReactions !== nextProps.disableReactions ||

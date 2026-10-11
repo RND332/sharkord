@@ -79,6 +79,51 @@ const useTransports = ({
   const consumeOperationsInProgress = useRef<Map<string, Promise<void>>>(
     new Map()
   );
+  const sessionGenerationRef = useRef(0);
+  const consumerOperationTokens = useRef<Map<string, { cancelled: boolean }>>(
+    new Map()
+  );
+  const closeConsumer = useCallback(
+    (remoteId: number, kind: StreamKind) => {
+      const key = `${remoteId}-${kind}`;
+      const token = consumerOperationTokens.current.get(key);
+      if (token) token.cancelled = true;
+      consumerOperationTokens.current.delete(key);
+      consumeOperationsInProgress.current.delete(key);
+      const consumer = consumers.current[remoteId]?.[kind];
+      // Detach first so a synchronous close event cannot clear a replacement.
+      if (consumer) {
+        delete consumers.current[remoteId][kind];
+        if (!Object.keys(consumers.current[remoteId]).length) {
+          delete consumers.current[remoteId];
+        }
+        if (!consumer.closed) consumer.close();
+      }
+      consumerCodecs.current.delete(key);
+      setRemoteConsumerType(remoteId, kind, undefined);
+      setRemoteStreamQualityLayers(remoteId, kind, []);
+      if (
+        kind === StreamKind.EXTERNAL_AUDIO ||
+        kind === StreamKind.EXTERNAL_VIDEO
+      ) {
+        removeExternalStreamTrack(remoteId, kind);
+      } else {
+        removeRemoteUserStream(remoteId, kind);
+      }
+    },
+    [
+      removeExternalStreamTrack,
+      removeRemoteUserStream,
+      setRemoteConsumerType,
+      setRemoteStreamQualityLayers
+    ]
+  );
+  const closeConsumers = useCallback(
+    (remoteId: number, kinds: readonly StreamKind[]) => {
+      for (const kind of kinds) closeConsumer(remoteId, kind);
+    },
+    [closeConsumer]
+  );
   const voiceOnlyModeRef = useRef(voiceOnlyMode);
   const nonVoiceGenerationRef = useRef(0);
   if (voiceOnlyModeRef.current !== voiceOnlyMode) {
@@ -86,6 +131,9 @@ const useTransports = ({
     nonVoiceGenerationRef.current++;
     for (const key of consumeOperationsInProgress.current.keys()) {
       if (key.slice(key.indexOf('-') + 1) !== StreamKind.AUDIO) {
+        const token = consumerOperationTokens.current.get(key);
+        if (token) token.cancelled = true;
+        consumerOperationTokens.current.delete(key);
         consumeOperationsInProgress.current.delete(key);
       }
     }
@@ -121,18 +169,27 @@ const useTransports = ({
 
   const createProducerTransport = useCallback(async (device: Device) => {
     logVoice('producer transport: creating');
+    const sessionGeneration = sessionGenerationRef.current;
 
     const trpc = getTRPCClient();
 
     try {
       const params = await trpc.voice.createProducerTransport.mutate();
+      if (sessionGeneration !== sessionGenerationRef.current) {
+        throw new Error('Voice session ended during transport creation');
+      }
 
       logVoice('producer transport: created', {
         transportId: params.id,
         iceCandidates: params.iceCandidates.length
       });
 
-      producerTransport.current = device.createSendTransport(params);
+      const transport = device.createSendTransport(params);
+      if (sessionGeneration !== sessionGenerationRef.current) {
+        transport.close();
+        throw new Error('Voice session ended during transport creation');
+      }
+      producerTransport.current = transport;
 
       producerTransport.current.on(
         'connect',
@@ -155,6 +212,7 @@ const useTransports = ({
       );
 
       producerTransport.current.on('connectionstatechange', (state) => {
+        if (producerTransport.current !== transport) return;
         logVoice('producer transport: connection state changed', { state });
 
         if (state === 'failed') {
@@ -192,26 +250,46 @@ const useTransports = ({
             qualityLayers?: TStreamQualityLayer[];
           };
 
-          if (!producerTransport.current) return;
-
           try {
+            const isCurrentTransport = () =>
+              !transport.closed &&
+              producerTransport.current === transport &&
+              sessionGeneration === sessionGenerationRef.current;
+            if (!isCurrentTransport()) {
+              throw new Error('Voice session ended during production');
+            }
             if (kind !== StreamKind.AUDIO && voiceOnlyModeRef.current) {
               throw new Error('Voice-only mode does not allow this media');
             }
             const generation = nonVoiceGenerationRef.current;
             const producerId = await trpc.voice.produce.mutate({
-              transportId: producerTransport.current.id,
+              transportId: transport.id,
               kind,
               rtpParameters,
               qualityLayers
             });
             if (
-              kind !== StreamKind.AUDIO &&
-              (voiceOnlyModeRef.current ||
-                generation !== nonVoiceGenerationRef.current)
+              !isCurrentTransport() ||
+              (kind !== StreamKind.AUDIO &&
+                (voiceOnlyModeRef.current ||
+                  generation !== nonVoiceGenerationRef.current))
             ) {
-              await trpc.voice.closeProducer.mutate({ kind, producerId });
-              throw new Error('Voice-only mode does not allow this media');
+              // Reject the running native task before cleanup: Transport.close()
+              // only rejects its public AwaitQueue promise, not this listener.
+              errback(new Error('Voice session ended during production'));
+              try {
+                await trpc.voice.closeProducer.mutate({ kind, producerId });
+              } catch (error) {
+                logVoiceWarn(
+                  'producer transport: stale producer cleanup failed',
+                  {
+                    kind,
+                    producerId,
+                    error
+                  }
+                );
+              }
+              return;
             }
 
             logVoice('producer transport: track produced', {
@@ -243,23 +321,33 @@ const useTransports = ({
       );
     } catch (error) {
       logVoiceError('producer transport: create failed', error);
+      throw error;
     }
   }, []);
 
   const createConsumerTransport = useCallback(async (device: Device) => {
     logVoice('consumer transport: creating');
+    const sessionGeneration = sessionGenerationRef.current;
 
     const trpc = getTRPCClient();
 
     try {
       const params = await trpc.voice.createConsumerTransport.mutate();
+      if (sessionGeneration !== sessionGenerationRef.current) {
+        throw new Error('Voice session ended during transport creation');
+      }
 
       logVoice('consumer transport: created', {
         transportId: params.id,
         iceCandidates: params.iceCandidates.length
       });
 
-      consumerTransport.current = device.createRecvTransport(params);
+      const transport = device.createRecvTransport(params);
+      if (sessionGeneration !== sessionGenerationRef.current) {
+        transport.close();
+        throw new Error('Voice session ended during transport creation');
+      }
+      consumerTransport.current = transport;
 
       consumerTransport.current.on(
         'connect',
@@ -282,6 +370,7 @@ const useTransports = ({
       );
 
       consumerTransport.current.on('connectionstatechange', (state) => {
+        if (consumerTransport.current !== transport) return;
         logVoice('consumer transport: connection state changed', { state });
 
         if (state === 'failed') {
@@ -315,6 +404,7 @@ const useTransports = ({
       });
     } catch (error) {
       logVoiceError('consumer transport: create failed', error);
+      throw error;
     }
   }, []);
 
@@ -333,6 +423,10 @@ const useTransports = ({
         consumer.pause();
 
         const operationKey = `${remoteId}-${kind}`;
+        const token = consumerOperationTokens.current.get(operationKey) ?? {
+          cancelled: false
+        };
+        consumerOperationTokens.current.set(operationKey, token);
         const pendingOperation =
           consumeOperationsInProgress.current.get(operationKey);
         const operation: Promise<void> = Promise.resolve().then(async () => {
@@ -341,6 +435,7 @@ const useTransports = ({
               await pendingOperation.catch(() => undefined);
             }
             if (
+              token.cancelled ||
               !transport ||
               transport !== consumerTransport.current ||
               transport.closed ||
@@ -359,6 +454,9 @@ const useTransports = ({
               operation
             ) {
               consumeOperationsInProgress.current.delete(operationKey);
+              if (consumerOperationTokens.current.get(operationKey) === token) {
+                consumerOperationTokens.current.delete(operationKey);
+              }
             }
           }
         });
@@ -391,6 +489,9 @@ const useTransports = ({
       }
 
       const operationKey = `${remoteId}-${kind}`;
+      const token = consumerOperationTokens.current.get(operationKey) ?? {
+        cancelled: false
+      };
       const pendingOperation =
         consumeOperationsInProgress.current.get(operationKey);
 
@@ -407,6 +508,7 @@ const useTransports = ({
           transport === consumerTransport.current &&
           !transport.closed &&
           generation === nonVoiceGenerationRef.current &&
+          !token.cancelled &&
           !voiceOnlyModeRef.current &&
           canConsumeScreen(remoteId)
         ) {
@@ -415,11 +517,13 @@ const useTransports = ({
         return;
       }
 
+      consumerOperationTokens.current.set(operationKey, token);
       const operation: Promise<void> = Promise.resolve().then(async () => {
         // a queued screen pause replaces the map's tail, not the running work.
         const isCurrent = () =>
           transport === consumerTransport.current &&
           !transport.closed &&
+          !token.cancelled &&
           (isScreen ||
             consumeOperationsInProgress.current.get(operationKey) ===
               operation) &&
@@ -502,7 +606,6 @@ const useTransports = ({
             });
 
             existingConsumer.close();
-            delete consumers.current[remoteId][consumerKind];
           }
 
           const newConsumer = await transport.consume({
@@ -540,32 +643,35 @@ const useTransports = ({
               if (consumers.current[remoteId]?.[consumerKind] !== newConsumer)
                 return;
 
+              // Delete before closing: close emits @close synchronously.
+              delete consumers.current[remoteId][consumerKind];
+              if (!Object.keys(consumers.current[remoteId]).length) {
+                delete consumers.current[remoteId];
+              }
+              if (!newConsumer.closed) newConsumer.close();
+
               if (
-                kind === StreamKind.EXTERNAL_VIDEO ||
-                kind === StreamKind.EXTERNAL_AUDIO
+                consumerKind === StreamKind.EXTERNAL_VIDEO ||
+                consumerKind === StreamKind.EXTERNAL_AUDIO
               ) {
-                removeExternalStreamTrack(remoteId, kind);
+                removeExternalStreamTrack(remoteId, consumerKind);
               } else {
-                removeRemoteUserStream(remoteId, kind);
+                removeRemoteUserStream(remoteId, consumerKind);
               }
 
-              if (consumers.current[remoteId]?.[consumerKind]) {
-                delete consumers.current[remoteId][consumerKind];
-              }
-
-              consumerCodecs.current.delete(`${remoteId}-${kind}`);
-
-              setRemoteConsumerType(remoteId, kind, undefined);
-              setRemoteStreamQualityLayers(remoteId, kind, []);
+              consumerCodecs.current.delete(`${remoteId}-${consumerKind}`);
+              setRemoteConsumerType(remoteId, consumerKind, undefined);
+              setRemoteStreamQualityLayers(remoteId, consumerKind, []);
             });
           });
 
+          consumers.current[remoteId] ??= {};
           consumers.current[remoteId][consumerKind] = newConsumer;
 
-          setRemoteConsumerType(remoteId, kind, consumerType);
-          setRemoteStreamQualityLayers(remoteId, kind, qualityLayers);
+          setRemoteConsumerType(remoteId, consumerKind, consumerType);
+          setRemoteStreamQualityLayers(remoteId, consumerKind, qualityLayers);
 
-          const codecKey = `${remoteId}-${kind}`;
+          const codecKey = `${remoteId}-${consumerKind}`;
 
           const negotiatedCodec =
             newConsumer.rtpParameters?.codecs?.[0]?.mimeType;
@@ -607,12 +713,12 @@ const useTransports = ({
           stream.addTrack(newConsumer.track);
 
           if (
-            kind === StreamKind.EXTERNAL_VIDEO ||
-            kind === StreamKind.EXTERNAL_AUDIO
+            consumerKind === StreamKind.EXTERNAL_VIDEO ||
+            consumerKind === StreamKind.EXTERNAL_AUDIO
           ) {
-            addExternalStreamTrack(remoteId, stream, kind);
+            addExternalStreamTrack(remoteId, stream, consumerKind);
           } else {
-            addRemoteUserStream(remoteId, stream, kind);
+            addRemoteUserStream(remoteId, stream, consumerKind);
           }
         } catch (error) {
           logVoiceError('consumer: consume failed', error, { remoteId, kind });
@@ -621,6 +727,9 @@ const useTransports = ({
             consumeOperationsInProgress.current.get(operationKey) === operation
           ) {
             consumeOperationsInProgress.current.delete(operationKey);
+            if (consumerOperationTokens.current.get(operationKey) === token) {
+              consumerOperationTokens.current.delete(operationKey);
+            }
           }
         }
       });
@@ -747,6 +856,11 @@ const useTransports = ({
   const cleanupTransports = useCallback(() => {
     logVoice('session: cleaning up transports');
     nonVoiceGenerationRef.current++;
+    sessionGenerationRef.current++;
+    for (const token of consumerOperationTokens.current.values()) {
+      token.cancelled = true;
+    }
+    consumerOperationTokens.current.clear();
 
     Object.values(consumers.current).forEach((userConsumers) => {
       Object.values(userConsumers).forEach((consumer) => {
@@ -781,6 +895,7 @@ const useTransports = ({
   return {
     producerTransport,
     consumerTransport,
+    sessionGenerationRef,
     consumers,
     consumeRef,
     pauseDemoConsumers,
@@ -790,6 +905,8 @@ const useTransports = ({
     consumeExistingProducers,
     cleanupTransports,
     getConsumer,
+    closeConsumer,
+    closeConsumers,
     getConsumerCodec
   };
 };

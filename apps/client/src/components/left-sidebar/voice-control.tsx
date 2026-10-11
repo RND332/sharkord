@@ -1,13 +1,18 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
-import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
-import { useChannelCan } from '@/features/server/hooks';
+import {
+  useChannelById,
+  useCurrentVoiceChannelId
+} from '@/features/server/channels/hooks';
+import { useChannelCan, useServerName } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
 import { ChannelPermission, PluginSlot } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import {
+  Activity,
   AlertTriangle,
+  Eye,
   Loader2,
   Monitor,
   MonitorOff,
@@ -28,6 +33,8 @@ const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
   const { devices } = useDevices();
   const voiceChannelId = useCurrentVoiceChannelId();
+  const channel = useChannelById(voiceChannelId ?? -1);
+  const serverName = useServerName();
   const channelCan = useChannelCan(voiceChannelId);
   const {
     ownVoiceState,
@@ -41,28 +48,32 @@ const VoiceControl = memo(() => {
     switch (connectionStatus) {
       case 'connecting':
         return {
-          icon: <Loader2 className="h-4 w-4 animate-spin" />,
+          icon: <Loader2 className="size-4 animate-spin" />,
           text: t('voiceConnecting'),
-          color: 'text-yellow-500'
+          color: 'text-yellow-500',
+          iconBackground: 'bg-yellow-500/15'
         };
       case 'connected':
         return {
-          icon: <Wifi className="h-4 w-4 text-green-600" />,
+          icon: <Wifi className="size-4" />,
           text: t('voiceConnected'),
-          color: 'text-green-600'
+          color: 'text-success',
+          iconBackground: 'bg-success/15'
         };
       case 'failed':
         return {
-          icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
+          icon: <AlertTriangle className="size-4" />,
           text: t('voiceFailed'),
-          color: 'text-red-500'
+          color: 'text-red-400',
+          iconBackground: 'bg-red-500/15'
         };
       case 'disconnected':
       default:
         return {
-          icon: <WifiOff className="h-4 w-4 text-red-500" />,
+          icon: <WifiOff className="size-4" />,
           text: t('voiceDisconnected'),
-          color: 'text-red-500'
+          color: 'text-red-400',
+          iconBackground: 'bg-red-500/15'
         };
     }
   }, [connectionStatus, t]);
@@ -80,86 +91,108 @@ const VoiceControl = memo(() => {
     <>
       <VoiceAudioStreams channelId={voiceChannelId} />
       <ExternalAudioStreams channelId={voiceChannelId} />
-      <div className="bg-secondary/30 border-t border-border">
-        <StatsPopover>
-          <div className="flex items-center px-2 py-1.5 gap-2 bg-secondary/50 cursor-pointer hover:bg-secondary/60 transition-colors">
+      <div className="h-[78px] shrink-0 overflow-hidden bg-panel">
+        <div className="flex h-[46px] items-center justify-between gap-1.5 px-2.5 py-1">
+          <div
+            className={cn(
+              'flex size-6 shrink-0 items-center justify-center rounded-md',
+              connectionInfo.color,
+              connectionInfo.iconBackground
+            )}
+          >
             {connectionInfo.icon}
-            <span className={cn('text-xs font-medium', connectionInfo.color)}>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-px">
+            <span
+              className={cn(
+                'truncate text-xs font-semibold leading-[17px]',
+                connectionInfo.color
+              )}
+            >
               {connectionInfo.text}
             </span>
+            <span className="truncate text-[10px] leading-[14px] text-muted-foreground">
+              {channel?.name} / {serverName}
+            </span>
           </div>
-        </StatsPopover>
-
-        <div className="flex items-center justify-between px-2 py-2">
+          <Activity className="size-[18px] shrink-0 text-muted-foreground" />
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-[22px] shrink-0 rounded text-muted-foreground hover:bg-raised hover:text-foreground"
             onClick={() => leaveVoice({ reason: 'user_disconnect_button' })}
+            title={t('disconnectVoice')}
           >
-            <PhoneOff className="h-3.5 w-3.5 mr-1.5" />
-            {t('disconnectVoice')}
+            <PhoneOff className="size-[18px]" />
+          </Button>
+        </div>
+
+        <div className="flex h-8 items-center gap-1.25 px-2.5 pb-1.25 pt-0.75">
+          <PluginSlotRenderer
+            slotId={PluginSlot.VOICE_CONTROLS}
+            props={pluginSlotProps}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-6 min-w-0 flex-1 rounded-md bg-raised text-foreground hover:bg-raised/80',
+              ownVoiceState.webcamEnabled && 'text-success'
+            )}
+            onClick={toggleWebcam}
+            title={
+              ownVoiceState.webcamEnabled
+                ? t('turnOffCamera')
+                : t('turnOnCamera')
+            }
+            disabled={
+              devices.voiceOnlyMode || !channelCan(ChannelPermission.WEBCAM)
+            }
+          >
+            {ownVoiceState.webcamEnabled ? (
+              <Video className="size-5" />
+            ) : (
+              <VideoOff className="size-5" />
+            )}
           </Button>
 
-          <div className="flex gap-1">
-            <PluginSlotRenderer
-              slotId={PluginSlot.VOICE_CONTROLS}
-              props={pluginSlotProps}
-            />
+          {isScreenShareSupported && (
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8 rounded-md transition-all duration-200',
-                ownVoiceState.webcamEnabled
-                  ? 'bg-green-500/15 hover:bg-green-500/25 text-green-400 hover:text-green-300'
-                  : 'bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground'
+                'h-6 min-w-0 flex-1 rounded-md bg-raised text-foreground hover:bg-raised/80',
+                ownVoiceState.sharingScreen && 'text-success'
               )}
-              onClick={toggleWebcam}
+              onClick={toggleScreenShare}
               title={
-                ownVoiceState.webcamEnabled
-                  ? t('turnOffCamera')
-                  : t('turnOnCamera')
+                ownVoiceState.sharingScreen
+                  ? t('stopScreenShare')
+                  : t('startScreenShare')
               }
               disabled={
-                devices.voiceOnlyMode || !channelCan(ChannelPermission.WEBCAM)
+                devices.voiceOnlyMode ||
+                !channelCan(ChannelPermission.SHARE_SCREEN)
               }
             >
-              {ownVoiceState.webcamEnabled ? (
-                <Video className="h-4 w-4" />
+              {ownVoiceState.sharingScreen ? (
+                <Monitor className="size-5" />
               ) : (
-                <VideoOff className="h-4 w-4" />
+                <MonitorOff className="size-5" />
               )}
             </Button>
+          )}
 
-            {isScreenShareSupported && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  'h-8 w-8 rounded-md transition-all duration-200',
-                  ownVoiceState.sharingScreen
-                    ? 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 hover:text-blue-300'
-                    : 'bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground'
-                )}
-                onClick={toggleScreenShare}
-                title={
-                  ownVoiceState.sharingScreen
-                    ? t('stopScreenShare')
-                    : t('startScreenShare')
-                }
-                disabled={
-                  devices.voiceOnlyMode ||
-                  !channelCan(ChannelPermission.SHARE_SCREEN)
-                }
-              >
-                {ownVoiceState.sharingScreen ? (
-                  <Monitor className="h-4 w-4" />
-                ) : (
-                  <MonitorOff className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-          </div>
+          <StatsPopover>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 min-w-0 flex-1 rounded-md bg-raised text-foreground hover:bg-raised/80"
+              title="Connection info"
+            >
+              <Eye className="size-5" />
+            </Button>
+          </StatsPopover>
         </div>
       </div>
     </>

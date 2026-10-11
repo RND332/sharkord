@@ -13,12 +13,7 @@ import { Monitor, ZoomIn, ZoomOut } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { CardTheme } from './card-theme';
 import { FullscreenButton } from './fullscreen-button';
-import {
-  cardBadgeClass,
-  cardControlClass,
-  cardControlsClass,
-  cardDensity
-} from './helpers';
+import { cardControlClass, cardControlsClass, cardDensity } from './helpers';
 import { useFullscreen } from './hooks/use-fullscreen';
 import {
   PinnedCardType,
@@ -183,7 +178,7 @@ const ScreenShareCard = memo(
           autoPlay
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className="absolute inset-x-0 top-0 h-[calc(100%-34px)] w-full bg-black object-contain"
           style={{
             transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
             transition: isDragging ? 'none' : 'transform 0.1s ease-out'
@@ -261,39 +256,30 @@ const ScreenShareCard = memo(
           </div>
         </div>
 
-        <div
-          className={cn(
-            'absolute bottom-0 left-0 right-0',
-            density.inset,
-            'hidden group-hover/screen-share-card:flex'
-          )}
-        >
-          <div className={cardBadgeClass(isCompact)}>
-            <Monitor className="text-white shrink-0 size-3" />
-            <p className={cn('leading-none truncate', density.label)}>
-              {user.name}'s screen
-              {(videoStats || codec) && (
-                <span className="text-muted-foreground text-xs ml-2 leading-none">
-                  {codec}
-                  {codec && videoStats && ' '}
-                  {videoStats && (
-                    <>
-                      {videoStats.width}x{videoStats.height}
-                      {videoStats.frameRate > 0 &&
-                        ` ${videoStats.frameRate}fps`}
-                    </>
-                  )}
-                  {(codec || videoStats) && qualityLabel && ' '}
-                  {qualityLabel && `(${qualityLabel})`}
-                </span>
-              )}
-              {isZoomEnabled && zoom > 1 && (
-                <span className="text-white/70 text-xs ml-2 leading-none">
-                  {Math.round(zoom * 100)}%
-                </span>
-              )}
-            </p>
-          </div>
+        <div className="absolute inset-x-0 bottom-0 flex h-[34px] items-center gap-2 bg-[#050505] px-2.5">
+          <Monitor className="size-[18px] shrink-0 text-white" />
+          <p className="truncate text-[13px] font-medium leading-[17px] text-white">
+            {user.name}'s screen
+            {(videoStats || codec) && (
+              <span className="ml-2 text-xs leading-4 text-muted-foreground">
+                {codec}
+                {codec && videoStats && ' '}
+                {videoStats && (
+                  <>
+                    {videoStats.width}x{videoStats.height}
+                    {videoStats.frameRate > 0 && ` ${videoStats.frameRate}fps`}
+                  </>
+                )}
+                {(codec || videoStats) && qualityLabel && ' '}
+                {qualityLabel && `(${qualityLabel})`}
+              </span>
+            )}
+            {isZoomEnabled && zoom > 1 && (
+              <span className="ml-2 text-xs leading-none text-white/70">
+                {Math.round(zoom * 100)}%
+              </span>
+            )}
+          </p>
         </div>
       </div>
     );

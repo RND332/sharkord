@@ -1,3 +1,4 @@
+import { VoiceSessionCancelledError } from '@/components/voice-provider/session-cancelled';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { channelByIdSelector } from '@/features/server/channels/selectors';
@@ -44,7 +45,8 @@ const useSelectChannel = () => {
 
         try {
           await init(response, channel.id);
-        } catch {
+        } catch (error) {
+          if (error instanceof VoiceSessionCancelledError) return;
           await leaveVoice({ reason: 'init_failed' });
 
           toast.error(t('common:failedInitVoiceConnection'));

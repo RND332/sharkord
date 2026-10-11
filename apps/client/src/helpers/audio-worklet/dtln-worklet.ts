@@ -41,13 +41,15 @@ type TDtlnChain = {
 };
 
 const createDtlnChain = async (
-  inputStream: MediaStream
+  inputStream: MediaStream,
+  registerContext?: (context: AudioContext) => void
 ): Promise<TDtlnChain> => {
   if (!isAudioWorkletSupported()) {
     throw new Error('AudioWorklet is not supported in this browser');
   }
 
   const ctx = new AudioContext({ sampleRate: 16000 });
+  registerContext?.(ctx);
   await ensureWorkletLoaded(ctx);
   const workletNode = new AudioWorkletNode(ctx, DTLN_WORKLET_NAME);
 

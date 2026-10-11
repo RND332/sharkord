@@ -26,7 +26,7 @@ import {
 } from '@sharkord/shared';
 import { Button, Spinner } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Paperclip, Reply, Send, Smile, X } from 'lucide-react';
+import { Plus, Reply, Send, Smile, X } from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -260,15 +260,25 @@ const MessageCompose = memo(
     return (
       <div
         ref={containerRef}
-        className="compose-container relative flex min-h-20 shrink-0 flex-col bg-canvas px-6 pb-[max(20px,env(safe-area-inset-bottom))] pt-2"
+        className="compose-container relative flex min-h-[112px] shrink-0 flex-col gap-2 bg-canvas px-6 pb-[max(20px,env(safe-area-inset-bottom))] pt-[10px]"
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
 
         <div
-          className={`compose-scroll-row flex min-h-[54px] flex-1 cursor-text items-start overflow-y-auto rounded-lg border border-line bg-panel${uploading ? ' bg-muted' : ''}`}
+          className={`compose-scroll-row flex min-h-[54px] flex-1 cursor-text items-start gap-[14px] px-4 overflow-y-auto rounded-[10px] bg-raised [&_.ProseMirror]:px-0! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.ProseMirror]:py-[17px]! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-[17px]! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-[#adb2ba]${uploading ? ' bg-muted' : ''}`}
           onClick={focusInputOnBackdropClick}
         >
-          <div className="flex flex-1 flex-col">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="mt-4 size-[22px] shrink-0 sticky top-4"
+            aria-label={t('attachFiles')}
+            disabled={uploading || !canUploadFiles}
+            onClick={openFileDialog}
+          >
+            <Plus className="size-[22px]" />
+          </Button>
+          <div className="flex min-w-0 flex-1 flex-col">
             {replyTarget && (
               <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/40 mx-2 mt-3 px-2 py-1 text-xs">
                 <div className="min-w-0 flex items-center gap-1.5 text-muted-foreground">
@@ -325,7 +335,7 @@ const MessageCompose = memo(
           </div>
 
           <input {...fileInputProps} />
-          <div className="flex items-start pr-4 pt-2 shrink-0 sticky top-0">
+          <div className="flex items-start pt-[17px] shrink-0 sticky top-0">
             {showPluginSlot && (
               <PluginSlotRenderer
                 slotId={PluginSlot.CHAT_ACTIONS}
@@ -337,29 +347,30 @@ const MessageCompose = memo(
               <Button
                 size="icon"
                 variant="ghost"
+                className="size-5"
+                aria-label={t('addEmoji')}
                 disabled={uploading || !canSendMessages}
               >
-                <Smile className="h-4 w-4" />
+                <Smile className="size-5" />
               </Button>
             </EmojiPicker>
-            <Button
-              size="icon"
-              variant="ghost"
-              disabled={uploading || !canUploadFiles}
-              onClick={openFileDialog}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleSend}
-              disabled={uploading || sending || !canSendMessages}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            {(!isEmptyMessage(message) || displayItems.length > 0) && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-5 ml-3"
+                aria-label={t('sendMessage')}
+                onClick={handleSend}
+                disabled={uploading || sending || !canSendMessages}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
+        <p className="h-5 shrink-0 text-[13px] leading-[18px] text-subtle-foreground">
+          {t('composerHint')}
+        </p>
       </div>
     );
   }

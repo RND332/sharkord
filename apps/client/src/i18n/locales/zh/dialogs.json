@@ -93,5 +93,6 @@
   "pluginInstallDocsNote": "欲了解更多详情，请阅读文档：",
   "pluginInstallConfirmBtn": "安装插件",
   "pluginInstallConfirmCountdown": "等待 ({{seconds}}s)",
-  "searchTruncated": "仅显示最近的匹配结果。请细化搜索条件以缩小范围。"
+  "searchTruncated": "仅显示最近的匹配结果。请细化搜索条件以缩小范围。",
+  "createChannelDesc": "为您的社区提供一个交流空间。"
 }

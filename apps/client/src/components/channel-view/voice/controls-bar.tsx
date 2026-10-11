@@ -54,8 +54,8 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
   );
 
   const barClass = alwaysShowControls
-    ? 'relative -mt-3'
-    : 'absolute bottom-0 left-0 right-0 transition-all duration-300 ease-in-out invisible opacity-0 translate-y-4 group-hover/voice-stage:visible group-hover/voice-stage:opacity-100 group-hover/voice-stage:translate-y-0';
+    ? 'relative'
+    : 'absolute bottom-0 left-0 right-0 transition-[opacity,translate] duration-150 ease-out invisible opacity-0 translate-y-3 group-hover/voice-stage:visible group-hover/voice-stage:opacity-100 group-hover/voice-stage:translate-y-0';
 
   const handleLeaveVoice = useCallback(() => {
     leaveVoice();
@@ -64,16 +64,11 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
   return (
     <div
       className={cn(
-        'flex h-[88px] items-center justify-center gap-3 border-t border-line bg-nav px-4 pointer-events-none',
+        'flex h-[88px] items-center justify-center gap-2.5 px-4 pointer-events-none',
         barClass
       )}
     >
-      <div
-        className={cn(
-          'flex items-center rounded-full border border-line bg-panel p-1.5 pointer-events-auto',
-          'gap-2'
-        )}
-      >
+      <div className="flex items-center gap-2.5 pointer-events-auto">
         <ControlToggleButton
           enabled={ownVoiceState.micMuted}
           enabledLabel="Unmute"
@@ -94,8 +89,6 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           enabledClassName="bg-red-500/20 text-red-500 hover:bg-red-500/30 hover:text-red-500"
           onClick={toggleSound}
         />
-
-        <div className="h-7 border-r border-line" />
 
         <ControlToggleButton
           enabled={ownVoiceState.webcamEnabled}
@@ -123,22 +116,17 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
 
         {isConnectedToThisChannel && (
           <Protect permission={Permission.SEND_VOICE_REACTION}>
-            <div className="h-7 border-r border-line" />
-
             <ReactionsButton />
           </Protect>
         )}
       </div>
       <Tooltip content="Disconnect">
         <Button
-          className={cn(
-            'inline-flex min-w-11 self-stretch items-center justify-center rounded-full border border-destructive/50 px-3',
-            'pointer-events-auto bg-danger-solid text-white hover:bg-destructive/80'
-          )}
+          className="pointer-events-auto size-10.5 rounded-lg bg-danger-solid p-0 text-white hover:bg-destructive/80"
           onClick={handleLeaveVoice}
           aria-label="Disconnect"
         >
-          <PhoneOff className="size-4" fill="currentColor" />
+          <PhoneOff className="size-4.5" fill="currentColor" />
         </Button>
       </Tooltip>
     </div>

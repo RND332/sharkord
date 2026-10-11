@@ -7,7 +7,7 @@ import {
 } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
-import { initTest } from '../../__tests__/helpers';
+import { getCaller, initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import { config } from '../../config';
 import {
@@ -634,6 +634,43 @@ describe('voice router', () => {
       }
     });
 
+    test('identity-bound microphone cleanup cannot close another user or replacement', async () => {
+      const { runtime, caller, producer } = await withProducer();
+      const replacement = createFakeProducer();
+      const other = createFakeProducer();
+      runtime.addUser(1, { micMuted: false, soundMuted: false });
+      runtime.addProducer(1, StreamKind.AUDIO, other.producer);
+      runtime.addProducer(2, StreamKind.AUDIO, replacement.producer);
+      try {
+        await caller.voice.closeProducer({
+          kind: StreamKind.AUDIO,
+          producerId: producer.id
+        });
+        await caller.voice.closeProducer({
+          kind: StreamKind.AUDIO,
+          producerId: other.producer.id
+        });
+        expect(replacement.state.closed).toBe(false);
+        expect(other.state.closed).toBe(false);
+        expect(runtime.getProducer(StreamKind.AUDIO, 2)).toBe(
+          replacement.producer
+        );
+        await caller.voice.closeProducer({
+          kind: StreamKind.AUDIO,
+          producerId: replacement.producer.id
+        });
+        expect(replacement.state.closed).toBe(true);
+        expect(other.state.closed).toBe(false);
+        // Repeated exact cleanup is harmless.
+        await caller.voice.closeProducer({
+          kind: StreamKind.AUDIO,
+          producerId: replacement.producer.id
+        });
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
     test('should reject an invalid producer identity without closing a share', async () => {
       const { runtime, caller, state } = await withProducer(StreamKind.SCREEN);
 
@@ -649,6 +686,18 @@ describe('voice router', () => {
       } finally {
         await runtime.destroy();
       }
+    });
+
+    test('identity-bound cleanup requires authentication', async () => {
+      const { caller } = await getCaller(2, undefined, {
+        authenticated: false
+      });
+      await expect(
+        caller.voice.closeProducer({
+          kind: StreamKind.AUDIO,
+          producerId: crypto.randomUUID()
+        })
+      ).rejects.toThrow('You must be authenticated');
     });
 
     test('should require global voice permission for identity-bound cleanup', async () => {

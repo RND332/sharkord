@@ -85,7 +85,7 @@ const Message = memo(
     return (
       <div
         className={cn(
-          'min-w-0 flex-1 ml-1 relative hover:bg-secondary/50 rounded-md px-1 py-0.5 group',
+          'min-w-0 flex-1 relative hover:bg-secondary/50 rounded-md group',
           isActiveThread && 'bg-primary/10',
           isMentioned && 'border-primary bg-primary/5',
           isInlineReplyTarget && 'ring-1 ring-primary/50 bg-primary/10'

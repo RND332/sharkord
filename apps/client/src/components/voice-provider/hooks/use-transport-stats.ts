@@ -59,6 +59,24 @@ export type TransportStatsData = {
   currentBitrateReceived: number;
 };
 
+// A request cannot be cancelled. Keep its slot until it settles, including
+// across polling restarts and hook remounts; never accumulate timed-out calls.
+const pendingStatsRequests = new WeakMap<
+  Transport | Producer<AppData>,
+  Promise<RTCStatsReport>
+>();
+
+const getStats = (target: Transport | Producer<AppData>) => {
+  const pending = pendingStatsRequests.get(target);
+  if (pending) return pending;
+
+  const request = Promise.resolve()
+    .then(() => target.getStats())
+    .finally(() => pendingStatsRequests.delete(target));
+  pendingStatsRequests.set(target, request);
+  return request;
+};
+
 const useTransportStats = () => {
   const [stats, setStats] = useState<TransportStatsData>({
     producer: null,
@@ -71,6 +89,8 @@ const useTransportStats = () => {
   });
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const generationRef = useRef(0);
+  const collectingRef = useRef<number | null>(null);
   const intervalMsRef = useRef(1000);
   const subscriberCountRef = useRef(0);
   const producerTransportRef = useRef<Transport | null>(null);
@@ -231,6 +251,18 @@ const useTransportStats = () => {
   );
 
   const collectStats = useCallback(async () => {
+    const generation = generationRef.current;
+    if (collectingRef.current === generation) return;
+    const producerTransport = producerTransportRef.current;
+    const consumerTransport = consumerTransportRef.current;
+    const screenShareProducer = screenShareProducerRef.current;
+    if (
+      [producerTransport, consumerTransport, screenShareProducer].some(
+        (target) => target && pendingStatsRequests.has(target)
+      )
+    )
+      return;
+    const isCurrent = () => generationRef.current === generation;
     if (!producerTransportRef.current && !consumerTransportRef.current) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -241,41 +273,41 @@ const useTransportStats = () => {
       return;
     }
 
+    collectingRef.current = generation;
     try {
       let producerStats: TransportStats | null = null;
       let consumerStats: TransportStats | null = null;
 
-      if (producerTransportRef.current) {
+      if (producerTransport) {
         try {
-          const producerStatsReport =
-            await producerTransportRef.current.getStats();
+          const producerStatsReport = await getStats(producerTransport);
+          if (!isCurrent()) return;
 
           producerStats = parseTransportStats(producerStatsReport, true);
         } catch {
+          if (!isCurrent()) return;
           producerTransportRef.current = null;
         }
       }
 
-      if (consumerTransportRef.current) {
+      if (consumerTransport) {
         try {
-          const consumerStatsReport =
-            await consumerTransportRef.current.getStats();
+          const consumerStatsReport = await getStats(consumerTransport);
+          if (!isCurrent()) return;
 
           consumerStats = parseTransportStats(consumerStatsReport, false);
         } catch {
+          if (!isCurrent()) return;
           consumerTransportRef.current = null;
         }
       }
 
       let screenShareStatsResult: ScreenShareStats | null = null;
 
-      if (
-        screenShareProducerRef.current &&
-        !screenShareProducerRef.current.closed
-      ) {
+      if (screenShareProducer && !screenShareProducer.closed) {
         try {
-          const screenShareReport =
-            await screenShareProducerRef.current.getStats();
+          const screenShareReport = await getStats(screenShareProducer);
+          if (!isCurrent()) return;
 
           const parsed = parseScreenShareStats(screenShareReport);
 
@@ -331,6 +363,7 @@ const useTransportStats = () => {
             };
           }
         } catch {
+          if (!isCurrent()) return;
           screenShareProducerRef.current = null;
           previousScreenShareStatsRef.current = null;
         }
@@ -400,6 +433,8 @@ const useTransportStats = () => {
       };
     } catch (error) {
       logVoiceError('stats: collection failed', error);
+    } finally {
+      if (collectingRef.current === generation) collectingRef.current = null;
     }
   }, [parseTransportStats, parseScreenShareStats]);
 
@@ -411,6 +446,7 @@ const useTransportStats = () => {
     if (shouldPoll === !!intervalRef.current) return;
 
     if (!shouldPoll) {
+      generationRef.current += 1;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -441,6 +477,7 @@ const useTransportStats = () => {
       consumerTransport?: Transport | null,
       intervalMs: number = 1000
     ) => {
+      generationRef.current += 1;
       producerTransportRef.current = producerTransport || null;
       consumerTransportRef.current = consumerTransport || null;
       intervalMsRef.current = intervalMs;
@@ -457,6 +494,7 @@ const useTransportStats = () => {
 
   const setScreenShareProducer = useCallback(
     (producer: Producer<AppData> | null | undefined) => {
+      generationRef.current += 1;
       screenShareProducerRef.current = producer || null;
 
       if (!producer) {
@@ -472,6 +510,7 @@ const useTransportStats = () => {
   );
 
   const stopMonitoring = useCallback(() => {
+    generationRef.current += 1;
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -485,6 +524,7 @@ const useTransportStats = () => {
   }, []);
 
   const resetStats = useCallback(() => {
+    generationRef.current += 1;
     setStats({
       producer: null,
       consumer: null,
@@ -522,8 +562,10 @@ const useTransportStats = () => {
 
   useEffect(() => {
     return () => {
+      generationRef.current += 1;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, []);

@@ -9,13 +9,14 @@ export type TNsChain = {
 
 const createNsChain = async (
   noiseSuppression: NoiseSuppression,
-  stream: MediaStream
+  stream: MediaStream,
+  registerContext?: (context: AudioContext) => void
 ): Promise<TNsChain> => {
   switch (noiseSuppression) {
     case NoiseSuppression.DTLN:
-      return createDtlnChain(stream);
+      return createDtlnChain(stream, registerContext);
     case NoiseSuppression.RNNOISE:
-      return createRnnoiseChain(stream);
+      return createRnnoiseChain(stream, registerContext);
     default:
       throw new Error(`no ns chain for ${noiseSuppression}`);
   }

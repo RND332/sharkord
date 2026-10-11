@@ -1,10 +1,21 @@
+import { Dialog } from '@/components/dialogs/dialogs';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { toggleChannelMuted } from '@/features/app/actions';
 import { useIsChannelMuted } from '@/features/app/hooks';
+import { openDialog } from '@/features/dialogs/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
+import { usePublicServerSettings } from '@/features/server/hooks';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
 import { IconButton, Tooltip } from '@sharkord/ui';
-import { BellOff, Hash, MessageCircleMore, Volume2, X } from 'lucide-react';
+import {
+  BellOff,
+  Hash,
+  MessageCircleMore,
+  Search,
+  Users,
+  Volume2,
+  X
+} from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
@@ -13,11 +24,20 @@ type TTextTopbarProps = {
   onScrollToMessage: (messageId: number) => Promise<void>;
   channelId: number;
   onClose?: () => void;
+  onToggleRightSidebar?: () => void;
+  isRightSidebarOpen?: boolean;
 };
 
 const TextTopbar = memo(
-  ({ onScrollToMessage, channelId, onClose }: TTextTopbarProps) => {
-    const { t } = useTranslation();
+  ({
+    onScrollToMessage,
+    channelId,
+    onClose,
+    onToggleRightSidebar,
+    isRightSidebarOpen
+  }: TTextTopbarProps) => {
+    const { t } = useTranslation('topbar');
+    const settings = usePublicServerSettings();
     const channel = useChannelById(channelId);
     const isMuted = useIsChannelMuted(channelId);
 
@@ -26,6 +46,9 @@ const TextTopbar = memo(
     }, [channelId]);
 
     const pluginProps = useMemo(() => ({ channelId }), [channelId]);
+    const openSearchDialog = useCallback(() => {
+      openDialog(Dialog.SEARCH);
+    }, []);
 
     const info = useMemo(() => {
       if (channel?.isDm) {
@@ -83,7 +106,7 @@ const TextTopbar = memo(
             />
 
             {isMuted && (
-              <Tooltip content={t('channelMutedTooltip')}>
+              <Tooltip content={t('common:channelMutedTooltip')}>
                 <IconButton
                   icon={BellOff}
                   size="sm"
@@ -93,6 +116,29 @@ const TextTopbar = memo(
               </Tooltip>
             )}
             <PinnedMessagesPopover onScrollToMessage={onScrollToMessage} />
+
+            {settings?.enableSearch && (
+              <IconButton
+                onClick={openSearchDialog}
+                icon={Search}
+                variant="ghost"
+                size="sm"
+                aria-label={t('searchContent')}
+              />
+            )}
+            {onToggleRightSidebar && (
+              <IconButton
+                onClick={onToggleRightSidebar}
+                icon={Users}
+                variant="ghost"
+                size="sm"
+                aria-label={
+                  isRightSidebarOpen
+                    ? t('closeMembersSidebar')
+                    : t('openMembersSidebar')
+                }
+              />
+            )}
             {onClose && (
               <IconButton
                 onClick={onClose}

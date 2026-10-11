@@ -264,6 +264,10 @@ body {
   z-index: 10;
 }
 
+#portal:not(:empty) {
+  display: block;
+}
+
 .line-break {
   white-space: pre-wrap;
   vertical-align: middle;

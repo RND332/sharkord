@@ -93,5 +93,6 @@
   "pluginInstallDocsNote": "Подробнее читайте в документации:",
   "pluginInstallConfirmBtn": "Установить плагин",
   "pluginInstallConfirmCountdown": "Подождите ({{seconds}}s)",
-  "searchTruncated": "Показаны только самые свежие совпадения. Уточните запрос, чтобы сузить поиск."
+  "searchTruncated": "Показаны только самые свежие совпадения. Уточните запрос, чтобы сузить поиск.",
+  "createChannelDesc": "Создайте место для общения вашего сообщества."
 }

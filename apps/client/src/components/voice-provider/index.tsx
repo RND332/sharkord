@@ -61,6 +61,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useDevices } from '../devices-provider/hooks/use-devices';
+import { closeAudioContext } from './close-audio-context';
 import {
   clearVoiceControlsBridge,
   setVoiceControlsBridge
@@ -88,6 +89,7 @@ import { useTransportStats } from './hooks/use-transport-stats';
 import { useTransports } from './hooks/use-transports';
 import { useVoiceControls } from './hooks/use-voice-controls';
 import { RemoteWebcamVisibilityProvider } from './remote-webcam-visibility-context';
+import { VoiceSessionCancelledError } from './session-cancelled';
 import { SIMULCAST_WEBCAM_MAX_BITRATE } from './statics';
 import { VoiceStatsContext } from './stats-context';
 import { VolumeControlProvider } from './volume-control-context';
@@ -467,6 +469,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const {
     producerTransport,
     consumerTransport,
+    sessionGenerationRef,
     consumers,
     createProducerTransport,
     createConsumerTransport,
@@ -475,7 +478,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     cleanupTransports,
     getConsumer,
     getConsumerCodec,
-    pauseDemoConsumers
+    pauseDemoConsumers,
+    closeConsumer,
+    closeConsumers
   } = useTransports({
     voiceOnlyMode,
     canConsumeScreen,
@@ -487,6 +492,41 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     setRemoteStreamQualityLayers,
     clearRemoteConsumerMetadata
   });
+
+  // Voice events get these resource-owning callbacks through the context.
+  // Internal cleanup uses raw stream callbacks to avoid recursive invalidation.
+  const removeRemoteUserStreamAndConsumer = useCallback(
+    (userId: number, kind: Parameters<typeof removeRemoteUserStream>[1]) =>
+      closeConsumer(userId, kind),
+    [closeConsumer]
+  );
+  const removeExternalStreamTrackAndConsumer = useCallback(
+    (streamId: number, kind: Parameters<typeof removeExternalStreamTrack>[1]) =>
+      closeConsumer(streamId, kind),
+    [closeConsumer]
+  );
+  const clearRemoteUserStreamsAndConsumersForUser = useCallback(
+    (userId: number) => {
+      closeConsumers(userId, [
+        StreamKind.AUDIO,
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO
+      ]);
+      clearRemoteUserStreamsForUser(userId);
+    },
+    [closeConsumers, clearRemoteUserStreamsForUser]
+  );
+  const removeExternalStreamAndConsumers = useCallback(
+    (streamId: number) => {
+      closeConsumers(streamId, [
+        StreamKind.EXTERNAL_AUDIO,
+        StreamKind.EXTERNAL_VIDEO
+      ]);
+      removeExternalStream(streamId);
+    },
+    [closeConsumers, removeExternalStream]
+  );
 
   const { directScreenShare } = useDirectScreenShare({
     channelId: currentVoiceChannelId,
@@ -528,6 +568,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     null
   );
   const nsAudioContextsRef = useRef<AudioContext[]>([]);
+  const pendingMicStartupDisposerRef = useRef<(() => void) | null>(null);
   const micMutedRef = useRef(ownVoiceState.micMuted);
 
   const syncTransmitMicrophoneTrackState = useCallback(() => {
@@ -545,17 +586,21 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const cleanupMicProcessingResources = useCallback(() => {
     logVoice('mic: releasing capture resources');
 
+    const disposePendingStartup = pendingMicStartupDisposerRef.current;
+    pendingMicStartupDisposerRef.current = null;
+    disposePendingStartup?.();
+
     if (microphoneNoiseGateWorkletNodeRef.current) {
       microphoneNoiseGateWorkletNodeRef.current.disconnect();
       microphoneNoiseGateWorkletNodeRef.current = null;
     }
 
     if (microphoneNoiseGateAudioContextRef.current) {
-      microphoneNoiseGateAudioContextRef.current.close();
+      closeAudioContext(microphoneNoiseGateAudioContextRef.current);
       microphoneNoiseGateAudioContextRef.current = null;
     }
 
-    nsAudioContextsRef.current.forEach((ctx) => ctx.close());
+    nsAudioContextsRef.current.forEach(closeAudioContext);
     nsAudioContextsRef.current = [];
 
     rawMicrophoneStreamRef.current
@@ -592,9 +637,34 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   }, [devices.noiseGateThresholdDb]);
 
   const startMicStream = useCallback(async () => {
+    const sessionGeneration = sessionGenerationRef.current;
+    const transport = producerTransport.current;
+    let cancelled = false;
+    const isCurrentSession = () =>
+      !cancelled &&
+      sessionGeneration === sessionGenerationRef.current &&
+      transport === producerTransport.current;
+    let rawStream: MediaStream | undefined;
+    let gateContext: AudioContext | null = null;
+    let gateNode: AudioWorkletNode | null = null;
+    let nsContexts: AudioContext[] = [];
+    const tracks = new Set<MediaStreamTrack>();
+    const disposeLocalResources = () => {
+      gateNode?.disconnect();
+      closeAudioContext(gateContext);
+      nsContexts.forEach(closeAudioContext);
+      rawStream?.getTracks().forEach((track) => track.stop());
+      tracks.forEach((track) => track.stop());
+    };
+    const cancelStartup = () => {
+      cancelled = true;
+      disposeLocalResources();
+    };
     try {
       logVoice('mic: starting');
       cleanupMicProcessingResources();
+      // Own acquired resources before any asynchronous processing begins.
+      pendingMicStartupDisposerRef.current = cancelStartup;
 
       const useNsChain =
         devices.noiseSuppression === NoiseSuppression.DTLN ||
@@ -624,7 +694,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         constraints: micStreamConstraints
       });
 
-      const rawStream =
+      rawStream =
         await navigator.mediaDevices.getUserMedia(micStreamConstraints);
 
       logVoice('mic: stream obtained', {
@@ -632,7 +702,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         label: rawStream.getAudioTracks()[0]?.label
       });
 
-      rawMicrophoneStreamRef.current = rawStream;
+      if (!isCurrentSession()) {
+        rawStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
 
       const rawAudioTrack = rawStream.getAudioTracks()[0];
 
@@ -647,6 +720,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
           try {
             audioContext = new window.AudioContext();
+            gateContext = audioContext;
             const source = audioContext.createMediaStreamSource(rawStream);
             const noiseGateNode = await createNoiseGateWorkletNode(
               audioContext,
@@ -659,6 +733,12 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
                 holdMs: MICROPHONE_GATE_CLOSE_HOLD_MS
               }
             );
+            gateNode = noiseGateNode;
+            gateContext = audioContext;
+            if (!isCurrentSession()) {
+              disposeLocalResources();
+              return;
+            }
             const destination = audioContext.createMediaStreamDestination();
 
             source.connect(noiseGateNode);
@@ -667,23 +747,30 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
             const processedTrack = destination.stream.getAudioTracks()[0];
 
             if (processedTrack) {
-              microphoneNoiseGateAudioContextRef.current = audioContext;
-              microphoneNoiseGateWorkletNodeRef.current = noiseGateNode;
+              tracks.add(processedTrack);
               transmitTrack = processedTrack;
               transmitStream = destination.stream;
             } else {
               noiseGateNode.disconnect();
-              audioContext.close();
+              closeAudioContext(audioContext);
               audioContext = null;
+              gateContext = null;
+              gateNode = null;
               logVoiceWarn(
                 'mic: noise gate produced no track, using ungated stream'
               );
             }
           } catch (error) {
             if (audioContext) {
-              audioContext.close();
+              closeAudioContext(audioContext);
             }
 
+            gateContext = null;
+            gateNode = null;
+            if (!isCurrentSession()) {
+              disposeLocalResources();
+              return;
+            }
             logVoiceError(
               'mic: noise gate worklet failed, using ungated stream',
               error
@@ -706,19 +793,40 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           try {
             const chain = await createNsChain(
               devices.noiseSuppression,
-              transmitStream
+              transmitStream,
+              (context) => {
+                nsContexts.push(context);
+                if (!isCurrentSession()) closeAudioContext(context);
+              }
             );
-            nsAudioContextsRef.current = chain.contexts;
+            nsContexts = chain.contexts;
+            tracks.add(chain.outputTrack);
+            if (!isCurrentSession()) {
+              disposeLocalResources();
+              return;
+            }
             transmitTrack = chain.outputTrack;
             transmitStream = new MediaStream([chain.outputTrack]);
             logVoice('mic: noise suppression ready');
           } catch (nsError) {
+            if (!isCurrentSession()) {
+              disposeLocalResources();
+              return;
+            }
             logVoiceWarn('mic: noise suppression setup failed', {
               error: nsError
             });
           }
         }
 
+        if (!isCurrentSession()) {
+          disposeLocalResources();
+          return;
+        }
+        rawMicrophoneStreamRef.current = rawStream;
+        microphoneNoiseGateAudioContextRef.current = gateContext;
+        microphoneNoiseGateWorkletNodeRef.current = gateNode;
+        nsAudioContextsRef.current = nsContexts;
         transmitMicrophoneTrackRef.current = transmitTrack;
         setLocalAudioStream(transmitStream);
         syncTransmitMicrophoneTrackState();
@@ -729,11 +837,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           settings: rawAudioTrack.getSettings()
         });
 
-        if (!producerTransport.current) {
+        if (!transport) {
           throw new Error('Producer transport is not available');
         }
 
-        localAudioProducer.current = await producerTransport.current.produce({
+        const producer = await transport.produce({
           track: transmitTrack,
           codecOptions: {
             opusStereo: false,
@@ -745,11 +853,20 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           appData: { kind: StreamKind.AUDIO }
         });
 
+        if (!isCurrentSession()) {
+          producer.close();
+          disposeLocalResources();
+          return;
+        }
+        localAudioProducer.current = producer;
+
         logVoice('mic: producer created', {
           producerId: localAudioProducer.current.id
         });
 
         localAudioProducer.current?.observer.on('close', async () => {
+          if (!isCurrentSession() || localAudioProducer.current !== producer)
+            return;
           logVoice('mic: producer closed');
 
           const trpc = getTRPCClient();
@@ -764,6 +881,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         });
 
         rawAudioTrack.onended = () => {
+          if (
+            !isCurrentSession() ||
+            rawMicrophoneStreamRef.current !== rawStream
+          )
+            return;
           logVoiceWarn('mic: track ended, cleaning up');
 
           transmitStream.getAudioTracks().forEach((track) => {
@@ -779,12 +901,20 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         throw new Error('Failed to obtain audio track from microphone');
       }
     } catch (error) {
+      disposeLocalResources();
+      if (!isCurrentSession()) return;
       cleanupMicProcessingResources();
       setLocalAudioStream(undefined);
       logVoiceError('mic: start failed', error);
+    } finally {
+      // A late completion must never unregister B's pending startup.
+      if (pendingMicStartupDisposerRef.current === cancelStartup) {
+        pendingMicStartupDisposerRef.current = null;
+      }
     }
   }, [
     cleanupMicProcessingResources,
+    sessionGenerationRef,
     producerTransport,
     setLocalAudioStream,
     localAudioProducer,
@@ -1436,6 +1566,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     cleanupTransports();
     deviceRtpCapabilities.current = null;
 
+    setLoading(false);
     setConnectionStatus(ConnectionStatus.DISCONNECTED);
   }, [
     stopMonitoring,
@@ -1462,6 +1593,12 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
       cleanup();
 
+      const sessionGeneration = sessionGenerationRef.current;
+      const assertCurrentSession = () => {
+        if (sessionGeneration !== sessionGenerationRef.current) {
+          throw new VoiceSessionCancelledError();
+        }
+      };
       try {
         setLoading(true);
         setConnectionStatus(ConnectionStatus.CONNECTING);
@@ -1469,6 +1606,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         await trpc.voice.updateState.mutate({
           voiceOnlyMode: savedVoiceOnlyModeRef.current
         });
+        assertCurrentSession();
 
         routerRtpCapabilities.current = incomingRouterRtpCapabilities;
 
@@ -1477,6 +1615,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         await device.load({
           routerRtpCapabilities: incomingRouterRtpCapabilities
         });
+        assertCurrentSession();
 
         const loadedDevice = device as Device & {
           rtpCapabilities?: RtpCapabilities;
@@ -1493,11 +1632,15 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         deviceRtpCapabilities.current = recvRtpCapabilities;
 
         await createProducerTransport(device);
+        assertCurrentSession();
         await createConsumerTransport(device);
+        assertCurrentSession();
         await consumeExistingProducers(recvRtpCapabilities, {
           isViewingDemo: () => false
         });
+        assertCurrentSession();
         await startMicStream();
+        assertCurrentSession();
 
         startMonitoring(producerTransport.current, consumerTransport.current);
         setConnectionStatus(ConnectionStatus.CONNECTED);
@@ -1505,6 +1648,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         playSound(SoundType.OWN_USER_JOINED_VOICE_CHANNEL);
       } catch (error) {
         logVoiceError('session: init failed', error, { channelId });
+        // A cancelled initializer must not tear down a newer session.
+        if (sessionGeneration !== sessionGenerationRef.current) {
+          throw new VoiceSessionCancelledError();
+        }
         cleanup();
 
         setConnectionStatus(ConnectionStatus.FAILED);
@@ -1521,7 +1668,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       startMicStream,
       startMonitoring,
       producerTransport,
-      consumerTransport
+      consumerTransport,
+      sessionGenerationRef
     ]
   );
 
@@ -1680,10 +1828,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       remoteUserStreams,
       externalStreams,
 
-      removeRemoteUserStream,
-      removeExternalStreamTrack,
-      removeExternalStream,
-      clearRemoteUserStreamsForUser
+      removeRemoteUserStream: removeRemoteUserStreamAndConsumer,
+      removeExternalStreamTrack: removeExternalStreamTrackAndConsumer,
+      removeExternalStream: removeExternalStreamAndConsumers,
+      clearRemoteUserStreamsForUser: clearRemoteUserStreamsAndConsumersForUser
     }),
     [
       loading,
@@ -1715,10 +1863,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       remoteUserStreams,
       externalStreams,
 
-      removeRemoteUserStream,
-      removeExternalStreamTrack,
-      removeExternalStream,
-      clearRemoteUserStreamsForUser
+      removeRemoteUserStreamAndConsumer,
+      removeExternalStreamTrackAndConsumer,
+      removeExternalStreamAndConsumers,
+      clearRemoteUserStreamsAndConsumersForUser
     ]
   );
 

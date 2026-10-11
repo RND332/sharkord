@@ -92,6 +92,7 @@ const AppRail = memo(() => {
       <div className="flex-1" />
       <Tooltip content={t('userSettings')}>
         <button
+          data-testid={TestId.USER_SETTINGS_TRIGGER}
           type="button"
           aria-label={t('userSettings')}
           onClick={openSettings}

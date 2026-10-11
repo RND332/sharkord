@@ -44,6 +44,34 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     // Only apply the filter if there are some video streams
     const shouldFilterNonVideo = hideNonVideoParticipants && hasAnyVideoStreams;
 
+    // Shared content is the primary focus and appears before participant tiles.
+    voiceUsers.forEach((voiceUser) => {
+      const shouldHideOwnScreenShare =
+        hideOwnScreenShare && voiceUser.id === ownUserId;
+      if (
+        devices.voiceOnlyMode ||
+        !voiceUser.state.sharingScreen ||
+        shouldHideOwnScreenShare ||
+        (voiceUser.id !== ownUserId && !viewedRemoteDemos[voiceUser.id])
+      ) {
+        return;
+      }
+
+      const screenShareCardId = `screen-share-${voiceUser.id}`;
+      cards.push(
+        <ScreenShareCard
+          key={screenShareCardId}
+          userId={voiceUser.id}
+          isPinned={isPinned(screenShareCardId)}
+          isAnyCardPinned={isAnyCardPinned}
+          cardId={screenShareCardId}
+          onPin={pinCard}
+          onUnpin={unpinCard}
+          showPinControls
+        />
+      );
+    });
+
     voiceUsers.forEach((voiceUser) => {
       const userCardId = `user-${voiceUser.id}`;
       const hasVideo = voiceUser.state.webcamEnabled;
@@ -52,7 +80,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
         voiceUser.state.sharingScreen &&
         !viewedRemoteDemos[voiceUser.id];
 
-      // keep the opt-in control reachable until its screen share tile is shown
+      // Keep the opt-in control reachable until its screen share tile is shown.
       if (!shouldFilterNonVideo || hasVideo || needsDemoControl) {
         cards.push(
           <VoiceUserCard
@@ -65,31 +93,6 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             onPin={pinCard}
             onUnpin={unpinCard}
             voiceUser={voiceUser}
-          />
-        );
-      }
-
-      // remote shares require opt-in; your own preview does not.
-      const shouldHideOwnScreenShare =
-        hideOwnScreenShare && voiceUser.id === ownUserId;
-      if (
-        !devices.voiceOnlyMode &&
-        voiceUser.state.sharingScreen &&
-        !shouldHideOwnScreenShare &&
-        (voiceUser.id === ownUserId || viewedRemoteDemos[voiceUser.id])
-      ) {
-        const screenShareCardId = `screen-share-${voiceUser.id}`;
-
-        cards.push(
-          <ScreenShareCard
-            key={screenShareCardId}
-            userId={voiceUser.id}
-            isPinned={isPinned(screenShareCardId)}
-            isAnyCardPinned={isAnyCardPinned}
-            cardId={screenShareCardId}
-            onPin={pinCard}
-            onUnpin={unpinCard}
-            showPinControls
           />
         );
       }

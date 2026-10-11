@@ -120,6 +120,8 @@ const ServerView = memo(() => {
           <ContentWrapper
             isDmMode={dmsOpen}
             selectedDmChannelId={selectedDmChannelId}
+            onToggleRightSidebar={handleDesktopRightSidebarToggle}
+            isRightSidebarOpen={isDesktopRightSidebarOpen}
           />
 
           <VoiceChatSidebar />

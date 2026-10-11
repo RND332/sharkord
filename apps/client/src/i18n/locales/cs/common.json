@@ -122,5 +122,12 @@
   "reconnectingAbort": "Přestat se připojovat",
   "removeImage": "Odebrat obrázek",
   "channelMutedTooltip": "Kanál je ztlumen, kliknutím zrušíte ztlumení",
-  "unknownRole": "Neznámá role"
+  "unknownRole": "Neznámá role",
+  "welcomeToChannel": "Vítejte v #{{name}}",
+  "channelWelcomeDesc": "Začněte konverzaci, sdílejte novinky nebo jen pozdravte.",
+  "today": "Dnes",
+  "composerHint": "Enter odešle zprávu · Shift + Enter vloží nový řádek",
+  "attachFiles": "Připojit soubory",
+  "addEmoji": "Přidat emoji",
+  "sendMessage": "Odeslat zprávu"
 }

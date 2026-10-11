@@ -18,10 +18,17 @@ import { useTranslation } from 'react-i18next';
 type TContentWrapperProps = {
   isDmMode: boolean;
   selectedDmChannelId?: number;
+  onToggleRightSidebar: () => void;
+  isRightSidebarOpen: boolean;
 };
 
 const ContentWrapper = memo(
-  ({ isDmMode, selectedDmChannelId }: TContentWrapperProps) => {
+  ({
+    isDmMode,
+    selectedDmChannelId,
+    onToggleRightSidebar,
+    isRightSidebarOpen
+  }: TContentWrapperProps) => {
     const { t } = useTranslation();
     const selectedChannelId = useSelectedChannelId();
     const selectedChannelType = useSelectedChannelType();
@@ -49,6 +56,8 @@ const ContentWrapper = memo(
           <TextChannel
             key={selectedDmChannelId}
             channelId={selectedDmChannelId}
+            onToggleRightSidebar={onToggleRightSidebar}
+            isRightSidebarOpen={isRightSidebarOpen}
           />
         );
       } else {
@@ -69,7 +78,12 @@ const ContentWrapper = memo(
     if (selectedChannelId) {
       if (selectedChannelType === ChannelType.TEXT) {
         content = (
-          <TextChannel key={selectedChannelId} channelId={selectedChannelId} />
+          <TextChannel
+            key={selectedChannelId}
+            channelId={selectedChannelId}
+            onToggleRightSidebar={onToggleRightSidebar}
+            isRightSidebarOpen={isRightSidebarOpen}
+          />
         );
       } else if (selectedChannelType === ChannelType.VOICE) {
         content = (

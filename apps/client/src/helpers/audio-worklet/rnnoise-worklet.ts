@@ -42,7 +42,8 @@ type TRnnoiseChain = {
 };
 
 const createRnnoiseChain = async (
-  inputStream: MediaStream
+  inputStream: MediaStream,
+  registerContext?: (context: AudioContext) => void
 ): Promise<TRnnoiseChain> => {
   if (!isAudioWorkletSupported()) {
     throw new Error('AudioWorklet is not supported in this browser');
@@ -58,6 +59,7 @@ const createRnnoiseChain = async (
   }
 
   const ctx = new AudioContext({ sampleRate: nativeSampleRate });
+  registerContext?.(ctx);
   await ensureWorkletLoaded(ctx);
 
   // outputChannelCount: [2] allocates a second output channel buffer so the

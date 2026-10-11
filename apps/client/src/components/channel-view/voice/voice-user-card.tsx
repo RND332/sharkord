@@ -142,12 +142,12 @@ const VoiceUserCard = memo(
           <UserAvatar
             userId={userId}
             className={cn(
-              'pointer-events-none',
+              'pointer-events-none [&_[data-slot=avatar-fallback]]:font-semibold',
               isPinned
-                ? 'w-16 h-16 md:w-20 md:h-20 lg:w-32 lg:h-32'
+                ? 'size-32 [&_[data-slot=avatar-fallback]]:text-4xl'
                 : isCompact
-                  ? 'w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14'
-                  : 'w-12 h-12 md:w-16 md:h-16 lg:w-24 lg:h-24'
+                  ? 'size-16 [&_[data-slot=avatar-fallback]]:text-xl'
+                  : 'size-30 [&_[data-slot=avatar-fallback]]:text-4xl'
             )}
             showStatusBadge={false}
           />

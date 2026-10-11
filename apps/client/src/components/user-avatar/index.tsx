@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { AvatarImage } from '@radix-ui/react-avatar';
 import { UserStatus } from '@sharkord/shared';
 import { Avatar, AvatarFallback } from '@sharkord/ui';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { UserPopover } from '../user-popover';
 import { UserStatusBadge } from '../user-status';
 
@@ -27,14 +27,24 @@ const UserAvatar = memo(
     onClick
   }: TUserAvatarProps) => {
     const user = useUserById(userId);
+    const profileColorStyle = useMemo(
+      () => ({ backgroundColor: user?.profileColor }),
+      [user?.profileColor]
+    );
 
     if (!user) return null;
 
     const content = (
       <div className="relative size-fit" onClick={onClick}>
-        <Avatar className={cn('size-8 bg-muted', className)}>
+        <Avatar
+          className={cn('size-8 bg-muted', className)}
+          style={profileColorStyle}
+        >
           <AvatarImage src={getFileUrl(user.avatar)} key={user.avatarId} />
-          <AvatarFallback className="bg-muted text-xs">
+          <AvatarFallback
+            className="bg-muted text-xs"
+            style={profileColorStyle}
+          >
             {getInitialsFromName(getRenderedUsername(user))}
           </AvatarFallback>
         </Avatar>

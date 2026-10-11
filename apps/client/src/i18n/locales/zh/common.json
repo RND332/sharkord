@@ -122,5 +122,12 @@
   "reconnectingAbort": "停止重新连接",
   "removeImage": "移除图片",
   "channelMutedTooltip": "频道已静音，点击取消静音",
-  "unknownRole": "未知角色"
+  "unknownRole": "未知角色",
+  "welcomeToChannel": "欢迎来到 #{{name}}",
+  "channelWelcomeDesc": "开始聊天、分享近况，或简单打个招呼。",
+  "today": "今天",
+  "composerHint": "按 Enter 发送 · Shift + Enter 换行",
+  "attachFiles": "附加文件",
+  "addEmoji": "添加表情",
+  "sendMessage": "发送消息"
 }

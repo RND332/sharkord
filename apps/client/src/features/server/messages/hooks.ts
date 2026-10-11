@@ -5,6 +5,7 @@ import {
   type TJoinedMessage,
   type TMessagesCursor
 } from '@sharkord/shared';
+import { isSameDay } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -84,7 +85,10 @@ const useGroupedMessages = (messages: TJoinedMessage[]) =>
       const currentDate = message.createdAt;
       const timeDifference = Math.abs(currentDate - lastDate) / 1000 / 60;
 
-      if (timeDifference < 1) {
+      if (
+        timeDifference < 1 &&
+        isSameDay(new Date(currentDate), new Date(lastDate))
+      ) {
         lastGroup.messages.push(message);
 
         continue;

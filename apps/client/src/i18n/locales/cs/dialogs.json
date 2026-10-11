@@ -93,5 +93,6 @@
   "pluginInstallDocsNote": "Více informací naleznete v dokumentaci:",
   "pluginInstallConfirmBtn": "Nainstalovat rozšíření",
   "pluginInstallConfirmCountdown": "Čekejte ({{seconds}}s)",
-  "searchTruncated": "Zobrazují se pouze nejnovější shody. Upřesněte hledání pro zúžení výsledků."
+  "searchTruncated": "Zobrazují se pouze nejnovější shody. Upřesněte hledání pro zúžení výsledků.",
+  "createChannelDesc": "Dejte své komunitě místo k rozhovoru."
 }

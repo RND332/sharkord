@@ -122,5 +122,12 @@
   "reconnectingAbort": "Dejar de reconectar",
   "removeImage": "Eliminar imagen",
   "channelMutedTooltip": "Canal silenciado, haz clic para dejar de silenciarlo",
-  "unknownRole": "Rol desconocido"
+  "unknownRole": "Rol desconocido",
+  "welcomeToChannel": "Te damos la bienvenida a #{{name}}",
+  "channelWelcomeDesc": "Inicia una conversación, comparte novedades o simplemente saluda.",
+  "today": "Hoy",
+  "composerHint": "Pulsa Enter para enviar · Shift + Enter para una nueva línea",
+  "attachFiles": "Adjuntar archivos",
+  "addEmoji": "Añadir emoji",
+  "sendMessage": "Enviar mensaje"
 }

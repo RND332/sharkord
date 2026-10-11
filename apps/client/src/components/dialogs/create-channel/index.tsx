@@ -10,13 +10,13 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Group,
   Input
 } from '@sharkord/ui';
-import { Hash, Mic } from 'lucide-react';
+import { Check, Hash, Plus, Volume2 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';
@@ -24,7 +24,6 @@ import type { TDialogBaseProps } from '../types';
 type TChannelTypeItemProps = {
   icon: React.ReactNode;
   title: string;
-  description: string;
   isActive: boolean;
   onClick: () => void;
 };
@@ -32,23 +31,25 @@ type TChannelTypeItemProps = {
 const ChannelTypeItem = ({
   icon,
   title,
-  description,
   isActive,
   onClick
 }: TChannelTypeItemProps) => (
-  <div
+  <button
+    type="button"
+    role="radio"
+    aria-checked={isActive}
     className={cn(
-      'flex items-center gap-2 p-2 rounded-md cursor-pointer',
-      isActive && 'ring-2 ring-primary bg-primary/10'
+      'flex w-full items-center gap-2 rounded-lg border p-[15px] text-left text-[15px] leading-[18px] cursor-pointer',
+      isActive
+        ? 'border-primary bg-raised text-primary'
+        : 'border-subtle-foreground bg-panel'
     )}
     onClick={onClick}
   >
     {icon}
-    <div className="flex flex-col">
-      <span>{title}</span>
-      <span className="text-sm text-primary/60">{description}</span>
-    </div>
-  </div>
+    <span>{title}</span>
+    {isActive && <Check className="size-4" />}
+  </button>
 );
 
 type TCreateChannelDialogProps = TDialogBaseProps & {
@@ -91,51 +92,74 @@ const CreateChannelDialog = memo(
 
     return (
       <Dialog open={isOpen}>
-        <DialogContent onInteractOutside={close} close={close}>
-          <DialogHeader>
-            <DialogTitle>{t('createChannelTitle')}</DialogTitle>
+        <DialogContent
+          onInteractOutside={close}
+          close={close}
+          className="flex h-[620px] max-h-[calc(100dvh-2rem)] flex-col gap-0 rounded-xl p-0"
+        >
+          <DialogHeader className="shrink-0 gap-[7px] border-b border-line px-[26px] pt-[25px] pb-[21px] pr-14">
+            <DialogTitle className="text-[21px] leading-[26px] font-bold tracking-[-0.025em]">
+              {t('createChannelTitle')}
+            </DialogTitle>
+            <DialogDescription className="text-[13px] leading-[19px]">
+              {t('createChannelDesc')}
+            </DialogDescription>
           </DialogHeader>
 
-          <Group label={t('channelTypeLabel')}>
-            <ChannelTypeItem
-              title={t('textChannelTitle')}
-              description={t('textChannelDesc')}
-              icon={<Hash className="h-6 w-6" />}
-              isActive={channelType === ChannelType.TEXT}
-              onClick={() => setChannelType(ChannelType.TEXT)}
-            />
-
-            <ChannelTypeItem
-              title={t('voiceChannelTitle')}
-              description={t('voiceChannelDesc')}
-              icon={<Mic className="h-6 w-6" />}
-              isActive={channelType === ChannelType.VOICE}
-              onClick={() => setChannelType(ChannelType.VOICE)}
-            />
-          </Group>
-
-          <Group label={t('channelNameLabel')}>
-            <AutoFocus>
-              <Input
-                placeholder={t('channelNamePlaceholder')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                name="name"
-                error={errors.name}
-                resetError={setErrors}
-                onEnter={onSubmit}
+          <div className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-[26px] py-7">
+            <div
+              role="radiogroup"
+              aria-label={t('channelTypeLabel')}
+              className="flex flex-col gap-3"
+            >
+              <span className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground">
+                {t('channelTypeLabel')}
+              </span>
+              <ChannelTypeItem
+                title={t('textChannelTitle')}
+                icon={<Hash className="size-4" />}
+                isActive={channelType === ChannelType.TEXT}
+                onClick={() => setChannelType(ChannelType.TEXT)}
               />
-            </AutoFocus>
-          </Group>
 
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={close}>
-              {t('cancel')}
-            </Button>
+              <ChannelTypeItem
+                title={t('voiceChannelTitle')}
+                icon={<Volume2 className="size-4" />}
+                isActive={channelType === ChannelType.VOICE}
+                onClick={() => setChannelType(ChannelType.VOICE)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-[9px]">
+              <label
+                htmlFor="create-channel-name"
+                className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
+              >
+                {t('channelNameLabel')}
+              </label>
+              <AutoFocus>
+                <Input
+                  id="create-channel-name"
+                  className="h-[50px] rounded-lg border-subtle-foreground bg-canvas px-[15px] text-[15px] leading-[18px]"
+                  placeholder={t('channelNamePlaceholder')}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  name="name"
+                  error={errors.name}
+                  resetError={setErrors}
+                  onEnter={onSubmit}
+                />
+              </AutoFocus>
+            </div>
+          </div>
+
+          <DialogFooter className="h-[74px] shrink-0 flex-row items-center justify-end gap-[10px] px-[26px] sm:mx-0 sm:mb-0">
             <Button
+              className="h-10 gap-2 rounded-lg px-[14px]"
               onClick={onSubmit}
               disabled={loading || !name || !channelType}
             >
+              <Plus className="size-5" />
               {t('createChannelBtn')}
             </Button>
           </DialogFooter>

@@ -93,5 +93,6 @@
   "pluginInstallDocsNote": "Para más detalles, lee la documentación en:",
   "pluginInstallConfirmBtn": "Instalar plugin",
   "pluginInstallConfirmCountdown": "Espera ({{seconds}}s)",
-  "searchTruncated": "Mostrando solo las coincidencias más recientes. Afina tu búsqueda para acotarla."
+  "searchTruncated": "Mostrando solo las coincidencias más recientes. Afina tu búsqueda para acotarla.",
+  "createChannelDesc": "Dale a tu comunidad un lugar para conversar."
 }

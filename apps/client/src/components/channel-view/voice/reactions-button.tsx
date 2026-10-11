@@ -92,10 +92,10 @@ const ReactionsButton = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded size-8 transition-all duration-200 hover:bg-muted/60"
+            className="size-10.5 rounded-lg border border-control-border bg-raised transition-colors duration-150 hover:bg-panel"
             aria-label={t('sendVoiceReaction')}
           >
-            <Smile className="size-4" />
+            <Smile className="size-4.5" />
           </Button>
         </PopoverTrigger>
       </Tooltip>

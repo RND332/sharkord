@@ -1,5 +1,6 @@
 import { MessageCompose } from '@/components/message-compose';
 import { useThreadSidebar } from '@/features/app/hooks';
+import { useChannelById } from '@/features/server/channels/hooks';
 import {
   useChannelCan,
   useTypingUsersByChannelId
@@ -19,8 +20,9 @@ import {
   type TJoinedMessage
 } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
-import { ArrowDown } from 'lucide-react';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { format, isSameDay, isToday } from 'date-fns';
+import { ArrowDown, Hash } from 'lucide-react';
+import { Fragment, memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ChatInputDivider } from './chat-input-divider';
@@ -41,10 +43,15 @@ import {
 type TChannelProps = {
   channelId: number;
   onClose?: () => void;
+  onToggleRightSidebar?: () => void;
+  isRightSidebarOpen?: boolean;
 };
 
-const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
+const TextChannel = memo((props: TChannelProps) => {
+  const { channelId, onClose, onToggleRightSidebar, isRightSidebarOpen } =
+    props;
   const { t } = useTranslation();
+  const channel = useChannelById(channelId);
   const {
     messages,
     hasMore,
@@ -193,6 +200,8 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
         onScrollToMessage={scrollToMessage}
         channelId={channelId}
         onClose={onClose}
+        onToggleRightSidebar={onToggleRightSidebar}
+        isRightSidebarOpen={isRightSidebarOpen}
       />
 
       <div
@@ -200,19 +209,55 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
         onScroll={onScroll}
         onLoadCapture={onAsyncContentLoaded}
         data-messages-container
-        className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-2 pb-7 animate-in fade-in duration-500"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-7 pt-7 pb-2 animate-in fade-in duration-500"
       >
-        <div className="space-y-4">
-          {groupedMessages.map((group) => (
-            <MessagesGroup
-              key={group.key}
-              group={group.messages}
-              onReplyMessageSelect={onReplyMessageSelect}
-              replyTargetMessageId={replyingToMessage?.id}
-              activeThreadMessageId={activeThreadMessageId}
-              editingMessageId={editingMessageId}
-              onEditComplete={handleEditComplete}
-            />
+        <div className="flex min-h-full flex-col justify-end [&>*]:shrink-0">
+          {!hasMore && !detachedFromPresent && channel && !channel.isDm && (
+            <div
+              data-channel-welcome
+              className="flex flex-col gap-[7px] pb-[22px]"
+            >
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-[#3d414b]">
+                <Hash className="size-6" />
+              </div>
+              <h2 className="text-[27px] leading-[33px] font-bold tracking-[-0.02em]">
+                {t('welcomeToChannel', { name: channel.name })}
+              </h2>
+              <p className="text-[15px] leading-[23px]">
+                {t('channelWelcomeDesc')}
+              </p>
+            </div>
+          )}
+          {groupedMessages.map((group, index) => (
+            <Fragment key={group.key}>
+              {(index === 0 ||
+                !isSameDay(
+                  new Date(group.messages[0].createdAt),
+                  new Date(groupedMessages[index - 1].messages[0].createdAt)
+                )) && (
+                <div
+                  data-message-date
+                  className="flex h-9 items-center gap-[14px]"
+                >
+                  <div className="h-px flex-1 bg-line" />
+                  <span className="text-xs leading-4 font-semibold uppercase text-[#a7abb2]">
+                    {isToday(new Date(group.messages[0].createdAt))
+                      ? t('today')
+                      : format(new Date(group.messages[0].createdAt), 'PPP')}
+                  </span>
+                  <div className="h-px flex-1 bg-line" />
+                </div>
+              )}
+              <MessagesGroup
+                showClockTime
+                group={group.messages}
+                onReplyMessageSelect={onReplyMessageSelect}
+                replyTargetMessageId={replyingToMessage?.id}
+                activeThreadMessageId={activeThreadMessageId}
+                editingMessageId={editingMessageId}
+                onEditComplete={handleEditComplete}
+              />
+            </Fragment>
           ))}
         </div>
       </div>
