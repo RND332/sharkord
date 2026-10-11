@@ -77,5 +77,7 @@
   "hideWebcam": "Skrýt webkameru",
   "showWebcam": "Zobrazit webkameru",
   "microphone": "Mikrofon",
-  "noiseSuppression": "Potlačení šumu"
+  "noiseSuppression": "Potlačení šumu",
+  "muteChannel": "Ztlumit kanál",
+  "unmuteChannel": "Zrušit ztlumení kanálu"
 }

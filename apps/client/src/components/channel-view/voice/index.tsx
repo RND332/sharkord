@@ -58,6 +58,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
           <VoiceUserCard
             key={userCardId}
             userId={voiceUser.id}
+            channelId={channelId}
             isPinned={isPinned(userCardId)}
             isAnyCardPinned={isAnyCardPinned}
             cardId={userCardId}
@@ -123,6 +124,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     voiceUsers,
     externalStreams,
     devices.voiceOnlyMode,
+    channelId,
     isPinned,
     pinCard,
     unpinCard,

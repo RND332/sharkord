@@ -1,4 +1,5 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
+import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { UserAvatar } from '@/components/user-avatar';
 import { useStreamVolumeControl } from '@/components/voice-provider/hooks/use-stream-volume-control';
 import { useRemoteWebcamVisibility } from '@/components/voice-provider/remote-webcam-visibility-context';
@@ -12,7 +13,7 @@ import {
 } from '@/features/server/voice/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { cn } from '@/lib/utils';
-import { StreamKind } from '@sharkord/shared';
+import { PluginSlot, StreamKind } from '@sharkord/shared';
 import { HeadphoneOff, MicOff, Monitor, Video } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { CardTheme } from './card-theme';
@@ -37,6 +38,7 @@ import { VolumeButton } from './volume-button';
 
 type TVoiceUserCardProps = {
   userId: number;
+  channelId: number;
   cardId: string;
   onPin: (card: TPinnedCard) => void;
   onUnpin: () => void;
@@ -50,6 +52,7 @@ type TVoiceUserCardProps = {
 const VoiceUserCard = memo(
   ({
     userId,
+    channelId,
     cardId,
     onPin,
     onUnpin,
@@ -85,6 +88,11 @@ const VoiceUserCard = memo(
         onPin({ id: cardId, type: PinnedCardType.USER, userId: userId });
       }
     }, [isPinned, onPin, onUnpin, cardId, userId]);
+
+    const pluginSlotProps = useMemo(
+      () => ({ channelId, userId }),
+      [channelId, userId]
+    );
 
     const backgroundStyle = useMemo(
       () =>
@@ -146,6 +154,18 @@ const VoiceUserCard = memo(
         )}
 
         <VoiceReactions userId={userId} isCompact={isCompact} />
+
+        <div
+          className={cn(
+            'absolute top-0 left-0 z-10 flex items-center gap-1',
+            density.inset
+          )}
+        >
+          <PluginSlotRenderer
+            slotId={PluginSlot.VOICE_USER_CARD}
+            props={pluginSlotProps}
+          />
+        </div>
 
         <div
           className={cn(

@@ -79,5 +79,7 @@
   "hideWebcam": "Hide webcam",
   "showWebcam": "Show webcam",
   "microphone": "Microphone",
-  "noiseSuppression": "Noise suppression"
+  "noiseSuppression": "Noise suppression",
+  "muteChannel": "Mute Channel",
+  "unmuteChannel": "Unmute Channel"
 }

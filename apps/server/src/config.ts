@@ -36,6 +36,7 @@ const zStunUrl = z.string().refine((value) => {
 }, 'Only STUN and STUNS host URLs are allowed');
 const zConfig = z.object({
   server: z.object({
+    host: z.string().trim(),
     port: z.coerce.number().int().positive(),
     debug: z.coerce.boolean(),
     autoupdate: z.coerce.boolean(),
@@ -123,6 +124,7 @@ type TConfig = z.infer<typeof zConfig>;
 
 const defaultConfig: TConfig = {
   server: {
+    host: '',
     port: 4991,
     debug: IS_DEVELOPMENT,
     autoupdate: false,
@@ -288,6 +290,7 @@ if (!configExists) {
 }
 
 const envOverridesMap: Record<string, string> = {
+  'server.host': 'SHARKORD_HOST',
   'server.port': 'SHARKORD_PORT',
   'server.debug': 'SHARKORD_DEBUG',
   'server.autoupdate': 'SHARKORD_AUTOUPDATE',

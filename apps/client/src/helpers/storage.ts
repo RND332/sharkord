@@ -32,7 +32,10 @@ export enum LocalStorageKey {
   PLUGIN_SLOT_DEBUG = 'sharkord-plugin-slot-debug',
   HIDE_OWN_SCREEN_SHARE = 'sharkord-hide-own-screen-share',
   HIDDEN_REMOTE_WEBCAMS = 'sharkord-hidden-remote-webcams',
-  ALWAYS_SHOW_VOICE_CONTROLS = 'sharkord-always-show-voice-controls'
+  ALWAYS_SHOW_VOICE_CONTROLS = 'sharkord-always-show-voice-controls',
+  NOTIFICATION_SOUNDS = 'sharkord-notification-sounds',
+  MESSAGE_SENT_SOUND = 'sharkord-message-sent-sound',
+  MUTED_CHANNEL_IDS = 'sharkord-muted-channel-ids'
 }
 
 export enum SessionStorageKey {

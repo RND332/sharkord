@@ -79,5 +79,7 @@
   "hideWebcam": "Ocultar webcam",
   "showWebcam": "Mostrar webcam",
   "microphone": "Microfone",
-  "noiseSuppression": "Supressão de ruído"
+  "noiseSuppression": "Supressão de ruído",
+  "muteChannel": "Silenciar canal",
+  "unmuteChannel": "Reativar canal"
 }
