@@ -1419,7 +1419,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       const audioTrack = stream.getAudioTracks()[0];
       if (!videoTrack)
         throw new Error('No video track obtained for screen share');
-      videoTrack.contentHint = 'detail';
+      // A game redraws every pixel of every frame, and `detail` maps to
+      // maintain-resolution, so the encoder dropped frames instead of
+      // resolution and viewers saw a slideshow instead of a fullscreen game.
+      // `motion` trades sharpness for a frame rate that holds up.
+      videoTrack.contentHint = 'motion';
       videoTrack.onended = stopScreenShareStream;
       if (audioTrack) {
         setLocalScreenShareAudio(new MediaStream([audioTrack]));
