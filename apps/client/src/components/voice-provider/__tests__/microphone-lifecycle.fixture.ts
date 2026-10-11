@@ -77,7 +77,11 @@ mock.module('@/features/server/voice/hooks', () => ({
   useOwnVoiceState: () => ({ micMuted: false, soundMuted: false }),
   useVoice: () => voice
 }));
-const devices = { noiseSuppression: 'disabled', noiseGateEnabled: false };
+const devices = {
+  noiseSuppression: 'disabled',
+  noiseGateEnabled: false,
+  directScreenSharing: false
+};
 mock.module('../../devices-provider/hooks/use-devices', () => ({
   useDevices: () => ({ devices })
 }));
@@ -88,9 +92,11 @@ for (const [path, name] of [
   ['../volume-control-context', 'VolumeControlProvider']
 ])
   mock.module(path!, () => ({ [name!]: () => null }));
+const directStart = mock(async (_stream: Stream) => true);
 mock.module('../hooks/use-direct-screen-share', () => ({
   useDirectScreenShare: () => ({
     directScreenShare: {
+      start: directStart,
       close() {},
       stop() {},
       acceptPendingOffer() {},
@@ -180,6 +186,8 @@ const deferred = <T>() => {
   return { promise, resolve, reject };
 };
 class Track {
+  kind = 'audio';
+  contentHint = '';
   id = 'mic';
   label = 'mic';
   enabled = true;
@@ -198,7 +206,10 @@ class Stream {
     return this.tracks;
   }
   getAudioTracks() {
-    return this.tracks;
+    return this.tracks.filter((track) => track.kind === 'audio');
+  }
+  getVideoTracks() {
+    return this.tracks.filter((track) => track.kind === 'video');
   }
 }
 const capture = mock(async () => new Stream());
@@ -271,6 +282,9 @@ beforeEach(() => {
   channelId = 1;
   devices.noiseGateEnabled = false;
   devices.noiseSuppression = 'disabled';
+  devices.directScreenSharing = false;
+  directStart.mockReset();
+  directStart.mockImplementation(async () => true);
   suppress.mockReset();
   suppress.mockImplementation(async (_type, _stream, register) => {
     const context = new Context();
@@ -311,6 +325,52 @@ test('genuine current initialization failure still leaves voice and reports fail
   expect(render().loading).toBe(false);
   expect(String(render().connectionStatus)).toBe('failed');
 });
+
+// Exercise the real provider/caller through both outgoing media boundaries.
+// Browser/transport doubles cannot prove actual Windows capture or encoder FPS.
+for (const route of ['SFU', 'direct', 'direct fallback'] as const) {
+  for (const hint of ['motion', 'text', 'detail', '']) {
+    test(`screen share forces the motion capture hint over '${hint}' via ${route}`, async () => {
+      const video = new Track();
+      video.kind = 'video';
+      video.contentHint = hint;
+      const stream = new Stream([video]);
+      Object.assign(navigator.mediaDevices, {
+        getDisplayMedia: mock(async () => stream)
+      });
+      devices.directScreenSharing = route !== 'SFU';
+      render();
+      send.current = transport();
+      const seenHints: string[] = [];
+      send.current.produce.mockImplementation(async (...args: unknown[]) => {
+        const options = args[0] as { track: Track };
+        expect(options.track).toBe(video);
+        seenHints.push(options.track.contentHint);
+        return producer();
+      });
+      directStart.mockImplementation(async (captured) => {
+        expect(captured).toBe(stream);
+        seenHints.push(captured.getVideoTracks()[0]!.contentHint);
+        return route === 'direct';
+      });
+
+      await voice.toggleScreenShare();
+
+      const expectedHint = 'motion';
+      expect(errorToast).not.toHaveBeenCalled();
+      expect(seenHints).toEqual(
+        route === 'direct fallback'
+          ? [expectedHint, expectedHint]
+          : [expectedHint]
+      );
+      expect(video.contentHint).toBe(expectedHint);
+      expect(video.readyState).toBe('live');
+      expect(send.current.produce).toHaveBeenCalledTimes(
+        route === 'direct' ? 0 : 1
+      );
+    });
+  }
+}
 
 test('leaving while capture is pending resets loading without replacement', async () => {
   const pending = deferred<Stream>();
