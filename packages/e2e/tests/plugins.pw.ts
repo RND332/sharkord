@@ -15,7 +15,10 @@ const chatActionSlot = (page: Page) =>
   page.getByTestId('e2e-plugin-chat-action');
 
 const openUserSettings = (page: Page) =>
-  page.getByTestId(TestId.USER_SETTINGS_TRIGGER).click();
+  page
+    .getByTestId(TestId.LEFT_SIDEBAR)
+    .getByTestId(TestId.USER_SETTINGS_TRIGGER)
+    .click();
 
 const openPluginUserSettings = async (page: Page) => {
   await openUserSettings(page);
