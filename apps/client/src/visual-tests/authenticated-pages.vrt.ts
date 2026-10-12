@@ -40,7 +40,7 @@ import {
   vi
 } from 'vitest';
 
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 vi.mock('@/lib/trpc', { spy: true });
 
 const addRoot = (id: string) => {
@@ -354,16 +354,22 @@ test('empty composer uses Paper geometry and keeps upload on the left', async ()
   const input = page.elementLocator(
     row.querySelector<HTMLElement>('.ProseMirror')!
   );
-  await input.fill('A draft keeps an explicit send action.');
+  const { getChannelDraftKey, getDraftMessage } =
+    await import('@/components/channel-view/text/use-draft-messages');
+  const draftKey = getChannelDraftKey(1);
+  await input.click();
+  await userEvent.type(input, 'A draft keeps an explicit send action.');
   await expect
     .element(page.getByRole('button', { name: 'Send message' }))
     .toBeVisible();
-  await input.fill('');
-  await waitForRender();
-  expect(input.element().textContent).toBe('');
-  const { getChannelDraftKey, getDraftMessage } =
-    await import('@/components/channel-view/text/use-draft-messages');
-  expect(getDraftMessage(getChannelDraftKey(1))).toBe('');
+  await expect.poll(() => getDraftMessage(draftKey)).not.toBe('');
+  await userEvent.keyboard('{Control>}a{/Control}');
+  await userEvent.keyboard('{Backspace}');
+  await expect.poll(() => input.element().textContent).toBe('');
+  await expect.poll(() => getDraftMessage(draftKey)).toBe('');
+  await expect
+    .poll(() => page.getByRole('button', { name: 'Send message' }).query())
+    .toBeNull();
   await page.getByText('sharkord', { exact: true }).hover();
 });
 
