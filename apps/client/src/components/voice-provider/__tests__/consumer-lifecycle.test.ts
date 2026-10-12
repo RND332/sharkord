@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test';
 import type { Device } from 'mediasoup-client/types';
 import { EventEmitter } from 'node:events';
 import * as React from 'react';
-import { Transport } from '../../../../node_modules/mediasoup-client/lib/Transport.js';
+import { Transport } from '../../../../../../node_modules/mediasoup-client/lib/Transport.js';
 
 // Exercise the actual hook and mediasoup Transport/Consumer; only React's
 // scheduler, RPC and the unavailable native WebRTC handler are substituted.
