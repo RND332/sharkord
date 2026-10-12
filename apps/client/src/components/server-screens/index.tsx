@@ -1,12 +1,26 @@
 import { closeServerScreens } from '@/features/server-screens/actions';
 import { useServerScreenInfo } from '@/features/server-screens/hooks';
-import { createElement, memo, type JSX } from 'react';
+import { memoizeImport, warmImportsWhenIdle } from '@/helpers/prefetch';
+import { createElement, lazy, memo, Suspense, type ComponentType } from 'react';
 import { createPortal } from 'react-dom';
-import { CategorySettings } from './category-settings';
-import { ChannelSettings } from './channel-settings';
 import { ServerScreen } from './screens';
-import { ServerSettings } from './server-settings';
-import { UserSettings } from './user-settings';
+
+const loadServerSettings = memoizeImport(() => import('./server-settings'));
+const loadChannelSettings = memoizeImport(() => import('./channel-settings'));
+const loadUserSettings = memoizeImport(() => import('./user-settings'));
+const loadCategorySettings = memoizeImport(() => import('./category-settings'));
+const ServerSettings = lazy(() =>
+  loadServerSettings().then((m) => ({ default: m.ServerSettings }))
+);
+const ChannelSettings = lazy(() =>
+  loadChannelSettings().then((m) => ({ default: m.ChannelSettings }))
+);
+const UserSettings = lazy(() =>
+  loadUserSettings().then((m) => ({ default: m.UserSettings }))
+);
+const CategorySettings = lazy(() =>
+  loadCategorySettings().then((m) => ({ default: m.CategorySettings }))
+);
 
 const ScreensMap = {
   [ServerScreen.SERVER_SETTINGS]: ServerSettings,
@@ -15,29 +29,35 @@ const ScreensMap = {
   [ServerScreen.CATEGORY_SETTINGS]: CategorySettings
 };
 
-const portalRoot = document.getElementById('portal')!;
-
 const ServerScreensProvider = memo(() => {
   const { isOpen, props, openServerScreen } = useServerScreenInfo();
+  if (!isOpen || !openServerScreen || !ScreensMap[openServerScreen])
+    return null;
 
-  let component: JSX.Element | null = null;
+  const Screen = ScreensMap[openServerScreen];
+  const portalRoot = document.getElementById('portal');
+  if (!portalRoot) return null;
 
-  if (openServerScreen && ScreensMap[openServerScreen]) {
-    const baseProps = {
-      ...props,
-      isOpen,
-      close: closeServerScreens
-    };
-
-    // @ts-expect-error - é lidar irmoum
-    component = createElement(ScreensMap[openServerScreen], baseProps);
-  }
-
-  const realIsOpen = isOpen && !!component;
-
-  if (!realIsOpen) return null;
-
-  return createPortal(component, portalRoot);
+  return createPortal(
+    <Suspense fallback={null}>
+      {createElement(
+        Screen as unknown as ComponentType<Record<string, unknown>>,
+        {
+          ...props,
+          isOpen,
+          close: closeServerScreens
+        }
+      )}
+    </Suspense>,
+    portalRoot
+  );
 });
+
+warmImportsWhenIdle([
+  loadServerSettings,
+  loadChannelSettings,
+  loadUserSettings,
+  loadCategorySettings
+]);
 
 export { ServerScreensProvider };

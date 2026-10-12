@@ -703,7 +703,7 @@ describe('/public', () => {
     expect(response.headers.get('Accept-Ranges')).toBe('bytes');
   });
 
-  test('should include cache validators and public cache policy on normal requests', async () => {
+  test('should include cache validators but prevent caching media responses', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
@@ -714,9 +714,7 @@ describe('/public', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('ETag')).toBeDefined();
     expect(response.headers.get('Last-Modified')).toBeDefined();
-    expect(response.headers.get('Cache-Control')).toBe(
-      'public, max-age=3600, must-revalidate'
-    );
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(response.headers.get('Vary')).toBe('Range');
   });
 
@@ -1009,16 +1007,7 @@ describe('/public', () => {
 
     expect(response.status).toBe(200);
 
-    const cacheControl = response.headers.get('Cache-Control');
-
-    expect(cacheControl).toBeDefined();
-    expect(cacheControl).toInclude('private');
-    expect(cacheControl).toInclude('must-revalidate');
-
-    const maxAgeMatch = cacheControl!.match(/max-age=(\d+)/);
-
-    expect(maxAgeMatch).toBeDefined();
-    expect(Number(maxAgeMatch![1]!)).toBeLessThanOrEqual(300);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
 
     const responseText = await response.text();
 

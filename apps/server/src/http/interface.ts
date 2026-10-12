@@ -48,7 +48,7 @@ const interfaceRouteHandler = async (
     return res;
   }
 
-  const isHashedAsset = /[-.][\da-f]{8,}\.\w+$/i.test(cleanSubPath);
+  const isHashedAsset = /[-.][A-Za-z0-9_-]{8,}\.\w+$/i.test(cleanSubPath);
 
   await sendFile(req, res, requestedPath, {
     cacheControl: isHashedAsset

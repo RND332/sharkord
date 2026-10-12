@@ -182,8 +182,12 @@ beforeAll(async () => {
   addRoot('portal');
   addRoot('imagePortal');
 
-  // main mounts during module evaluation, after these production root nodes exist.
-  await import('../main');
+  const [{ createElement }, { createRoot }, { ClientApp }] = await Promise.all([
+    import('react'),
+    import('react-dom/client'),
+    import('../main')
+  ]);
+  createRoot(document.getElementById('root')!).render(createElement(ClientApp));
   await document.fonts.ready;
   await page.getByTestId(TestId.CONNECT_IDENTITY_INPUT).fill('rnd332');
   await page.getByTestId(TestId.CONNECT_PASSWORD_INPUT).fill('password123');

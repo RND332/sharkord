@@ -8,7 +8,7 @@ import { files } from '../db/schema';
 import { verifyFileToken } from '../helpers/files-crypto';
 import { PUBLIC_PATH } from '../helpers/paths';
 import { logger } from '../logger';
-import { buildCacheControl, sendFile, sendJsonError } from './helpers';
+import { sendFile, sendJsonError } from './helpers';
 
 const INLINE_ALLOW_LIST = [
   'image/png',
@@ -61,7 +61,6 @@ const publicRouteHandler = async (
 
   const { storageSignedUrlsEnabled, logoId } = await getSettings();
   const isSignedUrlProtected = storageSignedUrlsEnabled && dbFile.id !== logoId;
-  let tokenExpiresAt: number | null = null;
 
   // server logo is the only exception to signed URLs
   if (isSignedUrlProtected) {
@@ -81,8 +80,6 @@ const publicRouteHandler = async (
 
       return;
     }
-
-    tokenExpiresAt = expiresAt;
 
     const isValidToken = verifyFileToken(
       dbFile.id,
@@ -115,7 +112,7 @@ const publicRouteHandler = async (
   );
 
   await sendFile(req, res, filePath, {
-    cacheControl: buildCacheControl(isSignedUrlProtected, tokenExpiresAt),
+    cacheControl: 'no-store',
     md5: dbFile.md5,
     contentType: dbFile.mimeType,
     contentDisposition: `${contentDisposition}; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`,

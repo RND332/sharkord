@@ -1,7 +1,7 @@
 {
   "name": "client",
   "private": true,
-  "version": "0.0.30",
+  "version": "0.0.31",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -27,6 +27,8 @@
     "@sharkord/shared": "workspace:*",
     "@sharkord/ui": "workspace:*",
     "@tailwindcss/vite": "^4.1.13",
+    "@tanstack/react-router": "^1.170.42",
+    "@tanstack/react-start": "^1.168.61",
     "@tiptap/core": "3.22.2",
     "@tiptap/extension-emoji": "3.22.2",
     "@tiptap/extension-link": "3.22.2",

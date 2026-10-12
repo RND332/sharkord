@@ -1,9 +1,7 @@
 import { i18nReady } from '@/i18n';
-import '@fontsource-variable/inter';
 import { Toaster } from '@sharkord/ui';
 import 'prosemirror-view/style/prosemirror.css';
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { DebugInfo } from './components/debug-info/index.tsx';
 import { StoreDebug } from './components/debug/store-debug.tsx';
@@ -28,27 +26,29 @@ exposePluginStore();
 
 await i18nReady;
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ThemeProvider
-      defaultTheme="dark"
-      storageKey={LocalStorageKey.VITE_UI_THEME}
-    >
-      <GlobalErrorBoundary>
-        <DebugInfo />
-        <Toaster />
-        <Provider store={store}>
-          <StoreDebug />
-          <HotkeysController />
-          <DevicesProvider>
-            <PluginsController />
-            <DialogsProvider />
-            <ServerScreensProvider />
-            <AutoLoginController />
-            <Routing />
-          </DevicesProvider>
-        </Provider>
-      </GlobalErrorBoundary>
-    </ThemeProvider>
-  </StrictMode>
-);
+export function ClientApp() {
+  return (
+    <StrictMode>
+      <ThemeProvider
+        defaultTheme="dark"
+        storageKey={LocalStorageKey.VITE_UI_THEME}
+      >
+        <GlobalErrorBoundary>
+          <DebugInfo />
+          <Toaster />
+          <Provider store={store}>
+            <StoreDebug />
+            <HotkeysController />
+            <DevicesProvider>
+              <PluginsController />
+              <DialogsProvider />
+              <ServerScreensProvider />
+              <AutoLoginController />
+              <Routing />
+            </DevicesProvider>
+          </Provider>
+        </GlobalErrorBoundary>
+      </ThemeProvider>
+    </StrictMode>
+  );
+}

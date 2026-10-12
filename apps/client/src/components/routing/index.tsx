@@ -9,15 +9,29 @@ import {
   useIsConnected,
   useIsReconnecting
 } from '@/features/server/hooks';
-import { Connect } from '@/screens/connect';
-import { Disconnected } from '@/screens/disconnected';
+import { memoizeImport, warmImportsWhenIdle } from '@/helpers/prefetch';
 import { LoadingApp } from '@/screens/loading-app';
-import { ServerView } from '@/screens/server-view';
 import { DisconnectCode } from '@sharkord/shared';
-import { memo } from 'react';
+import { lazy, memo, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from './hooks/use-document-title';
 import { useOidcAutoRedirect } from './hooks/use-oidc-auto-redirect';
+
+const loadConnect = memoizeImport(() => import('@/screens/connect'));
+const loadDisconnected = memoizeImport(() => import('@/screens/disconnected'));
+const loadServerView = memoizeImport(() => import('@/screens/server-view'));
+
+const Connect = lazy(() =>
+  loadConnect().then(({ Connect }) => ({ default: Connect }))
+);
+const Disconnected = lazy(() =>
+  loadDisconnected().then(({ Disconnected }) => ({ default: Disconnected }))
+);
+const ServerView = lazy(() =>
+  loadServerView().then(({ ServerView }) => ({ default: ServerView }))
+);
+
+warmImportsWhenIdle([loadConnect, loadDisconnected, loadServerView]);
 
 const Routing = memo(() => {
   const { t } = useTranslation('connect');
@@ -49,10 +63,18 @@ const Routing = memo(() => {
         disconnectInfo.code === DisconnectCode.BANNED ||
         disconnectInfo.code === DisconnectCode.SERVER_SHUTDOWN)
     ) {
-      return <Disconnected info={disconnectInfo} />;
+      return (
+        <Suspense fallback={<LoadingApp text={t('loadingApp')} />}>
+          <Disconnected info={disconnectInfo} />
+        </Suspense>
+      );
     }
 
-    return <Connect />;
+    return (
+      <Suspense fallback={<LoadingApp text={t('loadingApp')} />}>
+        <Connect />
+      </Suspense>
+    );
   }
 
   return (
@@ -60,7 +82,9 @@ const Routing = memo(() => {
       {isReconnecting && <ReconnectingOverlay />}
 
       <div className="contents" inert={isReconnecting}>
-        <ServerView />
+        <Suspense fallback={<LoadingApp text={t('loadingApp')} />}>
+          <ServerView />
+        </Suspense>
       </div>
     </>
   );

@@ -493,26 +493,8 @@ const sendFile = async (
   pipeFileStream(filePath, res, { start, end });
 };
 
-const buildCacheControl = (
-  isSignedUrlProtected: boolean,
-  tokenExpiresAt: number | null
-) => {
-  if (!isSignedUrlProtected) {
-    return 'public, max-age=3600, must-revalidate';
-  }
-
-  const remainingSeconds = Math.max(
-    0,
-    Math.floor((tokenExpiresAt! - Date.now()) / 1000)
-  );
-  const maxAge = Math.min(300, remainingSeconds);
-
-  return `private, max-age=${maxAge}, must-revalidate`;
-};
-
 export {
   applyCorsHeaders,
-  buildCacheControl,
   buildEtag,
   enforceHttpRateLimit,
   getJsonBody,

@@ -71,6 +71,11 @@ describe('/interface', () => {
     }
 
     const hashedCssPath = path.join(assetsDir, 'style.d4e5f678.css');
+    const viteHashedJsPath = path.join(assetsDir, 'main-Ch5IUFSg.js');
+
+    if (!fs.existsSync(viteHashedJsPath)) {
+      fs.writeFileSync(viteHashedJsPath, 'console.log("vite hashed");');
+    }
 
     if (!fs.existsSync(hashedCssPath)) {
       fs.writeFileSync(hashedCssPath, 'body { color: red; }');
@@ -285,6 +290,15 @@ describe('/interface', () => {
 
   test('should use immutable policy for hashed asset files', async () => {
     const response = await fetch(`${testsBaseUrl}/assets/main-a1b2c3ef.js`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=31536000, immutable'
+    );
+  });
+
+  test('should use immutable policy for Vite base64url-hashed assets', async () => {
+    const response = await fetch(`${testsBaseUrl}/assets/main-Ch5IUFSg.js`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toBe(

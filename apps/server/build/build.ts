@@ -40,7 +40,7 @@ if (values.bump && values.bump !== 'none') {
 
 const clientCwd = path.resolve(process.cwd(), '..', 'client');
 const serverCwd = process.cwd();
-const viteDistPath = path.join(clientCwd, 'dist');
+const viteDistPath = path.join(clientCwd, 'dist', 'client');
 const buildPath = path.join(serverCwd, 'build');
 const buildTempPath = path.join(buildPath, 'temp');
 const drizzleMigrationsPath = path.join(serverCwd, 'src', 'db', 'migrations');

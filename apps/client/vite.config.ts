@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
@@ -9,7 +10,18 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      tanstackStart({
+        spa: {
+          enabled: true,
+          prerender: {
+            outputPath: '/index.html'
+          }
+        }
+      }),
+      react(),
+      tailwindcss()
+    ],
     build: {
       target: 'esnext'
     },
