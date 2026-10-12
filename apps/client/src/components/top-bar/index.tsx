@@ -36,7 +36,7 @@ const TopBar = memo(({ onToggleRightSidebar, isOpen }: TTopBarProps) => {
     (!dmsOpen && selectedChannelType !== ChannelType.TEXT);
 
   return (
-    <header className="hidden h-16 w-full shrink-0 grid-cols-[minmax(160px,405px)_minmax(180px,550px)_minmax(0,1fr)] items-center gap-5 border-b border-line bg-rail px-5 lg:grid">
+    <header className="hidden h-16 w-full shrink-0 grid-cols-[minmax(0,1fr)_minmax(180px,550px)_minmax(0,1fr)] items-center gap-5 border-b border-line bg-rail px-5 lg:grid">
       <div className="flex min-w-0 items-center gap-2.5">
         <img src="/logo.webp" alt="" className="size-8 object-contain" />
         <span className="text-lg font-bold tracking-tight text-foreground">

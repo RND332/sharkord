@@ -9,7 +9,8 @@ import { useAudioLevel } from './use-audio-level';
 
 const useVoiceRefs = (
   remoteId: number,
-  externalStream?: { pluginId: string; streamKey: string }
+  externalStream?: { pluginId: string; streamKey: string },
+  screenShareVisible = true
 ) => {
   const isExternalStream = !!externalStream;
   const {
@@ -121,7 +122,12 @@ const useVoiceRefs = (
   ]);
 
   useEffect(() => {
-    if (!screenShareAudioStream || !screenShareAudioRef.current) return;
+    if (
+      !screenShareVisible ||
+      !screenShareAudioStream ||
+      !screenShareAudioRef.current
+    )
+      return;
 
     if (screenShareAudioRef.current.srcObject !== screenShareAudioStream) {
       screenShareAudioRef.current.srcObject = screenShareAudioStream;
@@ -134,18 +140,20 @@ const useVoiceRefs = (
   }, [
     screenShareAudioStream,
     screenShareAudioRef,
+    screenShareVisible,
     userScreenVolume,
     devices.playbackId,
     ownVoiceState.soundMuted
   ]);
 
   useEffect(() => {
-    if (!screenShareStream || !screenShareRef.current) return;
+    if (!screenShareVisible || !screenShareStream || !screenShareRef.current)
+      return;
 
     if (screenShareRef.current.srcObject !== screenShareStream) {
       screenShareRef.current.srcObject = screenShareStream;
     }
-  }, [screenShareStream, screenShareRef]);
+  }, [screenShareStream, screenShareRef, screenShareVisible]);
 
   useEffect(() => {
     if (!externalAudioStream || !externalAudioRef.current) return;

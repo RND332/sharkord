@@ -1,7 +1,12 @@
 import { PinnedCardType } from '@/components/channel-view/voice/hooks/use-pin-card-controller';
 import { Dialog } from '@/components/dialogs/dialogs';
 import { ServerScreen } from '@/components/server-screens/screens';
-import { closeThreadSidebar, openThreadSidebar } from '@/features/app/actions';
+import {
+  closeThreadSidebar,
+  closeVoiceChatSidebar,
+  openThreadSidebar,
+  openVoiceChatSidebar
+} from '@/features/app/actions';
 import { openDialog, resetDialogs } from '@/features/dialogs/actions';
 import {
   closeServerScreens,
@@ -353,6 +358,135 @@ test('empty composer uses Paper geometry and keeps upload on the left', async ()
   await page.getByText('sharkord', { exact: true }).hover();
 });
 
+test('global search stays centered across desktop widths', async () => {
+  try {
+    for (const width of [1024, 1440, 2560]) {
+      await page.viewport(width, 900);
+      await waitForRender();
+      const search = page
+        .getByRole('button', {
+          name: /Search messages, channels, and people Ctrl K/
+        })
+        .element();
+      const rect = search.getBoundingClientRect();
+      expect(
+        Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2)
+      ).toBeLessThanOrEqual(1);
+      expect(rect.width).toBeLessThanOrEqual(550);
+      const header = search.closest('header')!;
+      const logo = header.querySelector('img')!.getBoundingClientRect();
+      const actions = header.lastElementChild!.getBoundingClientRect();
+      expect(rect.left).toBeGreaterThan(logo.right);
+      expect(rect.right).toBeLessThanOrEqual(actions.left);
+    }
+  } finally {
+    await page.viewport(1440, 900);
+    await waitForRender();
+  }
+});
+
+test('application rail omits the redundant user avatar', async () => {
+  const rail = page.getByRole('navigation', { name: 'Application' }).element();
+  expect(rail.querySelector('[data-slot="avatar"]')).toBeNull();
+  expect(
+    page
+      .getByTestId(TestId.LEFT_SIDEBAR)
+      .element()
+      .querySelector('[data-slot="avatar"]')
+  ).not.toBeNull();
+});
+
+test('application rail omits the decorative orange S but keeps navigation', async () => {
+  const rail = page.getByRole('navigation', { name: 'Application' }).element();
+  expect(
+    Array.from(rail.children).some(
+      (node) =>
+        node.getAttribute('aria-hidden') === 'true' &&
+        node.textContent?.trim() === 'S'
+    )
+  ).toBe(false);
+  const server = rail.querySelector<HTMLButtonElement>(
+    'button[aria-label="Rnd Community"]'
+  )!;
+  expect(server).not.toBeNull();
+  expect(
+    rail.querySelector(`[data-testid="${TestId.DM_TOGGLE}"]`)
+  ).not.toBeNull();
+  expect(
+    rail.querySelector(`[data-testid="${TestId.USER_SETTINGS_TRIGGER}"]`)
+  ).not.toBeNull();
+  await page.elementLocator(server).click();
+  await waitForRender();
+  expect(server.getAttribute('aria-current')).toBe('page');
+});
+
+test('right docks open and close without layout animation', async () => {
+  const assertInstantDock = async (panel: HTMLElement) => {
+    await waitForRender();
+    const openedWidth = panel.getBoundingClientRect().width;
+    expect(openedWidth).toBeGreaterThan(0);
+    expect(getComputedStyle(panel).transitionDuration).toBe('0s');
+    expect(getComputedStyle(panel).animationDuration).toBe('0s');
+    expect(panel.getAnimations()).toHaveLength(0);
+    const handle = panel.querySelector<HTMLElement>('.cursor-col-resize')!;
+    const right = panel.getBoundingClientRect().right;
+    handle.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, button: 0 })
+    );
+    await waitForRender();
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: right - openedWidth - 20 })
+    );
+    await waitForRender();
+    expect(panel.getBoundingClientRect().width).toBe(openedWidth + 20);
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: right - openedWidth })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup'));
+    await waitForRender();
+    expect(panel.getBoundingClientRect().width).toBe(openedWidth);
+  };
+  await page.getByRole('button', { name: 'Open Members Sidebar' }).click();
+  const members = page
+    .getByTestId(TestId.MEMBER_ITEM)
+    .first()
+    .element()
+    .closest<HTMLElement>('.border-l')!;
+  await assertInstantDock(members);
+  await page.getByRole('button', { name: 'Close Members Sidebar' }).click();
+  await waitForRender();
+  expect(members.getBoundingClientRect().width).toBe(0);
+  expect(members.getAnimations()).toHaveLength(0);
+
+  const firstMessage = page.getByTestId(TestId.MESSAGE_ITEM).first();
+  openThreadSidebar(Number(firstMessage.element().dataset.messageId), 1);
+  await expect.element(page.getByText('Thread', { exact: true })).toBeVisible();
+  const thread = page
+    .getByText('Thread', { exact: true })
+    .element()
+    .closest<HTMLElement>('.border-l')!;
+  await assertInstantDock(thread);
+  closeThreadSidebar();
+  await waitForRender();
+  expect(thread.getBoundingClientRect().width).toBe(0);
+  expect(thread.getAnimations()).toHaveLength(0);
+
+  openVoiceChatSidebar(2);
+  await waitForRender();
+  const chat = Array.from(
+    document.querySelectorAll<HTMLElement>('.border-l[style]')
+  ).find((panel) => panel.getBoundingClientRect().width > 0)!;
+  try {
+    await assertInstantDock(chat);
+    closeVoiceChatSidebar();
+    await waitForRender();
+    expect(chat.getBoundingClientRect().width).toBe(0);
+    expect(chat.getAnimations()).toHaveLength(0);
+  } finally {
+    closeVoiceChatSidebar();
+  }
+});
+
 test('text channel matches the Paper design', async () => {
   await expect.element(page.getByTestId(TestId.SERVER_VIEW)).toBeVisible();
   await page
@@ -412,6 +546,59 @@ test('voice channel matches the Paper design', async () => {
     setSelectedChannelId(1);
 
     removeVoiceParticipants();
+  }
+});
+
+test('remote screen share stays in the real voice grid before watching', async () => {
+  setSelectedChannelId(2);
+  addVoiceParticipants(2);
+  await waitForRender();
+  try {
+    await expect
+      .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
+      .toBeVisible();
+    const tile = document.querySelector<HTMLElement>(
+      '[data-screen-share-card]'
+    )!;
+    expect(tile.querySelector('video')).toBeNull();
+    expect(tile.querySelector('[data-slot="avatar"]')).toBeNull();
+    expect(tile.textContent).not.toContain('LIVE');
+    expect(tile.textContent).toContain("aria's screen");
+    const participant = document.querySelector<HTMLElement>(
+      '.group\\/voice-user-card'
+    )!;
+    expect(tile.getBoundingClientRect().width).toBe(
+      participant.getBoundingClientRect().width
+    );
+    expect(tile.getBoundingClientRect().height).toBe(
+      participant.getBoundingClientRect().height
+    );
+    expect(
+      tile.getBoundingClientRect().width / tile.getBoundingClientRect().height
+    ).toBeCloseTo(16 / 9, 2);
+    try {
+      for (const [width, height] of [
+        [1024, 600],
+        [2560, 1440]
+      ]) {
+        await page.viewport(width, height);
+        await waitForRender();
+        const rect = tile.getBoundingClientRect();
+        const button = tile.querySelector('button')!.getBoundingClientRect();
+        expect(rect.width / rect.height).toBeCloseTo(16 / 9, 2);
+        expect(button.left).toBeGreaterThanOrEqual(rect.left);
+        expect(button.right).toBeLessThanOrEqual(rect.right);
+        expect(rect.bottom).toBeLessThanOrEqual(height);
+      }
+    } finally {
+      await page.viewport(1440, 900);
+      await waitForRender();
+    }
+    await page.getByText('sharkord', { exact: true }).hover();
+    await snapshot('screen-sharing-not-watching');
+  } finally {
+    removeVoiceParticipants();
+    setSelectedChannelId(1);
   }
 });
 
@@ -631,6 +818,7 @@ test('profile setup dialog matches the Paper design', async () => {
 });
 
 test('voice diagnostics dialog matches the Paper design', async () => {
+  clearVoiceDebugEvents();
   openDialog(Dialog.VOICE_DEBUG);
   await expect.element(page.getByRole('dialog')).toBeVisible();
 

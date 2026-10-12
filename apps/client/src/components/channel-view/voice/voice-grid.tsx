@@ -16,13 +16,14 @@ import { useTranslation } from 'react-i18next';
 type TVoiceGridProps = {
   children: ReactNode[];
   pinnedCardId?: string;
+  tileAspectRatio?: number;
   className?: string;
 };
 
 const OPTIMAL_CELL_ASPECT_RATIO = 1.5;
 
 const VoiceGrid = memo(
-  ({ children, pinnedCardId, className }: TVoiceGridProps) => {
+  ({ children, pinnedCardId, tileAspectRatio, className }: TVoiceGridProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerSize, setContainerSize] = useState<{
       width: number;
@@ -179,13 +180,31 @@ const VoiceGrid = memo(
       lastRowCount < gridCols ? ((gridCols - lastRowCount) / 2) * 100 : 0;
     const lastRowStart = regularCards.length - lastRowCount;
 
+    const tileWidth =
+      tileAspectRatio && containerSize
+        ? Math.max(
+            0,
+            Math.min(
+              (containerSize.width - 56 - (gridCols - 1) * 12) / gridCols,
+              ((containerSize.height - 48 - (rows - 1) * 12) / rows) *
+                tileAspectRatio
+            )
+          )
+        : undefined;
+    const tileHeight =
+      tileWidth !== undefined && tileAspectRatio
+        ? tileWidth / tileAspectRatio
+        : undefined;
+
     return (
       <div
         ref={containerRef}
         className={cn('grid size-full gap-3 bg-canvas px-7 py-6', className)}
         style={{
-          gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`
+          gridTemplateColumns: `repeat(${gridCols}, ${tileWidth !== undefined ? `${tileWidth}px` : '1fr'})`,
+          gridTemplateRows: `repeat(${rows}, ${tileHeight !== undefined ? `${tileHeight}px` : '1fr'})`,
+          alignContent: tileAspectRatio ? 'center' : undefined,
+          justifyContent: tileAspectRatio ? 'center' : undefined
         }}
       >
         {regularCards.map((card, index) => (

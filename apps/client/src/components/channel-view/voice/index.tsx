@@ -29,6 +29,14 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const { viewedRemoteDemos } = useDemoVisibility();
   const { devices } = useDevices();
   const isAnyCardPinned = pinnedCard !== undefined;
+  const hasScreenShareInvitation =
+    !devices.voiceOnlyMode &&
+    voiceUsers.some(
+      (user) =>
+        user.id !== ownUserId &&
+        user.state.sharingScreen &&
+        !viewedRemoteDemos[user.id]
+    );
 
   const cards = useMemo(() => {
     const cards: React.ReactNode[] = [];
@@ -51,8 +59,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
       if (
         devices.voiceOnlyMode ||
         !voiceUser.state.sharingScreen ||
-        shouldHideOwnScreenShare ||
-        (voiceUser.id !== ownUserId && !viewedRemoteDemos[voiceUser.id])
+        shouldHideOwnScreenShare
       ) {
         return;
       }
@@ -155,7 +162,12 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
 
   return (
     <div className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-canvas">
-      <VoiceGrid pinnedCardId={pinnedCard?.id}>{cards}</VoiceGrid>
+      <VoiceGrid
+        pinnedCardId={pinnedCard?.id}
+        tileAspectRatio={hasScreenShareInvitation ? 16 / 9 : undefined}
+      >
+        {cards}
+      </VoiceGrid>
       <ControlsBar channelId={channelId} />
     </div>
   );

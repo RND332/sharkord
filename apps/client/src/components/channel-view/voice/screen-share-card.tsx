@@ -9,8 +9,8 @@ import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { Monitor, ZoomIn, ZoomOut } from 'lucide-react';
-import { memo, useCallback, useMemo } from 'react';
+import { Monitor, Play, ZoomIn, ZoomOut } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CardTheme } from './card-theme';
 import { FullscreenButton } from './fullscreen-button';
 import { cardControlClass, cardControlsClass, cardDensity } from './helpers';
@@ -53,7 +53,34 @@ const ScreenShareCard = memo(
     const user = useUserById(userId);
     const ownUserId = useOwnUserId();
     const { devices } = useDevices();
-    const { isViewingDemo } = useDemoVisibility();
+    const { isViewingDemo, viewDemo, stopViewingDemo } = useDemoVisibility();
+    const [watchState, setWatchState] = useState<'idle' | 'loading' | 'error'>(
+      'idle'
+    );
+    const watchRequest = useRef(0);
+    useEffect(
+      () => () => {
+        watchRequest.current++;
+      },
+      [userId]
+    );
+    const handleWatch = useCallback(async () => {
+      const request = ++watchRequest.current;
+      setWatchState('loading');
+      try {
+        await viewDemo(userId);
+        // Media arrival, not the RPC completing, ends the loading state.
+      } catch {
+        if (request !== watchRequest.current) return;
+        // Roll back the provider's optimistic opt-in before offering a retry.
+        try {
+          await stopViewingDemo(userId);
+        } catch {
+          /* Still allow retry. */
+        }
+        if (request === watchRequest.current) setWatchState('error');
+      }
+    }, [viewDemo, stopViewingDemo, userId]);
     const { getUserScreenVolumeKey } = useVolumeControl();
     const isOwnUser = ownUserId === userId;
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
@@ -67,7 +94,22 @@ const ScreenShareCard = memo(
       screenShareAudioRef,
       hasScreenShareStream,
       hasScreenShareAudioStream
-    } = useVoiceRefs(userId);
+    } = useVoiceRefs(userId, undefined, isOwnUser || isViewingDemo(userId));
+
+    const viewing = isOwnUser || isViewingDemo(userId);
+    useEffect(() => {
+      if (watchState !== 'loading') return;
+      if (viewing && hasScreenShareStream) {
+        setWatchState('idle');
+        return;
+      }
+      const timer = setTimeout(() => {
+        watchRequest.current++;
+        void stopViewingDemo(userId).catch(() => {});
+        setWatchState('error');
+      }, 15_000);
+      return () => clearTimeout(timer);
+    }, [watchState, viewing, hasScreenShareStream, stopViewingDemo, userId]);
 
     const { getConsumerCodec } = useVoice();
     const transportStats = useVoiceStats();
@@ -140,14 +182,50 @@ const ScreenShareCard = memo(
       }
     }, [isPinned, onPin, onUnpin, cardId, userId, resetZoom]);
 
-    if (
-      !user ||
-      !hasScreenShareStream ||
-      devices.voiceOnlyMode ||
-      (!isOwnUser && !isViewingDemo(userId))
-    ) {
-      return null;
+    if (!user || devices.voiceOnlyMode) return null;
+
+    if (!isOwnUser && (!isViewingDemo(userId) || !hasScreenShareStream)) {
+      return (
+        <div
+          data-screen-share-card
+          className={cn(
+            'relative flex size-full items-center justify-center overflow-hidden rounded-[10px] border border-line bg-nav',
+            className
+          )}
+        >
+          <button
+            type="button"
+            onClick={handleWatch}
+            disabled={watchState === 'loading'}
+            aria-busy={watchState === 'loading'}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] border border-line bg-raised px-4 text-sm font-medium leading-5 text-foreground hover:bg-hover focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <Play aria-hidden="true" className="size-4" fill="currentColor" />
+            {watchState === 'loading'
+              ? 'Connecting…'
+              : watchState === 'error'
+                ? 'Retry watch stream'
+                : 'Watch stream'}
+          </button>
+          {watchState === 'error' && (
+            <p
+              role="alert"
+              className="absolute top-2.5 inset-x-2.5 text-center text-xs text-foreground"
+            >
+              Unable to watch stream. Try again.
+            </p>
+          )}
+          <div className="absolute bottom-2.5 left-2.5 flex min-w-0 max-w-[calc(100%-20px)] items-center gap-2 text-foreground">
+            <Monitor aria-hidden="true" className="size-[18px] shrink-0" />
+            <p className="truncate text-[13px] font-medium leading-[17px]">
+              {user.name}'s screen
+            </p>
+          </div>
+        </div>
+      );
     }
+
+    if (!hasScreenShareStream) return null;
 
     return (
       <div

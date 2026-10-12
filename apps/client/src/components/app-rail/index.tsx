@@ -7,7 +7,7 @@ import {
   usePublicServerSettings,
   useServerName
 } from '@/features/server/hooks';
-import { useOwnUserId } from '@/features/server/users/hooks';
+
 import { cn } from '@/lib/utils';
 import { TestId } from '@sharkord/shared';
 import { Tooltip } from '@sharkord/ui';
@@ -15,7 +15,6 @@ import { MessageCircleMore, Settings } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ServerScreen } from '../server-screens/screens';
-import { UserAvatar } from '../user-avatar';
 
 const AppRail = memo(() => {
   const { t } = useTranslation('sidebar');
@@ -23,7 +22,6 @@ const AppRail = memo(() => {
   const dmsOpen = useDmsOpen();
   const settings = usePublicServerSettings();
   const directMessagesUnreadCount = useDirectMessagesUnreadCount();
-  const ownUserId = useOwnUserId();
 
   const openServer = useCallback(() => {
     setDmsOpen(false);
@@ -44,13 +42,6 @@ const AppRail = memo(() => {
       aria-label="Application"
       className="hidden h-full w-[72px] shrink-0 flex-col items-center gap-3 bg-rail py-4 md:flex"
     >
-      <div
-        aria-hidden="true"
-        className="flex size-11 items-center justify-center rounded-[15px] bg-primary text-xl font-bold text-primary-foreground"
-      >
-        S
-      </div>
-      <div className="h-px w-7 bg-line" />
       <Tooltip content={serverName}>
         <button
           type="button"
@@ -101,10 +92,6 @@ const AppRail = memo(() => {
           <Settings className="size-5" />
         </button>
       </Tooltip>
-      <UserAvatar
-        userId={ownUserId ?? null}
-        className="size-11 border border-primary"
-      />
     </nav>
   );
 });
