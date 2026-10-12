@@ -40,7 +40,8 @@ const getManifestAssets = (): Set<string> => {
       }
     }
   } catch {
-    // Missing or invalid manifests fail closed: every asset remains revalidated.
+    // Retry later if extraction or a test fixture has not supplied the manifest yet.
+    return new Set<string>();
   }
 
   manifestAssetCache = { interfacePath: INTERFACE_PATH, assets };
