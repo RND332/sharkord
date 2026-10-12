@@ -12,12 +12,13 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       tanstackStart({
-        spa: {
+        prerender: {
           enabled: true,
-          prerender: {
-            outputPath: '/index.html'
-          }
-        }
+          autoStaticPathsDiscovery: false,
+          crawlLinks: false,
+          failOnError: true
+        },
+        pages: [{ path: '/', prerender: { outputPath: '/index.html' } }]
       }),
       react(),
       tailwindcss()

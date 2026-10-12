@@ -1,7 +1,6 @@
 import {
   createRootRoute,
   HeadContent,
-  Outlet,
   Scripts
 } from '@tanstack/react-router';
 import '../index.css';
@@ -18,17 +17,17 @@ export const Route = createRootRoute({
       { rel: 'manifest', href: '/manifest.json' }
     ]
   }),
-  component: RootDocument
+  shellComponent: RootDocument
 });
 
-function RootDocument() {
+function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
-        <Outlet />
+        {children}
         <div id="portal" />
         <div id="imagePortal" />
         <Scripts />

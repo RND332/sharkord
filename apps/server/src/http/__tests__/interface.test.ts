@@ -20,6 +20,8 @@ describe('/interface', () => {
     }
 
     const testJsPath = path.join(assetsDir, 'test.js');
+    const releaseNotesPath = path.join(testInterfacePath, 'release-notes123.js');
+    fs.writeFileSync(releaseNotesPath, 'mutable');
 
     if (!fs.existsSync(testJsPath)) {
       fs.writeFileSync(testJsPath, 'console.log("test");');
@@ -283,6 +285,13 @@ describe('/interface', () => {
 
   test('should use no-cache policy for non-hashed files', async () => {
     const response = await fetch(`${testsBaseUrl}/index.html`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-cache');
+  });
+
+  test('mutable release-like filenames must not be immutable', async () => {
+    const response = await fetch(`${testsBaseUrl}/release-notes123.js`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toBe('no-cache');
