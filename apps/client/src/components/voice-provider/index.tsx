@@ -142,8 +142,13 @@ export type TVoiceProvider = {
   rtpCapabilities: RtpCapabilities | undefined;
   rtpCapabilitiesRef: MutableRefObject<RtpCapabilities | null>;
   isViewingDemoRef: MutableRefObject<(userId: number) => boolean>;
-  clearViewedDemoRef: MutableRefObject<(userId: number) => void>;
+  onRemoteDemoStoppedRef: MutableRefObject<(userId: number) => void>;
   voiceOnlyModeRef: MutableRefObject<boolean>;
+  closeRemoteUserProducer: (
+    userId: number,
+    kind: StreamKind,
+    producerId: string
+  ) => void;
   canConsumeScreen: (userId: number) => boolean;
   startReceivingDemo: (userId: number) => boolean;
   stopReceivingDemo: (userId: number) => Promise<void>;
@@ -199,8 +204,9 @@ const VoiceProviderContext = createContext<TVoiceProvider>({
   rtpCapabilities: undefined,
   rtpCapabilitiesRef: { current: null },
   isViewingDemoRef: { current: () => false },
-  clearViewedDemoRef: { current: () => {} },
+  onRemoteDemoStoppedRef: { current: () => {} },
   voiceOnlyModeRef: { current: false },
+  closeRemoteUserProducer: () => {},
   canConsumeScreen: () => false,
   startReceivingDemo: () => false,
   stopReceivingDemo: () => Promise.resolve(),
@@ -265,7 +271,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   savedVoiceOnlyModeRef.current = devices.voiceOnlyMode;
   const previousVoiceOnlyModeRef = useRef(voiceOnlyMode);
   const isViewingDemoRef = useRef<(userId: number) => boolean>(() => false);
-  const clearViewedDemoRef = useRef<(userId: number) => void>(() => {});
+  const onRemoteDemoStoppedRef = useRef<(userId: number) => void>(() => {});
   const canConsumeScreen = useCallback(
     (userId: number) =>
       !!currentVoiceChannelIdRef.current &&
@@ -500,6 +506,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       closeConsumer(userId, kind),
     [closeConsumer]
   );
+  const closeRemoteUserProducer = useCallback(
+    (userId: number, kind: StreamKind, producerId: string) =>
+      closeConsumer(userId, kind, producerId),
+    [closeConsumer]
+  );
   const removeExternalStreamTrackAndConsumer = useCallback(
     (streamId: number, kind: Parameters<typeof removeExternalStreamTrack>[1]) =>
       closeConsumer(streamId, kind),
@@ -535,7 +546,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       connectionStatus === ConnectionStatus.CONNECTING ||
       connectionStatus === ConnectionStatus.CONNECTED,
     canConsumeScreen,
-    clearViewedDemoRef,
+    onRemoteDemoStoppedRef,
     addRemoteUserStream,
     removeRemoteUserStream
   });
@@ -1803,7 +1814,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       consumeRef,
       rtpCapabilitiesRef: deviceRtpCapabilities,
       isViewingDemoRef,
-      clearViewedDemoRef,
+      onRemoteDemoStoppedRef,
       voiceOnlyModeRef,
       canConsumeScreen,
       startReceivingDemo,
@@ -1832,6 +1843,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       remoteUserStreams,
       externalStreams,
 
+      closeRemoteUserProducer,
       removeRemoteUserStream: removeRemoteUserStreamAndConsumer,
       removeExternalStreamTrack: removeExternalStreamTrackAndConsumer,
       removeExternalStream: removeExternalStreamAndConsumers,
@@ -1845,6 +1857,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       getConsumerCodec,
       getConsumer,
       canConsumeScreen,
+      closeRemoteUserProducer,
       startReceivingDemo,
       stopReceivingDemo,
       consumeRef,

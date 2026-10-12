@@ -43,22 +43,31 @@ const DemoVisibilityProvider = memo(
       consumeRef,
       rtpCapabilitiesRef,
       isViewingDemoRef,
-      clearViewedDemoRef,
+      onRemoteDemoStoppedRef,
       voiceOnlyModeRef,
       canConsumeScreen,
       startReceivingDemo,
       stopReceivingDemo,
+      closeRemoteUserProducer,
       removeRemoteUserStream,
       removeExternalStreamTrack,
       removeExternalStream,
       clearRemoteUserStreamsForUser
     } = voice;
+    const isVoiceOnlyMode = voiceOnlyModeRef.current;
     const currentVoiceChannelId = useCurrentVoiceChannelId();
     const voiceChannelState = useSelector((state: IRootState) =>
       currentVoiceChannelId === undefined
         ? undefined
         : voiceChannelStateSelector(state, currentVoiceChannelId)
     );
+    const isVoiceSessionActive =
+      voice.connectionStatus === 'connecting' ||
+      voice.connectionStatus === 'connected';
+    const previousVoiceSessionRef = useRef({
+      channelId: currentVoiceChannelId,
+      active: isVoiceSessionActive
+    });
     const previousVoiceChannelStateRef = useRef(voiceChannelState);
     const [viewedRemoteDemos, setViewedRemoteDemos] =
       useState<TViewedRemoteDemos>({});
@@ -68,6 +77,18 @@ const DemoVisibilityProvider = memo(
       []
     );
     isViewingDemoRef.current = isViewingDemo;
+
+    const onRemoteDemoStopped = useCallback(
+      (userId: number) => {
+        stopReceivingDemo(userId).catch((error) => {
+          logVoiceError('demo: stopping presenter media failed', error, {
+            userId
+          });
+        });
+      },
+      [stopReceivingDemo]
+    );
+    onRemoteDemoStoppedRef.current = onRemoteDemoStopped;
 
     const viewDemo = useCallback(
       async (userId: number) => {
@@ -129,13 +150,12 @@ const DemoVisibilityProvider = memo(
       },
       [stopViewingDemo]
     );
-    clearViewedDemoRef.current = clearViewedDemo;
-
     // keep the subscription stable while the opt-in ref changes independently.
     useVoiceEvents({
       consumeRef,
       isViewingDemo,
       removeRemoteUserStream,
+      closeRemoteUserProducer,
       removeExternalStreamTrack,
       removeExternalStream,
       clearRemoteUserStreamsForUser,
@@ -146,13 +166,26 @@ const DemoVisibilityProvider = memo(
         voice.connectionStatus === 'connected'
     });
 
-    // reset session-scoped demo choices only when leaving voice, not text channels.
+    // Choices belong to one voice session, but survive navigation to text channels.
     useEffect(() => {
-      if (currentVoiceChannelId !== undefined) return;
-      clearViewedDemos();
-    }, [currentVoiceChannelId, clearViewedDemos]);
+      const previous = previousVoiceSessionRef.current;
+      previousVoiceSessionRef.current = {
+        channelId: currentVoiceChannelId,
+        active: isVoiceSessionActive
+      };
+      if (
+        previous.channelId !== currentVoiceChannelId ||
+        (previous.active && !isVoiceSessionActive)
+      ) {
+        clearViewedDemos();
+      }
+    }, [currentVoiceChannelId, isVoiceSessionActive, clearViewedDemos]);
 
-    // state also covers a direct share stopped while its SFU fallback was pending.
+    useEffect(() => {
+      if (isVoiceOnlyMode) clearViewedDemos();
+    }, [isVoiceOnlyMode, clearViewedDemos]);
+
+    // Retire active media on presenter stop without revoking the viewer's choice.
     useEffect(() => {
       const previousState = previousVoiceChannelStateRef.current;
       previousVoiceChannelStateRef.current = voiceChannelState;
@@ -160,14 +193,25 @@ const DemoVisibilityProvider = memo(
       for (const userId of Object.keys(viewedRemoteDemosRef.current)) {
         const previousPresenter = previousState?.users[+userId];
         const presenter = voiceChannelState?.users[+userId];
-        if (
-          (previousPresenter?.sharingScreen && !presenter?.sharingScreen) ||
-          (previousPresenter && !presenter)
-        ) {
+        if (previousPresenter && !presenter) {
           clearViewedDemo(+userId);
+        } else if (
+          previousPresenter?.sharingScreen &&
+          !presenter?.sharingScreen
+        ) {
+          stopReceivingDemo(+userId).catch((error) => {
+            logVoiceError('demo: stopping ended presentation failed', error, {
+              userId: +userId
+            });
+          });
         }
       }
-    }, [currentVoiceChannelId, voiceChannelState, clearViewedDemo]);
+    }, [
+      currentVoiceChannelId,
+      voiceChannelState,
+      clearViewedDemo,
+      stopReceivingDemo
+    ]);
 
     return (
       <DemoVisibilityContext.Provider

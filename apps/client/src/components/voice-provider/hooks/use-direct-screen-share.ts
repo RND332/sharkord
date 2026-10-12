@@ -11,7 +11,7 @@ type TDirectScreenShareParams = {
   enabled: boolean;
   isVoiceSessionActive: boolean;
   canConsumeScreen: (userId: number) => boolean;
-  clearViewedDemoRef: MutableRefObject<(userId: number) => void>;
+  onRemoteDemoStoppedRef: MutableRefObject<(userId: number) => void>;
   addRemoteUserStream: (
     userId: number,
     stream: MediaStream,
@@ -29,7 +29,7 @@ const useDirectScreenShare = ({
   enabled,
   isVoiceSessionActive,
   canConsumeScreen,
-  clearViewedDemoRef,
+  onRemoteDemoStoppedRef,
   addRemoteUserStream,
   removeRemoteUserStream
 }: TDirectScreenShareParams) => {
@@ -46,7 +46,7 @@ const useDirectScreenShare = ({
           sessionActiveRef.current &&
           canConsumeScreen(userId),
         canDefer: () => enabledRef.current && sessionActiveRef.current,
-        onStopped: (userId) => clearViewedDemoRef.current(userId),
+        onStopped: (userId) => onRemoteDemoStoppedRef.current(userId),
         prepare: async () => {
           if (!enabledRef.current || !subscribed.current) return null;
           const trpc = getTRPCClient();
@@ -76,7 +76,7 @@ const useDirectScreenShare = ({
       addRemoteUserStream,
       removeRemoteUserStream,
       canConsumeScreen,
-      clearViewedDemoRef
+      onRemoteDemoStoppedRef
     ]
   );
 

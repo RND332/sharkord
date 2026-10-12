@@ -703,7 +703,7 @@ describe('DirectScreenShare outgoing lifecycle', () => {
 });
 
 describe('DirectScreenShare incoming lifecycle', () => {
-  test('only a validated presenter stop clears the viewing choice, not fallback', async () => {
+  test('only a validated presenter stop retires received media, not fallback', async () => {
     const stopped: number[] = [];
     const subject = fixture(undefined, undefined, undefined, (userId) => {
       stopped.push(userId);

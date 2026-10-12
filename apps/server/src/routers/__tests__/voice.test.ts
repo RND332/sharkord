@@ -542,15 +542,19 @@ describe('voice router', () => {
     };
 
     test('should close the producer and tell the rest of the channel', async () => {
-      const { runtime, caller, state } = await withProducer();
+      const { runtime, caller, producer, state } = await withProducer();
 
-      const closures: { remoteId: number; kind: StreamKind }[] = [];
+      const closures: {
+        remoteId: number;
+        kind: StreamKind;
+        producerId: string;
+      }[] = [];
 
       const subscription = pubsub
         .subscribeForChannel(2, ServerEvents.VOICE_PRODUCER_CLOSED)
         .subscribe({
-          next: ({ remoteId, kind }) => {
-            closures.push({ remoteId, kind });
+          next: ({ remoteId, kind, producerId }) => {
+            closures.push({ remoteId, kind, producerId });
           }
         });
 
@@ -559,7 +563,9 @@ describe('voice router', () => {
 
         expect(state.closed).toBe(true);
         expect(runtime.getProducer(StreamKind.AUDIO, 2)).toBeUndefined();
-        expect(closures).toEqual([{ remoteId: 2, kind: StreamKind.AUDIO }]);
+        expect(closures).toEqual([
+          { remoteId: 2, kind: StreamKind.AUDIO, producerId: producer.id }
+        ]);
       } finally {
         subscription.unsubscribe();
         await runtime.destroy();
@@ -600,12 +606,16 @@ describe('voice router', () => {
         replacementAudio.producer
       );
 
-      const closures: { remoteId: number; kind: StreamKind }[] = [];
+      const closures: {
+        remoteId: number;
+        kind: StreamKind;
+        producerId: string;
+      }[] = [];
       const subscription = pubsub
         .subscribeForChannel(2, ServerEvents.VOICE_PRODUCER_CLOSED)
         .subscribe({
-          next: ({ remoteId, kind }) => {
-            closures.push({ remoteId, kind });
+          next: ({ remoteId, kind, producerId }) => {
+            closures.push({ remoteId, kind, producerId });
           }
         });
 

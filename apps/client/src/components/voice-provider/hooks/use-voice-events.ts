@@ -27,6 +27,11 @@ type TEvents = {
     userId: number,
     kind: TRemoteUserStreamKinds
   ) => void;
+  closeRemoteUserProducer?: (
+    userId: number,
+    kind: StreamKind,
+    producerId: string
+  ) => void;
   removeExternalStreamTrack: (
     streamId: number,
     kind: StreamKind.EXTERNAL_AUDIO | StreamKind.EXTERNAL_VIDEO
@@ -42,6 +47,7 @@ const useVoiceEvents = ({
   consumeRef,
   isViewingDemo,
   removeRemoteUserStream,
+  closeRemoteUserProducer,
   removeExternalStreamTrack,
   removeExternalStream,
   clearRemoteUserStreamsForUser,
@@ -127,7 +133,7 @@ const useVoiceEvents = ({
     const onVoiceProducerClosedSub = trpc.voice.onProducerClosed.subscribe(
       undefined,
       {
-        onData: ({ channelId, remoteId, kind }) => {
+        onData: ({ channelId, remoteId, kind, producerId }) => {
           if (currentVoiceChannelId !== channelId || isCleaningUp) return;
 
           logVoice('events: producer closed', { remoteId, kind, channelId });
@@ -138,13 +144,10 @@ const useVoiceEvents = ({
               kind === StreamKind.EXTERNAL_AUDIO
             ) {
               removeExternalStreamTrack(remoteId, kind);
+            } else if (producerId && closeRemoteUserProducer) {
+              closeRemoteUserProducer(remoteId, kind, producerId);
             } else {
               removeRemoteUserStream(remoteId, kind);
-            }
-
-            // a stopped presentation requires a new opt-in; losing audio alone does not.
-            if (kind === StreamKind.SCREEN) {
-              clearViewedDemo(remoteId);
             }
           } catch (error) {
             logVoiceError(
@@ -220,6 +223,7 @@ const useVoiceEvents = ({
     consumeRef,
     isViewingDemo,
     removeRemoteUserStream,
+    closeRemoteUserProducer,
     removeExternalStreamTrack,
     removeExternalStream,
     clearRemoteUserStreamsForUser,

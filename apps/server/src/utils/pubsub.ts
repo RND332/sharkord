@@ -110,6 +110,7 @@ type Events = {
     channelId: number;
     remoteId: number;
     kind: StreamKind;
+    producerId: string;
   };
 
   [ServerEvents.PLUGIN_LOG]: TLogEntry;

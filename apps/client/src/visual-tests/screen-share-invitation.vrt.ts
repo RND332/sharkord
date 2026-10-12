@@ -125,7 +125,9 @@ afterEach(() => {
   state.voiceOnlyMode = false;
   vi.useRealTimers();
   vi.clearAllMocks();
-  state.viewDemo.mockImplementation(async () => {});
+  state.viewDemo.mockImplementation(async () => {
+    state.viewing = true;
+  });
 });
 
 test('channel includes both the normal participant and a separate invitation before watching', async () => {
@@ -155,6 +157,20 @@ test('watched media returns to the invitation after production stop even with a 
     .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
     .toBeVisible();
   expect(document.querySelector('video')).toBeNull();
+});
+
+test('a previously watched presenter reconnects automatically without a second watch click', async () => {
+  state.viewing = true;
+  await render();
+
+  await expect
+    .element(page.getByRole('button', { name: 'Connecting…' }))
+    .toBeDisabled();
+  expect(state.viewDemo).not.toHaveBeenCalled();
+
+  state.hasStream = true;
+  await render();
+  expect(document.querySelector('video')).not.toBeNull();
 });
 
 test('own share immediately previews local media without a watch invitation', async () => {
@@ -236,12 +252,12 @@ test('watch remains loading until media arrives and times out into an accessible
 
 test('watch calls the production opt-in and exposes loading, failure and retry without pinning', async () => {
   let reject!: (reason: Error) => void;
-  state.viewDemo.mockImplementationOnce(
-    () =>
-      new Promise<void>((_, fail) => {
-        reject = fail;
-      })
-  );
+  state.viewDemo.mockImplementationOnce(() => {
+    state.viewing = true;
+    return new Promise<void>((_, fail) => {
+      reject = fail;
+    });
+  });
   await render();
   await page.getByRole('button', { name: 'Watch stream', exact: true }).click();
   expect(state.viewDemo).toHaveBeenCalledWith(2);

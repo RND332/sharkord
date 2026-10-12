@@ -522,7 +522,7 @@ test('a screen waiter cannot revive a closed producer after the old tail settles
     refs
       .filter((ref) => ref.current instanceof Map)
       .map((ref) => (ref.current as Map<string, unknown>).size)
-  ).toEqual([0, 0, 0]);
+  ).toEqual([0, 0, 0, 0]);
 });
 
 test('queued screen pause preserves running work and releases its token after the tail', async () => {
@@ -564,6 +564,7 @@ test('voice subscriptions release remote and external resources through context 
     isViewingDemo: () => true,
     // These are the resource-owning callbacks exposed by VoiceProvider.
     removeRemoteUserStream: hook.closeConsumer,
+    closeRemoteUserProducer: hook.closeConsumer,
     removeExternalStreamTrack: hook.closeConsumer,
     clearRemoteUserStreamsForUser: (id) =>
       hook.closeConsumers(id, [
@@ -638,4 +639,191 @@ test('trackended closes the real Consumer and releases the transport receiver', 
   ).toBe(0);
   expect(hook.getConsumer(42, StreamKind.AUDIO)).toBeUndefined();
   expect(hook.getConsumerCodec(42, StreamKind.AUDIO)).toBeUndefined();
+});
+
+test('closing and restarting a watched presentation preserves consent and consumes both new tracks', async () => {
+  let watching = true;
+  const clearViewedDemo = mock((userId: number) => {
+    expect(userId).toBe(42);
+    watching = false;
+  });
+  useVoiceEvents({
+    consumeRef: hook.consumeRef,
+    isViewingDemo: () => watching,
+    removeRemoteUserStream: hook.closeConsumer,
+    closeRemoteUserProducer: hook.closeConsumer,
+    removeExternalStreamTrack: hook.closeConsumer,
+    clearRemoteUserStreamsForUser: (id) =>
+      hook.closeConsumers(id, [
+        StreamKind.AUDIO,
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO
+      ]),
+    removeExternalStream: (id) =>
+      hook.closeConsumers(id, [
+        StreamKind.EXTERNAL_AUDIO,
+        StreamKind.EXTERNAL_VIDEO
+      ]),
+    clearViewedDemo,
+    rtpCapabilitiesRef: { current: {} },
+    isVoiceSessionActive: true
+  });
+  const cleanup = effects.at(-1)!();
+  try {
+    await hook.consume(42, StreamKind.SCREEN, {});
+    await hook.consume(42, StreamKind.SCREEN_AUDIO, {});
+    const oldScreen = hook.getConsumer(42, StreamKind.SCREEN)!;
+    const oldAudio = hook.getConsumer(42, StreamKind.SCREEN_AUDIO)!;
+
+    subscriptions.get('closed')!({
+      channelId: 7,
+      remoteId: 42,
+      kind: StreamKind.SCREEN,
+      producerId: oldScreen.producerId
+    });
+    subscriptions.get('closed')!({
+      channelId: 7,
+      remoteId: 42,
+      kind: StreamKind.SCREEN_AUDIO,
+      producerId: oldAudio.producerId
+    });
+
+    expect(watching).toBe(true);
+    expect(clearViewedDemo).not.toHaveBeenCalled();
+    expect(oldScreen.closed).toBe(true);
+    expect(oldAudio.closed).toBe(true);
+
+    subscriptions.get('new')!({
+      channelId: 7,
+      remoteId: 42,
+      kind: StreamKind.SCREEN
+    });
+    subscriptions.get('new')!({
+      channelId: 7,
+      remoteId: 42,
+      kind: StreamKind.SCREEN_AUDIO
+    });
+    await flush();
+
+    const restartedScreen = hook.getConsumer(42, StreamKind.SCREEN)!;
+    const restartedAudio = hook.getConsumer(42, StreamKind.SCREEN_AUDIO)!;
+    expect(restartedScreen.closed).toBe(false);
+    expect(restartedAudio.closed).toBe(false);
+    expect(restartedScreen.producerId).not.toBe(oldScreen.producerId);
+    expect(restartedAudio.producerId).not.toBe(oldAudio.producerId);
+  } finally {
+    if (cleanup) cleanup();
+  }
+});
+
+test('late closure for an old screen producer cannot close its replacement consumer', async () => {
+  let watching = true;
+  const clearViewedDemo = mock(() => {
+    watching = false;
+  });
+  await hook.consume(42, StreamKind.SCREEN, {});
+  const oldProducerId = hook.getConsumer(42, StreamKind.SCREEN)!.producerId;
+  hook.closeConsumer(42, StreamKind.SCREEN);
+  await hook.consume(42, StreamKind.SCREEN, {});
+  const replacement = hook.getConsumer(42, StreamKind.SCREEN)!;
+
+  useVoiceEvents({
+    consumeRef: hook.consumeRef,
+    isViewingDemo: () => watching,
+    removeRemoteUserStream: hook.closeConsumer,
+    closeRemoteUserProducer: hook.closeConsumer,
+    removeExternalStreamTrack: hook.closeConsumer,
+    clearRemoteUserStreamsForUser: (id) =>
+      hook.closeConsumers(id, [
+        StreamKind.AUDIO,
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO
+      ]),
+    removeExternalStream: (id) =>
+      hook.closeConsumers(id, [
+        StreamKind.EXTERNAL_AUDIO,
+        StreamKind.EXTERNAL_VIDEO
+      ]),
+    clearViewedDemo,
+    rtpCapabilitiesRef: { current: {} },
+    isVoiceSessionActive: true
+  });
+  const cleanup = effects.at(-1)!();
+  try {
+    subscriptions.get('closed')!({
+      channelId: 7,
+      remoteId: 42,
+      kind: StreamKind.SCREEN,
+      producerId: oldProducerId
+    });
+
+    expect(replacement.closed).toBe(false);
+    expect(hook.getConsumer(42, StreamKind.SCREEN)).toBe(replacement);
+    expect(watching).toBe(true);
+    expect(clearViewedDemo).not.toHaveBeenCalled();
+  } finally {
+    if (cleanup) cleanup();
+  }
+});
+
+test('late old producer closure during replacement receive cannot cancel the new native consumer', async () => {
+  let watching = true;
+  const clearViewedDemo = mock(() => {
+    watching = false;
+  });
+  await hook.consume(42, StreamKind.SCREEN, {});
+  const oldProducerId = hook.getConsumer(42, StreamKind.SCREEN)!.producerId;
+  hook.closeConsumer(42, StreamKind.SCREEN);
+  const pendingReceive = deferred<void>();
+  handler.receiveGate = pendingReceive.promise;
+  consumeRpc.mockImplementationOnce(async () => ({
+    ...response(StreamKind.SCREEN),
+    producerId: 'replacement-screen-producer'
+  }));
+
+  useVoiceEvents({
+    consumeRef: hook.consumeRef,
+    isViewingDemo: () => watching,
+    removeRemoteUserStream: hook.closeConsumer,
+    closeRemoteUserProducer: hook.closeConsumer,
+    removeExternalStreamTrack: hook.closeConsumer,
+    clearRemoteUserStreamsForUser: (id) =>
+      hook.closeConsumers(id, [
+        StreamKind.AUDIO,
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO
+      ]),
+    removeExternalStream: (id) =>
+      hook.closeConsumers(id, [
+        StreamKind.EXTERNAL_AUDIO,
+        StreamKind.EXTERNAL_VIDEO
+      ]),
+    clearViewedDemo,
+    rtpCapabilitiesRef: { current: {} },
+    isVoiceSessionActive: true
+  });
+  const cleanup = effects.at(-1)!();
+  try {
+    const replacementOperation = hook.consume(42, StreamKind.SCREEN, {});
+    await flush();
+    subscriptions.get('closed')!({
+      channelId: 7,
+      remoteId: 42,
+      kind: StreamKind.SCREEN,
+      producerId: oldProducerId
+    });
+    pendingReceive.resolve();
+    await replacementOperation;
+
+    const replacement = hook.getConsumer(42, StreamKind.SCREEN);
+    expect(watching).toBe(true);
+    expect(clearViewedDemo).not.toHaveBeenCalled();
+    expect(replacement?.producerId).toBe('replacement-screen-producer');
+    expect(replacement?.closed).toBe(false);
+  } finally {
+    if (cleanup) cleanup();
+  }
 });

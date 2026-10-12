@@ -16,6 +16,10 @@ type TVoiceProducerEvent = {
   kind: StreamKind;
 };
 
+type TVoiceProducerClosedEvent = TVoiceProducerEvent & {
+  producerId: string;
+};
+
 // these events are broadcast to ALL users (for UI population in the sidebar)
 const onUserJoinVoiceRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
@@ -86,7 +90,7 @@ const onVoiceNewProducerRoute = protectedProcedure.subscription(
 const onVoiceProducerClosedRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
     if (!ctx.currentVoiceChannelId) {
-      return observable<TVoiceProducerEvent>(() => () => {});
+      return observable<TVoiceProducerClosedEvent>(() => () => {});
     }
 
     return ctx.pubsub.subscribeForChannel(

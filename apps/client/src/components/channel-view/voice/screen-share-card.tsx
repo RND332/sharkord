@@ -58,6 +58,7 @@ const ScreenShareCard = memo(
       'idle'
     );
     const watchRequest = useRef(0);
+    const automaticResume = useRef(false);
     useEffect(
       () => () => {
         watchRequest.current++;
@@ -66,6 +67,7 @@ const ScreenShareCard = memo(
     );
     const handleWatch = useCallback(async () => {
       const request = ++watchRequest.current;
+      automaticResume.current = false;
       setWatchState('loading');
       try {
         await viewDemo(userId);
@@ -98,14 +100,27 @@ const ScreenShareCard = memo(
 
     const viewing = isOwnUser || isViewingDemo(userId);
     useEffect(() => {
-      if (watchState !== 'loading') return;
-      if (viewing && hasScreenShareStream) {
+      if (isOwnUser) return;
+      if (viewing && !hasScreenShareStream && watchState === 'idle') {
+        automaticResume.current = true;
+        setWatchState('loading');
+      } else if (!viewing && watchState === 'loading') {
+        automaticResume.current = false;
+        setWatchState('idle');
+      }
+    }, [isOwnUser, viewing, hasScreenShareStream, watchState]);
+    useEffect(() => {
+      if (viewing && hasScreenShareStream && watchState !== 'idle') {
+        automaticResume.current = false;
         setWatchState('idle');
         return;
       }
+      if (watchState !== 'loading') return;
       const timer = setTimeout(() => {
         watchRequest.current++;
-        void stopViewingDemo(userId).catch(() => {});
+        if (!automaticResume.current) {
+          void stopViewingDemo(userId).catch(() => {});
+        }
         setWatchState('error');
       }, 15_000);
       return () => clearTimeout(timer);

@@ -33,7 +33,8 @@ type TUseTransportParams = {
   ) => void;
   removeRemoteUserStream: (
     userId: number,
-    kind: TRemoteUserStreamKinds
+    kind: TRemoteUserStreamKinds,
+    expectedStream?: MediaStream
   ) => void;
   addExternalStreamTrack: (
     streamId: number,
@@ -57,6 +58,19 @@ type TUseTransportParams = {
   clearRemoteConsumerMetadata: () => void;
 };
 
+type TConsumerOperationToken = {
+  cancelled: boolean;
+  producerId?: string;
+  closedProducerIds: Set<string>;
+  retryAfterProducerClose: boolean;
+};
+
+const createConsumerOperationToken = (): TConsumerOperationToken => ({
+  cancelled: false,
+  closedProducerIds: new Set(),
+  retryAfterProducerClose: false
+});
+
 const useTransports = ({
   voiceOnlyMode,
   canConsumeScreen,
@@ -75,22 +89,35 @@ const useTransports = ({
       [kind: string]: Consumer<AppData>;
     };
   }>({});
+  const consumerStreams = useRef<Map<string, MediaStream>>(new Map());
   const consumerCodecs = useRef<Map<string, string>>(new Map());
   const consumeOperationsInProgress = useRef<Map<string, Promise<void>>>(
     new Map()
   );
   const sessionGenerationRef = useRef(0);
-  const consumerOperationTokens = useRef<Map<string, { cancelled: boolean }>>(
+  const consumerOperationTokens = useRef<Map<string, TConsumerOperationToken>>(
     new Map()
   );
   const closeConsumer = useCallback(
-    (remoteId: number, kind: StreamKind) => {
+    (remoteId: number, kind: StreamKind, expectedProducerId?: string) => {
       const key = `${remoteId}-${kind}`;
       const token = consumerOperationTokens.current.get(key);
-      if (token) token.cancelled = true;
-      consumerOperationTokens.current.delete(key);
-      consumeOperationsInProgress.current.delete(key);
       const consumer = consumers.current[remoteId]?.[kind];
+      if (expectedProducerId) {
+        if (token) {
+          if (token.producerId === expectedProducerId) {
+            token.cancelled = true;
+            token.retryAfterProducerClose = true;
+          } else if (!token.producerId) {
+            token.closedProducerIds.add(expectedProducerId);
+          }
+        }
+        if (!consumer || consumer.producerId !== expectedProducerId) return;
+      } else {
+        if (token) token.cancelled = true;
+        consumerOperationTokens.current.delete(key);
+        consumeOperationsInProgress.current.delete(key);
+      }
       // Detach first so a synchronous close event cannot clear a replacement.
       if (consumer) {
         delete consumers.current[remoteId][kind];
@@ -108,7 +135,13 @@ const useTransports = ({
       ) {
         removeExternalStreamTrack(remoteId, kind);
       } else {
-        removeRemoteUserStream(remoteId, kind);
+        const stream = consumerStreams.current.get(key);
+        if (stream) {
+          consumerStreams.current.delete(key);
+          removeRemoteUserStream(remoteId, kind, stream);
+        } else if (!expectedProducerId) {
+          removeRemoteUserStream(remoteId, kind);
+        }
       }
     },
     [
@@ -142,30 +175,13 @@ const useTransports = ({
   useEffect(() => {
     if (!voiceOnlyMode) return;
     for (const [remoteId, userConsumers] of Object.entries(consumers.current)) {
-      for (const [kind, consumer] of Object.entries(userConsumers)) {
-        if (kind === StreamKind.AUDIO) continue;
-        consumer.close();
-        delete userConsumers[kind];
-        consumerCodecs.current.delete(`${remoteId}-${kind}`);
-        setRemoteConsumerType(+remoteId, kind as StreamKind, undefined);
-        setRemoteStreamQualityLayers(+remoteId, kind as StreamKind, []);
-        if (
-          kind === StreamKind.EXTERNAL_AUDIO ||
-          kind === StreamKind.EXTERNAL_VIDEO
-        ) {
-          removeExternalStreamTrack(+remoteId, kind);
-        } else {
-          removeRemoteUserStream(+remoteId, kind as TRemoteUserStreamKinds);
+      for (const kind of Object.keys(userConsumers)) {
+        if (kind !== StreamKind.AUDIO) {
+          closeConsumer(+remoteId, kind as StreamKind);
         }
       }
     }
-  }, [
-    voiceOnlyMode,
-    removeExternalStreamTrack,
-    removeRemoteUserStream,
-    setRemoteConsumerType,
-    setRemoteStreamQualityLayers
-  ]);
+  }, [voiceOnlyMode, closeConsumer]);
 
   const createProducerTransport = useCallback(async (device: Device) => {
     logVoice('producer transport: creating');
@@ -423,9 +439,9 @@ const useTransports = ({
         consumer.pause();
 
         const operationKey = `${remoteId}-${kind}`;
-        const token = consumerOperationTokens.current.get(operationKey) ?? {
-          cancelled: false
-        };
+        const token =
+          consumerOperationTokens.current.get(operationKey) ??
+          createConsumerOperationToken();
         consumerOperationTokens.current.set(operationKey, token);
         const pendingOperation =
           consumeOperationsInProgress.current.get(operationKey);
@@ -489,9 +505,9 @@ const useTransports = ({
       }
 
       const operationKey = `${remoteId}-${kind}`;
-      const token = consumerOperationTokens.current.get(operationKey) ?? {
-        cancelled: false
-      };
+      const token =
+        consumerOperationTokens.current.get(operationKey) ??
+        createConsumerOperationToken();
       const pendingOperation =
         consumeOperationsInProgress.current.get(operationKey);
 
@@ -508,7 +524,7 @@ const useTransports = ({
           transport === consumerTransport.current &&
           !transport.closed &&
           generation === nonVoiceGenerationRef.current &&
-          !token.cancelled &&
+          (!token.cancelled || token.retryAfterProducerClose) &&
           !voiceOnlyModeRef.current &&
           canConsumeScreen(remoteId)
         ) {
@@ -577,6 +593,11 @@ const useTransports = ({
             remoteId,
             rtpCapabilities
           });
+          token.producerId = producerId;
+          if (token.closedProducerIds.has(producerId)) {
+            token.cancelled = true;
+            token.retryAfterProducerClose = true;
+          }
           if (!canContinue()) {
             if (isScreen && isCurrent() && !canConsumeScreen(remoteId)) {
               await trpc.voice.pauseConsumer.mutate({ remoteId, kind });
@@ -656,7 +677,15 @@ const useTransports = ({
               ) {
                 removeExternalStreamTrack(remoteId, consumerKind);
               } else {
-                removeRemoteUserStream(remoteId, consumerKind);
+                const stream = consumerStreams.current.get(
+                  `${remoteId}-${consumerKind}`
+                );
+                if (stream) {
+                  consumerStreams.current.delete(`${remoteId}-${consumerKind}`);
+                  removeRemoteUserStream(remoteId, consumerKind, stream);
+                } else {
+                  removeRemoteUserStream(remoteId, consumerKind);
+                }
               }
 
               consumerCodecs.current.delete(`${remoteId}-${consumerKind}`);
@@ -718,6 +747,7 @@ const useTransports = ({
           ) {
             addExternalStreamTrack(remoteId, stream, consumerKind);
           } else {
+            consumerStreams.current.set(`${remoteId}-${consumerKind}`, stream);
             addRemoteUserStream(remoteId, stream, consumerKind);
           }
         } catch (error) {
@@ -871,6 +901,7 @@ const useTransports = ({
     });
 
     consumers.current = {};
+    consumerStreams.current.clear();
     consumerCodecs.current.clear();
 
     clearRemoteConsumerMetadata();
