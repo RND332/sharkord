@@ -66,6 +66,20 @@ describe('/interface', () => {
       fs.mkdirSync(testDir, { recursive: true });
     }
 
+    const manifestDir = path.join(testInterfacePath, '.vite');
+    fs.mkdirSync(manifestDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(manifestDir, 'manifest.json'),
+      JSON.stringify({
+        'hashed-js': { file: 'assets/main-a1b2c3ef.js' },
+        'vite-hashed-js': { file: 'assets/main-Ch5IUFSg.js' },
+        'hashed-css': { file: 'assets/style.d4e5f678.css' }
+      })
+    );
+
+    const mutableInAssetsPath = path.join(assetsDir, 'release-12345678.js');
+    fs.writeFileSync(mutableInAssetsPath, 'mutable asset');
+
     const hashedJsPath = path.join(assetsDir, 'main-a1b2c3ef.js');
 
     if (!fs.existsSync(hashedJsPath)) {
@@ -292,6 +306,13 @@ describe('/interface', () => {
 
   test('mutable release-like filenames must not be immutable', async () => {
     const response = await fetch(`${testsBaseUrl}/release-notes123.js`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-cache');
+  });
+
+  test('mutable in-assets release-like filename must not be immutable', async () => {
+    const response = await fetch(`${testsBaseUrl}/assets/release-12345678.js`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Cache-Control')).toBe('no-cache');

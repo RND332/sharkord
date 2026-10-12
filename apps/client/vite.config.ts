@@ -24,7 +24,8 @@ export default defineConfig(({ mode }) => {
       tailwindcss()
     ],
     build: {
-      target: 'esnext'
+      target: 'esnext',
+      manifest: true
     },
     resolve: {
       alias: {
