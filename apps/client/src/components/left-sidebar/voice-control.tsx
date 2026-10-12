@@ -1,4 +1,6 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
+import { Dialog } from '@/components/dialogs/dialogs';
+import { openDialog } from '@/features/dialogs/actions';
 import {
   useChannelById,
   useCurrentVoiceChannelId
@@ -6,13 +8,14 @@ import {
 import { useChannelCan, useServerName } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
+import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { ChannelPermission, PluginSlot } from '@sharkord/shared';
+import { ChannelPermission, getTrpcError, PluginSlot } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import {
-  Activity,
   AlertTriangle,
   Eye,
+  EyeOff,
   Loader2,
   Monitor,
   MonitorOff,
@@ -22,16 +25,16 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { ExternalAudioStreams } from '../channel-view/voice/external-audio-streams';
 import { VoiceAudioStreams } from '../channel-view/voice/voice-audio-streams';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
-import { StatsPopover } from './stats-popover';
 
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
-  const { devices } = useDevices();
+  const { devices, saveDevices } = useDevices();
   const voiceChannelId = useCurrentVoiceChannelId();
   const channel = useChannelById(voiceChannelId ?? -1);
   const serverName = useServerName();
@@ -78,6 +81,34 @@ const VoiceControl = memo(() => {
     }
   }, [connectionStatus, t]);
 
+  const [isVoiceOnlyModePending, setIsVoiceOnlyModePending] = useState(false);
+  const isVoiceOnlyModeTogglePendingRef = useRef(false);
+
+  const toggleVoiceOnlyMode = useCallback(async () => {
+    if (isVoiceOnlyModeTogglePendingRef.current) return;
+
+    isVoiceOnlyModeTogglePendingRef.current = true;
+    setIsVoiceOnlyModePending(true);
+    const voiceOnlyMode = !devices.voiceOnlyMode;
+
+    try {
+      if (voiceChannelId !== undefined) {
+        await getTRPCClient().voice.updateState.mutate({ voiceOnlyMode });
+      }
+
+      saveDevices({ ...devices, voiceOnlyMode });
+    } catch (error) {
+      toast.error(getTrpcError(error, t('settings:failedSaveDeviceSettings')));
+    } finally {
+      isVoiceOnlyModeTogglePendingRef.current = false;
+      setIsVoiceOnlyModePending(false);
+    }
+  }, [devices, saveDevices, t, voiceChannelId]);
+
+  const openVoiceDiagnostics = useCallback(() => {
+    openDialog(Dialog.VOICE_DEBUG);
+  }, []);
+
   const pluginSlotProps = useMemo(
     () => (voiceChannelId ? { channelId: voiceChannelId } : undefined),
     [voiceChannelId]
@@ -93,15 +124,20 @@ const VoiceControl = memo(() => {
       <ExternalAudioStreams channelId={voiceChannelId} />
       <div className="h-[78px] shrink-0 overflow-hidden bg-panel">
         <div className="flex h-[46px] items-center justify-between gap-1.5 px-2.5 py-1">
-          <div
+          <Button
+            variant="ghost"
+            size="icon"
             className={cn(
-              'flex size-6 shrink-0 items-center justify-center rounded-md',
+              'flex size-6 shrink-0 items-center justify-center rounded-md p-0 hover:bg-transparent',
               connectionInfo.color,
               connectionInfo.iconBackground
             )}
+            onClick={openVoiceDiagnostics}
+            title={t('voiceDiagnostics')}
+            aria-label={t('voiceDiagnostics')}
           >
             {connectionInfo.icon}
-          </div>
+          </Button>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-px">
             <span
               className={cn(
@@ -115,7 +151,6 @@ const VoiceControl = memo(() => {
               {channel?.name} / {serverName}
             </span>
           </div>
-          <Activity className="size-[18px] shrink-0 text-muted-foreground" />
           <Button
             variant="ghost"
             size="icon"
@@ -183,16 +218,27 @@ const VoiceControl = memo(() => {
             </Button>
           )}
 
-          <StatsPopover>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 min-w-0 flex-1 rounded-md bg-raised text-foreground hover:bg-raised/80"
-              title="Connection info"
-            >
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-6 min-w-0 flex-1 rounded-md bg-raised hover:bg-raised/80',
+              devices.voiceOnlyMode
+                ? 'text-success hover:!text-success'
+                : 'text-foreground'
+            )}
+            onClick={toggleVoiceOnlyMode}
+            title={t('settings:voiceOnlyModeDesc')}
+            aria-label={t('settings:voiceOnlyModeLabel')}
+            aria-pressed={devices.voiceOnlyMode}
+            disabled={isVoiceOnlyModePending}
+          >
+            {devices.voiceOnlyMode ? (
+              <EyeOff className="size-5" />
+            ) : (
               <Eye className="size-5" />
-            </Button>
-          </StatsPopover>
+            )}
+          </Button>
         </div>
       </div>
     </>
