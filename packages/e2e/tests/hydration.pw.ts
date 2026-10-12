@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-test('server-rendered document hydrates without React recoverable errors', async ({ page }) => {
+test('server-rendered document hydrates without React recoverable errors', async ({
+  page
+}) => {
   const hydrationErrors: string[] = [];
   const isHydrationError = (message: string) =>
-    /Minified React error #(?:418|423)|Hydration failed|hydration mismatch/i.test(message);
+    /Minified React error #(?:418|423)|Hydration failed|hydration mismatch/i.test(
+      message
+    );
 
   page.on('pageerror', (error) => {
     if (isHydrationError(error.message)) hydrationErrors.push(error.message);

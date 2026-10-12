@@ -20,7 +20,10 @@ describe('/interface', () => {
     }
 
     const testJsPath = path.join(assetsDir, 'test.js');
-    const releaseNotesPath = path.join(testInterfacePath, 'release-notes123.js');
+    const releaseNotesPath = path.join(
+      testInterfacePath,
+      'release-notes123.js'
+    );
     fs.writeFileSync(releaseNotesPath, 'mutable');
 
     if (!fs.existsSync(testJsPath)) {

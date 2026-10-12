@@ -6,11 +6,7 @@
  * renders a select and requires `options`.
  */
 export type TPluginSettingType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'secret'
-  | 'enum';
+  'string' | 'number' | 'boolean' | 'secret' | 'enum';
 
 /** One choice of an `enum` setting: `value` is stored, `label` is shown. */
 export type TPluginSettingOption = {
