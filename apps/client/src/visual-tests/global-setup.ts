@@ -13,7 +13,7 @@ const seedEntry = path.join(
   'packages/e2e/tests/setup/seed-db.ts'
 );
 const visualSeedEntry = path.join(import.meta.dirname, 'seed.ts');
-const visualTestServerPort = process.env.SHARKORD_TEST_PORT ?? '4991';
+const visualTestServerPort = process.env.SHARKORD_TEST_PORT || '4991';
 const serverUrl = `http://localhost:${visualTestServerPort}/info`;
 const serverLifetimeMs = 180_000;
 
