@@ -43,6 +43,7 @@ const state = vi.hoisted(() => ({
     ) => {}
   ),
   updateVoiceState: vi.fn(async (_state: { voiceOnlyMode: boolean }) => {}),
+  setVoiceOnlyMode: vi.fn(async (_voiceOnlyMode: boolean) => false),
   openDialog: vi.fn(),
   toastError: vi.fn(),
   toggleWebcam: vi.fn(),
@@ -84,6 +85,7 @@ vi.mock('@/features/server/voice/hooks', () => ({
     ownVoiceState: { webcamEnabled: false, sharingScreen: false },
     toggleWebcam: state.toggleWebcam,
     toggleScreenShare: state.toggleScreenShare,
+    setVoiceOnlyMode: state.setVoiceOnlyMode,
     connectionStatus: 'connected',
     isScreenShareSupported: true
   })
@@ -145,9 +147,10 @@ const originalDevices = {
   voiceOnlyMode: false
 };
 
-const setVoiceChannelId = (voiceChannelId: number | undefined) => {
-  state.voiceChannelId = voiceChannelId;
-  state.storeListeners.forEach((listener) => listener());
+const confirmMockVoiceOnlyMode = async (voiceOnlyMode: boolean) => {
+  await state.updateVoiceState({ voiceOnlyMode });
+  state.saveDevices((current) => ({ ...current, voiceOnlyMode }));
+  return true;
 };
 
 const render = async (remount = false) => {
@@ -195,6 +198,8 @@ afterEach(() => {
     state.voiceServerModes[channelId] = nextState.voiceOnlyMode;
     state.events.push(`server:${channelId}:${nextState.voiceOnlyMode}`);
   });
+  state.setVoiceOnlyMode.mockReset();
+  state.setVoiceOnlyMode.mockImplementation(confirmMockVoiceOnlyMode);
   state.openDialog.mockReset();
   state.toastError.mockReset();
   state.toggleWebcam.mockReset();
@@ -212,6 +217,7 @@ state.updateVoiceState.mockImplementation(async (nextState) => {
   state.voiceServerModes[channelId] = nextState.voiceOnlyMode;
   state.events.push(`server:${channelId}:${nextState.voiceOnlyMode}`);
 });
+state.setVoiceOnlyMode.mockImplementation(confirmMockVoiceOnlyMode);
 
 test('eye toggles the existing mode after the server accepts and preserves device settings', async () => {
   await render();
@@ -348,52 +354,15 @@ test('voice-only persistence keeps device preferences changed while the server u
   });
 });
 
-test('voice-only mode is confirmed on the current voice session before local persistence', async () => {
-  state.voiceServerModes = { 42: false, 43: false };
-  let resolveFirstUpdate!: () => void;
-  state.updateVoiceState.mockImplementationOnce((nextState) => {
-    const requestChannelId = state.voiceChannelId!;
-    return new Promise<void>((resolve) => {
-      resolveFirstUpdate = () => {
-        state.voiceServerModes[requestChannelId] = nextState.voiceOnlyMode;
-        state.events.push(
-          `server:${requestChannelId}:${nextState.voiceOnlyMode}`
-        );
-        resolve();
-      };
-    });
-  });
-  await render();
-  const modeButton = page.getByRole('button', {
-    name: 'Voice-only mode',
-    exact: true
-  });
-
-  await modeButton.click();
-  await vi.waitFor(() =>
-    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
-  );
-  setVoiceChannelId(43);
-  await render();
-  resolveFirstUpdate();
-  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
-
-  expect(state.updateVoiceState).toHaveBeenCalledTimes(2);
-  expect(state.voiceServerModes[43]).toBe(true);
-  expect(state.events).toEqual([
-    'server:42:true',
-    'server:43:true',
-    'save:true'
-  ]);
-});
-
-test('a stale session rejection retries the replacement session without showing an error', async () => {
-  state.voiceServerModes = { 42: false, 43: false };
-  let rejectFirstUpdate!: (error: Error) => void;
-  state.updateVoiceState.mockImplementationOnce(
-    () =>
-      new Promise<void>((_, reject) => {
-        rejectFirstUpdate = reject;
+test('dock waits for provider confirmation before completing the mode action', async () => {
+  let confirmMode!: () => void;
+  state.setVoiceOnlyMode.mockImplementationOnce(
+    (voiceOnlyMode) =>
+      new Promise<boolean>((resolve) => {
+        confirmMode = () => {
+          state.saveDevices((current) => ({ ...current, voiceOnlyMode }));
+          resolve(true);
+        };
       })
   );
   await render();
@@ -404,66 +373,44 @@ test('a stale session rejection retries the replacement session without showing 
 
   await modeButton.click();
   await vi.waitFor(() =>
-    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+    expect(state.setVoiceOnlyMode).toHaveBeenCalledWith(true)
   );
-  setVoiceChannelId(43);
-  await render();
-  rejectFirstUpdate(new Error('stale session'));
+  await expect.element(modeButton).toBeDisabled();
+  expect(state.saveDevices).not.toHaveBeenCalled();
+  confirmMode();
   await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
+  await render();
+  await expect.element(modeButton).toHaveAttribute('aria-pressed', 'true');
+});
 
-  expect(state.updateVoiceState).toHaveBeenCalledTimes(2);
-  expect(state.voiceServerModes[43]).toBe(true);
-  expect(state.events).toEqual(['server:43:true', 'save:true']);
+test('an unconfirmed replacement-session result does not save a requested mode', async () => {
+  state.setVoiceOnlyMode.mockResolvedValueOnce(false);
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.setVoiceOnlyMode).toHaveBeenCalledWith(true)
+  );
+  await expect.element(modeButton).toBeEnabled();
+
+  expect(state.saveDevices).not.toHaveBeenCalled();
+  expect(state.devices.voiceOnlyMode).toBe(false);
   expect(state.toastError).not.toHaveBeenCalled();
 });
 
-test('rejoining the same voice channel during an update is treated as a new session', async () => {
-  state.voiceServerModes = { 42: false };
-  let resolveFirstUpdate!: () => void;
-  state.updateVoiceState.mockImplementationOnce((nextState) => {
-    const requestChannelId = state.voiceChannelId!;
-    return new Promise<void>((resolve) => {
-      resolveFirstUpdate = () => {
-        state.voiceServerModes[requestChannelId] = nextState.voiceOnlyMode;
-        state.events.push(
-          `server:${requestChannelId}:${nextState.voiceOnlyMode}`
-        );
-        resolve();
-      };
-    });
-  });
-  await render();
-  const modeButton = page.getByRole('button', {
-    name: 'Voice-only mode',
-    exact: true
-  });
-
-  await modeButton.click();
-  await vi.waitFor(() =>
-    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
-  );
-  setVoiceChannelId(undefined);
-  setVoiceChannelId(42);
-  state.voiceServerModes[42] = false;
-  await render();
-  resolveFirstUpdate();
-  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
-
-  expect(state.updateVoiceState).toHaveBeenCalledTimes(2);
-  expect(state.voiceServerModes[42]).toBe(true);
-  expect(state.events).toEqual([
-    'server:42:true',
-    'server:42:true',
-    'save:true'
-  ]);
-});
-
-test('leaving voice before the server reply prevents an obsolete local mode save', async () => {
-  let resolveUpdate!: () => void;
-  state.updateVoiceState.mockImplementationOnce(
-    () =>
-      new Promise<void>((resolve) => {
-        resolveUpdate = resolve;
+test('same-channel rejoin confirmation is delegated to the provider action', async () => {
+  let confirmMode!: () => void;
+  state.setVoiceOnlyMode.mockImplementationOnce(
+    (voiceOnlyMode) =>
+      new Promise<boolean>((resolve) => {
+        confirmMode = () => {
+          state.saveDevices((current) => ({ ...current, voiceOnlyMode }));
+          resolve(true);
+        };
       })
   );
   await render();
@@ -474,12 +421,44 @@ test('leaving voice before the server reply prevents an obsolete local mode save
 
   await modeButton.click();
   await vi.waitFor(() =>
-    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+    expect(state.setVoiceOnlyMode).toHaveBeenCalledTimes(1)
   );
-  setVoiceChannelId(undefined);
+  state.voiceChannelId = undefined;
   await render();
-  resolveUpdate();
-  await Promise.resolve();
+  state.voiceChannelId = 42;
+  await render();
+  expect(state.saveDevices).not.toHaveBeenCalled();
+
+  confirmMode();
+  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
+  expect(state.setVoiceOnlyMode).toHaveBeenCalledWith(true);
+  expect(state.devices.voiceOnlyMode).toBe(true);
+});
+
+test('leaving voice while provider confirmation is pending does not save a mode', async () => {
+  let confirmLeaving!: () => void;
+  state.setVoiceOnlyMode.mockImplementationOnce(
+    () =>
+      new Promise<boolean>((resolve) => {
+        confirmLeaving = () => resolve(false);
+      })
+  );
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.setVoiceOnlyMode).toHaveBeenCalledTimes(1)
+  );
+  state.voiceChannelId = undefined;
+  await render();
+  confirmLeaving();
+  const pendingResult = state.setVoiceOnlyMode.mock.results[0]
+    ?.value as Promise<boolean>;
+  expect(await pendingResult).toBe(false);
 
   expect(state.saveDevices).not.toHaveBeenCalled();
   expect(state.devices.voiceOnlyMode).toBe(false);

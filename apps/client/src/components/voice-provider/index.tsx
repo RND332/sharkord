@@ -119,6 +119,16 @@ enum ConnectionStatus {
   FAILED = 'failed'
 }
 
+type TVoiceSessionAttempt = {
+  channelId: number;
+  generation: number;
+  status: 'initializing' | 'ready' | 'failed';
+  client?: ReturnType<typeof getTRPCClient>;
+  error?: unknown;
+};
+
+const MAX_VOICE_SESSION_RESYNCS = 2;
+
 export type TVoiceProvider = {
   loading: boolean;
   connectionStatus: ConnectionStatus;
@@ -167,6 +177,7 @@ export type TVoiceProvider = {
     routerRtpCapabilities: RtpCapabilities,
     channelId: number
   ) => Promise<void>;
+  setVoiceOnlyMode: (enabled: boolean) => Promise<boolean>;
 } & Pick<
   ReturnType<typeof useLocalStreams>,
   | 'localAudioStream'
@@ -215,6 +226,7 @@ const VoiceProviderContext = createContext<TVoiceProvider>({
   setStreamQuality: () => Promise.resolve(),
   isSimulcastConsumer: () => false,
   init: () => Promise.resolve(),
+  setVoiceOnlyMode: async () => false,
   toggleMic: () => Promise.resolve(),
   toggleSound: () => Promise.resolve(),
   toggleWebcam: () => Promise.resolve(),
@@ -262,7 +274,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   currentVoiceChannelIdRef.current = currentVoiceChannelId;
   const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
   const ownVoiceState = useOwnVoiceState();
-  const { devices } = useDevices();
+  const { devices, saveDevices } = useDevices();
   const voiceOnlyMode =
     !!devices.voiceOnlyMode || !!ownVoiceState.voiceOnlyMode;
   const voiceOnlyModeRef = useRef(voiceOnlyMode);
@@ -498,6 +510,14 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     setRemoteStreamQualityLayers,
     clearRemoteConsumerMetadata
   });
+  const voiceSessionAttemptRef = useRef<TVoiceSessionAttempt | undefined>(
+    undefined
+  );
+  const voiceProviderLifetimeRef = useRef({ generation: 0, mounted: true });
+  const voiceSessionListenersRef = useRef(new Set<() => void>());
+  const notifyVoiceSessionListeners = useCallback(() => {
+    voiceSessionListenersRef.current.forEach((listener) => listener());
+  }, []);
 
   // Voice events get these resource-owning callbacks through the context.
   // Internal cleanup uses raw stream callbacks to avoid recursive invalidation.
@@ -1579,6 +1599,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     clearRemoteUserStreams();
     clearExternalStreams();
     cleanupTransports();
+    voiceSessionAttemptRef.current = undefined;
+    notifyVoiceSessionListeners();
     deviceRtpCapabilities.current = null;
 
     setLoading(false);
@@ -1593,7 +1615,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     clearLocalStreams,
     clearRemoteUserStreams,
     clearExternalStreams,
-    cleanupTransports
+    cleanupTransports,
+    notifyVoiceSessionListeners
   ]);
 
   const init = useCallback(
@@ -1601,6 +1624,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       incomingRouterRtpCapabilities: RtpCapabilities,
       channelId: number
     ) => {
+      if (!voiceProviderLifetimeRef.current.mounted) {
+        throw new VoiceSessionCancelledError();
+      }
       logVoice('session: initializing', {
         channelId,
         routerCodecs: incomingRouterRtpCapabilities.codecs?.length ?? 0
@@ -1609,15 +1635,36 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       cleanup();
 
       const sessionGeneration = sessionGenerationRef.current;
-      const assertCurrentSession = () => {
-        if (sessionGeneration !== sessionGenerationRef.current) {
-          throw new VoiceSessionCancelledError();
+      const sessionAttempt: TVoiceSessionAttempt = {
+        channelId,
+        generation: sessionGeneration,
+        status: 'initializing'
+      };
+      voiceSessionAttemptRef.current = sessionAttempt;
+      notifyVoiceSessionListeners();
+      let sessionClient: ReturnType<typeof getTRPCClient> | undefined;
+      const isCurrentProviderSession = () =>
+        sessionGeneration === sessionGenerationRef.current &&
+        currentVoiceChannelIdRef.current === channelId &&
+        voiceSessionAttemptRef.current === sessionAttempt;
+      const isCurrentSession = () => {
+        if (!isCurrentProviderSession()) return false;
+        if (!sessionClient) return true;
+        try {
+          return getTRPCClient() === sessionClient;
+        } catch {
+          return false;
         }
+      };
+      const assertCurrentSession = () => {
+        if (!isCurrentSession()) throw new VoiceSessionCancelledError();
       };
       try {
         setLoading(true);
         setConnectionStatus(ConnectionStatus.CONNECTING);
         const trpc = getTRPCClient();
+        sessionClient = trpc;
+        sessionAttempt.client = trpc;
         await trpc.voice.updateState.mutate({
           voiceOnlyMode: savedVoiceOnlyModeRef.current
         });
@@ -1661,16 +1708,31 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         setConnectionStatus(ConnectionStatus.CONNECTED);
         setLoading(false);
         playSound(SoundType.OWN_USER_JOINED_VOICE_CHANNEL);
+        assertCurrentSession();
+        sessionAttempt.status = 'ready';
+        notifyVoiceSessionListeners();
       } catch (error) {
-        logVoiceError('session: init failed', error, { channelId });
         // A cancelled initializer must not tear down a newer session.
-        if (sessionGeneration !== sessionGenerationRef.current) {
-          throw new VoiceSessionCancelledError();
+        if (!isCurrentSession()) {
+          const cancellation = new VoiceSessionCancelledError();
+          if (isCurrentProviderSession()) {
+            cleanup();
+            sessionAttempt.status = 'failed';
+            sessionAttempt.error = cancellation;
+            voiceSessionAttemptRef.current = sessionAttempt;
+            notifyVoiceSessionListeners();
+          }
+          throw cancellation;
         }
+        logVoiceError('session: init failed', error, { channelId });
         cleanup();
 
         setConnectionStatus(ConnectionStatus.FAILED);
         setLoading(false);
+        sessionAttempt.status = 'failed';
+        sessionAttempt.error = error;
+        voiceSessionAttemptRef.current = sessionAttempt;
+        notifyVoiceSessionListeners();
 
         throw error;
       }
@@ -1684,8 +1746,123 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       startMonitoring,
       producerTransport,
       consumerTransport,
-      sessionGenerationRef
+      sessionGenerationRef,
+      notifyVoiceSessionListeners
     ]
+  );
+
+  const waitForReadyVoiceSession = useCallback(
+    async (providerGeneration: number) => {
+      while (true) {
+        if (
+          !voiceProviderLifetimeRef.current.mounted ||
+          voiceProviderLifetimeRef.current.generation !== providerGeneration
+        )
+          return undefined;
+        const channelId = currentVoiceChannelIdRef.current;
+        if (channelId === undefined) return undefined;
+
+        const attempt = voiceSessionAttemptRef.current;
+        if (attempt?.channelId === channelId) {
+          if (
+            attempt.status === 'ready' &&
+            attempt.generation === sessionGenerationRef.current
+          ) {
+            return attempt;
+          }
+          if (attempt.status === 'failed') {
+            throw (
+              attempt.error ?? new Error('Voice session initialization failed')
+            );
+          }
+        }
+
+        await new Promise<void>((resolve) => {
+          const wake = () => {
+            voiceSessionListenersRef.current.delete(wake);
+            resolve();
+          };
+          voiceSessionListenersRef.current.add(wake);
+        });
+      }
+    },
+    [sessionGenerationRef]
+  );
+
+  const setVoiceOnlyMode = useCallback(
+    async (enabled: boolean): Promise<boolean> => {
+      const providerGeneration = voiceProviderLifetimeRef.current.generation;
+      let previousSession: TVoiceSessionAttempt | undefined;
+      let resyncCount = 0;
+
+      while (true) {
+        const session = await waitForReadyVoiceSession(providerGeneration);
+        if (!session) return false;
+
+        if (
+          previousSession &&
+          (previousSession.channelId !== session.channelId ||
+            previousSession.generation !== session.generation)
+        ) {
+          if (resyncCount >= MAX_VOICE_SESSION_RESYNCS) {
+            throw new Error(
+              'Voice session changed before voice-only mode was confirmed'
+            );
+          }
+          resyncCount += 1;
+        }
+        previousSession = session;
+
+        const trpc = getTRPCClient();
+        if (session.client !== trpc) {
+          throw new Error(
+            'Voice connection changed before voice-only mode was confirmed'
+          );
+        }
+        const isCurrentSession = () =>
+          voiceProviderLifetimeRef.current.mounted &&
+          voiceProviderLifetimeRef.current.generation === providerGeneration &&
+          voiceSessionAttemptRef.current === session &&
+          session.client === trpc &&
+          session.status === 'ready' &&
+          session.generation === sessionGenerationRef.current &&
+          currentVoiceChannelIdRef.current === session.channelId;
+        const isCurrentRequest = () => {
+          if (!isCurrentSession()) return false;
+          try {
+            return getTRPCClient() === trpc;
+          } catch {
+            return false;
+          }
+        };
+
+        try {
+          await trpc.voice.updateState.mutate({ voiceOnlyMode: enabled });
+        } catch (error) {
+          if (isCurrentRequest()) throw error;
+          if (isCurrentSession()) {
+            throw new Error(
+              'Voice connection changed before voice-only mode was confirmed',
+              {
+                cause: error
+              }
+            );
+          }
+          continue;
+        }
+
+        if (isCurrentRequest()) {
+          saveDevices((current) => ({ ...current, voiceOnlyMode: enabled }));
+          return true;
+        }
+        if (isCurrentSession()) {
+          throw new Error(
+            'Voice connection changed before voice-only mode was confirmed'
+          );
+        }
+      }
+    },
+    [saveDevices, waitForReadyVoiceSession, sessionGenerationRef]
   );
 
   const { toggleMic, toggleSound, toggleWebcam, toggleScreenShare } =
@@ -1795,7 +1972,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   }, [currentVoiceChannelId, cleanup]);
 
   useEffect(() => {
+    const lifetime = voiceProviderLifetimeRef.current;
+    lifetime.mounted = true;
     return () => {
+      lifetime.mounted = false;
+      lifetime.generation += 1;
       logVoice('session: provider unmounting');
       cleanup();
     };
@@ -1828,6 +2009,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       setStreamQuality,
       isSimulcastConsumer,
       init,
+      setVoiceOnlyMode,
 
       toggleMic,
       toggleSound,
@@ -1866,6 +2048,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       setStreamQuality,
       isSimulcastConsumer,
       init,
+      setVoiceOnlyMode,
 
       toggleMic,
       toggleSound,

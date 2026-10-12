@@ -49,6 +49,7 @@ mock.module('react-i18next', () => ({
 const errorToast = mock(() => {});
 mock.module('sonner', () => ({ toast: { error: errorToast } }));
 let channelId: number | undefined;
+let rerenderProvider = () => {};
 mock.module('@/features/server/channels/hooks', () => ({
   useCurrentVoiceChannelId: () => channelId
 }));
@@ -58,7 +59,11 @@ mock.module('@/features/server/hooks', () => ({
 const leaveVoice = mock(async () => {});
 mock.module('@/features/server/voice/actions', () => ({
   updateOwnVoiceState() {},
-  joinVoice: async () => ({}),
+  joinVoice: async (id: number) => {
+    channelId = id;
+    rerenderProvider();
+    return {};
+  },
   leaveVoice
 }));
 mock.module('@/features/server/channels/actions', () => ({
@@ -120,13 +125,14 @@ mock.module('mediasoup-client', () => ({
   }
 }));
 const updateState = mock(async () => {});
+const trpcClient = {
+  voice: {
+    updateState: { mutate: updateState },
+    closeProducer: { mutate: async () => {} }
+  }
+};
 mock.module('@/lib/trpc', () => ({
-  getTRPCClient: () => ({
-    voice: {
-      updateState: { mutate: updateState },
-      closeProducer: { mutate: async () => {} }
-    }
-  })
+  getTRPCClient: () => trpcClient
 }));
 const generation = { current: 0 };
 const send = { current: undefined as ReturnType<typeof transport> | undefined };
@@ -269,6 +275,14 @@ const render = () => {
   )({ children: null });
   voice = tree.props.value;
   return voice;
+};
+rerenderProvider = () => {
+  render();
+};
+const initializeSession = (id: number) => {
+  channelId = id;
+  rerenderProvider();
+  return voice.init({}, id);
 };
 const flush = async () => {
   for (let i = 0; i < 60; i++) await Promise.resolve();
@@ -428,7 +442,7 @@ for (const mode of ['leave', 'replacement'] as const) {
     await flush();
     const gateContext = contexts[1]!;
     if (mode === 'replacement') {
-      await voice.init({}, 2);
+      await initializeSession(2);
     } else {
       effects.forEach((effect) => effect());
       channelId = undefined;
@@ -465,7 +479,7 @@ test('cancelled startup disposes each context once even when close rejects', asy
   await flush();
   const context = contexts[0]!;
   context.rejectClose = true;
-  await voice.init({}, 2);
+  await initializeSession(2);
   pending.resolve({ connect() {}, disconnect: mock(() => {}) });
   await old;
   await flush();
@@ -567,7 +581,7 @@ test('late A processing disposes its graph without overwriting B', async () => {
   const old = voice.init({}, 1).catch(() => {});
   await flush();
   const oldContext = contexts[0]!;
-  await voice.init({}, 2);
+  await initializeSession(2);
   expect(oldContext.closed).toBe(true);
   const current = send.current!;
   const bStream = render().localAudioStream;
@@ -633,7 +647,7 @@ test('late A completion keeps B pending disposer registered for leave', async ()
     .mockImplementationOnce(async () => rawB);
   const old = voice.init({}, 1).catch(() => {});
   await flush();
-  const replacement = voice.init({}, 2).catch(() => {});
+  const replacement = initializeSession(2).catch(() => {});
   await flush();
   expect(rawA.tracks[0]!.readyState).toBe('ended');
   expect(contexts[0]!.closed).toBe(true);
@@ -662,7 +676,7 @@ test('late A capture cannot publish into B or replace B microphone', async () =>
     .mockImplementationOnce(async () => b);
   const old = voice.init({}, 1).catch(() => {});
   await flush();
-  await voice.init({}, 2);
+  await initializeSession(2);
   const current = send.current!;
   pending.resolve(a);
   await old;
