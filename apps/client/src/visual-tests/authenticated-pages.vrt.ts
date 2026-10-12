@@ -359,6 +359,11 @@ test('empty composer uses Paper geometry and keeps upload on the left', async ()
     .element(page.getByRole('button', { name: 'Send message' }))
     .toBeVisible();
   await input.fill('');
+  await waitForRender();
+  expect(input.element().textContent).toBe('');
+  const { getChannelDraftKey, getDraftMessage } =
+    await import('@/components/channel-view/text/use-draft-messages');
+  expect(getDraftMessage(getChannelDraftKey(1))).toBe('');
   await page.getByText('sharkord', { exact: true }).hover();
 });
 
@@ -498,6 +503,9 @@ test('text channel matches the Paper design', async () => {
     .filter({ hasText: 'general' })
     .click();
 
+  await expect
+    .element(page.getByTestId(TestId.DM_TOGGLE))
+    .toHaveTextContent('1');
   await snapshot('text-channel');
 });
 
@@ -1105,5 +1113,178 @@ test('redesigned channel header preserves upstream mute and unmute control', asy
       .toBeNull();
   } finally {
     if (document.querySelector('.lucide-bell-off')) toggleChannelMuted(1);
+  }
+});
+
+test('warm A-B-A switching shows cached messages before delayed revalidation', async () => {
+  const { ChannelType } = await import('@sharkord/shared');
+  const client = trpc.getTRPCClient();
+  const originalA = await client.messages.get.query({
+    channelId: 1,
+    limit: 50,
+    cursor: null
+  });
+  const bChannelId = await client.channels.add.mutate({
+    name: 'warm-switch-regression',
+    type: ChannelType.TEXT,
+    categoryId: 1
+  });
+  const template = originalA.messages[0];
+  const makeCachedMessages = (
+    channelId: number,
+    idOffset: number,
+    label: string
+  ) =>
+    Array.from({ length: 24 }, (_, index) => ({
+      ...template,
+      id: idOffset + index,
+      channelId,
+      content: `Warm ${label} marker ${index + 1}`,
+      createdAt: Date.UTC(2026, 9, 9, 12, index * 2)
+    }));
+  const cachedA = makeCachedMessages(1, 920001, 'A');
+  const cachedB = makeCachedMessages(bChannelId, 920101, 'B');
+  const { setChannelMessages } =
+    await import('@/features/server/messages/actions');
+  const { promise: delayedARequest, resolve: noteARequest } =
+    Promise.withResolvers<void>();
+  const { promise: releaseDelayedA, resolve: releaseARequest } =
+    Promise.withResolvers<void>();
+  const { promise: delayedAResponseFinished, resolve: noteAResponseFinished } =
+    Promise.withResolvers<void>();
+  const { promise: bRequestFinished, resolve: noteBRequestFinished } =
+    Promise.withResolvers<void>();
+  let delayNextARequest = false;
+  let delayedARequestStarted = false;
+  const query = vi
+    .fn(client.messages.get.query)
+    .mockImplementation(async (input) => {
+      let wasDelayedARequest = false;
+      try {
+        if (input.channelId === 1 && delayNextARequest) {
+          delayNextARequest = false;
+          delayedARequestStarted = true;
+          wasDelayedARequest = true;
+          noteARequest();
+          await releaseDelayedA;
+        }
+        return await client.messages.get.query(input);
+      } finally {
+        if (wasDelayedARequest) noteAResponseFinished();
+        if (input.channelId === bChannelId) noteBRequestFinished();
+      }
+    });
+  const fixtureClient = new Proxy(client, {
+    get(target, property) {
+      if (property !== 'messages') return Reflect.get(target, property);
+      return new Proxy(target.messages, {
+        get(messages, key) {
+          if (key !== 'get') return Reflect.get(messages, key);
+          return new Proxy(messages.get, {
+            get(get, method) {
+              return method === 'query' ? query : Reflect.get(get, method);
+            }
+          });
+        }
+      });
+    }
+  });
+  vi.mocked(trpc.getTRPCClient).mockReturnValue(fixtureClient);
+  let releaseTimer: number | undefined;
+  let networkReleasedAt = Number.POSITIVE_INFINITY;
+  try {
+    setChannelMessages(1, cachedA, false);
+    setChannelMessages(bChannelId, cachedB, false);
+    await expect
+      .element(page.getByText('Warm A marker 24', { exact: true }))
+      .toBeVisible();
+
+    await page
+      .getByTestId(TestId.CHANNEL_ITEM)
+      .filter({ hasText: 'warm-switch-regression' })
+      .click();
+    await expect
+      .element(page.getByText('Warm B marker 24', { exact: true }))
+      .toBeVisible();
+    await bRequestFinished;
+    await waitForRender();
+    expect(document.body.textContent).not.toContain('Warm A marker 24');
+
+    delayNextARequest = true;
+    const switchStartedAt = performance.now();
+    releaseTimer = window.setTimeout(() => {
+      networkReleasedAt = performance.now();
+      releaseARequest();
+    }, 900);
+    await page
+      .getByTestId(TestId.CHANNEL_ITEM)
+      .filter({ hasText: 'general' })
+      .click();
+    await delayedARequest;
+
+    const isVisuallyReady = () => {
+      const container = document.querySelector<HTMLElement>(
+        '[data-messages-container]'
+      );
+      const editor = document.querySelector<HTMLElement>(
+        '.compose-container .ProseMirror'
+      );
+      const marker = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          `[data-testid="${TestId.MESSAGE_ITEM}"]`
+        )
+      ).find((element) => element.textContent?.includes('Warm A marker 24'));
+      if (!container || !editor?.isContentEditable || !marker) return false;
+
+      const containerRect = container.getBoundingClientRect();
+      const markerRect = marker.getBoundingClientRect();
+      const distanceFromBottom =
+        container.scrollHeight - container.clientHeight - container.scrollTop;
+      return (
+        markerRect.bottom > containerRect.top &&
+        markerRect.top < containerRect.bottom &&
+        distanceFromBottom <= 1 &&
+        Number(getComputedStyle(container).opacity) >= 0.99
+      );
+    };
+    await expect
+      .poll(isVisuallyReady, { timeout: 4_000, interval: 10 })
+      .toBe(true);
+    const switchReadyAt = performance.now();
+    const readyMs = switchReadyAt - switchStartedAt;
+    const readyBeforeNetworkRelease = !Number.isFinite(networkReleasedAt);
+    console.info(
+      `[channel-switch-perf] warm A-B-A: visual+editor ready ${readyMs.toFixed(1)}ms before delayed response release`
+    );
+    expect(readyBeforeNetworkRelease).toBe(true);
+    expect(
+      getComputedStyle(
+        document.querySelector<HTMLElement>('[data-messages-container]')!
+      ).animationDuration
+    ).toBe('0s');
+    await delayedAResponseFinished;
+    await waitForRender();
+    const delayedResponseMs = networkReleasedAt - switchStartedAt;
+    console.info(
+      `[channel-switch-perf] delayed response released ${delayedResponseMs.toFixed(1)}ms after the channel click`
+    );
+    expect(switchReadyAt).toBeLessThan(networkReleasedAt);
+    expect(
+      document.querySelector('[data-messages-container]')?.textContent
+    ).toContain('Warm A marker 24');
+    expect(
+      document.querySelector('[data-messages-container]')?.textContent
+    ).not.toContain('Warm B marker 24');
+  } finally {
+    if (releaseTimer !== undefined) window.clearTimeout(releaseTimer);
+    releaseARequest();
+    if (delayedARequestStarted) await delayedAResponseFinished;
+    vi.mocked(trpc.getTRPCClient).mockReturnValue(client);
+    setSelectedChannelId(1);
+    await waitForRender();
+    setChannelMessages(1, [...originalA.messages].reverse(), false);
+    setChannelMessages(bChannelId, [], false);
+    await client.channels.delete.mutate({ channelId: bChannelId });
+    await waitForRender();
   }
 });

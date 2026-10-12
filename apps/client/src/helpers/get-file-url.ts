@@ -1,8 +1,10 @@
 import type { TFile } from '@sharkord/shared';
 
+const getDevelopmentServerPort = () => VITE_SERVER_PORT;
+
 const getHostFromServer = () => {
   if (import.meta.env.MODE === 'development') {
-    return 'localhost:4991';
+    return `localhost:${getDevelopmentServerPort()}`;
   }
 
   return window.location.host;
@@ -10,7 +12,7 @@ const getHostFromServer = () => {
 
 const getUrlFromServer = () => {
   if (import.meta.env.MODE === 'development') {
-    return 'http://localhost:4991';
+    return `http://localhost:${getDevelopmentServerPort()}`;
   }
 
   const host = window.location.host;

@@ -20,7 +20,8 @@ export default defineConfig({
     dedupe: ['react', 'react-dom']
   },
   define: {
-    VITE_APP_VERSION: JSON.stringify(pkg.version)
+    VITE_APP_VERSION: JSON.stringify(pkg.version),
+    VITE_SERVER_PORT: JSON.stringify(process.env.SHARKORD_TEST_PORT || '4991')
   },
   test: {
     include: ['src/visual-tests/**/*.vrt.ts'],

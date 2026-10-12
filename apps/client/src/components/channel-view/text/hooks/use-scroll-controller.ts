@@ -75,10 +75,10 @@ const useScrollController = ({
     }
   }, [loadMore, hasMore, fetching, isNearBottom]);
 
-  // Handle initial scroll after messages load
+  // Cached history should reach the bottom while its latest-page refresh is in flight.
   useEffect(() => {
     if (!containerRef.current) return;
-    if (fetching || messages.length === 0) return;
+    if (messages.length === 0) return;
 
     if (hasInitialScroll.current) return;
 

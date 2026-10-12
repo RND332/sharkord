@@ -13,7 +13,8 @@ const seedEntry = path.join(
   'packages/e2e/tests/setup/seed-db.ts'
 );
 const visualSeedEntry = path.join(import.meta.dirname, 'seed.ts');
-const serverUrl = 'http://localhost:4991/info';
+const visualTestServerPort = process.env.SHARKORD_TEST_PORT ?? '4991';
+const serverUrl = `http://localhost:${visualTestServerPort}/info`;
 const serverLifetimeMs = 180_000;
 
 type TServerStartState = {
@@ -71,7 +72,7 @@ const assertServerPortAvailable = async () => {
 
   if (portIsOccupied) {
     throw new Error(
-      'Visual tests require port 4991, but an HTTP server is already listening'
+      `Visual tests require port ${visualTestServerPort}, but an HTTP server is already listening`
     );
   }
 };
@@ -139,7 +140,8 @@ const startSetup = async () => {
     env: {
       ...process.env,
       NODE_ENV: 'development',
-      SHARKORD_DATA_PATH: dataPath
+      SHARKORD_DATA_PATH: dataPath,
+      SHARKORD_PORT: visualTestServerPort
     },
     stdio: 'inherit'
   });
