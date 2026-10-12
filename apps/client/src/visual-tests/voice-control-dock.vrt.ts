@@ -8,6 +8,12 @@ import { page, userEvent } from 'vitest/browser';
 import '../index.css';
 
 const state = vi.hoisted(() => ({
+  voiceChannelId: 42 as number | undefined,
+  voiceServerModes: {} as Record<number, boolean>,
+  storeListeners: [] as (() => void)[],
+  events: [] as string[],
+  canUseWebcam: true,
+  canShareScreen: true,
   devices: {
     microphoneId: 'mic-1',
     playbackId: 'speaker-1',
@@ -15,12 +21,26 @@ const state = vi.hoisted(() => ({
     voiceOnlyMode: false
   },
   saveDevices: vi.fn(
-    (_devices: {
-      microphoneId: string;
-      playbackId: string;
-      webcamId: string;
-      voiceOnlyMode: boolean;
-    }) => {}
+    (
+      _devices:
+        | {
+            microphoneId: string;
+            playbackId: string;
+            webcamId: string;
+            voiceOnlyMode: boolean;
+          }
+        | ((current: {
+            microphoneId: string;
+            playbackId: string;
+            webcamId: string;
+            voiceOnlyMode: boolean;
+          }) => {
+            microphoneId: string;
+            playbackId: string;
+            webcamId: string;
+            voiceOnlyMode: boolean;
+          })
+    ) => {}
   ),
   updateVoiceState: vi.fn(async (_state: { voiceOnlyMode: boolean }) => {}),
   openDialog: vi.fn(),
@@ -37,11 +57,27 @@ vi.mock('@/components/devices-provider/hooks/use-devices', () => ({
 }));
 vi.mock('@/features/server/channels/hooks', () => ({
   useChannelById: () => ({ name: 'Voice room' }),
-  useCurrentVoiceChannelId: () => 42
+  useCurrentVoiceChannelId: () => state.voiceChannelId
 }));
 vi.mock('@/features/server/hooks', () => ({
-  useChannelCan: () => () => true,
+  useChannelCan: () => (permission: string) =>
+    permission === 'WEBCAM' ? state.canUseWebcam : state.canShareScreen,
   useServerName: () => 'Test server'
+}));
+vi.mock('@/features/store', () => ({
+  store: {
+    getState: () => ({
+      server: { currentVoiceChannelId: state.voiceChannelId }
+    }),
+    subscribe: (listener: () => void) => {
+      state.storeListeners.push(listener);
+      return () => {
+        state.storeListeners = state.storeListeners.filter(
+          (current) => current !== listener
+        );
+      };
+    }
+  }
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useVoice: () => ({
@@ -101,6 +137,7 @@ vi.mock('@/components/plugin-slot-renderer', () => ({
 
 let root: Root | undefined;
 let host: HTMLDivElement | undefined;
+let remountVersion = 0;
 const originalDevices = {
   microphoneId: 'mic-1',
   playbackId: 'speaker-1',
@@ -108,7 +145,12 @@ const originalDevices = {
   voiceOnlyMode: false
 };
 
-const render = async () => {
+const setVoiceChannelId = (voiceChannelId: number | undefined) => {
+  state.voiceChannelId = voiceChannelId;
+  state.storeListeners.forEach((listener) => listener());
+};
+
+const render = async (remount = false) => {
   document.documentElement.classList.add('dark');
   if (!root) {
     host = document.createElement('div');
@@ -116,7 +158,11 @@ const render = async () => {
     document.body.append(host);
     root = createRoot(host);
   }
-  root.render(createElement(VoiceControl));
+  root.render(
+    remount
+      ? createElement(VoiceControl, { key: ++remountVersion })
+      : createElement(VoiceControl)
+  );
   await new Promise<void>((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   );
@@ -129,12 +175,26 @@ afterEach(() => {
   document.body.replaceChildren();
   document.documentElement.classList.remove('dark');
   state.devices = { ...originalDevices };
+  state.voiceChannelId = 42;
+  remountVersion = 0;
+  state.voiceServerModes = {};
+  state.storeListeners = [];
+  state.events = [];
+  state.canUseWebcam = true;
+  state.canShareScreen = true;
   state.saveDevices.mockReset();
   state.saveDevices.mockImplementation((devices) => {
-    state.devices = devices;
+    state.devices =
+      typeof devices === 'function' ? devices(state.devices) : devices;
+    state.events.push(`save:${state.devices.voiceOnlyMode}`);
   });
   state.updateVoiceState.mockReset();
-  state.updateVoiceState.mockResolvedValue(undefined);
+  state.updateVoiceState.mockImplementation(async (nextState) => {
+    const channelId = state.voiceChannelId;
+    if (channelId === undefined) return;
+    state.voiceServerModes[channelId] = nextState.voiceOnlyMode;
+    state.events.push(`server:${channelId}:${nextState.voiceOnlyMode}`);
+  });
   state.openDialog.mockReset();
   state.toastError.mockReset();
   state.toggleWebcam.mockReset();
@@ -142,7 +202,15 @@ afterEach(() => {
 });
 
 state.saveDevices.mockImplementation((devices) => {
-  state.devices = devices;
+  state.devices =
+    typeof devices === 'function' ? devices(state.devices) : devices;
+  state.events.push(`save:${state.devices.voiceOnlyMode}`);
+});
+state.updateVoiceState.mockImplementation(async (nextState) => {
+  const channelId = state.voiceChannelId;
+  if (channelId === undefined) return;
+  state.voiceServerModes[channelId] = nextState.voiceOnlyMode;
+  state.events.push(`server:${channelId}:${nextState.voiceOnlyMode}`);
 });
 
 test('eye toggles the existing mode after the server accepts and preserves device settings', async () => {
@@ -158,10 +226,8 @@ test('eye toggles the existing mode after the server accepts and preserves devic
   await render();
 
   expect(state.updateVoiceState).toHaveBeenCalledWith({ voiceOnlyMode: true });
-  expect(state.saveDevices).toHaveBeenCalledWith({
-    ...originalDevices,
-    voiceOnlyMode: true
-  });
+  expect(state.saveDevices).toHaveBeenCalledTimes(1);
+  expect(state.saveDevices.mock.calls[0][0]).toEqual(expect.any(Function));
   await expect.element(modeButton).toHaveAttribute('aria-pressed', 'true');
   await expect
     .element(modeButton)
@@ -185,7 +251,8 @@ test('eye toggles the existing mode after the server accepts and preserves devic
   expect(state.toggleWebcam).not.toHaveBeenCalled();
   expect(state.toggleScreenShare).not.toHaveBeenCalled();
   await document.fonts.ready;
-  await expect(page.elementLocator(host!)).toMatchScreenshot(
+  await userEvent.unhover(page.elementLocator(document.body));
+  await expect(page.elementLocator(document.documentElement)).toMatchScreenshot(
     'voice-control-dock-audio-only'
   );
 });
@@ -247,9 +314,186 @@ test('pending server update disables repeated toggles and delays local persisten
   await expect.element(modeButton).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('voice-only persistence keeps device preferences changed while the server update is pending', async () => {
+  let resolveUpdate!: () => void;
+  state.updateVoiceState.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        resolveUpdate = resolve;
+      })
+  );
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+  );
+  state.devices = {
+    ...state.devices,
+    microphoneId: 'mic-2',
+    playbackId: 'speaker-2'
+  };
+  resolveUpdate();
+  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
+
+  expect(state.devices).toEqual({
+    ...originalDevices,
+    microphoneId: 'mic-2',
+    playbackId: 'speaker-2',
+    voiceOnlyMode: true
+  });
+});
+
+test('voice-only mode is confirmed on the current voice session before local persistence', async () => {
+  state.voiceServerModes = { 42: false, 43: false };
+  let resolveFirstUpdate!: () => void;
+  state.updateVoiceState.mockImplementationOnce((nextState) => {
+    const requestChannelId = state.voiceChannelId!;
+    return new Promise<void>((resolve) => {
+      resolveFirstUpdate = () => {
+        state.voiceServerModes[requestChannelId] = nextState.voiceOnlyMode;
+        state.events.push(
+          `server:${requestChannelId}:${nextState.voiceOnlyMode}`
+        );
+        resolve();
+      };
+    });
+  });
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+  );
+  setVoiceChannelId(43);
+  await render();
+  resolveFirstUpdate();
+  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
+
+  expect(state.updateVoiceState).toHaveBeenCalledTimes(2);
+  expect(state.voiceServerModes[43]).toBe(true);
+  expect(state.events).toEqual([
+    'server:42:true',
+    'server:43:true',
+    'save:true'
+  ]);
+});
+
+test('a stale session rejection retries the replacement session without showing an error', async () => {
+  state.voiceServerModes = { 42: false, 43: false };
+  let rejectFirstUpdate!: (error: Error) => void;
+  state.updateVoiceState.mockImplementationOnce(
+    () =>
+      new Promise<void>((_, reject) => {
+        rejectFirstUpdate = reject;
+      })
+  );
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+  );
+  setVoiceChannelId(43);
+  await render();
+  rejectFirstUpdate(new Error('stale session'));
+  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
+
+  expect(state.updateVoiceState).toHaveBeenCalledTimes(2);
+  expect(state.voiceServerModes[43]).toBe(true);
+  expect(state.events).toEqual(['server:43:true', 'save:true']);
+  expect(state.toastError).not.toHaveBeenCalled();
+});
+
+test('rejoining the same voice channel during an update is treated as a new session', async () => {
+  state.voiceServerModes = { 42: false };
+  let resolveFirstUpdate!: () => void;
+  state.updateVoiceState.mockImplementationOnce((nextState) => {
+    const requestChannelId = state.voiceChannelId!;
+    return new Promise<void>((resolve) => {
+      resolveFirstUpdate = () => {
+        state.voiceServerModes[requestChannelId] = nextState.voiceOnlyMode;
+        state.events.push(
+          `server:${requestChannelId}:${nextState.voiceOnlyMode}`
+        );
+        resolve();
+      };
+    });
+  });
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+  );
+  setVoiceChannelId(undefined);
+  setVoiceChannelId(42);
+  state.voiceServerModes[42] = false;
+  await render();
+  resolveFirstUpdate();
+  await vi.waitFor(() => expect(state.saveDevices).toHaveBeenCalledTimes(1));
+
+  expect(state.updateVoiceState).toHaveBeenCalledTimes(2);
+  expect(state.voiceServerModes[42]).toBe(true);
+  expect(state.events).toEqual([
+    'server:42:true',
+    'server:42:true',
+    'save:true'
+  ]);
+});
+
+test('leaving voice before the server reply prevents an obsolete local mode save', async () => {
+  let resolveUpdate!: () => void;
+  state.updateVoiceState.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        resolveUpdate = resolve;
+      })
+  );
+  await render();
+  const modeButton = page.getByRole('button', {
+    name: 'Voice-only mode',
+    exact: true
+  });
+
+  await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+  );
+  setVoiceChannelId(undefined);
+  await render();
+  resolveUpdate();
+  await Promise.resolve();
+
+  expect(state.saveDevices).not.toHaveBeenCalled();
+  expect(state.devices.voiceOnlyMode).toBe(false);
+});
+
 test('a rejected update leaves local mode unchanged and reports the error', async () => {
   state.devices = { ...originalDevices, voiceOnlyMode: true };
-  state.updateVoiceState.mockRejectedValueOnce(new Error('offline'));
+  let rejectUpdate!: (error: Error) => void;
+  state.updateVoiceState.mockImplementationOnce(
+    () =>
+      new Promise<void>((_, reject) => {
+        rejectUpdate = reject;
+      })
+  );
   await render();
   const modeButton = page.getByRole('button', {
     name: 'Voice-only mode',
@@ -258,11 +502,20 @@ test('a rejected update leaves local mode unchanged and reports the error', asyn
   await expect.element(modeButton).toHaveAttribute('aria-pressed', 'true');
 
   await modeButton.click();
+  await vi.waitFor(() =>
+    expect(state.updateVoiceState).toHaveBeenCalledTimes(1)
+  );
+  state.devices = { ...state.devices, microphoneId: 'mic-2' };
+  rejectUpdate(new Error('offline'));
   await vi.waitFor(() => expect(state.toastError).toHaveBeenCalledTimes(1));
   await render();
 
   expect(state.updateVoiceState).toHaveBeenCalledWith({ voiceOnlyMode: false });
-  expect(state.devices.voiceOnlyMode).toBe(true);
+  expect(state.devices).toEqual({
+    ...originalDevices,
+    microphoneId: 'mic-2',
+    voiceOnlyMode: true
+  });
   expect(state.saveDevices).not.toHaveBeenCalled();
   await expect.element(modeButton).toHaveAttribute('aria-pressed', 'true');
   await expect.element(modeButton).toBeEnabled();
@@ -286,6 +539,29 @@ test('Wi-Fi connection badge opens voice diagnostics directly by click and keybo
   expect(state.openDialog).toHaveBeenCalledWith(Dialog.VOICE_DEBUG);
 });
 
+test('voice-only controls preserve separate camera and screen-share permission gates', async () => {
+  state.canUseWebcam = false;
+  await render();
+
+  await expect
+    .element(page.getByRole('button', { name: 'Turn on camera' }))
+    .toBeDisabled();
+  await expect
+    .element(page.getByRole('button', { name: 'Start screen share' }))
+    .toBeEnabled();
+
+  state.canUseWebcam = true;
+  state.canShareScreen = false;
+  await render(true);
+
+  await expect
+    .element(page.getByRole('button', { name: 'Turn on camera' }))
+    .toBeEnabled();
+  await expect
+    .element(page.getByRole('button', { name: 'Start screen share' }))
+    .toBeDisabled();
+});
+
 test('dock keeps its original footprint and removes the upper-row activity control', async () => {
   await render();
 
@@ -299,7 +575,8 @@ test('dock keeps its original footprint and removes the upper-row activity contr
   expect(dock.querySelectorAll('button')).toHaveLength(5);
 
   await document.fonts.ready;
-  await expect(page.elementLocator(host!)).toMatchScreenshot(
+  await userEvent.unhover(page.elementLocator(document.body));
+  await expect(page.elementLocator(document.documentElement)).toMatchScreenshot(
     'voice-control-dock'
   );
 });

@@ -5,9 +5,11 @@ import {
   useChannelById,
   useCurrentVoiceChannelId
 } from '@/features/server/channels/hooks';
+import { currentVoiceChannelIdSelector } from '@/features/server/channels/selectors';
 import { useChannelCan, useServerName } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
+import { store } from '@/features/store';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import { ChannelPermission, getTrpcError, PluginSlot } from '@sharkord/shared';
@@ -31,6 +33,8 @@ import { toast } from 'sonner';
 import { ExternalAudioStreams } from '../channel-view/voice/external-audio-streams';
 import { VoiceAudioStreams } from '../channel-view/voice/voice-audio-streams';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
+
+const MAX_VOICE_SESSION_RESYNCS = 2;
 
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
@@ -90,20 +94,82 @@ const VoiceControl = memo(() => {
     isVoiceOnlyModeTogglePendingRef.current = true;
     setIsVoiceOnlyModePending(true);
     const voiceOnlyMode = !devices.voiceOnlyMode;
+    let observedChannelId = currentVoiceChannelIdSelector(store.getState());
+    let sessionGeneration = 0;
+    const unsubscribeFromVoiceSessions = store.subscribe(() => {
+      const channelId = currentVoiceChannelIdSelector(store.getState());
+
+      if (channelId !== observedChannelId) {
+        observedChannelId = channelId;
+        sessionGeneration += 1;
+      }
+    });
+    const getCurrentSession = () => ({
+      channelId: currentVoiceChannelIdSelector(store.getState()),
+      generation: sessionGeneration
+    });
+    const initialSession = getCurrentSession();
 
     try {
-      if (voiceChannelId !== undefined) {
-        await getTRPCClient().voice.updateState.mutate({ voiceOnlyMode });
+      if (initialSession.channelId !== undefined) {
+        const isSameSession = (
+          first: typeof initialSession,
+          second: typeof initialSession
+        ) =>
+          first.channelId === second.channelId &&
+          first.generation === second.generation;
+        const updateCurrentVoiceOnlyMode = async (
+          requestSession: typeof initialSession
+        ) => {
+          try {
+            await getTRPCClient().voice.updateState.mutate({ voiceOnlyMode });
+          } catch (error) {
+            const currentSession = getCurrentSession();
+
+            if (isSameSession(currentSession, requestSession)) throw error;
+          }
+        };
+
+        let lastUpdatedSession = initialSession;
+        let isCurrentSessionConfirmed = false;
+
+        await updateCurrentVoiceOnlyMode(initialSession);
+
+        for (
+          let resyncCount = 0;
+          resyncCount <= MAX_VOICE_SESSION_RESYNCS;
+          resyncCount += 1
+        ) {
+          const currentSession = getCurrentSession();
+
+          if (currentSession.channelId === undefined) return;
+
+          if (isSameSession(currentSession, lastUpdatedSession)) {
+            isCurrentSessionConfirmed = true;
+            break;
+          }
+
+          if (resyncCount === MAX_VOICE_SESSION_RESYNCS) {
+            toast.error(t('settings:failedSaveDeviceSettings'));
+            return;
+          }
+
+          lastUpdatedSession = currentSession;
+          await updateCurrentVoiceOnlyMode(lastUpdatedSession);
+        }
+
+        if (!isCurrentSessionConfirmed) return;
       }
 
-      saveDevices({ ...devices, voiceOnlyMode });
+      saveDevices((currentDevices) => ({ ...currentDevices, voiceOnlyMode }));
     } catch (error) {
       toast.error(getTrpcError(error, t('settings:failedSaveDeviceSettings')));
     } finally {
+      unsubscribeFromVoiceSessions();
       isVoiceOnlyModeTogglePendingRef.current = false;
       setIsVoiceOnlyModePending(false);
     }
-  }, [devices, saveDevices, t, voiceChannelId]);
+  }, [devices.voiceOnlyMode, saveDevices, t]);
 
   const openVoiceDiagnostics = useCallback(() => {
     openDialog(Dialog.VOICE_DEBUG);

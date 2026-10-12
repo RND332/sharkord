@@ -146,7 +146,10 @@ export type TDevicesProvider = {
   inputDevices: (MediaDeviceInfo | undefined)[];
   playbackDevices: (MediaDeviceInfo | undefined)[];
   videoDevices: (MediaDeviceInfo | undefined)[];
-  saveDevices: (newDevices: TDeviceSettings) => void;
+  saveDevices: (
+    newDevices:
+      TDeviceSettings | ((current: TDeviceSettings) => TDeviceSettings)
+  ) => void;
   loadDevices: () => Promise<void>;
 };
 
@@ -255,14 +258,24 @@ const DevicesProvider = memo(({ children }: TDevicesProviderProps) => {
     };
   }, [loadDevices]);
 
-  const saveDevices = useCallback((newDevices: TDeviceSettings) => {
-    devicesRef.current = newDevices;
-    setDevices(newDevices);
-    setLocalStorageItemAsJSON<TDeviceSettings>(
-      LocalStorageKey.DEVICES_SETTINGS,
-      newDevices
-    );
-  }, []);
+  const saveDevices = useCallback(
+    (
+      newDevices:
+        TDeviceSettings | ((current: TDeviceSettings) => TDeviceSettings)
+    ) => {
+      const updatedDevices =
+        typeof newDevices === 'function'
+          ? newDevices(devicesRef.current)
+          : newDevices;
+      devicesRef.current = updatedDevices;
+      setDevices(updatedDevices);
+      setLocalStorageItemAsJSON<TDeviceSettings>(
+        LocalStorageKey.DEVICES_SETTINGS,
+        updatedDevices
+      );
+    },
+    []
+  );
 
   useEffect(() => {
     if (!devicesEnumerated) return;
