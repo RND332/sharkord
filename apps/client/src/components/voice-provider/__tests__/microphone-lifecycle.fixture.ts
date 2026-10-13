@@ -78,8 +78,9 @@ mock.module('@/features/server/channels/selectors', () => ({
 mock.module('@/features/store', () => ({ store: { getState: () => ({}) } }));
 
 let voice: import('../index').TVoiceProvider;
+let micMuted = false;
 mock.module('@/features/server/voice/hooks', () => ({
-  useOwnVoiceState: () => ({ micMuted: false, soundMuted: false }),
+  useOwnVoiceState: () => ({ micMuted, soundMuted: false }),
   useVoice: () => voice
 }));
 const devices = {
@@ -125,10 +126,13 @@ mock.module('mediasoup-client', () => ({
   }
 }));
 const updateState = mock(async () => {});
+const closeProducer = mock(
+  async (_input: { kind: string; producerId?: string }) => {}
+);
 const trpcClient = {
   voice: {
     updateState: { mutate: updateState },
-    closeProducer: { mutate: async () => {} }
+    closeProducer: { mutate: closeProducer }
   }
 };
 mock.module('@/lib/trpc', () => ({
@@ -137,11 +141,24 @@ mock.module('@/lib/trpc', () => ({
 const generation = { current: 0 };
 const send = { current: undefined as ReturnType<typeof transport> | undefined };
 const recv = { current: undefined as ReturnType<typeof transport> | undefined };
-const producer = () => ({
-  id: 'p',
-  close: mock(() => {}),
-  observer: { on() {} }
-});
+const producer = () => {
+  const listeners: (() => void)[] = [];
+  const value = {
+    id: crypto.randomUUID(),
+    closed: false,
+    close: mock(() => {
+      if (value.closed) return;
+      value.closed = true;
+      listeners.forEach((listener) => listener());
+    }),
+    observer: {
+      on(event: string, listener: () => void) {
+        if (event === 'close') listeners.push(listener);
+      }
+    }
+  };
+  return value;
+};
 let nextProduction: Promise<ReturnType<typeof producer>> | undefined;
 function transport() {
   const pending = nextProduction;
@@ -294,6 +311,7 @@ beforeEach(() => {
   send.current = recv.current = undefined;
   nextProduction = undefined;
   channelId = 1;
+  micMuted = false;
   devices.noiseGateEnabled = false;
   devices.noiseSuppression = 'disabled';
   devices.directScreenSharing = false;
@@ -317,6 +335,8 @@ beforeEach(() => {
   monitor.mockClear();
   updateState.mockReset();
   updateState.mockImplementation(async () => {});
+  closeProducer.mockReset();
+  closeProducer.mockImplementation(async () => {});
   Object.defineProperty(globalThis, 'navigator', {
     configurable: true,
     value: { mediaDevices: { getUserMedia: capture } }
@@ -327,6 +347,213 @@ beforeEach(() => {
     localStorage: { getItem: () => null, setItem() {} }
   });
   render();
+});
+
+test('an externally ended microphone recovers capture without rejoining voice', async () => {
+  devices.noiseSuppression = NoiseSuppression.RNNOISE;
+  const raw = new Stream();
+  const replacement = new Stream();
+  capture
+    .mockImplementationOnce(async () => raw)
+    .mockImplementationOnce(async () => replacement);
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  const currentTransport = send.current!;
+  const oldContext = contexts[0]!;
+
+  raw.tracks[0]!.readyState = 'ended';
+  raw.tracks[0]!.onended?.();
+  await Bun.sleep(650);
+  await flush();
+
+  expect(capture).toHaveBeenCalledTimes(2);
+  expect(send.current).toBe(currentTransport);
+  expect(currentTransport.produce).toHaveBeenCalledTimes(2);
+  expect(oldContext.closed).toBe(true);
+  expect(contexts[1]!.closed).toBe(false);
+  expect(replacement.tracks[0]!.readyState).toBe('live');
+  expect(render().localAudioStream?.getAudioTracks()[0]?.readyState).toBe(
+    'live'
+  );
+  expect(leaveVoice).not.toHaveBeenCalled();
+  expect(String(render().connectionStatus)).toBe('connected');
+});
+
+test('ended-capture server cleanup names the old producer, not its replacement', async () => {
+  const raw = new Stream();
+  capture.mockImplementationOnce(async () => raw);
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  const oldProducer = (await send.current!.produce.mock.results[0]!
+    .value) as ReturnType<typeof producer>;
+
+  raw.tracks[0]!.readyState = 'ended';
+  raw.tracks[0]!.onended?.();
+  await flush();
+
+  expect(closeProducer).toHaveBeenCalledWith({
+    kind: 'audio',
+    producerId: oldProducer.id
+  });
+  // Cancel the scheduled recovery before this fixture moves to another test.
+  channelId = undefined;
+  render();
+  effects.forEach((effect) => effect());
+});
+
+test('microphone recovery does not wait for a pending server cleanup RPC', async () => {
+  const cleanup = deferred<void>();
+  closeProducer.mockImplementationOnce(() => cleanup.promise);
+  const raw = new Stream();
+  capture.mockImplementationOnce(async () => raw);
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  raw.tracks[0]!.readyState = 'ended';
+  raw.tracks[0]!.onended?.();
+  await Bun.sleep(650);
+  expect(closeProducer).toHaveBeenCalledTimes(1);
+  expect(capture).toHaveBeenCalledTimes(2);
+  const replacement = render().localAudioStream;
+  expect(replacement?.getAudioTracks()[0]?.readyState).toBe('live');
+  cleanup.resolve();
+  await flush();
+  expect(render().localAudioStream).toBe(replacement);
+  expect(errorToast).not.toHaveBeenCalled();
+});
+
+test('failed automatic recovery reports the missing microphone without leaving voice', async () => {
+  const raw = new Stream();
+  capture
+    .mockImplementationOnce(async () => raw)
+    .mockImplementationOnce(async () => {
+      throw new Error('Audio service unavailable');
+    });
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  raw.tracks[0]!.readyState = 'ended';
+  raw.tracks[0]!.onended?.();
+  await Bun.sleep(650);
+  await flush();
+  expect(errorToast).toHaveBeenCalledWith('failedRestoreMicrophone');
+  expect(capture).toHaveBeenCalledTimes(2);
+  expect(render().localAudioStream).toBeUndefined();
+  expect(leaveVoice).not.toHaveBeenCalled();
+  expect(send.current!.closed).toBe(false);
+});
+
+test('automatic recovery preserves a muted microphone', async () => {
+  micMuted = true;
+  render();
+  effects.forEach((effect) => effect());
+  const raw = new Stream();
+  capture.mockImplementationOnce(async () => raw);
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  raw.tracks[0]!.readyState = 'ended';
+  raw.tracks[0]!.onended?.();
+  await Bun.sleep(650);
+  expect(capture).toHaveBeenCalledTimes(2);
+  const track = render().localAudioStream?.getAudioTracks()[0];
+  expect(track?.readyState).toBe('live');
+  expect(track?.enabled).toBe(false);
+  expect(micMuted).toBe(true);
+});
+
+for (const mode of ['leave', 'replacement'] as const) {
+  test(`${mode} cancels a scheduled microphone recovery`, async () => {
+    const raw = new Stream();
+    capture.mockImplementationOnce(async () => raw);
+    await initializeSession(1);
+    effects.forEach((effect) => effect());
+    raw.tracks[0]!.readyState = 'ended';
+    raw.tracks[0]!.onended?.();
+    if (mode === 'replacement') await initializeSession(2);
+    else {
+      channelId = undefined;
+      render();
+      effects.forEach((effect) => effect());
+    }
+    const stream = render().localAudioStream;
+    await Bun.sleep(650);
+    expect(capture).toHaveBeenCalledTimes(mode === 'replacement' ? 2 : 1);
+    expect(render().localAudioStream).toBe(stream);
+    expect(errorToast).not.toHaveBeenCalled();
+  });
+
+  test(`${mode} cancels recovery while the new capture is pending`, async () => {
+    const raw = new Stream();
+    const pending = deferred<Stream>();
+    capture
+      .mockImplementationOnce(async () => raw)
+      .mockImplementationOnce(() => pending.promise);
+    await initializeSession(1);
+    effects.forEach((effect) => effect());
+    raw.tracks[0]!.readyState = 'ended';
+    raw.tracks[0]!.onended?.();
+    await Bun.sleep(650);
+    expect(capture).toHaveBeenCalledTimes(2);
+    if (mode === 'replacement') await initializeSession(2);
+    else {
+      channelId = undefined;
+      render();
+      effects.forEach((effect) => effect());
+    }
+    const stream = render().localAudioStream;
+    const current = send.current;
+    const late = new Stream();
+    pending.resolve(late);
+    await flush();
+    expect(late.tracks[0]!.readyState).toBe('ended');
+    expect(render().localAudioStream).toBe(stream);
+    expect(send.current).toBe(current);
+    expect(errorToast).not.toHaveBeenCalled();
+  });
+}
+
+test('a manual restart superseding recovery does not show a stale failure', async () => {
+  const raw = new Stream();
+  const automatic = deferred<Stream>();
+  const manual = deferred<Stream>();
+  capture
+    .mockImplementationOnce(async () => raw)
+    .mockImplementationOnce(() => automatic.promise)
+    .mockImplementationOnce(() => manual.promise);
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  raw.tracks[0]!.readyState = 'ended';
+  raw.tracks[0]!.onended?.();
+  await Bun.sleep(650);
+  micMuted = true;
+  render();
+  effects.forEach((effect) => effect());
+  const restart = voice.toggleMic();
+  await flush();
+  const stale = new Stream();
+  automatic.resolve(stale);
+  await flush();
+  try {
+    expect(capture).toHaveBeenCalledTimes(3);
+    expect(stale.tracks[0]!.readyState).toBe('ended');
+    expect(errorToast).not.toHaveBeenCalled();
+  } finally {
+    manual.resolve(new Stream());
+    await restart;
+  }
+});
+
+test('repeated capture termination has a bounded automatic recovery budget', async () => {
+  await initializeSession(1);
+  effects.forEach((effect) => effect());
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const raw = (await capture.mock.results.at(-1)!.value) as Stream;
+    raw.tracks[0]!.readyState = 'ended';
+    raw.tracks[0]!.onended?.();
+    await Bun.sleep(650);
+    await flush();
+  }
+  expect(capture).toHaveBeenCalledTimes(4);
+  expect(errorToast).toHaveBeenCalledWith('failedRestoreMicrophone');
+  expect(render().localAudioStream).toBeUndefined();
 });
 
 test('genuine current initialization failure still leaves voice and reports failure', async () => {

@@ -52,6 +52,7 @@
   "failedLoadServerInfo": "Не удалось загрузить информацию о сервере",
   "failedLeaveVoiceChannel": "Не удалось покинуть голосовой канал",
   "failedUpdateMicrophoneState": "Не удалось обновить состояние микрофона",
+  "failedRestoreMicrophone": "Микрофон отключился, и восстановить его не удалось. Проверьте выбранное устройство ввода, затем выключите и снова включите микрофон.",
   "failedUpdateSoundState": "Не удалось обновить состояние звука",
   "failedUpdateWebcamState": "Не удалось обновить состояние камеры",
   "failedUpdateScreenShareState": "Не удалось обновить состояние демонстрации экрана",

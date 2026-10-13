@@ -55,6 +55,7 @@
   "failedLoadServerInfo": "Failed to load server info",
   "failedLeaveVoiceChannel": "Failed to leave voice channel",
   "failedUpdateMicrophoneState": "Failed to update microphone state",
+  "failedRestoreMicrophone": "Microphone disconnected and could not be restored. Check the selected input device, then turn the microphone off and on again.",
   "failedUpdateSoundState": "Failed to update sound state",
   "failedUpdateWebcamState": "Failed to update webcam state",
   "failedUpdateScreenShareState": "Failed to update screen share state",

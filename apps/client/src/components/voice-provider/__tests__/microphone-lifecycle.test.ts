@@ -13,4 +13,4 @@ test('provider/caller microphone lifecycle regressions', () => {
   });
   expect(result.stderr + result.stdout).toContain('0 fail');
   expect(result.status).toBe(0);
-});
+}, 15_000);

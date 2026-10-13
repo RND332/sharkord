@@ -600,6 +600,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   );
   const nsAudioContextsRef = useRef<AudioContext[]>([]);
   const pendingMicStartupDisposerRef = useRef<(() => void) | null>(null);
+  const micRecoveryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const micRecoveryHistoryRef = useRef<number[]>([]);
+  const startMicStreamRef = useRef<() => Promise<void>>(async () => {});
   const micMutedRef = useRef(ownVoiceState.micMuted);
 
   const syncTransmitMicrophoneTrackState = useCallback(() => {
@@ -616,6 +621,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
   const cleanupMicProcessingResources = useCallback(() => {
     logVoice('mic: releasing capture resources');
+
+    if (micRecoveryTimerRef.current !== null) {
+      clearTimeout(micRecoveryTimerRef.current);
+      micRecoveryTimerRef.current = null;
+    }
 
     const disposePendingStartup = pendingMicStartupDisposerRef.current;
     pendingMicStartupDisposerRef.current = null;
@@ -904,7 +914,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
           try {
             await trpc.voice.closeProducer.mutate({
-              kind: StreamKind.AUDIO
+              kind: StreamKind.AUDIO,
+              producerId: producer.id
             });
           } catch (error) {
             logVoiceError('mic: closing producer on the server failed', error);
@@ -923,9 +934,39 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
             track.stop();
           });
           cleanupMicProcessingResources();
-          localAudioProducer.current?.close();
+          producer.close();
+          localAudioProducer.current = undefined;
 
           setLocalAudioStream(undefined);
+          const now = Date.now();
+          const recentRecoveries = micRecoveryHistoryRef.current.filter(
+            (at) => now - at < 30_000
+          );
+          if (recentRecoveries.length >= 3) {
+            logVoiceWarn(
+              'mic: recovery stopped after repeated capture failures'
+            );
+            toast.error(t('failedRestoreMicrophone'));
+            return;
+          }
+          micRecoveryHistoryRef.current = [...recentRecoveries, now];
+          // An audio-service restart ends the old capture permanently. Acquire
+          // a fresh track without reconnecting the transport or changing mute.
+          micRecoveryTimerRef.current = setTimeout(async () => {
+            micRecoveryTimerRef.current = null;
+            if (!isCurrentSession() || transport?.closed) return;
+            logVoice('mic: recovering ended capture');
+            await startMicStreamRef.current();
+            if (
+              isCurrentSession() &&
+              !transport?.closed &&
+              !pendingMicStartupDisposerRef.current &&
+              !rawMicrophoneStreamRef.current
+            ) {
+              logVoiceWarn('mic: automatic capture recovery failed');
+              toast.error(t('failedRestoreMicrophone'));
+            }
+          }, 500);
         };
       } else {
         rawStream.getTracks().forEach((track) => track.stop());
@@ -945,6 +986,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     }
   }, [
     cleanupMicProcessingResources,
+    t,
     sessionGenerationRef,
     producerTransport,
     setLocalAudioStream,
@@ -957,6 +999,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     devices.noiseGateEnabled,
     devices.noiseGateThresholdDb
   ]);
+
+  useEffect(() => {
+    startMicStreamRef.current = startMicStream;
+  }, [startMicStream]);
 
   const startWebcamStream = useCallback(async () => {
     if (voiceOnlyModeRef.current) {
@@ -1592,6 +1638,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     stopMonitoring();
     resetStats();
     cleanupMicProcessingResources();
+    micRecoveryHistoryRef.current = [];
     stopWebcamStream();
     stopScreenShareStream();
     directScreenShare.close();
