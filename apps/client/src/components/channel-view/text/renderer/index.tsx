@@ -58,7 +58,8 @@ const MessageRenderer = memo(
         const choice = await requestConfirmation({
           title: t('deleteFileTitle'),
           message: t('deleteFileMsg'),
-          confirmLabel: t('deleteLabel')
+          confirmLabel: t('deleteLabel'),
+          variant: 'danger'
         });
 
         if (!choice) return;

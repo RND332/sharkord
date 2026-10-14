@@ -204,7 +204,7 @@ const ScreenShareCard = memo(
         <div
           data-screen-share-card
           className={cn(
-            'relative flex size-full items-center justify-center overflow-hidden rounded-[10px] border border-line bg-nav',
+            'relative flex size-full items-center justify-center overflow-hidden rounded-[12px] border border-line bg-nav',
             className
           )}
         >

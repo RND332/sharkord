@@ -3,18 +3,15 @@ import type { TIconButtonSize } from '@sharkord/ui';
 
 // cards shrink to the thumbnail strip when another card is pinned
 const cardDensity = (isCompact: boolean) => ({
-  inset: isCompact ? 'p-1' : 'p-2',
-  label: isCompact ? 'text-xs' : 'text-sm',
+  inset: isCompact ? 'p-1' : 'p-3',
+  label: 'text-xs font-semibold leading-[18px]',
   icon: (isCompact ? 'xs' : 'sm') as TIconButtonSize
 });
 
-// a fixed height rather than padding around whatever is inside: the name is revealed on
-// hover and its line box is taller than the state icons, so a height that follows the
-// content moves the icons every time the pointer crosses the card
 const cardBadgeClass = (isCompact: boolean) =>
   cn(
     'inline-flex min-w-0 items-center bg-black/70 rounded overflow-hidden truncate',
-    isCompact ? 'h-6 gap-2 px-2' : 'h-7 gap-3 px-3'
+    isCompact ? 'h-6 gap-2 px-2' : 'h-6.5 gap-2 px-2.5'
   );
 
 const cardControlsClass = (isCompact: boolean) =>

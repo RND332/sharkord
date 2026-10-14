@@ -16,16 +16,13 @@ const CardTheme = memo(
         hasVideoStream
           ? { backgroundColor: '#000000' }
           : {
-              backgroundImage: `linear-gradient(${profileColor} 20%, var(--color-accent))`
+              backgroundColor: `color-mix(in srgb, ${profileColor} 18%, var(--rail))`
             },
       [profileColor, hasVideoStream]
     );
 
     return (
-      <div
-        className="absolute inset-0 pointer-events-none brightness-70"
-        style={style}
-      />
+      <div className="absolute inset-0 pointer-events-none" style={style} />
     );
   }
 );

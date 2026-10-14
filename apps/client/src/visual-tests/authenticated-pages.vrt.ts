@@ -7,7 +7,12 @@ import {
   openThreadSidebar,
   openVoiceChatSidebar
 } from '@/features/app/actions';
-import { openDialog, resetDialogs } from '@/features/dialogs/actions';
+import {
+  openDialog,
+  requestConfirmation,
+  resetDialogs
+} from '@/features/dialogs/actions';
+import { dialogInfoSelector } from '@/features/dialogs/selectors';
 import {
   closeServerScreens,
   openServerScreen
@@ -221,6 +226,227 @@ afterEach(() => {
   closeServerScreens();
 });
 
+test('delete user keeps both confirmation steps visibly destructive', async () => {
+  const { store } = await import('@/features/store');
+  const { userByIdSelector } =
+    await import('@/features/server/users/selectors');
+  const state = store.getState();
+  const user = userByIdSelector(state, 2)!;
+  openDialog(Dialog.DELETE_USER, { user, refetch: async () => undefined });
+  const action = page.getByRole('button', { name: 'Delete User', exact: true });
+  try {
+    await expect.element(action).toBeVisible();
+    const initialStyle = getComputedStyle(action.element());
+    expect(initialStyle.backgroundColor).toBe('rgb(179, 38, 62)');
+    expect(initialStyle.color).toBe('rgb(255, 255, 255)');
+    await action.click();
+    await expect
+      .element(page.getByRole('heading', { name: 'Delete aria?' }))
+      .toBeVisible();
+    const confirmationStyle = getComputedStyle(action.element());
+    expect(confirmationStyle.backgroundColor).toBe('rgb(179, 38, 62)');
+    expect(confirmationStyle.color).toBe('rgb(255, 255, 255)');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    const currentState = store.getState();
+    expect(userByIdSelector(currentState, user.id)).toBeDefined();
+    await expect
+      .poll(() => {
+        const nextState = store.getState();
+        const info = dialogInfoSelector(nextState);
+        return info.openDialog;
+      })
+      .toBeUndefined();
+  } finally {
+    resetDialogs();
+  }
+});
+
+test('plugin security confirmation keeps the countdown and destructive action', async () => {
+  const { store } = await import('@/features/store');
+  const onConfirm = vi.fn();
+  openDialog(Dialog.PLUGIN_INSTALL_CONFIRM, {
+    pluginName: 'E2E Plugin',
+    onConfirm
+  });
+  const action = page.getByRole('button', { name: /^Wait \(/ });
+  try {
+    await expect.element(action).toBeVisible();
+    await expect.element(action).toBeDisabled();
+    const style = getComputedStyle(action.element());
+    expect(style.backgroundColor).toBe('rgb(179, 38, 62)');
+    expect(style.color).toBe('rgb(255, 255, 255)');
+    expect(onConfirm).not.toHaveBeenCalled();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    expect(onConfirm).not.toHaveBeenCalled();
+    await expect
+      .poll(() => {
+        const nextState = store.getState();
+        const info = dialogInfoSelector(nextState);
+        return info.openDialog;
+      })
+      .toBeUndefined();
+  } finally {
+    resetDialogs();
+  }
+});
+
+test('destructive confirmation retains its danger color while Space is held', async () => {
+  const { store } = await import('@/features/store');
+  const result = requestConfirmation({
+    title: 'Pressed fixture',
+    confirmLabel: 'Pressed fixture',
+    variant: 'danger'
+  });
+  const action = page.getByRole('button', {
+    name: 'Pressed fixture',
+    exact: true
+  });
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d')!;
+  let pressed = false;
+  try {
+    await expect.element(action).toBeVisible();
+    const node = action.element();
+    await userEvent.unhover(document.body);
+    node.focus();
+    await userEvent.keyboard('[Space>]');
+    pressed = true;
+    expect(node.matches(':hover')).toBe(false);
+    expect(node.matches(':active')).toBe(true);
+    await expect
+      .poll(() => {
+        context.clearRect(0, 0, 1, 1);
+        const style = getComputedStyle(node);
+        context.fillStyle = style.backgroundColor;
+        context.fillRect(0, 0, 1, 1);
+        const pixel = context.getImageData(0, 0, 1, 1);
+        const [red, green, blue, alpha] = pixel.data;
+        return (
+          red > 150 &&
+          green < 75 &&
+          blue < 100 &&
+          alpha === Math.round(255 * 0.8)
+        );
+      })
+      .toBe(true);
+  } finally {
+    if (pressed) {
+      await userEvent.keyboard('[/Space]');
+      expect(await result).toBe(true);
+    } else {
+      const state = store.getState();
+      const info = dialogInfoSelector(state);
+      info.props.onCancel?.();
+    }
+    await expect
+      .poll(() => {
+        const state = store.getState();
+        const info = dialogInfoSelector(state);
+        return info.openDialog;
+      })
+      .toBeUndefined();
+  }
+});
+
+test('destructive confirmations use a solid high-contrast action', async () => {
+  const { store } = await import('@/features/store');
+  const result = requestConfirmation({
+    title: 'Delete fixture',
+    message: 'This is a local appearance check.',
+    confirmLabel: 'Delete fixture',
+    variant: 'danger'
+  });
+  const action = page.getByRole('button', { name: 'Delete fixture' });
+  try {
+    await expect.element(action).toBeVisible();
+    const style = getComputedStyle(action.element());
+    expect(style.backgroundColor).toBe('rgb(179, 38, 62)');
+    expect(style.color).toBe('rgb(255, 255, 255)');
+    const dialog = page.getByRole('alertdialog').element();
+    expect(getComputedStyle(dialog).backgroundColor).toBe('rgb(43, 45, 49)');
+    expect(getComputedStyle(dialog).borderRadius).toBe('12px');
+  } finally {
+    const state = store.getState();
+    const info = dialogInfoSelector(state);
+    info.props.onCancel?.();
+    expect(await result).toBe(false);
+    await expect
+      .poll(() => {
+        const nextState = store.getState();
+        const nextInfo = dialogInfoSelector(nextState);
+        return nextInfo.openDialog;
+      })
+      .toBeUndefined();
+  }
+});
+
+test.each(['channel', 'category'] as const)(
+  '%s deletion confirmation uses the danger variant through its real menu',
+  async (kind) => {
+    const { store } = await import('@/features/store');
+    const target =
+      kind === 'channel'
+        ? page.getByTestId(TestId.CHANNEL_ITEM).filter({ hasText: 'general' })
+        : page.getByText('Text Channels', { exact: true });
+    try {
+      await target.click({ button: 'right' });
+      await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+      const action = page.getByRole('button', { name: 'Delete', exact: true });
+      await expect.element(action).toBeVisible();
+      expect(getComputedStyle(action.element()).backgroundColor).toBe(
+        'rgb(179, 38, 62)'
+      );
+    } finally {
+      const cancel = page.getByRole('button', { name: 'Cancel', exact: true });
+      if (cancel.query()) {
+        await cancel.click();
+        await expect
+          .poll(() => {
+            const state = store.getState();
+            const info = dialogInfoSelector(state);
+            return info.openDialog;
+          })
+          .toBeUndefined();
+      }
+      resetDialogs();
+    }
+  }
+);
+
+test('shared shell uses compact Discord headers', async () => {
+  await expect.element(page.getByTestId(TestId.SERVER_VIEW)).toBeVisible();
+  const header = document.querySelector('header')!;
+  expect(header.getBoundingClientRect().height).toBe(40);
+  const search = page.getByRole('button', {
+    name: /Search messages, channels, and people Ctrl K/
+  });
+  expect(search.element().getBoundingClientRect().height).toBe(28);
+  const sidebarHeader = page
+    .getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME)
+    .element().parentElement!;
+  expect(sidebarHeader.getBoundingClientRect().height).toBe(48);
+  const channelHeader = page
+    .getByRole('button', { name: 'Open Members Sidebar' })
+    .element().parentElement!.parentElement!.parentElement!;
+  expect(channelHeader.getBoundingClientRect().height).toBe(48);
+
+  await page.getByRole('button', { name: 'Open Members Sidebar' }).click();
+  const membersHeader = page.getByRole('heading', { name: /^Members/ });
+  await expect.element(membersHeader).toBeVisible();
+  expect(
+    membersHeader.element().parentElement!.getBoundingClientRect().height
+  ).toBe(48);
+  await page.getByRole('button', { name: 'Close Members Sidebar' }).click();
+
+  openServerScreen(ServerScreen.USER_SETTINGS);
+  await expect
+    .element(page.getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY).first())
+    .toBeVisible();
+  expect(document.querySelector('header')!.getBoundingClientRect().height).toBe(
+    40
+  );
+});
+
 test('short text history uses Paper gutters and rests above the composer', async () => {
   await expect
     .element(page.getByTestId(TestId.MESSAGE_ITEM).first())
@@ -229,11 +455,17 @@ test('short text history uses Paper gutters and rests above the composer', async
     '[data-messages-container]'
   )!;
   const styles = getComputedStyle(container);
-  // Paper 2H-0: 28px top/inline, 8px bottom; short histories align to end.
-  expect(styles.paddingLeft).toBe('28px');
-  expect(styles.paddingRight).toBe('28px');
-  expect(styles.paddingTop).toBe('28px');
+  // paper: 16px inline, 24px top, 8px bottom; short histories align to end.
+  expect(styles.paddingLeft).toBe('16px');
+  expect(styles.paddingRight).toBe('16px');
+  expect(styles.paddingTop).toBe('24px');
   expect(styles.paddingBottom).toBe('8px');
+  const channelHeader = page
+    .getByRole('button', { name: 'Open Members Sidebar' })
+    .element().parentElement!.parentElement!.parentElement!;
+  expect(channelHeader.querySelector('svg')!.getBoundingClientRect().left).toBe(
+    container.getBoundingClientRect().left + 16
+  );
   const history = container.firstElementChild!;
   const lastGroup = history.lastElementChild!;
   expect(lastGroup.getBoundingClientRect().bottom).toBeCloseTo(
@@ -260,7 +492,7 @@ test('overflowing text history keeps its first message reachable', async () => {
     const history = container.firstElementChild!;
     expect(container.scrollHeight).toBeGreaterThan(container.clientHeight);
     expect(history.firstElementChild!.getBoundingClientRect().top).toBeCloseTo(
-      container.getBoundingClientRect().top + 28,
+      container.getBoundingClientRect().top + 24,
       0
     );
     container.scrollTop = container.scrollHeight;
@@ -274,6 +506,12 @@ test('overflowing text history keeps its first message reachable', async () => {
   }
 });
 
+test('reply links use the readable accent text color', async () => {
+  const replies = page.getByRole('button', { name: '2 replies', exact: true });
+  await expect.element(replies).toBeVisible();
+  expect(getComputedStyle(replies.element()).color).toBe('rgb(174, 181, 255)');
+});
+
 test('message author typography and timestamps use the Paper hierarchy', async () => {
   const author = page.getByText('aria', { exact: true });
   await expect.element(author).toBeVisible();
@@ -281,8 +519,15 @@ test('message author typography and timestamps use the Paper hierarchy', async (
   expect(authorStyle.fontSize).toBe('14px');
   expect(authorStyle.lineHeight).toBe('20px');
   expect(authorStyle.fontWeight).toBe('600');
+  const content = page
+    .getByTestId(TestId.MESSAGE_ITEM)
+    .first()
+    .element()
+    .querySelector('.msg-content')!;
+  expect(getComputedStyle(content).fontSize).toBe('16px');
+  expect(getComputedStyle(content).lineHeight).toBe('24px');
   const timestamp = author.element().nextElementSibling!;
-  expect(getComputedStyle(timestamp).color).toBe('rgb(143, 148, 158)');
+  expect(getComputedStyle(timestamp).color).toBe('rgb(176, 180, 188)');
 });
 
 test('message groups use Paper avatar and body spacing', async () => {
@@ -291,8 +536,8 @@ test('message groups use Paper avatar and body spacing', async () => {
   const header = author.element().parentElement!;
   const body = header.parentElement!;
   const group = body.parentElement!;
-  expect(getComputedStyle(group).columnGap).toBe('12px');
-  expect(getComputedStyle(group).paddingTop).toBe('12px');
+  expect(getComputedStyle(group).columnGap).toBe('16px');
+  expect(getComputedStyle(group).paddingTop).toBe('8px');
   expect(getComputedStyle(group).paddingLeft).toBe('0px');
   expect(group.firstElementChild!.getBoundingClientRect().width).toBe(38);
   expect(getComputedStyle(body).rowGap).toBe('4px');
@@ -335,12 +580,12 @@ test('complete channel history shows a Paper welcome and date context for clock 
 test('empty composer uses Paper geometry and keeps upload on the left', async () => {
   const composer = document.querySelector<HTMLElement>('.compose-container')!;
   const row = composer.querySelector<HTMLElement>('.compose-scroll-row')!;
-  expect(composer.getBoundingClientRect().height).toBe(112);
+  expect(composer.getBoundingClientRect().height).toBe(104);
   expect(getComputedStyle(composer).paddingTop).toBe('10px');
-  expect(row.getBoundingClientRect().height).toBe(54);
-  expect(getComputedStyle(row).backgroundColor).toBe('rgb(57, 62, 71)');
+  expect(row.getBoundingClientRect().height).toBe(52);
+  expect(getComputedStyle(row).backgroundColor).toBe('rgb(64, 66, 73)');
   expect(getComputedStyle(row).borderTopWidth).toBe('0px');
-  expect(getComputedStyle(row).borderRadius).toBe('10px');
+  expect(getComputedStyle(row).borderRadius).toBe('8px');
   const upload = page.getByRole('button', { name: 'Attach files' }).element();
   expect(upload.getBoundingClientRect().left).toBeLessThan(
     row.querySelector('.ProseMirror')!.getBoundingClientRect().left
@@ -433,6 +678,9 @@ test('application rail omits the decorative orange S but keeps navigation', asyn
   await page.elementLocator(server).click();
   await waitForRender();
   expect(server.getAttribute('aria-current')).toBe('page');
+  expect(getComputedStyle(server).backgroundColor).toBe('rgb(88, 101, 242)');
+  expect(getComputedStyle(server).color).toBe('rgb(255, 255, 255)');
+  expect(getComputedStyle(server, '::before').height).toBe('32px');
 });
 
 test('right docks open and close without layout animation', async () => {
@@ -558,6 +806,55 @@ test('voice channel matches the Paper design', async () => {
     .toBeVisible();
 
   try {
+    await page.getByText('sharkord', { exact: true }).hover();
+    const controls = document.querySelector<HTMLElement>(
+      '[data-voice-controls]'
+    );
+    expect(controls).not.toBeNull();
+    expect(controls!.getBoundingClientRect().height).toBe(64);
+    expect(getComputedStyle(controls!).backgroundColor).toBe('rgb(43, 45, 49)');
+    const mute = page
+      .getByRole('button', { name: 'Mute', exact: true })
+      .element();
+    expect(mute.getBoundingClientRect().width).toBe(48);
+    const disconnect = controls!.querySelector<HTMLButtonElement>(
+      'button[aria-label="Disconnect"]'
+    )!;
+    expect(disconnect.classList.contains('active:bg-danger-solid/80')).toBe(
+      true
+    );
+    expect(
+      parseFloat(getComputedStyle(mute).borderRadius)
+    ).toBeGreaterThanOrEqual(24);
+    const caption = page.elementLocator(
+      document.querySelector('.group\\/voice-user-card p')!
+    );
+    await expect.element(caption).toBeVisible();
+    expect(getComputedStyle(caption.element()).fontSize).toBe('12px');
+    expect(getComputedStyle(caption.element()).lineHeight).toBe('18px');
+    const stage = controls!.parentElement!.parentElement!;
+    expect(getComputedStyle(stage).backgroundColor).toBe('rgb(30, 31, 34)');
+    const tile = caption.element().closest('.group\\/voice-user-card')!;
+    expect(getComputedStyle(tile.firstElementChild!).backgroundImage).toBe(
+      'none'
+    );
+    const pin = tile.querySelector<HTMLButtonElement>('button')!;
+    pin.focus();
+    await expect.element(page.elementLocator(pin)).toBeVisible();
+    await userEvent.keyboard('{Shift>}{Tab}{/Shift}');
+    await userEvent.keyboard('{Tab}');
+    expect(document.activeElement).toBe(pin);
+    await expect
+      .poll(() => getComputedStyle(pin).boxShadow)
+      .toContain('rgb(194, 199, 255)');
+    pin.blur();
+    const diagnostics = page
+      .getByRole('button', { name: 'Voice diagnostics' })
+      .element();
+    expect(
+      getComputedStyle(diagnostics.parentElement!.parentElement!)
+        .backgroundColor
+    ).toBe('rgb(30, 31, 34)');
     await snapshot('voice-channel');
   } finally {
     await leaveVoice({ reason: 'user_disconnect_button' });
@@ -776,7 +1073,7 @@ test('create channel uses the Paper sheet geometry and selectable options', asyn
   openDialog(Dialog.CREATE_CHANNEL);
   await expect.element(page.getByRole('dialog')).toBeVisible();
   const dialog = page.getByRole('dialog').element();
-  expect(dialog.getBoundingClientRect().height).toBe(620);
+  expect(dialog.getBoundingClientRect().height).toBeLessThan(500);
   expect(dialog.getBoundingClientRect().width).toBe(410);
   await expect
     .element(page.getByText('Give your community a place to talk.'))
@@ -784,20 +1081,20 @@ test('create channel uses the Paper sheet geometry and selectable options', asyn
   const text = page.getByRole('radio', { name: 'Text channel' });
   const voice = page.getByRole('radio', { name: 'Voice channel' });
   expect(text.element().getAttribute('aria-checked')).toBe('true');
-  expect(text.element().getBoundingClientRect().height).toBe(50);
-  expect(getComputedStyle(text.element()).paddingLeft).toBe('15px');
+  expect(text.element().getBoundingClientRect().height).toBe(44);
+  expect(getComputedStyle(text.element()).paddingLeft).toBe('12px');
   expect(getComputedStyle(text.element()).borderTopWidth).toBe('1px');
   await voice.click();
   expect(voice.element().getAttribute('aria-checked')).toBe('true');
   expect(text.element().getAttribute('aria-checked')).toBe('false');
   const footer = dialog.querySelector('[data-slot="dialog-footer"]')!;
-  expect(footer.getBoundingClientRect().height).toBe(74);
+  expect(footer.getBoundingClientRect().height).toBe(73);
   expect(footer.getBoundingClientRect().bottom).toBeCloseTo(
     dialog.getBoundingClientRect().bottom - 1,
     0
   );
   expect(dialog.querySelector('input')!.getBoundingClientRect().height).toBe(
-    50
+    44
   );
   expect(
     dialog.querySelectorAll('[data-slot="dialog-footer"] button')
@@ -807,6 +1104,9 @@ test('create channel uses the Paper sheet geometry and selectable options', asyn
 test('create channel dialog matches the Paper design', async () => {
   openDialog(Dialog.CREATE_CHANNEL);
   await expect.element(page.getByRole('dialog')).toBeVisible();
+  expect(
+    getComputedStyle(page.getByRole('dialog').element()).borderRadius
+  ).toBe('12px');
 
   await snapshot('create-channel-dialog');
 });
@@ -844,6 +1144,159 @@ test('voice diagnostics dialog matches the Paper design', async () => {
     comparatorOptions: { allowedMismatchedPixelRatio: 0.0002 },
     timeout: 3_000
   });
+});
+
+test.each([
+  [
+    'rename',
+    Dialog.TEXT_INPUT,
+    {
+      title: 'Rename fixture',
+      message: 'Rename only; no data is submitted.',
+      type: 'text'
+    },
+    'alertdialog'
+  ],
+  [
+    'password',
+    Dialog.SERVER_PASSWORD,
+    { handshakeHash: 'visual-fixture-handshake' },
+    'alertdialog'
+  ],
+  ['media sounds', Dialog.SOUNDS, {}, 'dialog'],
+  ['role access', Dialog.ASSIGN_ROLE, {}, 'alertdialog']
+] as const)(
+  '%s uses the shared compact dialog skin',
+  async (_name, kind, props, role) => {
+    const { store } = await import('@/features/store');
+    const { userByIdSelector } =
+      await import('@/features/server/users/selectors');
+    const state = store.getState();
+    const user = userByIdSelector(state, 2)!;
+    openDialog(kind, { user, refetch: async () => undefined, ...props });
+    const locator = page.getByRole(role);
+    try {
+      await expect.element(locator).toBeVisible();
+      const element = locator.element();
+      const style = getComputedStyle(element);
+      expect(style.backgroundColor).toBe('rgb(43, 45, 49)');
+      expect(style.borderRadius).toBe('12px');
+      expect(element.getBoundingClientRect().width).toBe(410);
+      expect(element.getBoundingClientRect().top).toBeGreaterThanOrEqual(0);
+      expect(element.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        innerHeight
+      );
+    } finally {
+      resetDialogs();
+      await waitForRender();
+    }
+  }
+);
+
+test('plugin detail loads through the existing installed fixture and real server', async () => {
+  const client = trpc.getTRPCClient();
+  const initial = await client.plugins.get.query();
+  const fixture = initial.plugins.find((plugin) => plugin.id === 'e2e-plugin')!;
+  expect(fixture.enabled).toBe(false);
+  const wasEnabled = fixture.enabled;
+  try {
+    await client.plugins.toggle.mutate({
+      pluginId: 'e2e-plugin',
+      enabled: true
+    });
+    openServerScreen(ServerScreen.SERVER_SETTINGS);
+    const entry = page
+      .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+      .filter({ hasText: 'E2E Plugin' });
+    await expect.element(entry).toBeVisible();
+    await entry.click();
+    await expect
+      .element(page.getByRole('heading', { name: 'E2E Plugin', exact: true }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole('tab', { name: 'Commands', exact: true }))
+      .toBeVisible();
+    await page.getByRole('tab', { name: 'Logs', exact: true }).click();
+    await expect.element(page.getByRole('tabpanel')).toBeVisible();
+    const header = document.querySelector('header')!;
+    expect(header.getBoundingClientRect().height).toBe(40);
+    expect(getComputedStyle(header).backgroundColor).toBe('rgb(30, 31, 34)');
+  } finally {
+    closeServerScreens();
+    await client.plugins.toggle.mutate({
+      pluginId: 'e2e-plugin',
+      enabled: wasEnabled
+    });
+    const restored = await client.plugins.get.query();
+    const current = restored.plugins.find(
+      (plugin) => plugin.id === fixture.id
+    )!;
+    expect(current.enabled).toBe(wasEnabled);
+    await expect
+      .element(page.getByTestId('e2e-plugin-topbar'))
+      .not.toBeInTheDocument();
+  }
+});
+
+test('search results show real fixture matches with the shared surface hierarchy', async () => {
+  openDialog(Dialog.SEARCH);
+  const dialog = page.getByRole('dialog');
+  try {
+    await page.getByTestId(TestId.SEARCH_INPUT).fill('voice controls');
+    await expect
+      .element(
+        dialog.getByText(
+          'The new direction feels much calmer. I left one note on the voice controls.',
+          { exact: true }
+        )
+      )
+      .toBeVisible();
+    await expect
+      .element(dialog.getByTestId(TestId.SEARCH_RESULT_JUMP).first())
+      .toBeEnabled();
+    const element = dialog.element();
+    expect(getComputedStyle(element).backgroundColor).toBe('rgb(43, 45, 49)');
+    expect(getComputedStyle(element).borderRadius).toBe('12px');
+  } finally {
+    resetDialogs();
+    await waitForRender();
+  }
+});
+
+test('connection retry uses the approved surface and readable progress states', async () => {
+  const { store } = await import('@/features/store');
+  const { serverSliceActions } = await import('@/features/server/slice');
+  try {
+    for (const nextAttemptAt of [Date.now() + 5_000, null]) {
+      store.dispatch(
+        serverSliceActions.setReconnect({
+          attempt: 2,
+          maxAttempts: 5,
+          nextAttemptAt
+        })
+      );
+      const overlay = page.getByRole('alertdialog');
+      await expect.element(overlay).toBeVisible();
+      await expect
+        .element(page.getByText('Connection lost', { exact: true }))
+        .toBeVisible();
+      await expect
+        .element(
+          page.getByRole('button', {
+            name: 'Stop trying to reconnect',
+            exact: true
+          })
+        )
+        .toBeEnabled();
+      const element = overlay.element();
+      expect(getComputedStyle(element).backgroundColor).toBe('rgb(49, 51, 56)');
+      const icon = element.querySelector('svg')!;
+      expect(getComputedStyle(icon).color).toBe('rgb(174, 181, 255)');
+      await waitForRender();
+    }
+  } finally {
+    store.dispatch(serverSliceActions.setReconnect(null));
+  }
 });
 
 test('same-author messages across midnight retain both date separators', async () => {
@@ -1113,6 +1566,9 @@ test('redesigned channel header preserves upstream mute and unmute control', asy
         page.getByRole('tooltip', { name: 'Channel muted, click to unmute' })
       )
       .toBeVisible();
+    const tooltip = document.querySelector('[data-slot="tooltip-content"]')!;
+    expect(getComputedStyle(tooltip).backgroundColor).toBe('rgb(30, 31, 34)');
+    expect(getComputedStyle(tooltip).color).toBe('rgb(242, 243, 245)');
     await button.click();
     await expect
       .poll(() => document.querySelector('.lucide-bell-off'))

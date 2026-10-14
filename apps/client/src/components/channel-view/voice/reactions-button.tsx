@@ -92,7 +92,7 @@ const ReactionsButton = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="size-10.5 rounded-lg border border-control-border bg-raised transition-colors duration-150 hover:bg-panel"
+            className="size-11 rounded-full border border-control-border bg-raised text-foreground transition-colors duration-150 hover:bg-panel sm:size-12"
             aria-label={t('sendVoiceReaction')}
           >
             <Smile className="size-4.5" />

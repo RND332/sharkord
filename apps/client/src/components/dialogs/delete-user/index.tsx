@@ -12,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AutoFocus,
+  buttonVariants,
   Group,
   Switch
 } from '@sharkord/ui';
@@ -38,7 +39,8 @@ const DeleteUserDialog = memo(
         title: t('confirmDeleteTitle', { name: user.name }),
         message: wipe ? t('confirmDeleteMsgWithWipe') : t('confirmDeleteMsg'),
         confirmLabel: t('deleteUserBtn'),
-        cancelLabel: t('cancel')
+        cancelLabel: t('cancel'),
+        variant: 'danger'
       });
 
       if (!choice) {
@@ -102,7 +104,11 @@ const DeleteUserDialog = memo(
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel onClick={close}>{t('cancel')}</AlertDialogCancel>
             <AutoFocus>
-              <AlertDialogAction onClick={onSubmit} disabled={isDeleting}>
+              <AlertDialogAction
+                onClick={onSubmit}
+                disabled={isDeleting}
+                className={buttonVariants({ variant: 'destructive' })}
+              >
                 {t('deleteUserBtn')}
               </AlertDialogAction>
             </AutoFocus>

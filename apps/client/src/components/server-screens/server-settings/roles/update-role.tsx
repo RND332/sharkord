@@ -81,7 +81,8 @@ const UpdateRole = memo(
       const choice = await requestConfirmation({
         title: t('deleteRoleTitle'),
         message: t('deleteRoleMsg'),
-        confirmLabel: t('deleteRoleBtn')
+        confirmLabel: t('deleteRoleBtn'),
+        variant: 'danger'
       });
 
       if (!choice) return;

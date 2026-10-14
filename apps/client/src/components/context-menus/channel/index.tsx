@@ -54,7 +54,8 @@ const ChannelContextMenu = memo(
         title: t('deleteChannelTitle'),
         message: t('deleteChannelMsg'),
         confirmLabel: t('deleteLabel'),
-        cancelLabel: t('cancel', { ns: 'common' })
+        cancelLabel: t('cancel', { ns: 'common' }),
+        variant: 'danger'
       });
 
       if (!choice) return;

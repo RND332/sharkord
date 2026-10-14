@@ -294,14 +294,14 @@ test('unwatched share shows the approved invitation without subscribing or pinni
   expect(styles.paddingLeft).toBe('16px');
   expect(styles.gap).toBe('8px');
   expect(styles.borderRadius).toBe('6px');
-  expect(styles.backgroundColor).toBe('rgb(57, 62, 71)');
-  expect(styles.color).toBe('rgb(242, 244, 246)');
+  expect(styles.backgroundColor).toBe('rgb(64, 66, 73)');
+  expect(styles.color).toBe('rgb(242, 243, 245)');
   expect(styles.fontSize).toBe('14px');
   expect(styles.lineHeight).toBe('20px');
   expect(styles.fontWeight).toBe('500');
-  expect(getComputedStyle(tile).backgroundColor).toBe('rgb(32, 35, 40)');
-  expect(getComputedStyle(tile).borderColor).toBe('rgb(69, 74, 83)');
-  expect(getComputedStyle(tile).borderRadius).toBe('10px');
+  expect(getComputedStyle(tile).backgroundColor).toBe('rgb(43, 45, 49)');
+  expect(getComputedStyle(tile).borderColor).toBe('rgb(68, 70, 77)');
+  expect(getComputedStyle(tile).borderRadius).toBe('12px');
   expect(
     button.getBoundingClientRect().x + button.getBoundingClientRect().width / 2
   ).toBeCloseTo(

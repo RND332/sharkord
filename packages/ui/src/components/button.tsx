@@ -5,19 +5,19 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[7px] text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-invalid:ring-destructive/30 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-invalid:ring-destructive/30 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
         default:
           'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
         destructive:
-          'bg-destructive/35 text-red-100 hover:bg-destructive/50 focus-visible:ring-destructive',
+          'bg-danger-solid text-white hover:bg-danger-solid/90 active:bg-danger-solid/80 focus-visible:ring-destructive',
         outline:
           'border border-line bg-transparent text-foreground hover:bg-raised',
         secondary: 'bg-raised text-secondary-foreground hover:bg-raised/80',
         ghost: 'text-muted-foreground hover:bg-raised hover:text-foreground',
-        link: 'text-primary underline-offset-4 hover:underline'
+        link: 'text-accent-text underline-offset-4 hover:underline'
       },
       size: {
         default: 'h-10 px-4 has-[>svg]:px-3',

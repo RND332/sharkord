@@ -33,7 +33,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           data-slot="textarea"
           aria-invalid={!!error}
           className={cn(
-            'border-input placeholder:text-subtle-foreground focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/30 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-[7px] border bg-panel px-3 py-2 text-base transition-[border-color,box-shadow] outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+            'border-input placeholder:text-subtle-foreground focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/30 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-input-surface px-3 py-2 text-base transition-[border-color,box-shadow] outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
             className
           )}
           onChange={onChangeHandler}

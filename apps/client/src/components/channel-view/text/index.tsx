@@ -209,7 +209,7 @@ const TextChannel = memo((props: TChannelProps) => {
         onScroll={onScroll}
         onLoadCapture={onAsyncContentLoaded}
         data-messages-container
-        className="flex-1 overflow-y-auto overflow-x-hidden px-7 pt-7 pb-2"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-6 pb-2"
       >
         <div className="flex min-h-full flex-col justify-end [&>*]:shrink-0">
           {!hasMore && !detachedFromPresent && channel && !channel.isDm && (

@@ -6,7 +6,8 @@ import {
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
+  buttonVariants
 } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -82,7 +83,7 @@ const PluginInstallConfirmDialog = memo(
               </p>
             </div>
 
-            <p className="text-sm text-primary">
+            <p className="text-sm text-accent-text">
               {t('pluginInstallUseDocker')}
             </p>
 
@@ -92,7 +93,7 @@ const PluginInstallConfirmDialog = memo(
                 href="https://sharkord.com/docs/plugins/security"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline hover:text-primary transition-colors"
+                className="underline hover:text-accent-text transition-colors"
               >
                 https://sharkord.com/docs/plugins/security
               </a>
@@ -105,7 +106,7 @@ const PluginInstallConfirmDialog = memo(
             <AlertDialogAction
               onClick={handleConfirm}
               disabled={!canConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className={buttonVariants({ variant: 'destructive' })}
             >
               {canConfirm
                 ? t('pluginInstallConfirmBtn')

@@ -53,7 +53,7 @@ const MessagesGroup = memo(
       group.length === 1 && !!firstMessage.replyToMessageId;
 
     const groupContent = (
-      <div className="flex min-w-0 max-w-dvw gap-3 py-3">
+      <div className="flex min-w-0 max-w-dvw gap-4 py-2">
         {isPluginMessage ? (
           <PluginAvatar
             name={pluginMetadata?.name}
@@ -73,19 +73,19 @@ const MessagesGroup = memo(
               className={cn(
                 'text-sm font-semibold leading-5',
                 isDeletedUser && 'line-through text-muted-foreground',
-                isPluginMessage && 'text-primary/80'
+                isPluginMessage && 'text-accent-text'
               )}
             >
               {authorName}
             </span>
             {isPluginMessage && (
-              <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary/60 uppercase tracking-wide">
+              <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-accent-text uppercase tracking-wide">
                 bot
               </span>
             )}
             {showClockTime ? (
               <time
-                className="text-subtle-foreground dark:text-[#8f949e] text-xs leading-4"
+                className="text-subtle-foreground text-xs leading-4"
                 dateTime={date.toISOString()}
                 title={format(date, 'PPpp')}
               >
@@ -95,7 +95,7 @@ const MessagesGroup = memo(
               <RelativeTime date={date}>
                 {(relativeTime) => (
                   <span
-                    className="text-subtle-foreground dark:text-[#8f949e] text-xs"
+                    className="text-subtle-foreground text-xs"
                     title={format(date, 'PPpp')}
                   >
                     {relativeTime}

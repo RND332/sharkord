@@ -42,7 +42,8 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
     const answer = await requestConfirmation({
       title: t('deleteInviteTitle'),
       message: t('deleteInviteMsg'),
-      confirmLabel: t('deleteBtn')
+      confirmLabel: t('deleteBtn'),
+      variant: 'danger'
     });
 
     if (!answer) return;

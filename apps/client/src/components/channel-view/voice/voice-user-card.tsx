@@ -105,7 +105,7 @@ const VoiceUserCard = memo(
     return (
       <div
         className={cn(
-          'relative overflow-hidden rounded-lg bg-panel group/voice-user-card',
+          'relative overflow-hidden rounded-[12px] bg-panel group/voice-user-card',
           'flex items-center justify-center',
           'size-full',
           'border border-line',
@@ -115,7 +115,7 @@ const VoiceUserCard = memo(
       >
         {voiceUser.banner && showUserBanners ? (
           <div
-            className="absolute inset-0 h-full w-full rounded-lg bg-cover bg-center bg-no-repeat blur-sm brightness-50"
+            className="absolute inset-0 h-full w-full rounded-[12px] bg-cover bg-center bg-no-repeat blur-sm brightness-50"
             style={backgroundStyle}
           />
         ) : (
@@ -171,8 +171,8 @@ const VoiceUserCard = memo(
           className={cn(
             'absolute top-0 right-0 z-10 justify-end',
             density.inset,
-            'hidden group-hover/voice-user-card:flex',
-            'has-[[data-state=open]]:flex'
+            'flex opacity-0 pointer-events-none group-hover/voice-user-card:opacity-100 group-hover/voice-user-card:pointer-events-auto group-focus-within/voice-user-card:opacity-100 group-focus-within/voice-user-card:pointer-events-auto',
+            'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
           )}
         >
           <div className={cardControlsClass(isCompact)}>
@@ -229,16 +229,7 @@ const VoiceUserCard = memo(
         <div
           className={cn('absolute bottom-0 left-0 right-0 flex', density.inset)}
         >
-          <div
-            className={cn(
-              cardBadgeClass(isCompact),
-              !voiceUser.state.micMuted &&
-                !voiceUser.state.soundMuted &&
-                !voiceUser.state.webcamEnabled &&
-                !voiceUser.state.sharingScreen &&
-                'hidden group-hover/voice-stage:inline-flex'
-            )}
-          >
+          <div className={cardBadgeClass(isCompact)}>
             {voiceUser.state.micMuted && !voiceUser.state.soundMuted && (
               <MicOff
                 className="text-red-400/80 shrink-0 size-3"
@@ -257,14 +248,7 @@ const VoiceUserCard = memo(
             {voiceUser.state.sharingScreen && (
               <Monitor className="text-white/80 size-3" />
             )}
-            <p
-              className={cn(
-                'hidden group-hover/voice-stage:block truncate leading-none',
-                density.label
-              )}
-            >
-              {voiceUser.name}
-            </p>
+            <p className={cn('truncate', density.label)}>{voiceUser.name}</p>
           </div>
         </div>
       </div>

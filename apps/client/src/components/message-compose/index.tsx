@@ -260,23 +260,23 @@ const MessageCompose = memo(
     return (
       <div
         ref={containerRef}
-        className="compose-container relative flex min-h-[112px] shrink-0 flex-col gap-2 bg-canvas px-6 pb-[max(20px,env(safe-area-inset-bottom))] pt-[10px]"
+        className="compose-container relative flex min-h-[100px] shrink-0 flex-col gap-2 bg-canvas px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[10px]"
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
 
         <div
-          className={`compose-scroll-row flex min-h-[54px] flex-1 cursor-text items-start gap-[14px] px-4 overflow-y-auto rounded-[10px] bg-raised [&_.ProseMirror]:px-0! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.ProseMirror]:py-[17px]! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-[17px]! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-[#adb2ba]${uploading ? ' bg-muted' : ''}`}
+          className={`compose-scroll-row flex min-h-[52px] flex-1 cursor-text items-start gap-[14px] px-4 overflow-y-auto rounded-md bg-raised [&_.ProseMirror]:px-0! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.ProseMirror]:py-4! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-4! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-muted-foreground${uploading ? ' bg-muted' : ''}`}
           onClick={focusInputOnBackdropClick}
         >
           <Button
             size="icon"
             variant="ghost"
-            className="mt-4 size-[22px] shrink-0 sticky top-4"
+            className="mt-4 size-5 shrink-0 sticky top-4"
             aria-label={t('attachFiles')}
             disabled={uploading || !canUploadFiles}
             onClick={openFileDialog}
           >
-            <Plus className="size-[22px]" />
+            <Plus className="size-5" />
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
             {replyTarget && (
@@ -335,7 +335,7 @@ const MessageCompose = memo(
           </div>
 
           <input {...fileInputProps} />
-          <div className="flex items-start pt-[17px] shrink-0 sticky top-0">
+          <div className="flex items-start pt-4 shrink-0 sticky top-0">
             {showPluginSlot && (
               <PluginSlotRenderer
                 slotId={PluginSlot.CHAT_ACTIONS}
@@ -368,7 +368,7 @@ const MessageCompose = memo(
             )}
           </div>
         </div>
-        <p className="h-5 shrink-0 text-[13px] leading-[18px] text-subtle-foreground">
+        <p className="h-[18px] shrink-0 text-[13px] leading-[18px] text-subtle-foreground">
           {t('composerHint')}
         </p>
       </div>

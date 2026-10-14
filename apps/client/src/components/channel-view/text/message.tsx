@@ -104,7 +104,7 @@ const Message = memo(
               <button
                 type="button"
                 onClick={onThreadClick}
-                className="flex items-center gap-1 text-xs text-primary/70 hover:text-primary hover:underline mt-1 transition-colors"
+                className="flex items-center gap-1 text-xs text-accent-text hover:text-accent-text hover:underline mt-1 transition-colors"
               >
                 <MessageSquareText className="h-3 w-3" />
                 <span>{t('reply', { count: replyCount })}</span>

@@ -39,10 +39,10 @@ const ChannelTypeItem = ({
     role="radio"
     aria-checked={isActive}
     className={cn(
-      'flex w-full items-center gap-2 rounded-lg border p-[15px] text-left text-[15px] leading-[18px] cursor-pointer',
+      'flex h-11 w-full items-center gap-2 rounded-md border px-3 text-left text-sm leading-5 cursor-pointer',
       isActive
-        ? 'border-primary bg-raised text-primary'
-        : 'border-subtle-foreground bg-panel'
+        ? 'border-accent-text bg-raised text-accent-text'
+        : 'border-control-border bg-panel'
     )}
     onClick={onClick}
   >
@@ -95,18 +95,14 @@ const CreateChannelDialog = memo(
         <DialogContent
           onInteractOutside={close}
           close={close}
-          className="flex h-[620px] max-h-[calc(100dvh-2rem)] flex-col gap-0 rounded-xl p-0"
+          className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0"
         >
-          <DialogHeader className="shrink-0 gap-[7px] border-b border-line px-[26px] pt-[25px] pb-[21px] pr-14">
-            <DialogTitle className="text-[21px] leading-[26px] font-bold tracking-[-0.025em]">
-              {t('createChannelTitle')}
-            </DialogTitle>
-            <DialogDescription className="text-[13px] leading-[19px]">
-              {t('createChannelDesc')}
-            </DialogDescription>
+          <DialogHeader className="shrink-0 border-b border-line p-6 pr-14">
+            <DialogTitle>{t('createChannelTitle')}</DialogTitle>
+            <DialogDescription>{t('createChannelDesc')}</DialogDescription>
           </DialogHeader>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-[26px] py-7">
+          <div className="flex min-h-0 flex-col gap-6 overflow-y-auto p-6">
             <div
               role="radiogroup"
               aria-label={t('channelTypeLabel')}
@@ -130,7 +126,7 @@ const CreateChannelDialog = memo(
               />
             </div>
 
-            <div className="flex flex-col gap-[9px]">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor="create-channel-name"
                 className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
@@ -140,7 +136,7 @@ const CreateChannelDialog = memo(
               <AutoFocus>
                 <Input
                   id="create-channel-name"
-                  className="h-[50px] rounded-lg border-subtle-foreground bg-canvas px-[15px] text-[15px] leading-[18px]"
+
                   placeholder={t('channelNamePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -153,9 +149,8 @@ const CreateChannelDialog = memo(
             </div>
           </div>
 
-          <DialogFooter className="h-[74px] shrink-0 flex-row items-center justify-end gap-[10px] px-[26px] sm:mx-0 sm:mb-0">
+          <DialogFooter className="shrink-0 flex-row items-center justify-end sm:mx-0 sm:mb-0">
             <Button
-              className="h-10 gap-2 rounded-lg px-[14px]"
               onClick={onSubmit}
               disabled={loading || !name || !channelType}
             >

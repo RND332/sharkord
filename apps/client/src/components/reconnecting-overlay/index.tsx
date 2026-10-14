@@ -27,9 +27,9 @@ const ReconnectingOverlay = memo(() => {
       <div className="flex w-full max-w-sm flex-col items-center gap-5 px-6 text-center">
         <div className="flex size-14 items-center justify-center rounded-full border border-line bg-panel">
           {isAttemptInFlight ? (
-            <Loader2 className="size-6 animate-spin text-primary" />
+            <Loader2 className="size-6 animate-spin text-accent-text" />
           ) : (
-            <WifiOff className="size-6 text-primary" />
+            <WifiOff className="size-6 text-accent-text" />
           )}
         </div>
 

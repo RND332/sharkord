@@ -24,7 +24,8 @@ const Files = memo(() => {
         title: t('deleteFileTitle'),
         message: t('deleteFileMsg'),
         confirmLabel: t('deleteBtn'),
-        cancelLabel: t('cancel')
+        cancelLabel: t('cancel'),
+        variant: 'danger'
       });
 
       if (!answer) return;

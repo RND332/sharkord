@@ -64,18 +64,21 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
   return (
     <div
       className={cn(
-        'flex h-[88px] items-center justify-center gap-2.5 px-4 pointer-events-none',
+        'flex h-[88px] shrink-0 items-center justify-center px-2 pointer-events-none sm:px-4',
         barClass
       )}
     >
-      <div className="flex items-center gap-2.5 pointer-events-auto">
+      <div
+        data-voice-controls
+        className="flex items-center gap-1 rounded-full bg-nav p-1 pointer-events-auto sm:gap-2 sm:p-2"
+      >
         <ControlToggleButton
           enabled={ownVoiceState.micMuted}
           enabledLabel="Unmute"
           disabledLabel="Mute"
           enabledIcon={MicOff}
           disabledIcon={Mic}
-          enabledClassName="bg-red-500/20 text-red-500 hover:bg-red-500/30 hover:text-red-500"
+          enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
           onClick={toggleMic}
           disabled={!permissions.canSpeak || ownVoiceState.soundMuted}
         />
@@ -86,7 +89,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           disabledLabel="Deafen"
           enabledIcon={HeadphoneOff}
           disabledIcon={Headphones}
-          enabledClassName="bg-red-500/20 text-red-500 hover:bg-red-500/30 hover:text-red-500"
+          enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
           onClick={toggleSound}
         />
 
@@ -96,7 +99,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           disabledLabel="Start Video"
           enabledIcon={Video}
           disabledIcon={VideoOff}
-          enabledClassName="bg-green-500/20 text-green-500 hover:bg-green-500/30 hover:text-green-500"
+          enabledClassName="bg-success-solid text-white hover:bg-success-solid/90 hover:text-white"
           onClick={toggleWebcam}
           disabled={!permissions.canWebcam || devices.voiceOnlyMode}
         />
@@ -108,7 +111,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             disabledLabel="Share Screen"
             enabledIcon={ScreenShareOff}
             disabledIcon={Monitor}
-            enabledClassName="bg-blue-500/20 text-blue-500 hover:bg-blue-500/30 hover:text-blue-500"
+            enabledClassName="bg-success-solid text-white hover:bg-success-solid/90 hover:text-white"
             onClick={toggleScreenShare}
             disabled={!permissions.canShareScreen || devices.voiceOnlyMode}
           />
@@ -119,16 +122,17 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             <ReactionsButton />
           </Protect>
         )}
+        <Tooltip content="Disconnect">
+          <Button
+            variant="destructive"
+            className="size-11 rounded-full p-0 sm:size-12"
+            onClick={handleLeaveVoice}
+            aria-label="Disconnect"
+          >
+            <PhoneOff className="size-4.5" fill="currentColor" />
+          </Button>
+        </Tooltip>
       </div>
-      <Tooltip content="Disconnect">
-        <Button
-          className="pointer-events-auto size-10.5 rounded-lg bg-danger-solid p-0 text-white hover:bg-destructive/80"
-          onClick={handleLeaveVoice}
-          aria-label="Disconnect"
-        >
-          <PhoneOff className="size-4.5" fill="currentColor" />
-        </Button>
-      </Tooltip>
     </div>
   );
 });

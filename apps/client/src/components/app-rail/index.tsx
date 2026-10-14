@@ -40,7 +40,7 @@ const AppRail = memo(() => {
   return (
     <nav
       aria-label="Application"
-      className="hidden h-full w-[72px] shrink-0 flex-col items-center gap-3 bg-rail py-4 md:flex"
+      className="hidden h-full w-[72px] shrink-0 flex-col items-center gap-2 bg-rail py-3 md:flex"
     >
       <Tooltip content={serverName}>
         <button
@@ -49,8 +49,9 @@ const AppRail = memo(() => {
           aria-current={!dmsOpen ? 'page' : undefined}
           onClick={openServer}
           className={cn(
-            'flex size-11 items-center justify-center rounded-[15px] bg-raised text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            !dmsOpen && 'border border-primary bg-primary/10 text-foreground'
+            'relative flex size-11 items-center justify-center rounded-[15px] bg-raised text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            !dmsOpen &&
+              "bg-primary text-primary-foreground hover:text-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
           )}
         >
           {serverName?.trim().charAt(0).toUpperCase() || 'S'}
@@ -66,7 +67,8 @@ const AppRail = memo(() => {
             onClick={toggleDirectMessages}
             className={cn(
               'relative flex size-11 items-center justify-center rounded-[15px] bg-raised text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              dmsOpen && 'border border-primary bg-primary/10 text-foreground'
+              dmsOpen &&
+                "bg-primary text-primary-foreground hover:text-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
             )}
           >
             <MessageCircleMore className="size-5" />

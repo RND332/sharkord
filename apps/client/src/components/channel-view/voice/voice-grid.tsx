@@ -124,7 +124,7 @@ const VoiceGrid = memo(
       return (
         <div
           className={cn(
-            'flex h-full flex-col gap-3 bg-canvas px-7 py-6',
+            'flex h-full flex-col gap-3 bg-rail px-7 py-6',
             className
           )}
         >
@@ -199,7 +199,7 @@ const VoiceGrid = memo(
     return (
       <div
         ref={containerRef}
-        className={cn('grid size-full gap-3 bg-canvas px-7 py-6', className)}
+        className={cn('grid size-full gap-3 bg-rail px-7 py-6', className)}
         style={{
           gridTemplateColumns: `repeat(${gridCols}, ${tileWidth !== undefined ? `${tileWidth}px` : '1fr'})`,
           gridTemplateRows: `repeat(${rows}, ${tileHeight !== undefined ? `${tileHeight}px` : '1fr'})`,

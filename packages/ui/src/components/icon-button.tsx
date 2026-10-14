@@ -5,13 +5,13 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 
 const iconButtonVariants = cva(
-  'inline-flex items-center justify-center transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 outline-none shrink-0',
+  'inline-flex items-center justify-center transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 outline-none shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   {
     variants: {
       variant: {
-        default: 'text-foreground hover:text-primary',
+        default: 'text-foreground hover:text-accent-text',
         destructive: 'text-foreground hover:text-destructive',
-        primary: 'text-primary hover:text-primary/80',
+        primary: 'text-accent-text hover:text-accent-text',
         secondary: 'text-muted-foreground hover:text-foreground',
         ghost: 'text-muted-foreground hover:text-foreground'
       },

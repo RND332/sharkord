@@ -37,7 +37,8 @@ const Header = memo(() => {
       const answer = await requestConfirmation({
         title: t('removeRoleTitle'),
         message: t('removeRoleMsg', { roleName }),
-        confirmLabel: t('removeRoleConfirm')
+        confirmLabel: t('removeRoleConfirm'),
+        variant: 'danger'
       });
 
       if (!answer) {

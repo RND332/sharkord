@@ -85,7 +85,7 @@ const RightSidebar = memo(
         isOpen={isOpen}
         className={cn('h-full bg-nav', className)}
       >
-        <div className="flex h-14 items-center border-b border-line px-5">
+        <div className="flex h-12 shrink-0 items-center border-b border-line px-4">
           <h3 className="text-sm font-semibold text-foreground">
             {t('membersHeader', { count: usersCount })}
           </h3>

@@ -147,7 +147,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
 
   if (voiceUsers.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-canvas">
+      <div className="flex flex-1 items-center justify-center bg-rail">
         <div className="text-center">
           <p className="text-muted-foreground text-lg mb-2">
             No one in the voice channel
@@ -161,7 +161,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   }
 
   return (
-    <div className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-canvas">
+    <div className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-rail">
       <VoiceGrid
         pinnedCardId={pinnedCard?.id}
         tileAspectRatio={hasScreenShareInvitation ? 16 / 9 : undefined}

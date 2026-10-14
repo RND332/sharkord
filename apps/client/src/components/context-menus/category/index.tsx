@@ -33,7 +33,8 @@ const CategoryContextMenu = memo(
         title: t('deleteCategoryTitle'),
         message: t('deleteCategoryMsg'),
         confirmLabel: t('deleteLabel'),
-        cancelLabel: t('cancel', { ns: 'common' })
+        cancelLabel: t('cancel', { ns: 'common' }),
+        variant: 'danger'
       });
 
       if (!choice) return;

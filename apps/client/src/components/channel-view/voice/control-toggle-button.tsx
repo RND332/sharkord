@@ -41,7 +41,7 @@ const ControlToggleButton = memo(
           variant="ghost"
           size="icon"
           className={cn(
-            'size-10.5 rounded-lg border border-control-border bg-raised transition-colors duration-150',
+            'size-11 rounded-full border border-control-border bg-raised text-foreground transition-colors duration-150 sm:size-12',
             enabled
               ? enabledClassName
               : (disabledClassName ?? 'hover:bg-panel'),

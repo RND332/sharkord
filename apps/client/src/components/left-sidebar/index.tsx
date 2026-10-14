@@ -44,7 +44,7 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       className={cn('h-full bg-nav', className)}
       data-testid={TestId.LEFT_SIDEBAR}
     >
-      <div className="flex h-14 w-full items-center justify-between border-b border-line px-4">
+      <div className="flex h-12 w-full items-center justify-between border-b border-line px-4">
         <h2
           className="truncate text-base font-semibold text-foreground"
           onClick={() => setSelectedChannelId(undefined)}

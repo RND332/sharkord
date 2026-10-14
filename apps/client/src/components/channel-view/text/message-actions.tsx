@@ -111,7 +111,8 @@ const MessageActions = memo(
           title: t('deleteMessageTitle'),
           message: t('deleteMessageConfirm'),
           confirmLabel: t('deleteLabel'),
-          cancelLabel: t('cancel')
+          cancelLabel: t('cancel'),
+          variant: 'danger'
         });
 
         if (!choice) return;

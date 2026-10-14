@@ -7,7 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AutoFocus
+  AutoFocus,
+  buttonVariants
 } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +21,7 @@ type TConfirmActionDialogProps = TDialogBaseProps & {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'destructive' | 'default';
+  variant?: 'danger' | 'info';
 };
 
 const ConfirmActionDialog = memo(
@@ -31,7 +32,8 @@ const ConfirmActionDialog = memo(
     title,
     message,
     confirmLabel,
-    cancelLabel
+    cancelLabel,
+    variant = 'info'
   }: TConfirmActionDialogProps) => {
     const { t } = useTranslation('dialogs');
 
@@ -51,7 +53,12 @@ const ConfirmActionDialog = memo(
               {cancelLabel ?? t('cancel')}
             </AlertDialogCancel>
             <AutoFocus>
-              <AlertDialogAction onClick={onConfirm}>
+              <AlertDialogAction
+                onClick={onConfirm}
+                className={buttonVariants({
+                  variant: variant === 'danger' ? 'destructive' : 'default'
+                })}
+              >
                 {confirmLabel ?? t('confirm')}
               </AlertDialogAction>
             </AutoFocus>

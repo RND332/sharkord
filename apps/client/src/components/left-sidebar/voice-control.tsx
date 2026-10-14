@@ -117,7 +117,7 @@ const VoiceControl = memo(() => {
     <>
       <VoiceAudioStreams channelId={voiceChannelId} />
       <ExternalAudioStreams channelId={voiceChannelId} />
-      <div className="h-[78px] shrink-0 overflow-hidden bg-panel">
+      <div className="h-[78px] shrink-0 overflow-hidden bg-rail">
         <div className="flex h-[46px] items-center justify-between gap-1.5 px-2.5 py-1">
           <Button
             variant="ghost"
