@@ -1,106 +1,264 @@
 import { getErrorMessage } from '@sharkord/shared';
-import { BunUpdater } from 'bun-sfe-autoupdater';
+import { BunUpdater, validateReleaseMetadata } from 'bun-sfe-autoupdater';
+import { renameSync, rmdirSync } from 'fs';
+import fs from 'fs/promises';
+import path from 'path';
+import semver from 'semver';
+import { z } from 'zod';
 import { config } from '../config';
 import { logger } from '../logger';
+import { initVoiceRuntimes } from '../runtimes';
+import { VoiceRuntime } from '../runtimes/voice';
 import { IS_DOCKER, IS_PRODUCTION, SERVER_VERSION } from '../utils/env';
+import { closeMediasoup, loadMediasoup } from '../utils/mediasoup';
+import { readBodyWithLimit } from '../utils/read-body-with-limit';
+import { sha256File } from '../utils/sha-256-file';
 
-const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const CONSECUTIVE_FAILURES_BEFORE_ALARM = 3;
+const RELEASE_API =
+  'https://api.github.com/repos/RND332/sharkord/releases/latest';
+const RELEASE_ASSET_ROOT = new URL(
+  'https://github.com/RND332/sharkord/releases/download/'
+);
+const MAX_BINARY_BYTES = 512 * 1024 * 1024;
+const zGithubRelease = z.object({
+  tag_name: z.string(),
+  assets: z.array(
+    z.object({
+      name: z.string(),
+      browser_download_url: z.url().refine((value) => {
+        const url = new URL(value);
+        return (
+          url.origin === RELEASE_ASSET_ROOT.origin &&
+          url.pathname.startsWith(RELEASE_ASSET_ROOT.pathname)
+        );
+      })
+    })
+  )
+});
+
+const readJson = async (response: Response): Promise<unknown> => {
+  const chunks: Uint8Array[] = [];
+  await readBodyWithLimit(response, {
+    maxBytes: 1024 * 1024,
+    tooLargeMessage: 'Update metadata exceeds the size limit',
+    onChunk: (chunk) => chunks.push(chunk)
+  });
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+};
 
 class Updater {
-  private bunUpdater: BunUpdater;
-  private isUpdating: boolean = false;
-  private consecutiveFailures: number = 0;
+  private bunUpdater = new BunUpdater({
+    repoOwner: 'RND332',
+    repoName: 'sharkord',
+    currentVersion: SERVER_VERSION,
+    autoStart: true
+  });
+  private isUpdating = false;
+  private isAutoUpdateStarted = false;
+  private consecutiveFailures = 0;
   private checkTimer: ReturnType<typeof setInterval> | null = null;
-
-  constructor() {
-    this.bunUpdater = new BunUpdater({
-      repoOwner: 'Sharkord',
-      repoName: 'sharkord',
-      currentVersion: SERVER_VERSION
-    });
-
-    if (!this.canUpdate()) {
-      return;
-    }
-
-    this.setupAutoUpdater();
-  }
+  private checkAbort?: AbortController;
 
   public canUpdate = (): boolean => IS_PRODUCTION && !IS_DOCKER;
-
   public getLatestVersion = async () => this.bunUpdater.getLatestVersion();
-
   public hasUpdates = async () => this.bunUpdater.hasUpdates();
+  public update = async (): Promise<void> => this.runUpdate(false);
 
-  public update = async (): Promise<void> => {
-    if (!this.canUpdate()) return;
-
-    if (this.isUpdating) {
-      logger.debug('Update check already in progress, skipping');
+  private runUpdate = async (automatic: boolean): Promise<void> => {
+    if (
+      !this.canUpdate() ||
+      this.isUpdating ||
+      (automatic && this.shouldDeferAutoUpdate())
+    )
       return;
-    }
-
     this.isUpdating = true;
-
+    this.checkAbort = new AbortController();
     try {
-      logger.info('Checking for updates...');
-
-      // if an update is available, it will be downloaded automatically
-      // the app will restart to apply the update
-      await this.bunUpdater.checkForUpdates();
-
-      if (this.consecutiveFailures > 0) {
-        logger.info(
-          'Update check recovered after %d consecutive failures',
-          this.consecutiveFailures
-        );
-      }
-
+      if (automatic) await this.installIdleUpdate();
+      else await this.bunUpdater.checkForUpdates();
       this.consecutiveFailures = 0;
     } catch (error) {
+      if (automatic && this.checkAbort.signal.aborted) return;
       this.consecutiveFailures += 1;
-
       logger.error(
         'Failed to check for updates (%d consecutive): %s',
         this.consecutiveFailures,
         getErrorMessage(error)
       );
-
       if (this.consecutiveFailures === CONSECUTIVE_FAILURES_BEFORE_ALARM) {
         logger.error(
-          'Auto-update has failed %d times in a row and this server is not updating itself. Check network access to GitHub, or disable server.autoupdate.',
+          'Auto-update has failed %d times in a row. Check GitHub access or disable server.autoupdate.',
           this.consecutiveFailures
         );
       }
     } finally {
+      this.checkAbort = undefined;
       this.isUpdating = false;
     }
   };
 
-  public stop = (): void => {
-    if (!this.checkTimer) return;
+  private fetchUpdate = async (
+    url: string,
+    timeout = 15_000
+  ): Promise<Response> => {
+    const response = await fetch(url, {
+      signal: AbortSignal.any([
+        this.checkAbort!.signal,
+        AbortSignal.timeout(timeout)
+      ])
+    });
+    if (!response.ok)
+      throw new Error(`Update download failed: HTTP ${response.status}`);
+    return response;
+  };
 
+  private installIdleUpdate = async (): Promise<void> => {
+    const release = zGithubRelease.parse(
+      await readJson(await this.fetchUpdate(RELEASE_API))
+    );
+    const manifest = release.assets.find(({ name }) => name === 'release.json');
+    if (!manifest) throw new Error('GitHub release is missing release.json');
+    const metadata = validateReleaseMetadata(
+      await readJson(await this.fetchUpdate(manifest.browser_download_url))
+    );
+    if (
+      !semver.valid(metadata.version) ||
+      !semver.valid(release.tag_name) ||
+      !semver.eq(metadata.version, release.tag_name)
+    ) {
+      throw new Error('Release tag and metadata version do not match');
+    }
+    if (
+      !semver.gt(metadata.version, SERVER_VERSION) ||
+      this.shouldDeferAutoUpdate()
+    )
+      return;
+    const artifact = metadata.artifacts.find(
+      ({ target }) => target === `${process.platform}-${process.arch}`
+    );
+    const asset = release.assets.find(({ name }) => name === artifact?.name);
+    if (
+      !artifact ||
+      !asset ||
+      !Number.isSafeInteger(artifact.size) ||
+      artifact.size <= 0 ||
+      artifact.size > MAX_BINARY_BYTES ||
+      !/^[a-f0-9]{64}$/i.test(artifact.checksum)
+    ) {
+      throw new Error('Release has no valid artifact for this platform');
+    }
+    const binary = process.execPath;
+    const directory = await fs.mkdtemp(
+      path.join(path.dirname(binary), '.sharkord-update-')
+    );
+    const staged = path.join(directory, 'binary');
+    const backup = binary + '.old';
+    let locked = false;
+    let workerStopped = false;
+    let installed = false;
+    try {
+      const response = await this.fetchUpdate(
+        asset.browser_download_url,
+        300_000
+      );
+      const writer = Bun.file(staged).writer();
+      try {
+        await readBodyWithLimit(response, {
+          maxBytes: artifact.size,
+          tooLargeMessage: 'Update binary exceeds the declared size',
+          onChunk: (chunk) => writer.write(chunk)
+        });
+      } finally {
+        await writer.end();
+      }
+      if (
+        (await fs.stat(staged)).size !== artifact.size ||
+        (await sha256File(staged)) !== artifact.checksum.toLowerCase()
+      ) {
+        throw new Error('Update binary size or SHA-256 does not match');
+      }
+      await fs.chmod(staged, (await fs.stat(binary)).mode & 0o777);
+      await fs.copyFile(binary, backup);
+      if (this.shouldDeferAutoUpdate() || !VoiceRuntime.beginIdleUpdate())
+        return;
+      locked = true;
+      workerStopped = await closeMediasoup();
+      if (this.shouldDeferAutoUpdate()) return;
+      // No await between atomic replacement and exec: new voice joins remain blocked.
+      renameSync(staged, binary);
+      installed = true;
+      try {
+        rmdirSync(directory);
+        process.execve!(
+          binary,
+          [binary, ...process.argv.slice(2)],
+          process.env
+        );
+      } catch (error) {
+        renameSync(backup, binary);
+        installed = false;
+        throw error;
+      }
+    } finally {
+      try {
+        if (workerStopped && !installed) {
+          await loadMediasoup();
+          await initVoiceRuntimes();
+        }
+      } finally {
+        if (locked) VoiceRuntime.endIdleUpdate();
+        await fs.rm(directory, { recursive: true, force: true });
+      }
+    }
+  };
+
+  private shouldDeferAutoUpdate = (): boolean =>
+    !this.isAutoUpdateStarted ||
+    !config.server.autoupdate ||
+    !!this.checkAbort?.signal.aborted ||
+    Object.values(VoiceRuntime.getVoiceMap()).some(
+      ({ users }) => Object.keys(users).length > 0
+    );
+
+  public start = (): void => {
+    // execve is Unix-only; Windows retains the explicit manual updater.
+    if (
+      !this.canUpdate() ||
+      process.platform === 'win32' ||
+      typeof process.execve !== 'function' ||
+      !config.server.autoupdate ||
+      this.checkTimer
+    )
+      return;
+    this.isAutoUpdateStarted = true;
+    this.checkTimer = setInterval(
+      this.updateAutomatically,
+      UPDATE_CHECK_INTERVAL_MS
+    );
+    this.checkTimer.unref();
+    this.updateAutomatically();
+  };
+
+  public stop = (): void => {
+    this.isAutoUpdateStarted = false;
+    this.checkAbort?.abort();
+    if (!this.checkTimer) return;
     clearInterval(this.checkTimer);
     this.checkTimer = null;
   };
 
-  private setupAutoUpdater = async (): Promise<void> => {
-    if (!config.server.autoupdate) {
+  private updateAutomatically = (): void => {
+    if (
+      !this.isAutoUpdateStarted ||
+      !this.canUpdate() ||
+      this.shouldDeferAutoUpdate()
+    )
       return;
-    }
-
-    logger.info(
-      `Auto-updater enabled, checking every ${UPDATE_CHECK_INTERVAL_MS / 1000 / 60} minutes`
-    );
-
-    await this.update();
-
-    this.checkTimer = setInterval(this.update, UPDATE_CHECK_INTERVAL_MS);
+    void this.runUpdate(true);
   };
 }
 
 const updater = new Updater();
-
 export { updater };

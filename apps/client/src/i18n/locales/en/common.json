@@ -112,7 +112,7 @@
   "andMore": "and {{count}} more",
   "typeAMessage": "Type a message...",
   "messageChannel": "Message #{{name}}",
-  "composerHint": "Press Enter to send · Shift + Enter for a new line",
+
   "attachFiles": "Attach files",
   "addEmoji": "Add emoji",
   "sendMessage": "Send message",

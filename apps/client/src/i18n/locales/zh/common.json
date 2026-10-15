@@ -126,7 +126,7 @@
   "welcomeToChannel": "欢迎来到 #{{name}}",
   "channelWelcomeDesc": "开始聊天、分享近况，或简单打个招呼。",
   "today": "今天",
-  "composerHint": "按 Enter 发送 · Shift + Enter 换行",
+
   "attachFiles": "附加文件",
   "addEmoji": "添加表情",
   "sendMessage": "发送消息"

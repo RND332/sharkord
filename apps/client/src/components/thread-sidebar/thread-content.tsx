@@ -1,14 +1,13 @@
 import { useThreadSidebar } from '@/features/app/hooks';
 import { useTypingUsersByThreadId } from '@/features/server/hooks';
 import { useThreadMessages } from '@/features/server/messages/hooks';
-import { LocalStorageKey } from '@/helpers/storage';
+
 import type { TJoinedMessage } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
 import { MessageSquareText } from 'lucide-react';
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChatInputDivider } from '../channel-view/text/chat-input-divider';
-import { DEFAULT_MAX_HEIGHT_VH } from '../channel-view/text/helpers';
+
 import { useArrowUpEdit } from '../channel-view/text/hooks/use-arrow-up-edit';
 import { useScrollController } from '../channel-view/text/hooks/use-scroll-controller';
 import { MessagesGroup } from '../channel-view/text/messages-group';
@@ -38,7 +37,6 @@ const ThreadContent = memo(
     } = useArrowUpEdit(messages);
 
     const typingUsers = useTypingUsersByThreadId(parentMessageId);
-    const composeContainerRef = useRef<HTMLDivElement>(null);
 
     const {
       containerRef,
@@ -119,14 +117,6 @@ const ThreadContent = memo(
             </>
           )}
 
-          <ChatInputDivider
-            composeContainerRef={composeContainerRef}
-            scrollToBottom={scrollToBottom}
-            isAtBottom={isAtBottom}
-            storageKey={LocalStorageKey.THREAD_INPUT_HEIGHT_VH}
-            defaultMaxHeightVh={DEFAULT_MAX_HEIGHT_VH}
-          />
-
           <ThreadCompose
             ref={composeRef}
             parentMessageId={parentMessageId}
@@ -135,9 +125,7 @@ const ThreadContent = memo(
             replyingToMessage={replyingToMessage}
             onCancelReply={handleCancelReply}
             onArrowUp={handleArrowUpEdit}
-            composeContainerRef={composeContainerRef}
-            inputStorageKey={LocalStorageKey.THREAD_INPUT_HEIGHT_VH}
-            inputDefaultMaxHeightVh={DEFAULT_MAX_HEIGHT_VH}
+
             onResize={onComposeResize}
           />
         </div>

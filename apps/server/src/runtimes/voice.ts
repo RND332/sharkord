@@ -152,6 +152,24 @@ type TDirectScreenRuntimeSession = {
 };
 
 class VoiceRuntime {
+  private static idleUpdateInProgress = false;
+
+  public static beginIdleUpdate = (): boolean => {
+    if (
+      VoiceRuntime.idleUpdateInProgress ||
+      [...voiceRuntimes.values()].some(
+        (runtime) => runtime.state.users.length > 0
+      )
+    )
+      return false;
+    VoiceRuntime.idleUpdateInProgress = true;
+    return true;
+  };
+
+  public static endIdleUpdate = (): void => {
+    VoiceRuntime.idleUpdateInProgress = false;
+  };
+
   public readonly id: number;
   private state: TChannelState = { users: [], externalStreams: {} };
   private router?: Router<AppData>;
@@ -433,6 +451,11 @@ class VoiceRuntime {
     userId: number,
     state: Pick<TVoiceUserState, 'micMuted' | 'soundMuted'>
   ) => {
+    invariant(!VoiceRuntime.idleUpdateInProgress, {
+      code: 'CONFLICT',
+      message:
+        'The server is installing an update. Retry joining voice shortly.'
+    });
     if (this.getUser(userId)) return;
 
     this.nonVoiceMediaGenerations.set(userId, ++this.nonVoiceMediaSequence);

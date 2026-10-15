@@ -6,14 +6,12 @@ export type TDialogState = {
   openDialog: Dialog | undefined;
   props: TGenericObject;
   isOpen: boolean;
-  closing: boolean;
 };
 
 const initialState: TDialogState = {
   openDialog: undefined,
   props: {},
-  isOpen: false,
-  closing: false
+  isOpen: false
 };
 
 export const dialogSlice = createSlice({
@@ -33,10 +31,6 @@ export const dialogSlice = createSlice({
       state.openDialog = undefined;
       state.props = {};
       state.isOpen = false;
-      state.closing = false;
-    },
-    setClosing: (state, action: PayloadAction<boolean>) => {
-      state.closing = action.payload;
     }
   }
 });

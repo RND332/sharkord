@@ -8,7 +8,7 @@ import {
 import { useMessages } from '@/features/server/messages/hooks';
 import { SoundType } from '@/features/server/types';
 import { playSound } from '@/helpers/sounds';
-import { LocalStorageKey } from '@/helpers/storage';
+
 import { useTypingSignal } from '@/hooks/use-typing-signal';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
@@ -22,11 +22,10 @@ import {
 import { Spinner } from '@sharkord/ui';
 import { format, isSameDay, isToday } from 'date-fns';
 import { ArrowDown, Hash } from 'lucide-react';
-import { Fragment, memo, useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ChatInputDivider } from './chat-input-divider';
-import { DEFAULT_MAX_HEIGHT_VH } from './helpers';
+
 import { useArrowUpEdit } from './hooks/use-arrow-up-edit';
 import { useScrollController } from './hooks/use-scroll-controller';
 import { useScrollToJumpTarget } from './hooks/use-scroll-to-jump-target';
@@ -75,7 +74,7 @@ const TextChannel = memo((props: TChannelProps) => {
     TJoinedMessage | undefined
   >();
   const typingUsers = useTypingUsersByChannelId(channelId);
-  const composeContainerRef = useRef<HTMLDivElement>(null);
+
   const { activeThreadMessageId } = useThreadSidebar();
   const {
     composeRef,
@@ -274,17 +273,9 @@ const TextChannel = memo((props: TChannelProps) => {
         </button>
       )}
 
-      <ChatInputDivider
-        composeContainerRef={composeContainerRef}
-        scrollToBottom={scrollToBottom}
-        isAtBottom={isAtBottom}
-        storageKey={LocalStorageKey.CHAT_INPUT_HEIGHT_VH}
-        defaultMaxHeightVh={DEFAULT_MAX_HEIGHT_VH}
-      />
-
       <MessageCompose
         ref={composeRef}
-        composeContainerRef={composeContainerRef}
+
         channelId={channelId}
         message={newMessage}
         onMessageChange={setNewMessageHandler}

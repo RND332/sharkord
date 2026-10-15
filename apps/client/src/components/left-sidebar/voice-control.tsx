@@ -1,6 +1,4 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
-import { Dialog } from '@/components/dialogs/dialogs';
-import { openDialog } from '@/features/dialogs/actions';
 import {
   useChannelById,
   useCurrentVoiceChannelId
@@ -30,6 +28,7 @@ import { toast } from 'sonner';
 import { ExternalAudioStreams } from '../channel-view/voice/external-audio-streams';
 import { VoiceAudioStreams } from '../channel-view/voice/voice-audio-streams';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
+import { StatsPopover } from './stats-popover';
 
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
@@ -100,10 +99,6 @@ const VoiceControl = memo(() => {
     }
   }, [devices.voiceOnlyMode, setVoiceOnlyMode, t]);
 
-  const openVoiceDiagnostics = useCallback(() => {
-    openDialog(Dialog.VOICE_DEBUG);
-  }, []);
-
   const pluginSlotProps = useMemo(
     () => (voiceChannelId ? { channelId: voiceChannelId } : undefined),
     [voiceChannelId]
@@ -117,22 +112,23 @@ const VoiceControl = memo(() => {
     <>
       <VoiceAudioStreams channelId={voiceChannelId} />
       <ExternalAudioStreams channelId={voiceChannelId} />
-      <div className="h-[78px] shrink-0 overflow-hidden bg-rail">
-        <div className="flex h-[46px] items-center justify-between gap-1.5 px-2.5 py-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'flex size-6 shrink-0 items-center justify-center rounded-md p-0 hover:bg-transparent',
-              connectionInfo.color,
-              connectionInfo.iconBackground
-            )}
-            onClick={openVoiceDiagnostics}
-            title={t('voiceDiagnostics')}
-            aria-label={t('voiceDiagnostics')}
-          >
-            {connectionInfo.icon}
-          </Button>
+      <div className="h-24 shrink-0 overflow-hidden bg-rail">
+        <div className="flex h-[52px] items-center justify-between gap-2 px-2.5 py-1">
+          <StatsPopover>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-8 shrink-0 rounded-md p-2 hover:bg-transparent',
+                connectionInfo.color,
+                connectionInfo.iconBackground
+              )}
+              title={t('transportStats')}
+              aria-label={t('transportStats')}
+            >
+              {connectionInfo.icon}
+            </Button>
+          </StatsPopover>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-px">
             <span
               className={cn(
@@ -149,7 +145,7 @@ const VoiceControl = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-[22px] shrink-0 rounded text-muted-foreground hover:bg-raised hover:text-foreground"
+            className="size-8 shrink-0 rounded p-[7px] text-muted-foreground hover:bg-raised hover:text-foreground"
             onClick={() => leaveVoice({ reason: 'user_disconnect_button' })}
             title={t('disconnectVoice')}
           >
@@ -157,7 +153,7 @@ const VoiceControl = memo(() => {
           </Button>
         </div>
 
-        <div className="flex h-8 items-center gap-1.25 px-2.5 pb-1.25 pt-0.75">
+        <div className="flex h-11 items-center gap-2 px-2.5 pb-2 pt-1">
           <PluginSlotRenderer
             slotId={PluginSlot.VOICE_CONTROLS}
             props={pluginSlotProps}
@@ -166,7 +162,7 @@ const VoiceControl = memo(() => {
             variant="ghost"
             size="icon"
             className={cn(
-              'h-6 min-w-0 flex-1 rounded-md bg-raised text-foreground hover:bg-raised/80',
+              'h-8 min-w-0 flex-1 rounded-md bg-raised p-1.5 text-foreground hover:bg-raised/80',
               ownVoiceState.webcamEnabled && 'text-success'
             )}
             onClick={toggleWebcam}
@@ -191,7 +187,7 @@ const VoiceControl = memo(() => {
               variant="ghost"
               size="icon"
               className={cn(
-                'h-6 min-w-0 flex-1 rounded-md bg-raised text-foreground hover:bg-raised/80',
+                'h-8 min-w-0 flex-1 rounded-md bg-raised p-1.5 text-foreground hover:bg-raised/80',
                 ownVoiceState.sharingScreen && 'text-success'
               )}
               onClick={toggleScreenShare}
@@ -217,7 +213,7 @@ const VoiceControl = memo(() => {
             variant="ghost"
             size="icon"
             className={cn(
-              'h-6 min-w-0 flex-1 rounded-md bg-raised hover:bg-raised/80',
+              'h-8 min-w-0 flex-1 rounded-md bg-raised p-1.5 hover:bg-raised/80',
               devices.voiceOnlyMode
                 ? 'text-success hover:!text-success'
                 : 'text-foreground'

@@ -30,8 +30,9 @@ const LanguageSwitcher = memo(
     return (
       <Select value={i18n.language} onValueChange={handleChange}>
         <SelectTrigger
+          size="sm"
           className={cn(
-            'w-auto gap-1 px-2',
+            'w-auto gap-2',
             variant === 'full' && 'w-36',
             className
           )}

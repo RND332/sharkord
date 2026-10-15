@@ -13,6 +13,16 @@ const systemChromium =
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    entries: ['src/visual-tests/**/*.vrt.ts'],
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'embla-carousel-react',
+      'filesize'
+    ]
+  },
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src')

@@ -5,9 +5,7 @@ import {
   isValidElement,
   memo,
   useCallback,
-  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode
 } from 'react';
@@ -24,7 +22,6 @@ const OPTIMAL_CELL_ASPECT_RATIO = 1.5;
 
 const VoiceGrid = memo(
   ({ children, pinnedCardId, tileAspectRatio, className }: TVoiceGridProps) => {
-    const containerRef = useRef<HTMLDivElement>(null);
     const [containerSize, setContainerSize] = useState<{
       width: number;
       height: number;
@@ -36,8 +33,7 @@ const VoiceGrid = memo(
       setHideParticipants((hidden) => !hidden);
     }, []);
 
-    useLayoutEffect(() => {
-      const element = containerRef.current;
+    const containerRef = useCallback((element: HTMLDivElement | null) => {
       if (!element) return;
 
       const updateSize = () => {

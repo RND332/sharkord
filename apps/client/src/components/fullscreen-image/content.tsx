@@ -17,7 +17,6 @@ const FullScreenImage = memo(
     const { t } = useTranslation('common');
 
     const [open, setOpen] = useState(false);
-    const [visible, setVisible] = useState(false);
 
     const imgRef = useRef<HTMLImageElement>(null);
     const scaleRef = useRef(0.8);
@@ -38,17 +37,12 @@ const FullScreenImage = memo(
       posRef.current = { x: 0, y: 0 };
 
       setOpen(true);
-
-      setTimeout(() => setVisible(true), 10);
     }, []);
 
     const onCloseClick = useCallback(() => {
-      setVisible(false);
-
       scaleRef.current = 1;
       posRef.current = { x: 0, y: 0 };
-
-      setTimeout(() => setOpen(false), 300);
+      setOpen(false);
     }, []);
 
     const handleMouseDown = useCallback(
@@ -151,11 +145,7 @@ const FullScreenImage = memo(
       ? createPortal(
           <>
             <div
-              className={cn(
-                'fixed inset-0 flex justify-center items-center backdrop-blur-sm bg-black/30 z-50 transition-opacity duration-300',
-                visible ? 'opacity-100' : 'opacity-0',
-                open ? 'pointer-events-auto' : 'pointer-events-none'
-              )}
+              className="fixed inset-0 flex justify-center items-center backdrop-blur-sm bg-black/30 z-50"
               onClick={onClickOutside}
             >
               <Component

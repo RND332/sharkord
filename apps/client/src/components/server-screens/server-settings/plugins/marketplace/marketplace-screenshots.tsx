@@ -16,7 +16,9 @@ const MarketplaceScreenshots = memo(
     const [emblaRef, emblaApi] = useEmblaCarousel({
       align: 'start',
       loop: false,
-      slidesToScroll: 1
+      slidesToScroll: 1,
+      duration: 0,
+      watchDrag: false
     });
 
     const [canScrollPrev, setCanScrollPrev] = useState(false);

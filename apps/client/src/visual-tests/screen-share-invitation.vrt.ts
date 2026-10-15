@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   ownId: 1,
   viewing: false,
   hasStream: false,
+  visibilityListeners: [] as (() => void)[],
   voiceOnlyMode: false,
   viewDemo: vi.fn(async (_id: number) => {}),
   stopViewingDemo: vi.fn(async (_id: number) => {})
@@ -18,14 +19,28 @@ const state = vi.hoisted(() => ({
 vi.mock('@/components/devices-provider/hooks/use-devices', () => ({
   useDevices: () => ({ devices: { voiceOnlyMode: state.voiceOnlyMode } })
 }));
-vi.mock('@/components/voice-provider/demo-visibility-context', () => ({
-  useDemoVisibility: () => ({
-    isViewingDemo: () => state.viewing,
-    viewDemo: state.viewDemo,
-    stopViewingDemo: state.stopViewingDemo,
-    viewedRemoteDemos: state.viewing ? { 2: true } : {}
-  })
-}));
+vi.mock('@/components/voice-provider/demo-visibility-context', async () => {
+  const { useSyncExternalStore } = await import('react');
+  const subscribe = (listener: () => void) => {
+    state.visibilityListeners.push(listener);
+    return () => {
+      state.visibilityListeners = state.visibilityListeners.filter(
+        (entry) => entry !== listener
+      );
+    };
+  };
+  return {
+    useDemoVisibility: () => {
+      const viewing = useSyncExternalStore(subscribe, () => state.viewing);
+      return {
+        isViewingDemo: () => viewing,
+        viewDemo: state.viewDemo,
+        stopViewingDemo: state.stopViewingDemo,
+        viewedRemoteDemos: viewing ? { 2: true } : {}
+      };
+    }
+  };
+});
 vi.mock('@/features/server/users/hooks', () => ({
   useUserById: () => ({ id: 2, name: 'aria' }),
   useOwnUserId: () => state.ownId
@@ -100,6 +115,7 @@ const render = async (channel = false) => {
     document.body.append(host);
     root = createRoot(host);
   }
+  state.visibilityListeners.forEach((listener) => listener());
   root.render(
     channel
       ? createElement(VoiceChannel, { channelId: 2 })
@@ -122,12 +138,75 @@ afterEach(() => {
   state.ownId = 1;
   state.viewing = false;
   state.hasStream = false;
+  state.visibilityListeners = [];
   state.voiceOnlyMode = false;
   vi.useRealTimers();
   vi.clearAllMocks();
   state.viewDemo.mockImplementation(async () => {
     state.viewing = true;
   });
+});
+
+test('watching and stopping a stream keep the same card shell and caption geometry', async () => {
+  await render();
+  const beforeCaption = page
+    .getByText("aria's screen", { exact: true })
+    .element();
+  const beforeTile = beforeCaption.parentElement!.parentElement!;
+  const beforeRect = beforeTile.getBoundingClientRect();
+  const beforeStyle = getComputedStyle(beforeTile);
+  const radius = beforeStyle.borderRadius;
+  const border = beforeStyle.borderColor;
+  const captionRect = beforeCaption.getBoundingClientRect();
+  state.viewing = true;
+  state.hasStream = true;
+  await render();
+  const afterCaption = page
+    .getByText("aria's screen", { exact: true })
+    .element();
+  const afterTile = afterCaption.parentElement!.parentElement!;
+  expect(getComputedStyle(afterTile).borderRadius).toBe(radius);
+  expect(getComputedStyle(afterTile).borderColor).toBe(border);
+  expect(afterTile.getBoundingClientRect().width).toBe(beforeRect.width);
+  expect(afterTile.getBoundingClientRect().height).toBe(beforeRect.height);
+  expect(afterCaption.getBoundingClientRect().x).toBe(captionRect.x);
+  expect(afterCaption.getBoundingClientRect().y).toBe(captionRect.y);
+  state.viewing = false;
+  await render();
+  const stoppedCaption = page
+    .getByText("aria's screen", { exact: true })
+    .element();
+  expect(stoppedCaption.getBoundingClientRect().y).toBe(captionRect.y);
+  expect(document.querySelector('video')).toBeNull();
+});
+
+test('starting and stopping viewing does not resize the channel tiles', async () => {
+  await render(true);
+  const tile = document.querySelector('[data-screen-share-card]')!;
+  const stage = tile.closest('[class~="group/voice-stage"]')!;
+  (stage.parentElement as HTMLElement).style.cssText =
+    'position:fixed;left:0;top:0;width:1292px;height:720px';
+  await render(true);
+  const initial = document
+    .querySelector('[data-screen-share-card]')!
+    .getBoundingClientRect();
+  state.viewing = true;
+  state.hasStream = true;
+  await render(true);
+  const watched = document
+    .querySelector('[data-screen-share-card]')!
+    .getBoundingClientRect();
+  expect(watched.width).toBe(initial.width);
+  expect(watched.height).toBe(initial.height);
+  expect(watched.x).toBe(initial.x);
+  expect(watched.y).toBe(initial.y);
+  state.viewing = false;
+  await render(true);
+  const stopped = document
+    .querySelector('[data-screen-share-card]')!
+    .getBoundingClientRect();
+  expect(stopped.width).toBe(initial.width);
+  expect(stopped.height).toBe(initial.height);
 });
 
 test('channel includes both the normal participant and a separate invitation before watching', async () => {

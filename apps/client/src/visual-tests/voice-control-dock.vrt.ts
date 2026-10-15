@@ -116,6 +116,7 @@ vi.mock('react-i18next', () => ({
         voiceDisconnected: 'Voice disconnected',
         disconnectVoice: 'Disconnect voice',
         voiceDiagnostics: 'Voice diagnostics',
+        transportStats: 'Transport stats',
         'settings:voiceOnlyModeLabel': 'Voice-only mode',
         'settings:voiceOnlyModeDesc':
           'Send and receive microphone audio only; cameras, screen sharing, and external media are disabled.',
@@ -157,7 +158,7 @@ const render = async (remount = false) => {
   document.documentElement.classList.add('dark');
   if (!root) {
     host = document.createElement('div');
-    host.style.cssText = 'position:fixed;left:0;top:0;width:252px;height:78px';
+    host.style.cssText = 'position:fixed;left:0;top:0;width:252px;height:96px';
     document.body.append(host);
     root = createRoot(host);
   }
@@ -243,7 +244,7 @@ test('eye toggles the existing mode after the server accepts and preserves devic
     );
   expect(modeButton.element().className).toContain('text-success');
   const activeColor = getComputedStyle(
-    page.getByRole('button', { name: 'Voice diagnostics' }).element()
+    page.getByRole('button', { name: 'Transport stats' }).element()
   ).color;
   await vi.waitFor(() =>
     expect(getComputedStyle(modeButton.element()).color).toBe(activeColor)
@@ -500,22 +501,53 @@ test('a rejected update leaves local mode unchanged and reports the error', asyn
   await expect.element(modeButton).toBeEnabled();
 });
 
-test('Wi-Fi connection badge opens voice diagnostics directly by click and keyboard', async () => {
+test('Wi-Fi connection badge opens transport stats by click and keyboard', async () => {
   await render();
-  const diagnosticsButton = page.getByRole('button', {
-    name: 'Voice diagnostics',
+  const diagnosticsTrigger = page.getByRole('button', {
+    name: 'Transport stats',
     exact: true
   });
-  await diagnosticsButton.click();
 
-  expect(state.openDialog).toHaveBeenCalledTimes(1);
-  expect(state.openDialog).toHaveBeenCalledWith(Dialog.VOICE_DEBUG);
-  state.openDialog.mockClear();
+  await diagnosticsTrigger.click();
+  await expect
+    .element(page.getByRole('heading', { name: 'Transport stats' }))
+    .toBeInTheDocument();
+  expect(state.openDialog).not.toHaveBeenCalled();
 
-  await diagnosticsButton.element().focus();
+  await userEvent.keyboard('{Escape}');
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(diagnosticsTrigger.element())
+  );
   await userEvent.keyboard('{Enter}');
+  await expect
+    .element(page.getByRole('heading', { name: 'Transport stats' }))
+    .toBeInTheDocument();
+  expect(state.openDialog).not.toHaveBeenCalled();
+});
+
+test('advanced diagnostics closes transport stats before opening the dialog', async () => {
+  await render();
+  const diagnosticsTrigger = page.getByRole('button', {
+    name: 'Transport stats',
+    exact: true
+  });
+  await diagnosticsTrigger.click();
+  await expect
+    .element(page.getByRole('heading', { name: 'Transport stats' }))
+    .toBeInTheDocument();
+
+  await page
+    .getByRole('button', { name: 'Voice diagnostics', exact: true })
+    .click();
+
   expect(state.openDialog).toHaveBeenCalledTimes(1);
   expect(state.openDialog).toHaveBeenCalledWith(Dialog.VOICE_DEBUG);
+  await expect
+    .element(page.getByRole('heading', { name: 'Transport stats' }))
+    .not.toBeInTheDocument();
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(diagnosticsTrigger.element())
+  );
 });
 
 test('voice-only controls preserve separate camera and screen-share permission gates', async () => {
@@ -541,14 +573,41 @@ test('voice-only controls preserve separate camera and screen-share permission g
     .toBeDisabled();
 });
 
-test('dock keeps its original footprint and removes the upper-row activity control', async () => {
+test('voice dock gives every icon padded hit targets without clipping', async () => {
+  await render();
+  const wifi = page
+    .getByRole('button', { name: 'Transport stats', exact: true })
+    .element();
+  const disconnect = page
+    .getByRole('button', { name: 'Disconnect voice', exact: true })
+    .element();
+  expect(wifi.getBoundingClientRect().width).toBe(32);
+  expect(wifi.getBoundingClientRect().height).toBe(32);
+  expect(getComputedStyle(wifi).padding).toBe('8px');
+  expect(disconnect.getBoundingClientRect().width).toBe(32);
+  expect(disconnect.getBoundingClientRect().height).toBe(32);
+  expect(getComputedStyle(disconnect).padding).toBe('7px');
+  for (const name of [
+    'Turn on camera',
+    'Start screen share',
+    'Voice-only mode'
+  ]) {
+    const button = page.getByRole('button', { name, exact: true }).element();
+    const icon = button.querySelector('svg')!;
+    expect(button.getBoundingClientRect().height).toBe(32);
+    expect(getComputedStyle(button).paddingTop).toBe('6px');
+    expect(icon.getBoundingClientRect().height).toBe(20);
+  }
+});
+
+test('dock has room for padded controls and removes the upper-row activity control', async () => {
   await render();
 
   const dock = host?.firstElementChild as HTMLDivElement;
   const [topRow, bottomRow] = Array.from(dock.children) as HTMLDivElement[];
-  expect(dock.getBoundingClientRect().height).toBe(78);
-  expect(topRow.getBoundingClientRect().height).toBe(46);
-  expect(bottomRow.getBoundingClientRect().height).toBe(32);
+  expect(dock.getBoundingClientRect().height).toBe(96);
+  expect(topRow.getBoundingClientRect().height).toBe(52);
+  expect(bottomRow.getBoundingClientRect().height).toBe(44);
   expect(topRow.children).toHaveLength(3);
   expect(dock.querySelector('.lucide-activity')).toBeNull();
   expect(dock.querySelectorAll('button')).toHaveLength(5);

@@ -127,7 +127,7 @@
   "welcomeToChannel": "Добро пожаловать в #{{name}}",
   "channelWelcomeDesc": "Начните разговор, поделитесь новостями или просто поздоровайтесь.",
   "today": "Сегодня",
-  "composerHint": "Enter — отправить · Shift + Enter — новая строка",
+
   "attachFiles": "Прикрепить файлы",
   "addEmoji": "Добавить эмодзи",
   "sendMessage": "Отправить сообщение"

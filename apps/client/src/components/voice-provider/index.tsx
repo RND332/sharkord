@@ -67,7 +67,6 @@ import {
   setVoiceControlsBridge
 } from './controls-bridge';
 import { DemoVisibilityProvider } from './demo-visibility-context';
-import { FloatingPinnedCard } from './floating-pinned-card';
 import {
   getRemoteConsumerTypeKey,
   getScreenShareSimulcastEncodings,
@@ -2128,15 +2127,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         <VolumeControlProvider>
           <RemoteWebcamVisibilityProvider>
             <DemoVisibilityProvider>
-              <div className="relative">
-                <FloatingPinnedCard
-                  remoteUserStreams={remoteUserStreams}
-                  externalStreams={externalStreams}
-                  localScreenShareStream={localScreenShareStream}
-                  localVideoStream={localVideoStream}
-                />
-                {children}
-              </div>
+              <div className="relative">{children}</div>
             </DemoVisibilityProvider>
           </RemoteWebcamVisibilityProvider>
         </VolumeControlProvider>

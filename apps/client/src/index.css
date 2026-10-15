@@ -4,6 +4,15 @@
 @source "../../../packages/ui/src";
 
 @layer base {
+  *,
+  ::before,
+  ::after,
+  ::backdrop {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;

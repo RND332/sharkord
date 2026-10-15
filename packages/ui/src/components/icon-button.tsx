@@ -16,11 +16,11 @@ const iconButtonVariants = cva(
         ghost: 'text-muted-foreground hover:text-foreground'
       },
       size: {
-        default: '[&_svg]:size-5',
-        xs: '[&_svg]:size-3',
-        sm: '[&_svg]:size-4',
-        lg: '[&_svg]:size-6',
-        xl: '[&_svg]:size-7'
+        default: 'size-9 p-2 [&_svg]:size-5',
+        xs: 'size-5 p-1 [&_svg]:size-3',
+        sm: 'size-7 p-1.5 [&_svg]:size-4',
+        lg: 'size-10 p-2 [&_svg]:size-6',
+        xl: 'size-11 p-2 [&_svg]:size-7'
       }
     },
     defaultVariants: {

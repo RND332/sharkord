@@ -39,6 +39,11 @@ type TScreenShareCardProps = {
   isAnyCardPinned?: boolean;
 };
 
+const SCREEN_SHARE_SHELL_CLASS =
+  'relative flex size-full items-center justify-center overflow-hidden rounded-[12px] border border-line';
+const SCREEN_SHARE_CAPTION_CLASS =
+  'absolute inset-x-0 bottom-0 flex h-[34px] items-center gap-2 px-2.5';
+
 const ScreenShareCard = memo(
   ({
     userId,
@@ -203,10 +208,7 @@ const ScreenShareCard = memo(
       return (
         <div
           data-screen-share-card
-          className={cn(
-            'relative flex size-full items-center justify-center overflow-hidden rounded-[12px] border border-line bg-nav',
-            className
-          )}
+          className={cn(SCREEN_SHARE_SHELL_CLASS, 'bg-nav', className)}
         >
           <button
             type="button"
@@ -230,7 +232,7 @@ const ScreenShareCard = memo(
               Unable to watch stream. Try again.
             </p>
           )}
-          <div className="absolute bottom-2.5 left-2.5 flex min-w-0 max-w-[calc(100%-20px)] items-center gap-2 text-foreground">
+          <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'text-foreground')}>
             <Monitor aria-hidden="true" className="size-[18px] shrink-0" />
             <p className="truncate text-[13px] font-medium leading-[17px]">
               {user.name}'s screen
@@ -245,13 +247,11 @@ const ScreenShareCard = memo(
     return (
       <div
         ref={containerRef}
+        data-screen-share-card
         className={cn(
-          'relative bg-black group/screen-share-card',
-          'flex items-center justify-center',
-          'size-full',
-          isFullscreen
-            ? 'rounded-none border-none'
-            : 'rounded overflow-hidden border border-border',
+          SCREEN_SHARE_SHELL_CLASS,
+          'bg-black group/screen-share-card',
+          isFullscreen && 'rounded-none border-none',
           className
         )}
         onWheel={handleWheel}
@@ -349,7 +349,7 @@ const ScreenShareCard = memo(
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 flex h-[34px] items-center gap-2 bg-[#050505] px-2.5">
+        <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'bg-[#050505]')}>
           <Monitor className="size-[18px] shrink-0 text-white" />
           <p className="truncate text-[13px] font-medium leading-[17px] text-white">
             {user.name}'s screen

@@ -99,7 +99,7 @@ warmImportsWhenIdle([
 ]);
 
 const DialogsProvider = memo(() => {
-  const { isOpen, openDialog, props, closing } = useDialogInfo();
+  const { isOpen, openDialog, props } = useDialogInfo();
   if (!openDialog || !DialogsMap[openDialog]) return null;
 
   const DialogComponent = DialogsMap[openDialog];
@@ -109,7 +109,7 @@ const DialogsProvider = memo(() => {
         DialogComponent as unknown as ComponentType<Record<string, unknown>>,
         {
           ...props,
-          isOpen: isOpen && !closing,
+          isOpen,
           close: closeDialogs
         }
       )}

@@ -3,7 +3,7 @@ import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import type { TTiptapInputHandle } from '@/components/tiptap-input';
 import { TiptapInput } from '@/components/tiptap-input';
 import type { TEmojiItem } from '@/components/tiptap-input/helpers';
-import { LocalStorageKey } from '@/helpers/storage';
+
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
 import { useChannelById } from '@/features/server/channels/hooks';
@@ -35,16 +35,14 @@ import {
   useMemo,
   useRef,
   useState,
-  type Ref,
-  type RefObject
+  type Ref
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { DEFAULT_MAX_HEIGHT_VH } from '../channel-view/text/helpers';
+
 import { useMessageAuthorName } from '../channel-view/text/hooks/use-message-author-name';
 import { PreviewFile } from '../channel-view/text/preview-file';
 import { UsersTypingIndicator } from '../channel-view/text/users-typing';
-import { useFileAwareHeight } from './hooks';
 
 type TMessageComposeProps = {
   channelId: number;
@@ -54,9 +52,7 @@ type TMessageComposeProps = {
   onTyping: () => void;
   typingUsers: TJoinedPublicUser[];
   showPluginSlot?: boolean;
-  composeContainerRef?: RefObject<HTMLDivElement | null>;
-  inputStorageKey?: LocalStorageKey;
-  inputDefaultMaxHeightVh?: number;
+
   replyTarget?: TReplyTarget;
   onCancelReply?: () => void;
   onArrowUp?: () => void;
@@ -79,9 +75,7 @@ const MessageCompose = memo(
     onTyping,
     typingUsers,
     showPluginSlot = false,
-    composeContainerRef,
-    inputStorageKey = LocalStorageKey.CHAT_INPUT_HEIGHT_VH,
-    inputDefaultMaxHeightVh = DEFAULT_MAX_HEIGHT_VH,
+
     replyTarget,
     onCancelReply,
     onArrowUp,
@@ -91,8 +85,7 @@ const MessageCompose = memo(
   }: TMessageComposeProps) => {
     const { t } = useTranslation('common');
     const sendingRef = useRef(false);
-    const internalContainerRef = useRef<HTMLDivElement | null>(null);
-    const containerRef = composeContainerRef ?? internalContainerRef;
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const tiptapRef = useRef<TTiptapInputHandle>(null);
     const [sending, setSending] = useState(false);
     const can = useCan();
@@ -148,14 +141,6 @@ const MessageCompose = memo(
       fileInputProps
     } = useUploadFiles(channelId, containerRef, !canSendMessages);
 
-    useFileAwareHeight({
-      containerRef,
-      composeContainerRef,
-      displayItems,
-      inputStorageKey,
-      inputDefaultMaxHeightVh
-    });
-
     useImperativeHandle(
       ref,
       () => ({ clearFiles, focus: () => tiptapRef.current?.focus() }),
@@ -187,27 +172,8 @@ const MessageCompose = memo(
 
       if (success) {
         clearFiles();
-
-        // if we were pinned down to the min then unpin now
-        const el = containerRef.current;
-
-        if (el?.dataset.pendingUnpinOnSend) {
-          el.style.height = '';
-          el.style.maxHeight = `${inputDefaultMaxHeightVh}vh`;
-
-          delete el.dataset.pendingUnpinOnSend;
-        }
       }
-    }, [
-      message,
-      files,
-      canSendMessages,
-      onSend,
-      clearFiles,
-      containerRef,
-      inputDefaultMaxHeightVh,
-      t
-    ]);
+    }, [message, files, canSendMessages, onSend, clearFiles, t]);
 
     const focusInputOnBackdropClick = useCallback(
       (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -260,7 +226,7 @@ const MessageCompose = memo(
     return (
       <div
         ref={containerRef}
-        className="compose-container relative flex min-h-[100px] shrink-0 flex-col gap-2 bg-canvas px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[10px]"
+        className="compose-container relative flex max-h-[35vh] shrink-0 flex-col gap-2 bg-canvas px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[10px]"
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
 
@@ -271,7 +237,7 @@ const MessageCompose = memo(
           <Button
             size="icon"
             variant="ghost"
-            className="mt-4 size-5 shrink-0 sticky top-4"
+            className="mt-2.5 size-8 shrink-0 p-1.5 sticky top-2.5"
             aria-label={t('attachFiles')}
             disabled={uploading || !canUploadFiles}
             onClick={openFileDialog}
@@ -288,11 +254,11 @@ const MessageCompose = memo(
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-6 w-6 shrink-0"
+                  className="size-6 shrink-0 p-[5px]"
                   onClick={onCancelReply}
                   title={t('cancelReply')}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="size-3.5" />
                 </Button>
               </div>
             )}
@@ -335,7 +301,7 @@ const MessageCompose = memo(
           </div>
 
           <input {...fileInputProps} />
-          <div className="flex items-start pt-4 shrink-0 sticky top-0">
+          <div className="flex items-start gap-2 pt-2.5 shrink-0 sticky top-0">
             {showPluginSlot && (
               <PluginSlotRenderer
                 slotId={PluginSlot.CHAT_ACTIONS}
@@ -347,7 +313,7 @@ const MessageCompose = memo(
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-5"
+                className="size-8 p-1.5"
                 aria-label={t('addEmoji')}
                 disabled={uploading || !canSendMessages}
               >
@@ -358,7 +324,7 @@ const MessageCompose = memo(
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-5 ml-3"
+                className="size-8 p-2"
                 aria-label={t('sendMessage')}
                 onClick={handleSend}
                 disabled={uploading || sending || !canSendMessages}
@@ -368,9 +334,6 @@ const MessageCompose = memo(
             )}
           </div>
         </div>
-        <p className="h-[18px] shrink-0 text-[13px] leading-[18px] text-subtle-foreground">
-          {t('composerHint')}
-        </p>
       </div>
     );
   }

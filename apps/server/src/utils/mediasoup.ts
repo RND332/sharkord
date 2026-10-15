@@ -75,4 +75,21 @@ const loadMediasoup = async () => {
   }
 };
 
-export { loadMediasoup, mediaSoupWorker, webRtcServer, webRtcServerListenInfo };
+const closeMediasoup = async (): Promise<boolean> => {
+  const worker = mediaSoupWorker;
+  if (!worker || worker.subprocessClosed) return false;
+  const closed = new Promise<void>((resolve) =>
+    worker.once('subprocessclose', resolve)
+  );
+  worker.close();
+  await closed;
+  return true;
+};
+
+export {
+  closeMediasoup,
+  loadMediasoup,
+  mediaSoupWorker,
+  webRtcServer,
+  webRtcServerListenInfo
+};

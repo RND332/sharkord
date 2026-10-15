@@ -2,7 +2,6 @@ export enum LocalStorageKey {
   IDENTITY = 'sharkord-identity',
   VITE_UI_THEME = 'vite-ui-theme',
   DEVICES_SETTINGS = 'sharkord-devices-settings',
-  FLOATING_CARD_POSITION = 'sharkord-floating-card-position',
   RIGHT_SIDEBAR_STATE = 'sharkord-right-sidebar-state',
   VOICE_CHAT_SIDEBAR_STATE = 'sharkord-voice-chat-sidebar-state',
   VOICE_CHAT_SIDEBAR_CHANNEL_ID = 'sharkord-voice-chat-sidebar-channel-id',
@@ -25,8 +24,7 @@ export enum LocalStorageKey {
   BROWSER_NOTIFICATIONS = 'sharkord-browser-notifications',
   BROWSER_NOTIFICATIONS_FOR_MENTIONS = 'sharkord-browser-notifications-for-mentions',
   BROWSER_NOTIFICATIONS_FOR_DMS = 'sharkord-browser-notifications-for-dms',
-  CHAT_INPUT_HEIGHT_VH = 'sharkord-chat-input-height-vh',
-  THREAD_INPUT_HEIGHT_VH = 'sharkord-thread-input-height-vh',
+
   BROWSER_NOTIFICATIONS_FOR_REPLIES = 'sharkord-browser-notifications-for-replies',
   LANGUAGE = 'sharkord-language',
   PLUGIN_SLOT_DEBUG = 'sharkord-plugin-slot-debug',

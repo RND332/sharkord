@@ -14,7 +14,7 @@ import { config, SERVER_PRIVATE_IP } from './config';
 import { loadCrons } from './crons';
 import { loadDb } from './db';
 import { getHost } from './helpers/get-host';
-import './helpers/updater';
+import { updater } from './helpers/updater';
 import { pluginManager } from './plugins';
 import { enqueueActivityLog } from './queues/activity-log';
 import { initVoiceRuntimes } from './runtimes';
@@ -27,6 +27,7 @@ await pluginManager.init();
 await createServers();
 await loadMediasoup();
 await initVoiceRuntimes();
+updater.start();
 await loadCrons();
 
 const host = getHost(

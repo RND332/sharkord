@@ -7,7 +7,7 @@ import { ensureServerDirs } from './helpers/ensure-server-dirs';
 import { getPrivateIp, getPublicIp } from './helpers/network';
 import { CONFIG_INI_PATH } from './helpers/paths';
 import { deepMerge } from './utils/deep-merge';
-import { IS_DEVELOPMENT, IS_TEST } from './utils/env';
+import { IS_DEVELOPMENT, IS_DOCKER, IS_PRODUCTION, IS_TEST } from './utils/env';
 
 const deepFreeze = <T>(value: T): T => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -127,7 +127,7 @@ const defaultConfig: TConfig = {
     host: '',
     port: 4991,
     debug: IS_DEVELOPMENT,
-    autoupdate: false,
+    autoupdate: IS_PRODUCTION && !IS_DOCKER && !IS_TEST,
     backupDatabase: true,
     maxRequestBodyBytes: 256 * 1024,
     allowedOrigins: ['*'],

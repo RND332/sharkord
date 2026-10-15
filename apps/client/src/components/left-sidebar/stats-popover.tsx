@@ -86,6 +86,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
   const { t } = useTranslation('sidebar');
   const transportStats = useVoiceStats();
   const { devices } = useDevices();
+  const [isOpen, setIsOpen] = useState(false);
   const [showSimulcastLayers, setShowSimulcastLayers] = useState(false);
 
   const {
@@ -137,11 +138,12 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
   }, [screenShare?.codec]);
 
   const handleOpenDiagnostics = useCallback(() => {
+    setIsOpen(false);
     openDialog(Dialog.VOICE_DEBUG);
   }, []);
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent side="top" align="start" className="p-0">
         <div className="w-72 p-3 text-xs">

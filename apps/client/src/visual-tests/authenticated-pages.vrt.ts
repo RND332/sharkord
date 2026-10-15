@@ -577,10 +577,14 @@ test('complete channel history shows a Paper welcome and date context for clock 
   expect(timestamp.getAttribute('datetime')).toBe('2026-10-09T09:40:00.000Z');
 });
 
-test('empty composer uses Paper geometry and keeps upload on the left', async () => {
+test('composer has no resize handle or hint and grows naturally with multiline input', async () => {
   const composer = document.querySelector<HTMLElement>('.compose-container')!;
   const row = composer.querySelector<HTMLElement>('.compose-scroll-row')!;
-  expect(composer.getBoundingClientRect().height).toBe(104);
+  await expect
+    .element(page.getByRole('separator', { name: 'Resize chat input' }))
+    .not.toBeInTheDocument();
+  expect(document.querySelector('.cursor-row-resize')).toBeNull();
+  expect(composer.getBoundingClientRect().height).toBe(78);
   expect(getComputedStyle(composer).paddingTop).toBe('10px');
   expect(row.getBoundingClientRect().height).toBe(52);
   expect(getComputedStyle(row).backgroundColor).toBe('rgb(64, 66, 73)');
@@ -594,7 +598,7 @@ test('empty composer uses Paper geometry and keeps upload on the left', async ()
     .element(
       page.getByText('Press Enter to send · Shift + Enter for a new line')
     )
-    .toBeVisible();
+    .not.toBeInTheDocument();
   expect(page.getByRole('button', { name: 'Send message' }).query()).toBeNull();
   const input = page.elementLocator(
     row.querySelector<HTMLElement>('.ProseMirror')!
@@ -608,6 +612,20 @@ test('empty composer uses Paper geometry and keeps upload on the left', async ()
     .element(page.getByRole('button', { name: 'Send message' }))
     .toBeVisible();
   await expect.poll(() => getDraftMessage(draftKey)).not.toBe('');
+  await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
+  await userEvent.type(
+    input,
+    'A second line grows the input without manual resize.'
+  );
+  await expect
+    .poll(() => composer.getBoundingClientRect().height)
+    .toBeGreaterThan(78);
+  await userEvent.keyboard('{Shift>}{Enter}{/Shift}'.repeat(40));
+  await expect
+    .poll(() => composer.getBoundingClientRect().height)
+    .toBe(parseFloat(getComputedStyle(composer).maxHeight));
+  expect(row.scrollHeight).toBeGreaterThan(row.clientHeight);
+  expect(getComputedStyle(composer).resize).toBe('none');
   await userEvent.keyboard('{Control>}a{/Control}');
   await userEvent.keyboard('{Backspace}');
   await expect.poll(() => input.element().textContent).toBe('');
@@ -643,6 +661,51 @@ test('global search stays centered across desktop widths', async () => {
     await page.viewport(1440, 900);
     await waitForRender();
   }
+});
+
+test('composer icon buttons have padded hit targets without clipping their icons', async () => {
+  const { getChannelDraftKey, getDraftMessage } =
+    await import('../components/channel-view/text/use-draft-messages');
+  const assertPaddedIcon = (button: Element) => {
+    const rect = button.getBoundingClientRect();
+    const style = getComputedStyle(button);
+    const icon = button.querySelector('svg')!.getBoundingClientRect();
+    expect(rect.width).toBe(32);
+    expect(rect.height).toBe(32);
+    expect(parseFloat(style.paddingLeft)).toBeGreaterThanOrEqual(6);
+    expect(parseFloat(style.paddingTop)).toBeGreaterThanOrEqual(6);
+    expect(icon.left).toBeGreaterThanOrEqual(
+      rect.left + parseFloat(style.paddingLeft)
+    );
+    expect(icon.top).toBeGreaterThanOrEqual(
+      rect.top + parseFloat(style.paddingTop)
+    );
+    expect(icon.right).toBeLessThanOrEqual(
+      rect.right - parseFloat(style.paddingRight)
+    );
+    expect(icon.bottom).toBeLessThanOrEqual(
+      rect.bottom - parseFloat(style.paddingBottom)
+    );
+  };
+  assertPaddedIcon(
+    page.getByRole('button', { name: 'Attach files' }).element()
+  );
+  assertPaddedIcon(page.getByRole('button', { name: 'Add emoji' }).element());
+  const input = page.elementLocator(
+    document.querySelector<HTMLElement>('.compose-container .ProseMirror')!
+  );
+  await userEvent.type(input, 'Draft for testing send-button geometry.');
+  await expect
+    .element(page.getByRole('button', { name: 'Send message' }))
+    .toBeVisible();
+  assertPaddedIcon(
+    page.getByRole('button', { name: 'Send message' }).element()
+  );
+  await userEvent.keyboard('{Control>}a{/Control}');
+  await userEvent.keyboard('{Backspace}');
+  await expect.poll(() => input.element().textContent).toBe('');
+  await expect.poll(() => getDraftMessage(getChannelDraftKey(1))).toBe('');
+  expect(page.getByRole('button', { name: 'Send message' }).query()).toBeNull();
 });
 
 test('application rail omits the redundant user avatar', async () => {
@@ -729,6 +792,11 @@ test('right docks open and close without layout animation', async () => {
     .element()
     .closest<HTMLElement>('.border-l')!;
   await assertInstantDock(thread);
+  await expect
+    .poll(() => thread.querySelector('.compose-container'))
+    .not.toBeNull();
+  expect(thread.querySelector('.cursor-row-resize')).toBeNull();
+  expect(thread.textContent).not.toContain('Press Enter to send');
   closeThreadSidebar();
   await waitForRender();
   expect(thread.getBoundingClientRect().width).toBe(0);
@@ -848,12 +916,11 @@ test('voice channel matches the Paper design', async () => {
       .poll(() => getComputedStyle(pin).boxShadow)
       .toContain('rgb(194, 199, 255)');
     pin.blur();
-    const diagnostics = page
-      .getByRole('button', { name: 'Voice diagnostics' })
+    const stats = page
+      .getByRole('button', { name: 'Transport Statistics' })
       .element();
     expect(
-      getComputedStyle(diagnostics.parentElement!.parentElement!)
-        .backgroundColor
+      getComputedStyle(stats.parentElement!.parentElement!).backgroundColor
     ).toBe('rgb(30, 31, 34)');
     await snapshot('voice-channel');
   } finally {

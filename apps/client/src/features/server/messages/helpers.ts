@@ -18,15 +18,15 @@ export const highlightMessageElement = async (
   await nextFrame();
   await nextFrame();
 
-  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  element.classList.add('bg-secondary', 'animate-pulse');
+  element.scrollIntoView({ behavior: 'instant', block: 'center' });
+  element.classList.add('bg-secondary');
 
   if (messageHighlightTimeouts.has(element)) {
     clearTimeout(messageHighlightTimeouts.get(element));
   }
 
   const timeoutId = setTimeout(() => {
-    element.classList.remove('bg-secondary', 'animate-pulse');
+    element.classList.remove('bg-secondary');
 
     messageHighlightTimeouts.delete(element);
   }, highlightTime);

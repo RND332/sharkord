@@ -93,7 +93,6 @@ mock.module('../../devices-provider/hooks/use-devices', () => ({
 }));
 for (const [path, name] of [
   ['../demo-visibility-context', 'DemoVisibilityProvider'],
-  ['../floating-pinned-card', 'FloatingPinnedCard'],
   ['../remote-webcam-visibility-context', 'RemoteWebcamVisibilityProvider'],
   ['../volume-control-context', 'VolumeControlProvider']
 ])

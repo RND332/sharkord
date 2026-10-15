@@ -126,7 +126,7 @@
   "welcomeToChannel": "Vítejte v #{{name}}",
   "channelWelcomeDesc": "Začněte konverzaci, sdílejte novinky nebo jen pozdravte.",
   "today": "Dnes",
-  "composerHint": "Enter odešle zprávu · Shift + Enter vloží nový řádek",
+
   "attachFiles": "Připojit soubory",
   "addEmoji": "Přidat emoji",
   "sendMessage": "Odeslat zprávu"

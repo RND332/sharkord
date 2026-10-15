@@ -21,18 +21,7 @@ export const toggleDialog = (dialog: Dialog) => {
 };
 
 export const closeDialogs = () => {
-  store.dispatch(dialogSliceActions.setClosing(true));
-
-  // allow fade out animation to complete before stopping rendering, otherwise it looks choppy
-  setTimeout(() => {
-    store.dispatch(dialogSliceActions.closeDialogs());
-
-    setTimeout(() => {
-      // https://github.com/radix-ui/primitives/issues/1241
-      // remove this after radix fixes the bug
-      document.body.style.pointerEvents = '';
-    }, 0);
-  }, 150);
+  store.dispatch(dialogSliceActions.closeDialogs());
 };
 
 export const requestConfirmation = async ({
