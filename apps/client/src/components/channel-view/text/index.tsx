@@ -96,7 +96,7 @@ const TextChannel = memo((props: TChannelProps) => {
   }, [replyingToMessage]);
 
   const {
-    containerRef,
+    bindContainer,
     onScroll,
     onAsyncContentLoaded,
     scrollToBottom,
@@ -204,7 +204,7 @@ const TextChannel = memo((props: TChannelProps) => {
       />
 
       <div
-        ref={containerRef}
+        ref={bindContainer}
         onScroll={onScroll}
         onLoadCapture={onAsyncContentLoaded}
         data-messages-container

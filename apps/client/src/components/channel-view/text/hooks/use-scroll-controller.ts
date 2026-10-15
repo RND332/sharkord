@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // TODO: this might be improved in the future
 
@@ -11,7 +11,7 @@ type TUseScrollControllerProps = {
 };
 
 type TUseScrollControllerReturn = {
-  containerRef: React.RefObject<HTMLDivElement | null>;
+  bindContainer: React.RefCallback<HTMLDivElement>;
   onScroll: () => void;
   scrollToBottom: () => void;
   onAsyncContentLoaded: () => void;
@@ -28,9 +28,15 @@ const useScrollController = ({
   hasTypingUsers = false
 }: TUseScrollControllerProps): TUseScrollControllerReturn => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const bindContainer = useCallback((element: HTMLDivElement | null) => {
+    containerRef.current = element;
+    setContainer(element);
+  }, []);
   const hasInitialScroll = useRef(false);
   const shouldStickToBottom = useRef(true);
   const isProgrammaticScroll = useRef(false);
+  const lastScrollTop = useRef(0);
 
   const isNearBottom = useCallback((container: HTMLDivElement) => {
     const distanceFromBottom =
@@ -46,6 +52,7 @@ const useScrollController = ({
 
     isProgrammaticScroll.current = true;
     container.scrollTop = container.scrollHeight;
+    lastScrollTop.current = container.scrollTop;
 
     requestAnimationFrame(() => {
       isProgrammaticScroll.current = false;
@@ -58,9 +65,16 @@ const useScrollController = ({
 
     if (!container) return;
 
+    const scrolledUp = container.scrollTop < lastScrollTop.current;
+    lastScrollTop.current = container.scrollTop;
+
     if (isProgrammaticScroll.current) return;
 
-    shouldStickToBottom.current = isNearBottom(container);
+    const nearBottom = isNearBottom(container);
+    // Scroll anchoring can move down before ResizeObserver reports growing media.
+    if (nearBottom || scrolledUp) {
+      shouldStickToBottom.current = nearBottom;
+    }
 
     if (fetching) return;
 
@@ -82,36 +96,9 @@ const useScrollController = ({
 
     if (hasInitialScroll.current) return;
 
-    // content keeps growing after the first paint (images, embeds), so the
-    // position is re-applied until the container stops resizing
-    const performScroll = () => {
-      scrollToBottom();
-      hasInitialScroll.current = true;
-      shouldStickToBottom.current = true;
-    };
-
-    performScroll();
-
-    const container = containerRef.current;
-    const observer = new ResizeObserver(() => {
-      if (!shouldStickToBottom.current) return;
-
-      scrollToBottom();
-    });
-
-    const content = container.firstElementChild;
-
-    if (content) observer.observe(content);
-
-    // ceiling: media that settles after this lands mid-scroll
-    const stopObservingTimer = setTimeout(() => observer.disconnect(), 1000);
-
-    // and the real window is shorter than 1s: messages.length is a dependency, so the next
-    // message or page tears the observer down and the early return above blocks a new one
-    return () => {
-      observer.disconnect();
-      clearTimeout(stopObservingTimer);
-    };
+    scrollToBottom();
+    hasInitialScroll.current = true;
+    shouldStickToBottom.current = true;
   }, [fetching, messages.length, scrollToBottom, containerRef]);
 
   // if user is already at the top when fetching completes
@@ -143,10 +130,8 @@ const useScrollController = ({
     return () => clearTimeout(timer);
   }, [messages, hasTypingUsers, scrollToBottom]);
 
-  // keep bottom lock on container resize (input/footer height changes)
+  // Keep observing both viewport and content through refreshes and late media loads.
   useEffect(() => {
-    const container = containerRef.current;
-
     if (!container) {
       return;
     }
@@ -160,11 +145,13 @@ const useScrollController = ({
     });
 
     observer.observe(container);
+    const content = container.firstElementChild;
+    if (content) observer.observe(content);
 
     return () => {
       observer.disconnect();
     };
-  }, [scrollToBottom]);
+  }, [container, messages.length, scrollToBottom]);
 
   // scroll to bottom when async content loads (e.g. metadata images)
   const onAsyncContentLoaded = useCallback(() => {
@@ -182,7 +169,7 @@ const useScrollController = ({
   }, [isNearBottom]);
 
   return {
-    containerRef,
+    bindContainer,
     onScroll,
     scrollToBottom,
     onAsyncContentLoaded,
