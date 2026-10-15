@@ -1,13 +1,11 @@
 import { expect, test } from 'bun:test';
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
 
 test('autoupdate defaults on only for standalone production unless explicitly disabled', async () => {
   const dataPath = await fs.mkdtemp(
-    path.join(
-      process.env.TMPDIR ?? '/home/rnd332/.hermes/cache/scratch',
-      'sharkord-autoupdate-config-'
-    )
+    path.join(os.tmpdir(), 'sharkord-autoupdate-config-')
   );
 
   try {
