@@ -94,5 +94,13 @@
   "pluginInstallConfirmBtn": "Instalar Plugin",
   "pluginInstallConfirmCountdown": "Aguarde ({{seconds}}s)",
   "searchTruncated": "Mostrando apenas as correspondências mais recentes. Refine sua busca para restringi-la.",
-  "createChannelDesc": "Dê à sua comunidade um lugar para conversar."
+  "createChannelDesc": "Dê à sua comunidade um lugar para conversar.",
+  "shortcutMute": "Ativar ou silenciar o microfone",
+  "shortcutDeafen": "Ativar ou silenciar o áudio",
+  "shortcutMembers": "Mostrar ou ocultar membros",
+  "keyboardShortcutsTitle": "Atalhos de teclado",
+  "keyboardShortcutsDescription": "Os atalhos do Discord funcionam enquanto a janela do aplicativo está ativa. Nos campos de texto, Ctrl+U continua reservado à formatação.",
+  "shortcutPreviousChannel": "Canal de texto anterior",
+  "shortcutNextChannel": "Próximo canal de texto",
+  "shortcutBackToVoice": "Voltar ao canal de voz"
 }

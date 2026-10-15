@@ -1,6 +1,6 @@
 import { openDialog } from '@/features/dialogs/actions';
 import { Search } from 'lucide-react';
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '../dialogs/dialogs';
 
@@ -9,19 +9,6 @@ const ServerSearch = memo(() => {
   const openSearchDialog = useCallback(() => {
     openDialog(Dialog.SEARCH);
   }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        openSearchDialog();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [openSearchDialog]);
 
   return (
     <button

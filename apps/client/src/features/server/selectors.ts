@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 import {
+  ChannelType,
   OWNER_ROLE_ID,
   PluginCapabilityType,
   PluginSlot,
@@ -132,6 +133,18 @@ export const referenceableChannelsSelector = createSelector(
           )
       )
       .sort((a, b) => a.position - b.position || a.id - b.id)
+);
+
+export const navigableTextChannelsSelector = createSelector(
+  [categoriesSelector, referenceableChannelsSelector],
+  (categories, channels) =>
+    categories.flatMap((category) =>
+      channels.filter(
+        (channel) =>
+          channel.categoryId === category.id &&
+          channel.type === ChannelType.TEXT
+      )
+    )
 );
 
 const DEFAULT_ARRAY: unknown[] = [];

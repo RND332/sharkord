@@ -94,5 +94,13 @@
   "pluginInstallConfirmBtn": "Установить плагин",
   "pluginInstallConfirmCountdown": "Подождите ({{seconds}}s)",
   "searchTruncated": "Показаны только самые свежие совпадения. Уточните запрос, чтобы сузить поиск.",
-  "createChannelDesc": "Создайте место для общения вашего сообщества."
+  "createChannelDesc": "Создайте место для общения вашего сообщества.",
+  "shortcutMute": "Включить или выключить микрофон",
+  "shortcutDeafen": "Включить или выключить звук",
+  "shortcutMembers": "Показать или скрыть участников",
+  "keyboardShortcutsTitle": "Горячие клавиши",
+  "keyboardShortcutsDescription": "Сочетания как в Discord работают, пока окно приложения активно. В текстовых полях Ctrl+U остаётся сочетанием для форматирования.",
+  "shortcutPreviousChannel": "Предыдущий текстовый канал",
+  "shortcutNextChannel": "Следующий текстовый канал",
+  "shortcutBackToVoice": "Вернуться в голосовой канал"
 }

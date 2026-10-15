@@ -94,5 +94,13 @@
   "pluginInstallDocsNote": "For more details, read the docs at:",
   "pluginInstallConfirmBtn": "Install Plugin",
   "pluginInstallConfirmCountdown": "Wait ({{seconds}}s)",
-  "searchTruncated": "Showing the most recent matches only. Refine your search to narrow it down."
+  "searchTruncated": "Showing the most recent matches only. Refine your search to narrow it down.",
+  "shortcutMute": "Toggle microphone",
+  "shortcutDeafen": "Toggle deafen",
+  "shortcutMembers": "Toggle member list",
+  "keyboardShortcutsTitle": "Keyboard Shortcuts",
+  "keyboardShortcutsDescription": "Discord-style shortcuts work while the app window is focused. Ctrl+U is reserved for text formatting inside text fields.",
+  "shortcutPreviousChannel": "Previous text channel",
+  "shortcutNextChannel": "Next text channel",
+  "shortcutBackToVoice": "Back to voice channel"
 }

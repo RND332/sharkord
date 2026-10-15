@@ -94,5 +94,13 @@
   "pluginInstallConfirmBtn": "Installa plugin",
   "pluginInstallConfirmCountdown": "Attendi ({{seconds}}s)",
   "searchTruncated": "Vengono mostrate solo le corrispondenze più recenti. Affina la ricerca per restringerla.",
-  "createChannelDesc": "Offri alla tua comunità uno spazio per parlare."
+  "createChannelDesc": "Offri alla tua comunità uno spazio per parlare.",
+  "shortcutMute": "Attiva o disattiva il microfono",
+  "shortcutDeafen": "Attiva o disattiva l’audio",
+  "shortcutMembers": "Mostra o nascondi i membri",
+  "keyboardShortcutsTitle": "Scorciatoie da tastiera",
+  "keyboardShortcutsDescription": "Le scorciatoie di Discord funzionano quando la finestra dell’app è attiva. Nei campi di testo, Ctrl+U resta riservato alla formattazione.",
+  "shortcutPreviousChannel": "Canale di testo precedente",
+  "shortcutNextChannel": "Canale di testo successivo",
+  "shortcutBackToVoice": "Torna al canale vocale"
 }

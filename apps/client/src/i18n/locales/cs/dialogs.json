@@ -94,5 +94,13 @@
   "pluginInstallConfirmBtn": "Nainstalovat rozšíření",
   "pluginInstallConfirmCountdown": "Čekejte ({{seconds}}s)",
   "searchTruncated": "Zobrazují se pouze nejnovější shody. Upřesněte hledání pro zúžení výsledků.",
-  "createChannelDesc": "Dejte své komunitě místo k rozhovoru."
+  "createChannelDesc": "Dejte své komunitě místo k rozhovoru.",
+  "shortcutMute": "Zapnout nebo vypnout mikrofon",
+  "shortcutDeafen": "Zapnout nebo vypnout zvuk",
+  "shortcutMembers": "Zobrazit nebo skrýt členy",
+  "keyboardShortcutsTitle": "Klávesové zkratky",
+  "keyboardShortcutsDescription": "Zkratky jako v Discordu fungují, když je okno aplikace aktivní. V textových polích zůstává Ctrl+U vyhrazeno formátování textu.",
+  "shortcutPreviousChannel": "Předchozí textový kanál",
+  "shortcutNextChannel": "Další textový kanál",
+  "shortcutBackToVoice": "Zpět do hlasového kanálu"
 }

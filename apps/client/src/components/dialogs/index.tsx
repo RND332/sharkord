@@ -21,6 +21,9 @@ const loadWelcomeProfileSetup = memoizeImport(
   () => import('./welcome-profile-setup')
 );
 const loadVoiceDebug = memoizeImport(() => import('./voice-debug'));
+const loadKeyboardShortcuts = memoizeImport(
+  () => import('./keyboard-shortcuts')
+);
 
 const ConfirmActionDialog = lazy(() =>
   loadConfirmAction().then((m) => ({ default: m.ConfirmActionDialog }))
@@ -66,6 +69,10 @@ const VoiceDebugDialog = lazy(() =>
   loadVoiceDebug().then((m) => ({ default: m.VoiceDebugDialog }))
 );
 
+const KeyboardShortcutsDialog = lazy(() =>
+  loadKeyboardShortcuts().then((m) => ({ default: m.KeyboardShortcutsDialog }))
+);
+
 const DialogsMap = {
   [Dialog.CONFIRM_ACTION]: ConfirmActionDialog,
   [Dialog.CREATE_CHANNEL]: CreateChannelDialog,
@@ -79,7 +86,8 @@ const DialogsMap = {
   [Dialog.DELETE_USER]: DeleteUserDialog,
   [Dialog.SEARCH]: SearchDialog,
   [Dialog.WELCOME_PROFILE_SETUP]: WelcomeProfileSetupDialog,
-  [Dialog.VOICE_DEBUG]: VoiceDebugDialog
+  [Dialog.VOICE_DEBUG]: VoiceDebugDialog,
+  [Dialog.KEYBOARD_SHORTCUTS]: KeyboardShortcutsDialog
 };
 
 warmImportsWhenIdle([
@@ -95,7 +103,8 @@ warmImportsWhenIdle([
   loadDeleteUser,
   loadSearch,
   loadWelcomeProfileSetup,
-  loadVoiceDebug
+  loadVoiceDebug,
+  loadKeyboardShortcuts
 ]);
 
 const DialogsProvider = memo(() => {

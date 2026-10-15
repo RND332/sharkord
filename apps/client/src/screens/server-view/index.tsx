@@ -1,4 +1,5 @@
 import { AppRail } from '@/components/app-rail';
+import { ServerHotkeysController } from '@/components/hotkeys-controller/server-hotkeys-controller';
 import { LeftSidebar } from '@/components/left-sidebar';
 import { ModViewSheet } from '@/components/mod-view-sheet';
 import { Protect } from '@/components/protect';
@@ -43,6 +44,17 @@ const ServerView = memo(() => {
     );
   }, [isDesktopRightSidebarOpen]);
 
+  const handleMembersShortcut = useCallback(() => {
+    // use the same lg breakpoint as the desktop sidebar layout
+    if (window.matchMedia('(min-width: 64rem)').matches) {
+      handleDesktopRightSidebarToggle();
+      return;
+    }
+
+    setIsMobileMenuOpen(false);
+    setIsMobileUsersOpen((prev) => !prev);
+  }, [handleDesktopRightSidebarToggle]);
+
   const handleSwipeRight = useCallback(() => {
     if (isMobileMenuOpen || isMobileUsersOpen) {
       setIsMobileMenuOpen(false);
@@ -81,6 +93,7 @@ const ServerView = memo(() => {
 
   return (
     <VoiceProvider>
+      <ServerHotkeysController onToggleMembers={handleMembersShortcut} />
       <div
         data-testid={TestId.SERVER_VIEW}
         className="flex h-dvh flex-col bg-background text-foreground"

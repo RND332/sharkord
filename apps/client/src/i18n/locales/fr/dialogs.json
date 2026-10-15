@@ -94,5 +94,13 @@
   "pluginInstallConfirmBtn": "Installer le plugin",
   "pluginInstallConfirmCountdown": "Attendre ({{seconds}}s)",
   "searchTruncated": "Seuls les résultats les plus récents sont affichés. Affinez votre recherche pour la restreindre.",
-  "createChannelDesc": "Offrez à votre communauté un espace de discussion."
+  "createChannelDesc": "Offrez à votre communauté un espace de discussion.",
+  "shortcutMute": "Activer ou couper le microphone",
+  "shortcutDeafen": "Activer ou couper le son",
+  "shortcutMembers": "Afficher ou masquer les membres",
+  "keyboardShortcutsTitle": "Raccourcis clavier",
+  "keyboardShortcutsDescription": "Les raccourcis de Discord fonctionnent lorsque la fenêtre de l’application est active. Dans les champs de texte, Ctrl+U reste réservé à la mise en forme.",
+  "shortcutPreviousChannel": "Canal textuel précédent",
+  "shortcutNextChannel": "Canal textuel suivant",
+  "shortcutBackToVoice": "Revenir au canal vocal"
 }
