@@ -1,4 +1,4 @@
-import { PictureInPictureButton } from '@/components/channel-view/voice/picture-in-picture-button';
+import { VoiceCardContextMenu } from '@/components/channel-view/voice/voice-card-context-menu';
 import { VoiceProvider } from '@/components/voice-provider';
 import '@fontsource-variable/inter';
 import { createElement, useRef } from 'react';
@@ -199,12 +199,16 @@ let requestPictureInPictureDescriptor: PropertyDescriptor | undefined;
 const ManualPiPHarness = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  return createElement(
+  const card = createElement(
     'div',
-    null,
-    createElement('video', { ref: videoRef }),
-    createElement(PictureInPictureButton, { videoRef })
+    { 'data-testid': 'video-card' },
+    createElement('video', { ref: videoRef })
   );
+
+  return createElement(VoiceCardContextMenu, {
+    pictureInPicture: { videoRef },
+    children: card
+  });
 };
 
 const renderProvider = async () => {
@@ -282,7 +286,7 @@ test('selecting a text channel does not float the pinned webcam above the voice 
   expect(document.querySelector('.cursor-move')).toBeNull();
 });
 
-test('native picture-in-picture stays an explicit video-card action', async () => {
+test('native picture-in-picture stays an explicit video-card context-menu action', async () => {
   pictureInPictureEnabledDescriptor = Object.getOwnPropertyDescriptor(
     document,
     'pictureInPictureEnabled'
@@ -311,13 +315,29 @@ test('native picture-in-picture stays an explicit video-card action', async () =
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   );
 
-  const pipButton = document.querySelector<HTMLButtonElement>(
-    'button[title="Picture-in-Picture"]'
+  const card = document.querySelector<HTMLElement>(
+    '[data-testid="video-card"]'
   );
-  expect(pipButton).not.toBeNull();
+  expect(card).not.toBeNull();
   expect(requestPictureInPicture).not.toHaveBeenCalled();
 
-  await page.elementLocator(pipButton!).click();
+  card!.dispatchEvent(
+    new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 10,
+      clientY: 10
+    })
+  );
+  const pipItem = await vi.waitFor(() => {
+    const item = [
+      ...document.querySelectorAll<HTMLElement>('[role="menuitem"]')
+    ].find((el) => el.textContent?.trim() === 'Picture-in-picture');
+    expect(item).toBeTruthy();
+    return item!;
+  });
+
+  await page.elementLocator(pipItem).click();
   await vi.waitFor(() =>
     expect(requestPictureInPicture).toHaveBeenCalledTimes(1)
   );
