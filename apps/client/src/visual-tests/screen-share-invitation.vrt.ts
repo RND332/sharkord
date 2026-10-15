@@ -77,9 +77,6 @@ vi.mock('@/components/channel-view/voice/hooks/use-voice-refs', () => ({
     hasScreenShareAudioStream: false
   })
 }));
-vi.mock('@/components/channel-view/voice/picture-in-picture-button', () => ({
-  PictureInPictureButton: () => null
-}));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key })
 }));
