@@ -39,7 +39,7 @@ const ThreadContent = memo(
     const typingUsers = useTypingUsersByThreadId(parentMessageId);
 
     const {
-      containerRef,
+      bindContainer,
       onScroll,
       onAsyncContentLoaded,
       scrollToBottom,
@@ -87,7 +87,7 @@ const ThreadContent = memo(
               )}
 
               <div
-                ref={containerRef}
+                ref={bindContainer}
                 onScroll={onScroll}
                 onLoadCapture={onAsyncContentLoaded}
                 className="flex-1 overflow-y-auto overflow-x-hidden p-2 animate-in fade-in duration-500"
