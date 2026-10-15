@@ -8,11 +8,9 @@ import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@sharkord/shared';
-import { IconButton } from '@sharkord/ui';
-import { Monitor, Play, ZoomIn, ZoomOut } from 'lucide-react';
+import { Monitor, Play } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CardTheme } from './card-theme';
-import { FullscreenButton } from './fullscreen-button';
 import { cardControlClass, cardControlsClass, cardDensity } from './helpers';
 import { useFullscreen } from './hooks/use-fullscreen';
 import {
@@ -22,11 +20,9 @@ import {
 import { useScreenShareZoom } from './hooks/use-screen-share-zoom';
 import { useVideoStats } from './hooks/use-video-stats';
 import { useVoiceRefs } from './hooks/use-voice-refs';
-import { PictureInPictureButton } from './picture-in-picture-button';
-import { PinButton } from './pin-button';
 import { QualityButton } from './quality-button';
 import { ViewDemoButton } from './view-demo-button';
-import { VolumeButton } from './volume-button';
+import { VoiceCardContextMenu } from './voice-card-context-menu';
 
 type TScreenShareCardProps = {
   userId: number;
@@ -245,136 +241,128 @@ const ScreenShareCard = memo(
     if (!hasScreenShareStream) return null;
 
     return (
-      <div
-        ref={containerRef}
-        data-screen-share-card
-        className={cn(
-          SCREEN_SHARE_SHELL_CLASS,
-          'bg-black group/screen-share-card',
-          isFullscreen && 'rounded-none border-none',
-          className
-        )}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
-        style={{
-          cursor: isFullscreen && !isOverlayVisible ? 'none' : getCursor()
-        }}
+      <VoiceCardContextMenu
+        volumeKey={
+          !isOwnUser && hasScreenShareAudioStream ? volumeKey : undefined
+        }
+        pinControl={
+          showPinControls ? { isPinned, onToggle: handlePinToggle } : undefined
+        }
+        pictureInPicture={{ videoRef: screenShareRef }}
+        fullscreen={{ isFullscreen, onToggle: handleToggleFullscreen }}
+        zoom={
+          showPinControls && isPinned
+            ? { isEnabled: isZoomEnabled, onToggle: handleToggleZoom }
+            : undefined
+        }
+        demo={
+          !isOwnUser
+            ? {
+                isViewing: isViewingDemo(userId),
+                onToggle: () =>
+                  isViewingDemo(userId)
+                    ? stopViewingDemo(userId)
+                    : void viewDemo(userId)
+              }
+            : undefined
+        }
       >
-        <CardTheme />
-
-        <video
-          ref={screenShareRef}
-          autoPlay
-          muted
-          playsInline
-          className="absolute inset-x-0 top-0 h-[calc(100%-34px)] w-full bg-black object-contain"
-          style={{
-            transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-          }}
-        />
-
-        <audio
-          ref={screenShareAudioRef}
-          className="hidden"
-          autoPlay
-          playsInline
-        />
-
         <div
+          ref={containerRef}
+          data-screen-share-card
           className={cn(
-            'absolute top-0 right-0 z-10 justify-end',
-            density.inset,
-            'hidden group-hover/screen-share-card:flex',
-            'has-[[data-state=open]]:flex'
+            SCREEN_SHARE_SHELL_CLASS,
+            'bg-black group/screen-share-card',
+            isFullscreen && 'rounded-none border-none',
+            className
           )}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onDoubleClick={handleDoubleClick}
+          style={{
+            cursor: isFullscreen && !isOverlayVisible ? 'none' : getCursor()
+          }}
         >
-          <div className={cardControlsClass(isCompact)}>
-            <PictureInPictureButton
-              videoRef={screenShareRef}
-              size={density.icon}
-              className={cardControlClass()}
-            />
-            {!isOwnUser && hasScreenShareAudioStream && (
-              <VolumeButton
-                volumeKey={volumeKey}
-                size={density.icon}
-                className={cardControlClass()}
-              />
+          <CardTheme />
+
+          <video
+            ref={screenShareRef}
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-x-0 top-0 h-[calc(100%-34px)] w-full bg-black object-contain"
+            style={{
+              transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+              transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+            }}
+          />
+
+          <audio
+            ref={screenShareAudioRef}
+            className="hidden"
+            autoPlay
+            playsInline
+          />
+
+          <div
+            className={cn(
+              'absolute top-0 right-0 z-10 justify-end',
+              density.inset,
+              'hidden group-hover/screen-share-card:flex',
+              'has-[[data-state=open]]:flex'
             )}
-            {!isOwnUser && webRtcSimulcastEnabled && (
-              <QualityButton
-                streamId={userId}
-                kind={StreamKind.SCREEN}
-                disabled={!isSimulcastScreenConsumer}
-                size={density.icon}
-                className={cardControlClass()}
-              />
-            )}
-            <FullscreenButton
-              isFullscreen={isFullscreen}
-              handleToggleFullscreen={handleToggleFullscreen}
-              size={density.icon}
-              className={cardControlClass(isFullscreen)}
-            />
-            {showPinControls && isPinned && (
-              <IconButton
-                variant={isZoomEnabled ? 'default' : 'ghost'}
-                icon={isZoomEnabled ? ZoomOut : ZoomIn}
-                onClick={handleToggleZoom}
-                title={isZoomEnabled ? 'Disable Zoom' : 'Enable Zoom'}
-                size={density.icon}
-                className={cardControlClass(isZoomEnabled)}
-              />
-            )}
-            {showPinControls && (
-              <PinButton
-                isPinned={isPinned}
-                handlePinToggle={handlePinToggle}
-                size={density.icon}
-                className={cardControlClass(isPinned)}
-              />
-            )}
-            {!isOwnUser && (
-              <ViewDemoButton
-                userId={userId}
-                size={density.icon}
-                className={cardControlClass(true)}
-              />
-            )}
+          >
+            <div className={cardControlsClass(isCompact)}>
+              {!isOwnUser && webRtcSimulcastEnabled && (
+                <QualityButton
+                  streamId={userId}
+                  kind={StreamKind.SCREEN}
+                  disabled={!isSimulcastScreenConsumer}
+                  size={density.icon}
+                  className={cardControlClass()}
+                />
+              )}
+              {!isOwnUser && (
+                <ViewDemoButton
+                  userId={userId}
+                  size={density.icon}
+                  className={cardControlClass(true)}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'bg-[#050505]')}>
+            <Monitor className="size-[18px] shrink-0 text-white" />
+            <p className="truncate text-[13px] font-medium leading-[17px] text-white">
+              {user.name}'s screen
+              {(videoStats || codec) && (
+                <span className="ml-2 text-xs leading-4 text-muted-foreground">
+                  {codec}
+                  {codec && videoStats && ' '}
+                  {videoStats && (
+                    <>
+                      {videoStats.width}x{videoStats.height}
+                      {videoStats.frameRate > 0 &&
+                        ` ${videoStats.frameRate}fps`}
+                    </>
+                  )}
+                  {(codec || videoStats) && qualityLabel && ' '}
+                  {qualityLabel && `(${qualityLabel})`}
+                </span>
+              )}
+              {isZoomEnabled && zoom > 1 && (
+                <span className="ml-2 text-xs leading-none text-white/70">
+                  {Math.round(zoom * 100)}%
+                </span>
+              )}
+            </p>
           </div>
         </div>
-
-        <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'bg-[#050505]')}>
-          <Monitor className="size-[18px] shrink-0 text-white" />
-          <p className="truncate text-[13px] font-medium leading-[17px] text-white">
-            {user.name}'s screen
-            {(videoStats || codec) && (
-              <span className="ml-2 text-xs leading-4 text-muted-foreground">
-                {codec}
-                {codec && videoStats && ' '}
-                {videoStats && (
-                  <>
-                    {videoStats.width}x{videoStats.height}
-                    {videoStats.frameRate > 0 && ` ${videoStats.frameRate}fps`}
-                  </>
-                )}
-                {(codec || videoStats) && qualityLabel && ' '}
-                {qualityLabel && `(${qualityLabel})`}
-              </span>
-            )}
-            {isZoomEnabled && zoom > 1 && (
-              <span className="ml-2 text-xs leading-none text-white/70">
-                {Math.round(zoom * 100)}%
-              </span>
-            )}
-          </p>
-        </div>
-      </div>
+      </VoiceCardContextMenu>
     );
   }
 );
