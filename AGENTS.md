@@ -445,3 +445,13 @@ Every new behaviour needs tests and the whole suite must pass, see [Testing](#te
   promise nobody awaits) as deliberate instead of leaving it visible. If the promise genuinely
   cannot be awaited, either handle its failure with a `.catch()` or say why in a comment.
 - Do NOT comment on everything. Comments are for context and explain possible edge cases, not for restating what the code does.
+
+## Agent workflow for this fork
+
+- Work on a branch `agent/<task>` from `development`. Never push to `main` or `development`
+  directly; open a PR into `development`.
+- Before reporting done, run and report: `bun run format:check`, `bun run check-types`,
+  `bun run lint`, `bun run test`. Report any gate you could not run.
+- Do not bump the version unless the task is a release. Releases run on merge to `main`.
+- Visual tests (`bun run test:visual` in `apps/client`) need the Paper design as reference
+  for UI changes; see the sharkord-paper-ui-verification skill.
