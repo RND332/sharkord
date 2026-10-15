@@ -100,7 +100,7 @@ const SettingsShell = memo(
 
     return (
       <SettingsFormContext.Provider value={setForm}>
-        <div className="flex h-dvh flex-col bg-canvas text-foreground dark">
+        <div className="flex h-dvh flex-col bg-canvas text-foreground">
           <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-rail px-5 sm:h-10">
             <Button
               variant="ghost"

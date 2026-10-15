@@ -6,6 +6,7 @@ import { useAutoJoinLastChannel } from '@/features/app/hooks';
 import { Group, Switch } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Themes } from './themes';
 
 type TOthersValues = {
   autoJoinLastChannel: boolean;
@@ -33,6 +34,7 @@ const Others = memo(() => {
 
   return (
     <SettingsSection title={t('othersTitle')} description={t('othersDesc')}>
+      <Themes />
       <Group
         label={t('autoJoinLastChannelLabel')}
         description={t('autoJoinLastChannelDesc')}

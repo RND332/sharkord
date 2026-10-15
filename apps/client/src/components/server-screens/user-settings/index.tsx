@@ -6,7 +6,7 @@ import {
   Headphones,
   KeyRound,
   Package,
-  SlidersHorizontal,
+  Paintbrush,
   User
 } from 'lucide-react';
 import { memo, useMemo } from 'react';
@@ -56,7 +56,7 @@ const UserSettings = memo(({ close }: TUserSettingsProps) => {
       {
         id: 'others',
         label: t('othersTab'),
-        icon: SlidersHorizontal,
+        icon: Paintbrush,
         content: <Others />
       }
     ],
