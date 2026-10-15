@@ -1141,60 +1141,38 @@ test('personal theme preview applies to settings, chat and body portals', async 
   }
 });
 
-test('theme catalog searches and filters all imported palettes without applying a preview', async () => {
+test('theme catalog is one searchable list containing every theme', async () => {
   openServerScreen(ServerScreen.USER_SETTINGS);
   await page
     .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
     .filter({ hasText: 'Appearance & language' })
     .click();
-  const catalog = page.getByRole('region', { name: 'Oh My Pi themes' });
-  expect(
-    Array.from(
-      catalog.element().querySelectorAll('button[aria-pressed]'),
-      (button) => button.getAttribute('aria-label')
-    )
-  ).toEqual([
-    'Preview Titanium',
-    'Preview Dark Catppuccin',
-    'Preview Dark Tokyo Night',
-    'Preview Dark Nord',
-    'Preview Light',
-    'Preview Light Github',
-    'Preview Light Catppuccin',
-    'Preview Alabaster'
-  ]);
-  await page
-    .getByRole('button', { name: 'Browse all 102 themes', exact: true })
-    .click();
-  await expect.element(catalog).toBeVisible();
-  expect(
-    catalog.element().querySelectorAll('button[aria-pressed]')
-  ).toHaveLength(102);
-  await page
-    .getByRole('combobox', { name: 'Theme brightness' })
-    .selectOptions('light');
-  expect(
-    catalog.element().querySelectorAll('button[aria-pressed]')
-  ).toHaveLength(48);
-  await page
-    .getByRole('combobox', { name: 'Theme brightness' })
-    .selectOptions('dark');
-  expect(
-    catalog.element().querySelectorAll('button[aria-pressed]')
-  ).toHaveLength(54);
+  const catalog = page.getByRole('region', { name: 'Themes', exact: true });
   const search = page.getByRole('textbox', { name: 'Search themes' });
-  await search.fill('Tokyo');
-  await expect
-    .element(
-      page.getByRole('button', {
-        name: 'Preview Dark Tokyo Night',
-        exact: true
-      })
-    )
-    .toBeVisible();
+  await expect.element(search).toBeVisible();
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(106);
+  expect(catalog.element().querySelectorAll('h4')).toHaveLength(0);
+  expect(document.body.textContent).not.toContain('Made for you');
+  expect(document.querySelector('[aria-label="Theme brightness"]')).toBeNull();
+  await search.fill('Miku');
   expect(
     catalog.element().querySelectorAll('button[aria-pressed]')
   ).toHaveLength(1);
+  await expect
+    .element(
+      page.getByRole('button', { name: 'Preview Hatsune Miku', exact: true })
+    )
+    .toBeVisible();
+  await search.fill('ryuko');
+  await expect
+    .element(page.getByRole('button', { name: 'Preview Ryūko', exact: true }))
+    .toBeVisible();
+  await search.fill('Tokyo');
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(2);
   await page
     .getByRole('button', { name: 'Preview Dark Tokyo Night', exact: true })
     .click();
@@ -1203,6 +1181,10 @@ test('theme catalog searches and filters all imported palettes without applying 
   expect(document.documentElement.dataset.theme).toBe('dark');
   await search.fill('no-such-theme');
   await expect.element(page.getByText('No themes found.')).toBeVisible();
+  await search.fill('');
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(106);
 });
 
 test('Miku uses its pink rail accent and light mode reaches settings and dialogs', async () => {
@@ -1302,9 +1284,6 @@ test('theme settings keep the approved layout and remain usable on a narrow view
       390
     );
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await page
-      .getByRole('button', { name: 'Browse all 102 themes', exact: true })
-      .click();
     await page
       .getByRole('textbox', { name: 'Search themes' })
       .fill('light github');

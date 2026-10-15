@@ -17,29 +17,6 @@ export const ThemeCard = memo(
       () => onPreview(theme.id),
       [onPreview, theme.id]
     );
-    const personal = theme.source === 'personal';
-    if (theme.source === 'sharkord') {
-      return (
-        <button
-          type="button"
-          aria-label={t('previewTheme', { name: theme.name })}
-          aria-pressed={selected}
-          onClick={handlePreview}
-          className={cn(
-            'flex min-h-11 items-center gap-3 rounded-lg border border-line bg-nav px-3 py-2 text-left text-[13px] font-medium outline-none hover:border-control-border focus-visible:ring-2 focus-visible:ring-ring',
-            selected && 'border-accent-text'
-          )}
-        >
-          <span
-            className="flex size-7 shrink-0 items-center justify-center rounded-full border border-control-border"
-            style={{ backgroundColor: theme.bg, color: theme.fg }}
-          >
-            {selected && <Check className="size-4" />}
-          </span>
-          {theme.name}
-        </button>
-      );
-    }
     return (
       <button
         type="button"
@@ -47,14 +24,13 @@ export const ThemeCard = memo(
         aria-pressed={selected}
         onClick={handlePreview}
         className={cn(
-          'flex min-w-0 flex-col gap-2 rounded-lg border border-line bg-nav p-2 text-left outline-none hover:border-control-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
-          selected && 'border-accent-text ring-1 ring-accent-text',
-          personal && 'sm:flex-row sm:items-center sm:gap-4 sm:p-3'
+          'flex h-full w-full min-w-0 flex-col gap-2 rounded-lg border border-line bg-nav p-2 text-left outline-none hover:border-control-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
+          selected && 'border-accent-text ring-1 ring-accent-text'
         )}
       >
         <svg
           viewBox="0 0 220 90"
-          className={cn('w-full shrink-0 rounded-md', personal && 'sm:w-[45%]')}
+          className="w-full shrink-0 rounded-md"
           aria-hidden="true"
         >
           <rect width="220" height="90" fill={theme.bg} />
@@ -93,26 +69,6 @@ export const ThemeCard = memo(
             {theme.name}
             {selected && <Check className="size-4 shrink-0 text-accent-text" />}
           </span>
-          {personal && (
-            <>
-              <span className="text-xs text-muted-foreground">
-                {t(theme.id === 'ryuko' ? 'ryukoThemeDesc' : 'mikuThemeDesc')}
-              </span>
-              <span className="flex gap-1.5" aria-hidden="true">
-                <span
-                  className="size-3 rounded-full"
-                  style={{ backgroundColor: theme.accent }}
-                />
-                <span
-                  className="size-3 rounded-full"
-                  style={{ backgroundColor: theme.secondary }}
-                />
-              </span>
-              <span className="text-xs text-accent-text">
-                {t('previewThemeAction')}
-              </span>
-            </>
-          )}
         </span>
       </button>
     );

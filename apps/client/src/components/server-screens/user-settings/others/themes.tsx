@@ -1,13 +1,8 @@
-import {
-  getTheme,
-  PERSONAL_THEMES,
-  SHARKORD_THEMES
-} from '@/components/theme-provider/themes';
+import { getTheme } from '@/components/theme-provider/themes';
 import { useTheme } from '@/components/theme-provider/use-theme';
 import { Button, Switch } from '@sharkord/ui';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ThemeCard } from './theme-card';
 import { ThemeCatalog } from './theme-catalog';
 import { ThemePreview } from './theme-preview';
 
@@ -59,32 +54,6 @@ export const Themes = memo(() => {
           </div>
         </div>
       )}
-      <section className="space-y-3" aria-label={t('defaultThemes')}>
-        <h4 className="text-sm font-semibold">{t('defaultThemes')}</h4>
-        <div className="grid max-w-lg grid-cols-2 gap-4">
-          {SHARKORD_THEMES.map((item) => (
-            <ThemeCard
-              key={item.id}
-              theme={item}
-              selected={preview.id === item.id}
-              onPreview={handlePreview}
-            />
-          ))}
-        </div>
-      </section>
-      <section className="space-y-3" aria-label={t('personalThemes')}>
-        <h4 className="text-base font-semibold">{t('personalThemes')}</h4>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {PERSONAL_THEMES.map((item) => (
-            <ThemeCard
-              key={item.id}
-              theme={item}
-              selected={preview.id === item.id}
-              onPreview={handlePreview}
-            />
-          ))}
-        </div>
-      </section>
       <ThemeCatalog selectedId={preview.id} onPreview={handlePreview} />
       <p className="text-xs text-muted-foreground">{t('themesColorsOnly')}</p>
     </div>
