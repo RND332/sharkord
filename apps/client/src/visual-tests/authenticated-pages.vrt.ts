@@ -1085,7 +1085,246 @@ test('user settings match the Paper design', async () => {
     .element(page.getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY).first())
     .toBeVisible();
 
+  await userEvent.unhover(document.body);
   await snapshot('user-settings');
+});
+
+test('personal theme preview applies to settings, chat and body portals', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+  await page
+    .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+    .filter({ hasText: 'Appearance & language' })
+    .click();
+  await page
+    .getByRole('button', { name: 'Preview Ryūko', exact: true })
+    .click();
+  expect(document.documentElement.dataset.theme).not.toBe('ryuko');
+  const portal = document.createElement('div');
+  try {
+    await page
+      .getByRole('button', { name: 'Apply theme', exact: true })
+      .click();
+    await expect
+      .poll(() => document.documentElement.dataset.theme)
+      .toBe('ryuko');
+    expect(localStorage.getItem('vite-ui-theme')).toBe('ryuko');
+    const settings = document.querySelector('main')!;
+    expect(getComputedStyle(settings).backgroundColor).toBe('rgb(20, 24, 37)');
+    closeServerScreens();
+    await expect.element(page.getByTestId(TestId.SERVER_VIEW)).toBeVisible();
+    expect(
+      getComputedStyle(page.getByTestId(TestId.SERVER_VIEW).element())
+        .backgroundColor
+    ).toBe('rgb(20, 24, 37)');
+    await expect(
+      page.elementLocator(document.documentElement)
+    ).toMatchScreenshot('theme-ryuko-chat', { timeout: 3_000 });
+    portal.className = 'bg-popover text-popover-foreground';
+    document.body.append(portal);
+    expect(getComputedStyle(portal).backgroundColor).toBe('rgb(12, 16, 27)');
+  } finally {
+    portal.remove();
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    await page
+      .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+      .filter({ hasText: 'Appearance & language' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Preview Sharkord Dark', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Apply theme', exact: true })
+      .click();
+    await expect
+      .poll(() => document.documentElement.dataset.theme)
+      .toBe('dark');
+  }
+});
+
+test('theme catalog searches and filters all imported palettes without applying a preview', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+  await page
+    .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+    .filter({ hasText: 'Appearance & language' })
+    .click();
+  const catalog = page.getByRole('region', { name: 'Oh My Pi themes' });
+  expect(
+    Array.from(
+      catalog.element().querySelectorAll('button[aria-pressed]'),
+      (button) => button.getAttribute('aria-label')
+    )
+  ).toEqual([
+    'Preview Titanium',
+    'Preview Dark Catppuccin',
+    'Preview Dark Tokyo Night',
+    'Preview Dark Nord',
+    'Preview Light',
+    'Preview Light Github',
+    'Preview Light Catppuccin',
+    'Preview Alabaster'
+  ]);
+  await page
+    .getByRole('button', { name: 'Browse all 102 themes', exact: true })
+    .click();
+  await expect.element(catalog).toBeVisible();
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(102);
+  await page
+    .getByRole('combobox', { name: 'Theme brightness' })
+    .selectOptions('light');
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(48);
+  await page
+    .getByRole('combobox', { name: 'Theme brightness' })
+    .selectOptions('dark');
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(54);
+  const search = page.getByRole('textbox', { name: 'Search themes' });
+  await search.fill('Tokyo');
+  await expect
+    .element(
+      page.getByRole('button', {
+        name: 'Preview Dark Tokyo Night',
+        exact: true
+      })
+    )
+    .toBeVisible();
+  expect(
+    catalog.element().querySelectorAll('button[aria-pressed]')
+  ).toHaveLength(1);
+  await page
+    .getByRole('button', { name: 'Preview Dark Tokyo Night', exact: true })
+    .click();
+  expect(document.documentElement.dataset.theme).toBe('dark');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  expect(document.documentElement.dataset.theme).toBe('dark');
+  await search.fill('no-such-theme');
+  await expect.element(page.getByText('No themes found.')).toBeVisible();
+});
+
+test('Miku uses its pink rail accent and light mode reaches settings and dialogs', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+  await page
+    .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+    .filter({ hasText: 'Appearance & language' })
+    .click();
+  await page
+    .getByRole('button', { name: 'Preview Hatsune Miku', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Apply theme', exact: true }).click();
+  closeServerScreens();
+  const server = page
+    .getByRole('navigation', { name: 'Application', exact: true })
+    .getByRole('button', { name: 'Rnd Community', exact: true });
+  try {
+    await expect.element(server).toBeVisible();
+    expect(getComputedStyle(server.element()).backgroundColor).toBe(
+      'rgb(239, 118, 167)'
+    );
+    expect(getComputedStyle(server.element()).color).toBe('rgb(0, 0, 0)');
+    await expect(
+      page.elementLocator(document.documentElement)
+    ).toMatchScreenshot('theme-miku-chat', { timeout: 3_000 });
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    await page
+      .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+      .filter({ hasText: 'Appearance & language' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Preview Sharkord Light', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Apply theme', exact: true })
+      .click();
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(
+      getComputedStyle(document.querySelector('main')!).backgroundColor
+    ).toBe('oklch(1 0 0)');
+    const result = requestConfirmation({
+      title: 'Light dialog fixture',
+      confirmLabel: 'Confirm light fixture'
+    });
+    const dialog = page.getByRole('alertdialog');
+    await expect.element(dialog).toBeVisible();
+    expect(
+      getComputedStyle(dialog.element()).getPropertyValue('--canvas').trim()
+    ).toBe('#ffffff');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await result;
+  } finally {
+    resetDialogs();
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    await page
+      .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+      .filter({ hasText: 'Appearance & language' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Preview Sharkord Dark', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Apply theme', exact: true })
+      .click();
+    await expect
+      .poll(() => document.documentElement.dataset.theme)
+      .toBe('dark');
+  }
+});
+
+test('theme settings keep the approved layout and remain usable on a narrow viewport', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+  await page
+    .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+    .filter({ hasText: 'Appearance & language' })
+    .click();
+  await expect
+    .element(page.getByRole('button', { name: 'Preview Ryūko', exact: true }))
+    .toBeVisible();
+  await userEvent.unhover(document.body);
+  await expect(page.elementLocator(document.documentElement)).toMatchScreenshot(
+    'theme-settings',
+    { timeout: 3_000 }
+  );
+  try {
+    await page.viewport(390, 844);
+    await page
+      .getByRole('button', { name: 'Preview Hatsune Miku', exact: true })
+      .click();
+    const apply = page.getByRole('button', {
+      name: 'Apply theme',
+      exact: true
+    });
+    await expect.element(apply).toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390);
+    expect(apply.element().getBoundingClientRect().right).toBeLessThanOrEqual(
+      390
+    );
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Browse all 102 themes', exact: true })
+      .click();
+    await page
+      .getByRole('textbox', { name: 'Search themes' })
+      .fill('light github');
+    const card = page.getByRole('button', {
+      name: 'Preview Light Github',
+      exact: true
+    });
+    await expect.element(card).toBeVisible();
+    card.element().focus();
+    await userEvent.keyboard('{Enter}');
+    await expect
+      .element(page.getByRole('button', { name: 'Apply theme', exact: true }))
+      .toBeVisible();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  } finally {
+    await page.viewport(1440, 900);
+    await waitForRender();
+    await userEvent.unhover(document.body);
+  }
 });
 
 test('server settings match the Paper design', async () => {

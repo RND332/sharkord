@@ -51,7 +51,7 @@ const AppRail = memo(() => {
           className={cn(
             'relative flex size-11 items-center justify-center rounded-[15px] bg-raised text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             !dmsOpen &&
-              "bg-primary text-primary-foreground hover:text-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
+              "bg-sidebar-primary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
           )}
         >
           {serverName?.trim().charAt(0).toUpperCase() || 'S'}
@@ -68,7 +68,7 @@ const AppRail = memo(() => {
             className={cn(
               'relative flex size-11 items-center justify-center rounded-[15px] bg-raised text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               dmsOpen &&
-                "bg-primary text-primary-foreground hover:text-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
+                "bg-sidebar-primary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
             )}
           >
             <MessageCircleMore className="size-5" />

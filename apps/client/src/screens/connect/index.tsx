@@ -157,7 +157,7 @@ const Connect = memo(() => {
   }
 
   return (
-    <div className="relative flex h-full flex-col items-center justify-center bg-canvas px-6 py-12 dark">
+    <div className="relative flex h-full flex-col items-center justify-center bg-canvas px-6 py-12">
       <header className="absolute inset-x-0 top-0 flex h-16 items-center justify-between border-b border-line bg-rail px-7">
         <span className="text-[17px] font-bold tracking-tight">sharkord</span>
         <LanguageSwitcher

@@ -69,9 +69,8 @@ const createSuggestionRenderer = <TItem>(
           editor: props.editor,
           // this wrapper is the element reposition() positions, so the stacking
           // context has to live here, a z-index on the static list inside it does
-          // nothing. `dark` because the popup is mounted on document.body, outside
-          // the server view div that hardcodes the dark theme variables
-          className: 'dark relative z-50'
+          // nothing. theme variables inherit from the document root
+          className: 'relative z-50'
         });
 
         document.body.appendChild(component.element);
