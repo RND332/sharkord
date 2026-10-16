@@ -61,6 +61,7 @@ vi.mock('@/features/server/channels/hooks', () => ({
   useCurrentVoiceChannelId: () => state.voiceChannelId
 }));
 vi.mock('@/features/server/hooks', () => ({
+  useCurrentVoicePeers: () => [],
   useChannelCan: () => (permission: string) =>
     permission === 'WEBCAM' ? state.canUseWebcam : state.canShareScreen,
   useServerName: () => 'Test server'

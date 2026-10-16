@@ -20,6 +20,7 @@ vi.mock('@/features/server/channels/hooks', () => ({
   useCurrentVoiceChannelId: () => 42
 }));
 vi.mock('@/features/server/hooks', () => ({
+  useCurrentVoicePeers: () => [],
   useChannelCan: () => () => true,
   useServerName: () => 'Test server'
 }));

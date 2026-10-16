@@ -1,19 +1,24 @@
-import { ChannelPermission, type TDirectScreenSession } from '@sharkord/shared';
+import {
+  ChannelPermission,
+  DIRECT_MEDIA_KINDS,
+  type TDirectMediaSession
+} from '@sharkord/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { channelUserCan } from '../../db/queries/channels';
-import { getDirectScreenRuntime } from '../../helpers/get-direct-screen-runtime';
+import { getDirectMediaRuntime } from '../../helpers/get-direct-media-runtime';
 import { VoiceRuntime } from '../../runtimes/voice';
+import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
-const startDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
+const startDirectMediaRoute = rateLimitedProcedure(protectedProcedure, {
   maxRequests: config.rateLimiters.voiceStream.maxRequests,
   windowMs: config.rateLimiters.voiceStream.windowMs,
-  logLabel: 'startDirectScreen'
+  logLabel: 'startDirectMedia'
 })
-  .input(z.strictObject({}))
-  .mutation(async ({ ctx }): Promise<TDirectScreenSession | null> => {
-    const { runtime, channelId } = await getDirectScreenRuntime(ctx, true);
+  .input(z.strictObject({ kind: z.enum(DIRECT_MEDIA_KINDS) }))
+  .mutation(async ({ ctx, input }): Promise<TDirectMediaSession | null> => {
+    const { runtime, channelId } = await getDirectMediaRuntime(ctx, input.kind);
     const member = runtime.getUser(ctx.user.id);
     const peer = runtime
       .getState()
@@ -37,7 +42,16 @@ const startDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
       runtime.getUser(peer.userId) !== peer
     )
       return null;
-    return runtime.startDirectScreen(ctx.user.id);
+    const session = runtime.startDirectMedia(ctx.user.id, input.kind);
+    invariant(
+      session || !runtime.isDirectMediaRequired(ctx.user.id, input.kind),
+      {
+        code: 'BAD_REQUEST',
+        message:
+          'Direct screen sharing is unavailable; server relay is disabled'
+      }
+    );
+    return session;
   });
 
-export { startDirectScreenRoute };
+export { startDirectMediaRoute };

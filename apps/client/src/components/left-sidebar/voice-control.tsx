@@ -112,7 +112,7 @@ const VoiceControl = memo(() => {
     <>
       <VoiceAudioStreams channelId={voiceChannelId} />
       <ExternalAudioStreams channelId={voiceChannelId} />
-      <div className="h-24 shrink-0 overflow-hidden bg-rail">
+      <div data-voice-dock className="h-24 shrink-0 overflow-hidden bg-rail">
         <div className="flex h-[52px] items-center justify-between gap-2 px-2.5 py-1">
           <StatsPopover>
             <Button

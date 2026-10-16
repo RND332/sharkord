@@ -1,5 +1,6 @@
 import { VoiceCardContextMenu } from '@/components/channel-view/voice/voice-card-context-menu';
 import { VoiceProvider } from '@/components/voice-provider';
+import { VolumeControlProvider } from '@/components/voice-provider/volume-control-context';
 import '@fontsource-variable/inter';
 import { createElement, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -73,6 +74,7 @@ const state = vi.hoisted(() => {
       closeConsumers: noop
     },
     directScreenShare: {
+      getConnections: () => [],
       acceptPendingOffer: () => false,
       stopReceiving: noop,
       close: noop,
@@ -110,7 +112,8 @@ vi.mock('@/features/server/channels/hooks', () => ({
   useIsCurrentVoiceChannelSelected: () => state.isCurrentVoiceChannelSelected
 }));
 vi.mock('@/features/server/hooks', () => ({
-  useWebRtcSimulcastEnabled: () => false
+  useWebRtcSimulcastEnabled: () => false,
+  useDirectMediaPolicy: () => 'relay'
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useOwnVoiceState: () => state.ownVoiceState,
@@ -145,10 +148,6 @@ vi.mock('@/components/voice-provider/remote-webcam-visibility-context', () => ({
   }) => children,
   useRemoteWebcamVisibility: () => ({ isWebcamHidden: () => false })
 }));
-vi.mock('@/components/voice-provider/volume-control-context', () => ({
-  VolumeControlProvider: ({ children }: { children: React.ReactNode }) =>
-    children
-}));
 vi.mock('@/components/voice-provider/hooks/use-local-streams', () => ({
   useLocalStreams: () => state.localStreams
 }));
@@ -161,8 +160,14 @@ vi.mock('@/components/voice-provider/hooks/use-transports', () => ({
 vi.mock('@/components/voice-provider/hooks/use-transport-stats', () => ({
   useTransportStats: () => state.transportStats
 }));
-vi.mock('@/components/voice-provider/hooks/use-direct-screen-share', () => ({
-  useDirectScreenShare: () => ({ directScreenShare: state.directScreenShare })
+vi.mock('@/components/voice-provider/hooks/use-direct-media', () => ({
+  useDirectMedia: () => ({
+    directMedia: {
+      audio: state.directScreenShare,
+      video: state.directScreenShare,
+      screen: state.directScreenShare
+    }
+  })
 }));
 vi.mock('@/components/voice-provider/hooks/use-voice-controls', () => ({
   useVoiceControls: () => state.voiceControls
@@ -310,7 +315,9 @@ test('native picture-in-picture stays an explicit video-card context-menu action
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
-  root.render(createElement(ManualPiPHarness));
+  root.render(
+    createElement(VolumeControlProvider, null, createElement(ManualPiPHarness))
+  );
   await new Promise<void>((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
   );

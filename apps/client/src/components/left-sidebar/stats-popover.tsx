@@ -2,17 +2,21 @@ import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { Dialog } from '@/components/dialogs/dialogs';
 import { useVoiceStats } from '@/components/voice-provider/stats-context';
 import { openDialog } from '@/features/dialogs/actions';
+import { useCurrentVoicePeers } from '@/features/server/hooks';
 import { formatBigNumber } from '@/helpers/format-big-number';
+import { cn } from '@/lib/utils';
 import { NoiseSuppression } from '@/types';
+import { TestId } from '@sharkord/shared';
 import {
   IconButton,
   Popover,
+  PopoverAnchor,
   PopoverContent,
   PopoverTrigger
 } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { Stethoscope } from 'lucide-react';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type StatsPopoverProps = {
@@ -82,14 +86,73 @@ const StatsLabelValue = memo(
 
 StatsLabelValue.displayName = 'StatsLabelValue';
 
+const ConnectionPing = ({
+  value,
+  control = false
+}: {
+  value: number | null | undefined;
+  control?: boolean;
+}) => {
+  const { t, i18n } = useTranslation('sidebar');
+  const available =
+    typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  const formatted = available
+    ? `${new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 }).format(value)} ms`
+    : '\u2014';
+  return (
+    <td
+      className={cn(
+        'pt-1 pl-2 text-right font-semibold leading-5',
+        control || !available ? 'text-muted-foreground' : 'text-primary'
+      )}
+      title={t(control ? 'serverPingDescription' : 'peerPingDescription')}
+    >
+      {formatted}
+    </td>
+  );
+};
+
 const StatsPopover = memo(({ children }: StatsPopoverProps) => {
   const { t } = useTranslation('sidebar');
   const transportStats = useVoiceStats();
+  const peers = useCurrentVoicePeers();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverAnchor = useMemo(
+    () => ({
+      current: {
+        getBoundingClientRect: () => {
+          const trigger = triggerRef.current;
+          const dock = trigger?.closest('[data-voice-dock]');
+          const reference =
+            dock?.getBoundingClientRect() ??
+            trigger?.getBoundingClientRect() ??
+            new DOMRect();
+          const sidebar =
+            trigger
+              ?.closest(`[data-testid="${TestId.LEFT_SIDEBAR}"]`)
+              ?.getBoundingClientRect() ?? reference;
+          return new DOMRect(
+            sidebar.left + 8,
+            reference.top,
+            Math.max(0, sidebar.width - 16),
+            reference.height
+          );
+        },
+        get contextElement() {
+          return triggerRef.current?.closest('[data-voice-dock]') ?? undefined;
+        }
+      }
+    }),
+    []
+  );
   const { devices } = useDevices();
   const [isOpen, setIsOpen] = useState(false);
   const [showSimulcastLayers, setShowSimulcastLayers] = useState(false);
 
   const {
+    peerRtts,
+    serverRtt,
+    direct,
     producer,
     consumer,
     screenShare,
@@ -144,15 +207,24 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent side="top" align="start" className="p-0">
-        <div className="w-72 p-3 text-xs">
-          <div className="mb-2 flex items-center gap-2">
+      <PopoverTrigger asChild ref={triggerRef}>
+        {children}
+      </PopoverTrigger>
+      {/* Register the custom anchor after Trigger so its initial anchor cannot replace it. */}
+      <PopoverAnchor virtualRef={popoverAnchor} />
+      <PopoverContent
+        side="top"
+        align="start"
+        sideOffset={12}
+        className="w-(--radix-popover-trigger-width) max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-xl border border-line bg-nav p-3"
+      >
+        <div className="flex flex-col gap-2.5 text-xs leading-4">
+          <div className="flex h-6 items-center gap-2">
             <h3 className="font-semibold text-sm text-foreground">
               {t('transportStats')}
             </h3>
             <IconButton
-              className="ml-auto"
+              className="ml-auto size-6 p-[3px]"
               variant="ghost"
               size="sm"
               icon={Stethoscope}
@@ -161,81 +233,93 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
               onClick={handleOpenDiagnostics}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-3">
-            <div>
-              <h4 className="font-medium text-green-400 mb-1">
-                {t('outgoing')}
-              </h4>
-              {producer ? (
-                <div className="space-y-1">
-                  <div>
-                    <StatsLabelValue
-                      text={t('rate', { rate: filesize(currentBitrateSent) })}
-                    />
-                  </div>
-                  <div>
-                    <StatsLabelValue
-                      text={t('packets', {
-                        packets: formatBigNumber(producer.packetsSent)
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <StatsLabelValue
-                      text={t('rtt', { rtt: producer.rtt.toFixed(1) })}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="text-muted-foreground">{t('noData')}</div>
-              )}
-            </div>
-
-            <div>
-              <h4 className="font-medium text-cyan-400 mb-1">
-                {t('incoming')}
-              </h4>
-              {consumer ? (
-                <div className="space-y-1">
-                  <div>
-                    <StatsLabelValue
-                      text={t('rate', {
-                        rate: filesize(currentBitrateReceived)
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <StatsLabelValue
-                      text={t('packets', {
-                        packets: formatBigNumber(consumer.packetsReceived)
-                      })}
-                    />
-                  </div>
-                  {consumer.packetsLost > 0 && (
-                    <div>
-                      <StatsLabelValue
-                        text={t('packetsLost', {
-                          lost: formatBigNumber(consumer.packetsLost)
-                        })}
-                        valueClassName="text-red-400"
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-muted-foreground">
-                  {t('noRemoteStreams')}
-                </div>
-              )}
-            </div>
+          <table
+            className="w-full table-fixed border-collapse text-xs"
+            aria-label={t('connection')}
+          >
+            <colgroup>
+              <col />
+              <col className="w-[68px]" />
+            </colgroup>
+            <thead>
+              <tr className="h-[18px] text-muted-foreground">
+                <th scope="col" className="text-left font-medium">
+                  {t('connection')}
+                </th>
+                <th scope="col" className="pl-2 text-right font-medium">
+                  {t('ping')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {peers.map((peer) => (
+                <tr key={peer.id}>
+                  <td className="pt-1 leading-5">
+                    <span className="block truncate" title={peer.name}>
+                      {peer.name}
+                    </span>
+                  </td>
+                  <ConnectionPing value={peerRtts[peer.id]} />
+                </tr>
+              ))}
+              <tr>
+                <td className="pt-1 leading-5">
+                  <span className="block truncate" title={t('serverControl')}>
+                    {t('serverControl')}
+                  </span>
+                </td>
+                <ConnectionPing value={serverRtt} control />
+              </tr>
+            </tbody>
+          </table>
+          <div className="grid grid-cols-[48px_minmax(0,1fr)_minmax(0,1fr)] gap-x-1.5 gap-y-1 pt-2 leading-[18px]">
+            <span />
+            <span className="font-semibold text-success">{t('outgoing')}</span>
+            <span className="font-semibold text-primary">{t('incoming')}</span>
+            <span className="text-muted-foreground">{t('rateLabel')}</span>
+            <span>
+              {producer || direct
+                ? `${filesize(currentBitrateSent)}/s`
+                : '\u2014'}
+            </span>
+            <span>
+              {consumer || direct
+                ? `${filesize(currentBitrateReceived)}/s`
+                : '\u2014'}
+            </span>
+            <span className="text-muted-foreground">{t('packetsLabel')}</span>
+            <span>
+              {producer || direct
+                ? formatBigNumber(
+                    (producer?.packetsSent ?? 0) + (direct?.packetsSent ?? 0)
+                  )
+                : '\u2014'}
+            </span>
+            <span>
+              {consumer || direct
+                ? formatBigNumber(
+                    (consumer?.packetsReceived ?? 0) +
+                      (direct?.packetsReceived ?? 0)
+                  )
+                : '\u2014'}
+            </span>
+            <span className="text-muted-foreground">{t('lostLabel')}</span>
+            <span className="text-muted-foreground">{'\u2014'}</span>
+            <span className="text-destructive">
+              {consumer || direct
+                ? formatBigNumber(
+                    (consumer?.packetsLost ?? 0) + (direct?.packetsLost ?? 0)
+                  )
+                : '\u2014'}
+            </span>
           </div>
 
           {hasNoiseSuppression && (
-            <div className="border-t border-border/50 pt-2 mb-3">
-              <h4 className="font-medium text-purple-400 mb-1">
+            <div className="pt-2">
+              <h4 className="mb-1.5 text-[13px] font-semibold leading-5 text-foreground">
                 {t('microphone')}
               </h4>
-              <div>
+              <div className="leading-[18px]">
                 <StatsLabelValue
                   label={t('noiseSuppression')}
                   value={noiseSuppressionLabel}
@@ -245,7 +329,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
           )}
 
           {screenShare && (
-            <div className="border-t border-border/50 pt-2 mb-3">
+            <div className="pt-2">
               <h4 className="font-medium text-blue-400 mb-1">
                 {t('screenShare')}
               </h4>
@@ -312,7 +396,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
                             key={layer.id}
                             className="space-y-1 rounded-md border border-border/50 p-2"
                           >
-                            <div className="border-b border-border/50 pb-1 font-medium text-foreground">
+                            <div className="pb-1 font-medium text-foreground">
                               {t('simulcastLayer', {
                                 layer: layer.rid || index + 1
                               })}
@@ -385,13 +469,19 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
             </div>
           )}
 
-          <div className="border-t border-border/50 pt-2">
-            <h4 className="font-medium text-yellow-400 mb-1">
+          <div className="pt-2">
+            <h4 className="mb-1.5 text-[13px] font-semibold leading-5 text-foreground">
               {t('sessionTotals')}
             </h4>
-            <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-              <div>↑ {filesize(totalBytesSent)}</div>
-              <div>↓ {filesize(totalBytesReceived)}</div>
+            <div className="grid grid-cols-2 gap-3 leading-[18px] text-foreground">
+              <div className="flex gap-1.5">
+                <span className="text-muted-foreground">↑</span>
+                {filesize(totalBytesSent)}
+              </div>
+              <div className="flex gap-1.5">
+                <span className="text-muted-foreground">↓</span>
+                {filesize(totalBytesReceived)}
+              </div>
             </div>
           </div>
         </div>

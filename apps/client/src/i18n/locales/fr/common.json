@@ -1,4 +1,5 @@
 {
+  "directMediaFailed": "Impossible d’établir la connexion média. Réessayez.",
   "cancel": "Annuler",
   "confirm": "Confirmer",
   "close": "Fermer",

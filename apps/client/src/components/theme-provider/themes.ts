@@ -14,6 +14,7 @@ export type TTheme = {
   accent: string;
   secondary?: string;
   sidebarAccent?: string;
+  selection?: string;
 };
 
 export const SHARKORD_THEMES: TTheme[] = [
@@ -65,15 +66,16 @@ export const PERSONAL_THEMES: TTheme[] = [
     name: 'Hatsune Miku',
     source: 'personal',
     mode: 'dark',
-    bg: '#162426',
-    nav: '#0d191c',
-    panel: '#203639',
-    border: '#355154',
-    fg: '#effcf9',
-    muted: '#b0ceca',
-    accent: '#58ded0',
-    secondary: '#ef76a7',
-    sidebarAccent: '#ef76a7'
+    bg: '#1b2025',
+    nav: '#151c22',
+    panel: '#282f36',
+    border: '#3d4952',
+    fg: '#eaf2f5',
+    muted: '#b0c2cc',
+    accent: '#39c5cf',
+    secondary: '#e8488d',
+    sidebarAccent: '#e8488d',
+    selection: '#163d43'
   }
 ];
 
@@ -110,6 +112,7 @@ export const getThemeVariables = (theme: TTheme): Record<string, string> => {
   if (theme.source === 'sharkord') return {};
   const { bg, nav, panel, border, accent, mode } = theme;
   const surfaces = [bg, nav, panel];
+  if (theme.selection) surfaces.push(theme.selection);
   const readableForeground = surfaces.every(
     (surface) => contrast(theme.fg, surface) >= 4.5
   );
@@ -124,12 +127,12 @@ export const getThemeVariables = (theme: TTheme): Record<string, string> => {
     contrast(sidebarAccent, '#ffffff') > contrast(sidebarAccent, '#000000')
       ? '#ffffff'
       : '#000000';
-  const muted = [bg, nav, panel].every(
+  const muted = surfaces.every(
     (surface) => contrast(theme.muted, surface) >= 4.5
   )
     ? theme.muted
     : fg;
-  const accentText = [bg, nav, panel].every(
+  const accentText = surfaces.every(
     (surface) => contrast(accent, surface) >= 4.5
   )
     ? accent
@@ -149,7 +152,7 @@ export const getThemeVariables = (theme: TTheme): Record<string, string> => {
     '--secondary-foreground': fg,
     '--muted': panel,
     '--muted-foreground': muted,
-    '--accent': border,
+    '--accent': theme.selection ?? border,
     '--accent-foreground': fg,
     '--destructive': danger,
     '--border': border,
@@ -164,11 +167,12 @@ export const getThemeVariables = (theme: TTheme): Record<string, string> => {
     '--sidebar-foreground': fg,
     '--sidebar-primary': sidebarAccent,
     '--sidebar-primary-foreground': sidebarInk,
-    '--sidebar-accent': panel,
+    '--sidebar-accent': theme.selection ?? panel,
     '--sidebar-accent-foreground': fg,
     '--sidebar-border': border,
     '--sidebar-ring': accentText,
     '--rail': nav,
+    '--theme-secondary': theme.secondary ?? accent,
     '--nav': nav,
     '--canvas': bg,
     '--panel': panel,

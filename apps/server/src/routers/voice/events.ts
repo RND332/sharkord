@@ -1,12 +1,12 @@
 import {
   ServerEvents,
   type StreamKind,
-  type TDirectScreenEvent
+  type TDirectMediaEvent
 } from '@sharkord/shared';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import { config } from '../../config';
-import { getDirectScreenRuntime } from '../../helpers/get-direct-screen-runtime';
+import { getDirectMediaRuntime } from '../../helpers/get-direct-media-runtime';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
@@ -100,28 +100,28 @@ const onVoiceProducerClosedRoute = protectedProcedure.subscription(
   }
 );
 
-const onDirectScreenSignalRoute = rateLimitedProcedure(protectedProcedure, {
+const onDirectMediaSignalRoute = rateLimitedProcedure(protectedProcedure, {
   maxRequests: config.rateLimiters.voiceStream.maxRequests,
   windowMs: config.rateLimiters.voiceStream.windowMs,
-  logLabel: 'onDirectScreenSignal'
+  logLabel: 'onDirectMediaSignal'
 })
   .input(z.strictObject({ enabled: z.boolean() }))
   .subscription(async ({ ctx, input }) => {
-    const { runtime, channelId } = await getDirectScreenRuntime(ctx);
+    const { runtime, channelId } = await getDirectMediaRuntime(ctx);
     const member = runtime.getUser(ctx.user.id);
-    return observable<TDirectScreenEvent>((observer) => {
+    return observable<TDirectMediaEvent>((observer) => {
       if (
         ctx.currentVoiceChannelId !== channelId ||
         VoiceRuntime.findById(channelId) !== runtime ||
         runtime.getUser(ctx.user.id) !== member
       )
         return () => {};
-      const registration = runtime.registerDirectScreenSubscriber(
+      const registration = runtime.registerDirectMediaSubscriber(
         ctx.user.id,
         input.enabled
       );
       const subscription = ctx.pubsub
-        .subscribeFor(ctx.user.id, ServerEvents.DIRECT_SCREEN_SIGNAL)
+        .subscribeFor(ctx.user.id, ServerEvents.DIRECT_MEDIA_SIGNAL)
         .subscribe({
           next: (event) => {
             if (event.channelId !== channelId) return;
@@ -147,7 +147,7 @@ const onDirectScreenSignalRoute = rateLimitedProcedure(protectedProcedure, {
   });
 
 export {
-  onDirectScreenSignalRoute,
+  onDirectMediaSignalRoute,
   onUserJoinVoiceRoute,
   onUserLeaveVoiceRoute,
   onUserUpdateVoiceStateRoute,

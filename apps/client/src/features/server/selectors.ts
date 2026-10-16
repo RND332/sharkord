@@ -69,6 +69,26 @@ export const pluginsEnabledSelector = (state: IRootState) =>
 export const webRtcSimulcastEnabledSelector = (state: IRootState) =>
   !!state.server.publicSettings?.webRtcSimulcastEnabled;
 
+export const directMediaPolicySelector = createSelector(
+  [
+    (state: IRootState) => {
+      const channelId = currentVoiceChannelIdSelector(state);
+      return channelId === undefined
+        ? undefined
+        : voiceChannelStateSelector(state, channelId);
+    }
+  ],
+  (channel): 'relay' | 'audio' | 'all' => {
+    const members = Object.values(channel?.users ?? {});
+    if (
+      members.length !== 2 ||
+      !members.every((state) => state.directMediaEnabled === true)
+    )
+      return 'relay';
+    return members.some((state) => state.voiceOnlyMode) ? 'audio' : 'all';
+  }
+);
+
 export const infoSelector = (state: IRootState) => state.server.info;
 
 export const activeFullscreenPluginIdSelector = (state: IRootState) =>
@@ -234,6 +254,19 @@ export const ownVoiceUserSelector = createSelector(
   ],
   (ownUserId, voiceUsers) =>
     voiceUsers?.find((voiceUser) => voiceUser.id === ownUserId)
+);
+
+export const currentVoicePeersSelector = createSelector(
+  [
+    ownUserIdSelector,
+    (state: IRootState) => {
+      const channelId = currentVoiceChannelIdSelector(state);
+      return channelId === undefined
+        ? undefined
+        : voiceUsersByChannelIdSelector(state, channelId);
+    }
+  ],
+  (ownUserId, users) => users?.filter((user) => user.id !== ownUserId) ?? []
 );
 
 // this approach has some limitations but it should work for most cases
