@@ -1,3 +1,4 @@
+import { AudioSettingsMenu } from '@/components/audio-settings-menu';
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { Protect } from '@/components/protect';
 import { useIsCurrentVoiceChannelSelected } from '@/features/server/channels/hooks';
@@ -69,27 +70,33 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
         data-voice-controls
         className="flex items-center gap-1 rounded-full bg-nav p-1 pointer-events-auto sm:gap-2 sm:p-2"
       >
-        <ControlToggleButton
-          enabled={ownVoiceState.micMuted}
-          enabledLabel="Unmute"
-          disabledLabel="Mute"
-          enabledIcon={MicOff}
-          disabledIcon={MicrophoneIcon}
-          enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
-          onClick={toggleMic}
-          disabled={!permissions.canSpeak || ownVoiceState.soundMuted}
-        />
+        <div className="flex items-center">
+          <ControlToggleButton
+            enabled={ownVoiceState.micMuted}
+            enabledLabel="Unmute"
+            disabledLabel="Mute"
+            enabledIcon={MicOff}
+            disabledIcon={MicrophoneIcon}
+            enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
+            onClick={toggleMic}
+            disabled={!permissions.canSpeak || ownVoiceState.soundMuted}
+          />
 
-        <ControlToggleButton
-          enabled={ownVoiceState.soundMuted}
-          enabledLabel="Undeafen"
-          disabledLabel="Deafen"
-          enabledIcon={HeadphoneOff}
-          disabledIcon={Headphones}
-          enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
-          onClick={toggleSound}
-        />
+          <AudioSettingsMenu kind="microphone" />
+        </div>
+        <div className="flex items-center">
+          <ControlToggleButton
+            enabled={ownVoiceState.soundMuted}
+            enabledLabel="Undeafen"
+            disabledLabel="Deafen"
+            enabledIcon={HeadphoneOff}
+            disabledIcon={Headphones}
+            enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
+            onClick={toggleSound}
+          />
 
+          <AudioSettingsMenu kind="output" />
+        </div>
         <ControlToggleButton
           enabled={ownVoiceState.webcamEnabled}
           enabledLabel="Stop Video"

@@ -1,3 +1,4 @@
+import { AudioSettingsMenu } from '@/components/audio-settings-menu';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useChannelCan } from '@/features/server/hooks';
@@ -46,46 +47,51 @@ const UserControl = memo(() => {
       </UserPopover>
 
       <div className="flex items-center gap-0.5">
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            'h-7 w-8 rounded-md hover:bg-raised',
-            ownVoiceState.micMuted
-              ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-          onClick={toggleMic}
-          title={ownVoiceState.micMuted ? t('unmuteMic') : t('muteMic')}
-          disabled={
-            !channelCan(ChannelPermission.SPEAK) || ownVoiceState.soundMuted
-          }
-        >
-          {ownVoiceState.micMuted ? (
-            <MicOff className="h-4 w-4" />
-          ) : (
-            <Mic className="h-4 w-4" />
-          )}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            'h-7 w-8 rounded-md hover:bg-raised',
-            ownVoiceState.soundMuted
-              ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-          onClick={toggleSound}
-          title={ownVoiceState.soundMuted ? t('undeafen') : t('deafen')}
-        >
-          {ownVoiceState.soundMuted ? (
-            <HeadphoneOff className="h-4 w-4" />
-          ) : (
-            <Headphones className="h-4 w-4" />
-          )}
-        </Button>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-7 w-8 rounded-md hover:bg-raised',
+              ownVoiceState.micMuted
+                ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            onClick={toggleMic}
+            title={ownVoiceState.micMuted ? t('unmuteMic') : t('muteMic')}
+            disabled={
+              !channelCan(ChannelPermission.SPEAK) || ownVoiceState.soundMuted
+            }
+          >
+            {ownVoiceState.micMuted ? (
+              <MicOff className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </Button>
+          <AudioSettingsMenu kind="microphone" compact />
+        </div>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-7 w-8 rounded-md hover:bg-raised',
+              ownVoiceState.soundMuted
+                ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            onClick={toggleSound}
+            title={ownVoiceState.soundMuted ? t('undeafen') : t('deafen')}
+          >
+            {ownVoiceState.soundMuted ? (
+              <HeadphoneOff className="h-4 w-4" />
+            ) : (
+              <Headphones className="h-4 w-4" />
+            )}
+          </Button>
+          <AudioSettingsMenu kind="output" compact />
+        </div>
         <Button
           variant="ghost"
           size="icon"

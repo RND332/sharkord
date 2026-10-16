@@ -18,6 +18,7 @@ type TSettingsShellProps = {
   close: () => void;
   entries: TSettingsEntry[];
   pluginEntries?: TSettingsEntry[];
+  initialEntryId?: string;
 };
 
 const NO_ENTRIES: TSettingsEntry[] = [];
@@ -27,10 +28,13 @@ const SettingsShell = memo(
     title,
     close,
     entries,
-    pluginEntries = NO_ENTRIES
+    pluginEntries = NO_ENTRIES,
+    initialEntryId
   }: TSettingsShellProps) => {
     const { t } = useTranslation('settings');
-    const [selectedId, setSelectedId] = useState(() => entries[0]?.id ?? '');
+    const [selectedId, setSelectedId] = useState(
+      () => initialEntryId ?? entries[0]?.id ?? ''
+    );
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [form, setForm] = useState<TSettingsFormHandle | null>(null);
     const { isOpen: isModViewOpen } = useModViewOpen();

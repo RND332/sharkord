@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils';
 import { PluginSlot, StreamKind } from '@sharkord/shared';
 import { HeadphoneOff, MicOff, Monitor, Video } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';
 import {
   cardBadgeClass,
@@ -31,7 +34,6 @@ import {
 } from './hooks/use-pin-card-controller';
 import { useVoiceRefs } from './hooks/use-voice-refs';
 import { QualityButton } from './quality-button';
-import { ViewDemoButton } from './view-demo-button';
 import { VoiceCardContextMenu } from './voice-card-context-menu';
 import { VoiceReactions } from './voice-reactions';
 
@@ -61,6 +63,7 @@ const VoiceUserCard = memo(
     voiceUser,
     isAnyCardPinned = false
   }: TVoiceUserCardProps) => {
+    const { t } = useTranslation('common');
     const { videoRef, hasVideoStream } = useVoiceRefs(userId);
     const { volumeKey } = useStreamVolumeControl({ type: 'user', userId });
     const { devices } = useDevices();
@@ -72,7 +75,18 @@ const VoiceUserCard = memo(
       useSpeakingState(userId);
     const { isWebcamHidden, toggleWebcamHidden } = useRemoteWebcamVisibility();
     const webcamHidden = isWebcamHidden(userId);
-    const { isViewingDemo, viewDemo, stopViewingDemo } = useDemoVisibility();
+    const { isViewingDemo, stopViewingDemo } = useDemoVisibility();
+    const handleToggleWebcam = useCallback(
+      () => toggleWebcamHidden(userId),
+      [toggleWebcamHidden, userId]
+    );
+    const handleStopWatching = useCallback(async () => {
+      try {
+        await stopViewingDemo(userId);
+      } catch {
+        toast.error(t('failedStopWatching'));
+      }
+    }, [stopViewingDemo, userId, t]);
 
     const isCompact = isAnyCardPinned && !isPinned;
     const density = cardDensity(isCompact);
@@ -105,15 +119,12 @@ const VoiceUserCard = memo(
     return (
       <VoiceCardContextMenu
         volumeKey={isOwnUser ? undefined : volumeKey}
-        pinControl={
-          showPinControls ? { isPinned, onToggle: handlePinToggle } : undefined
-        }
         pictureInPicture={showWebcamVideo ? { videoRef } : undefined}
         webcam={
           !isOwnUser && !devices.voiceOnlyMode && hasVideoStream
             ? {
                 isHidden: webcamHidden,
-                onToggle: () => toggleWebcamHidden(userId)
+                onToggle: handleToggleWebcam
               }
             : undefined
         }
@@ -121,10 +132,7 @@ const VoiceUserCard = memo(
           !isOwnUser && !devices.voiceOnlyMode && voiceUser.state.sharingScreen
             ? {
                 isViewing: isViewingDemo(userId),
-                onToggle: () =>
-                  isViewingDemo(userId)
-                    ? stopViewingDemo(userId)
-                    : void viewDemo(userId)
+                onToggle: handleStopWatching
               }
             : undefined
         }
@@ -139,6 +147,13 @@ const VoiceUserCard = memo(
             className
           )}
         >
+          {showPinControls && (
+            <CardPinButton
+              name={voiceUser.name}
+              isPinned={isPinned}
+              onToggle={handlePinToggle}
+            />
+          )}
           {voiceUser.banner && showUserBanners ? (
             <div
               className="absolute inset-0 h-full w-full rounded-[12px] bg-cover bg-center bg-no-repeat blur-sm brightness-50"
@@ -221,15 +236,6 @@ const VoiceUserCard = memo(
                       className={cardControlClass(webcamHidden)}
                     />
                   )}
-                  {!isOwnUser &&
-                    !devices.voiceOnlyMode &&
-                    voiceUser.state.sharingScreen && (
-                      <ViewDemoButton
-                        userId={userId}
-                        size={density.icon}
-                        className={cardControlClass()}
-                      />
-                    )}
                 </div>
               </div>
             )}

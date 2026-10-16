@@ -8,6 +8,7 @@ import { StreamKind, type TExternalStream } from '@sharkord/shared';
 import { Avatar, AvatarFallback, AvatarImage } from '@sharkord/ui';
 import { Headphones, Router, Video } from 'lucide-react';
 import { memo, useCallback } from 'react';
+import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';
 import { cardBadgeClass, cardDensity } from './helpers';
 import { useFullscreen } from './hooks/use-fullscreen';
@@ -77,12 +78,8 @@ const ExternalStreamCard = memo(
       resetZoom
     } = useScreenShareZoom();
 
-    const {
-      isFullscreen,
-      isOverlayVisible,
-      toggleFullscreen,
-      handleDoubleClick
-    } = useFullscreen(containerRef);
+    const { isFullscreen, isOverlayVisible, toggleFullscreen } =
+      useFullscreen(containerRef);
 
     const handleToggleFullscreen = useCallback(() => {
       resetZoom();
@@ -124,9 +121,6 @@ const ExternalStreamCard = memo(
     return (
       <VoiceCardContextMenu
         volumeKey={hasAudio ? volumeKey : undefined}
-        pinControl={
-          showPinControls ? { isPinned, onToggle: handlePinToggle } : undefined
-        }
         pictureInPicture={hasVideo ? { videoRef: externalVideoRef } : undefined}
         fullscreen={{ isFullscreen, onToggle: handleToggleFullscreen }}
         zoom={
@@ -152,7 +146,6 @@ const ExternalStreamCard = memo(
           onMouseMove={hasVideo ? handleMouseMove : undefined}
           onMouseUp={hasVideo ? handleMouseUp : undefined}
           onMouseLeave={hasVideo ? handleMouseUp : undefined}
-          onDoubleClick={hasVideo ? handleDoubleClick : undefined}
           style={{
             cursor:
               isFullscreen && !isOverlayVisible
@@ -162,6 +155,13 @@ const ExternalStreamCard = memo(
                   : 'default'
           }}
         >
+          {showPinControls && !isFullscreen && (
+            <CardPinButton
+              name={stream.title || 'External Stream'}
+              isPinned={isPinned}
+              onToggle={handlePinToggle}
+            />
+          )}
           {stream.bannerUrl && showUserBanners ? (
             <div
               className="h-full w-full rounded bg-cover bg-center blur-sm brightness-50 bg-no-repeat absolute inset-0"
@@ -212,7 +212,7 @@ const ExternalStreamCard = memo(
 
           <div
             className={cn(
-              'absolute bottom-0 left-0 right-0 z-10',
+              'pointer-events-none absolute bottom-0 left-0 right-0 z-10',
               density.inset,
               'hidden group-hover/external-stream-card:flex'
             )}

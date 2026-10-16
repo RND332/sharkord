@@ -4,7 +4,8 @@ import '@fontsource-variable/inter';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
+import '../i18n';
 import '../index.css';
 
 const state = vi.hoisted(() => ({
@@ -33,7 +34,7 @@ vi.mock('@/components/voice-provider/demo-visibility-context', async () => {
     useDemoVisibility: () => {
       const viewing = useSyncExternalStore(subscribe, () => state.viewing);
       return {
-        isViewingDemo: () => viewing,
+        isViewingDemo: () => state.viewing,
         viewDemo: state.viewDemo,
         stopViewingDemo: state.stopViewingDemo,
         viewedRemoteDemos: viewing ? { 2: true } : {}
@@ -77,9 +78,6 @@ vi.mock('@/components/channel-view/voice/hooks/use-voice-refs', () => ({
     hasScreenShareAudioStream: false
   })
 }));
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key })
-}));
 vi.mock(
   '@/components/channel-view/voice/hooks/use-pin-card-controller',
   () => ({
@@ -103,7 +101,15 @@ vi.mock('@/components/channel-view/voice/external-stream-card', () => ({
 }));
 
 let root: Root;
-const pin = vi.fn();
+let pinned = false;
+const pin = vi.fn(() => {
+  pinned = true;
+  render();
+});
+const unpin = vi.fn(() => {
+  pinned = false;
+  render();
+});
 const render = async (channel = false) => {
   document.documentElement.classList.add('dark');
   if (!root) {
@@ -120,7 +126,8 @@ const render = async (channel = false) => {
           userId: 2,
           cardId: 'screen-share-2',
           onPin: pin,
-          onUnpin: vi.fn(),
+          onUnpin: () => unpin(),
+          isPinned: pinned,
           showPinControls: true
         })
   );
@@ -137,11 +144,106 @@ afterEach(() => {
   state.hasStream = false;
   state.visibilityListeners = [];
   state.voiceOnlyMode = false;
+  pinned = false;
   vi.useRealTimers();
   vi.clearAllMocks();
   state.viewDemo.mockImplementation(async () => {
     state.viewing = true;
   });
+  state.stopViewingDemo.mockImplementation(async () => {
+    state.viewing = false;
+  });
+});
+
+test('left clicking anywhere on a watched screen toggles its pin', async () => {
+  state.ownId = 2;
+  state.hasStream = true;
+  await render();
+  const tile = page.elementLocator(
+    document.querySelector('[data-screen-share-card]')!
+  );
+  await tile.click();
+  await expect
+    .element(page.getByRole('button', { name: 'Unpin aria', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true');
+  await tile.click();
+  await expect
+    .element(page.getByRole('button', { name: 'Pin aria', exact: true }))
+    .toHaveAttribute('aria-pressed', 'false');
+});
+
+test('left clicking an invitation starts viewing and pins the screen without a Watch stream button', async () => {
+  state.viewDemo.mockImplementation(async () => {
+    state.viewing = true;
+  });
+  await render();
+  await page
+    .elementLocator(document.querySelector('[data-screen-share-card]')!)
+    .click();
+  await render();
+  expect(state.viewing).toBe(true);
+  await expect
+    .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
+    .not.toBeInTheDocument();
+  state.hasStream = true;
+  await render();
+  await expect
+    .element(page.getByRole('button', { name: 'Unpin aria', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true');
+});
+
+test('a late stop response cannot clear a newer pin', async () => {
+  state.viewing = true;
+  state.hasStream = true;
+  pinned = true;
+  const { promise, resolve } = Promise.withResolvers<void>();
+  state.stopViewingDemo.mockImplementationOnce(() => promise);
+  await render();
+  await page
+    .elementLocator(document.querySelector('[data-screen-share-card]')!)
+    .click({ button: 'right' });
+  await page
+    .getByRole('menuitem', { name: 'Stop watching', exact: true })
+    .click();
+  expect(pinned).toBe(false);
+  pinned = true;
+  await render();
+  resolve();
+  await render();
+  expect(pinned).toBe(true);
+});
+
+test('left clicks keep native fullscreen open without changing the card pin', async () => {
+  state.ownId = 2;
+  state.hasStream = true;
+  pinned = true;
+  await render();
+  const card = page.elementLocator(
+    document.querySelector('[data-screen-share-card]')!
+  );
+  await card.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Fullscreen', exact: true }).click();
+  await expect.poll(() => document.fullscreenElement).not.toBeNull();
+  try {
+    await card.click();
+    expect(pinned).toBe(true);
+    expect(document.fullscreenElement).not.toBeNull();
+    await userEvent.keyboard('{Escape}');
+  } finally {
+    if (document.fullscreenElement) await document.exitFullscreen();
+  }
+});
+
+test('fullscreen exit while a stream is not mounted cannot mark its later preview fullscreen', async () => {
+  await render();
+  document.dispatchEvent(new Event('fullscreenchange'));
+  state.viewing = true;
+  state.hasStream = true;
+  await render();
+  expect(
+    getComputedStyle(document.querySelector('[data-screen-share-card]')!)
+      .borderRadius
+  ).toBe('12px');
 });
 
 test('watching and stopping a stream keep the same card shell and caption geometry', async () => {
@@ -210,7 +312,9 @@ test('channel includes both the normal participant and a separate invitation bef
   await render(true);
   expect(document.querySelectorAll('[data-participant]')).toHaveLength(1);
   await expect
-    .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
+    .element(
+      page.getByRole('button', { name: "View aria's screen", exact: true })
+    )
     .toBeVisible();
   expect(state.viewDemo).not.toHaveBeenCalled();
 });
@@ -221,16 +325,17 @@ test('watched media returns to the invitation after production stop even with a 
   await render();
   expect(document.querySelector('video')).not.toBeNull();
   await page
-    .elementLocator(document.querySelector('video')!.parentElement!)
-    .hover();
+    .elementLocator(document.querySelector('[data-screen-share-card]')!)
+    .click({ button: 'right' });
   await page
-    .getByRole('button', { name: 'stopViewingDemo', exact: true })
+    .getByRole('menuitem', { name: 'Stop watching', exact: true })
     .click();
-  expect(state.stopViewingDemo).toHaveBeenCalledWith(2);
   state.viewing = false;
   await render();
   await expect
-    .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
+    .element(
+      page.getByRole('button', { name: "View aria's screen", exact: true })
+    )
     .toBeVisible();
   expect(document.querySelector('video')).toBeNull();
 });
@@ -268,12 +373,14 @@ test('invitation appearance matches the approved Paper tile', async () => {
   );
 });
 
-test('successful opt-in shows arriving media without pinning', async () => {
+test('successful opt-in shows arriving media with the screen pinned', async () => {
   state.viewDemo.mockImplementation(async () => {
     state.viewing = true;
   });
   await render();
-  await page.getByRole('button', { name: 'Watch stream', exact: true }).click();
+  await page
+    .getByRole('button', { name: "View aria's screen", exact: true })
+    .click();
   await render();
   expect(
     page
@@ -284,7 +391,9 @@ test('successful opt-in shows arriving media without pinning', async () => {
   state.hasStream = true;
   await render();
   expect(document.querySelector('video')).not.toBeNull();
-  expect(pin).not.toHaveBeenCalled();
+  await expect
+    .element(page.getByRole('button', { name: 'Unpin aria', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true');
 });
 
 test('late rejected watch cannot roll back a replacement tile subscription', async () => {
@@ -296,7 +405,9 @@ test('late rejected watch cannot roll back a replacement tile subscription', asy
       })
   );
   await render();
-  await page.getByRole('button', { name: 'Watch stream', exact: true }).click();
+  await page
+    .getByRole('button', { name: "View aria's screen", exact: true })
+    .click();
   root.unmount();
   root = undefined!;
   document.body.replaceChildren();
@@ -310,7 +421,9 @@ test('late rejected watch cannot roll back a replacement tile subscription', asy
 test('watch remains loading until media arrives and times out into an accessible retry', async () => {
   await render();
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-  await page.getByRole('button', { name: 'Watch stream', exact: true }).click();
+  await page
+    .getByRole('button', { name: "View aria's screen", exact: true })
+    .click();
   await render();
   expect(
     page
@@ -321,12 +434,12 @@ test('watch remains loading until media arrives and times out into an accessible
   await vi.advanceTimersByTimeAsync(15_000);
   await render();
   expect(page.getByRole('alert').element().textContent).toContain(
-    'Unable to watch stream'
+    'Unable to view stream'
   );
   expect(state.stopViewingDemo).toHaveBeenCalledWith(2);
 });
 
-test('watch calls the production opt-in and exposes loading, failure and retry without pinning', async () => {
+test('viewing exposes loading, failure and retry before a successful pin', async () => {
   let reject!: (reason: Error) => void;
   state.viewDemo.mockImplementationOnce(() => {
     state.viewing = true;
@@ -335,7 +448,9 @@ test('watch calls the production opt-in and exposes loading, failure and retry w
     });
   });
   await render();
-  await page.getByRole('button', { name: 'Watch stream', exact: true }).click();
+  await page
+    .getByRole('button', { name: "View aria's screen", exact: true })
+    .click();
   expect(state.viewDemo).toHaveBeenCalledWith(2);
   await expect
     .element(page.getByRole('button', { name: 'Connecting…' }))
@@ -343,16 +458,24 @@ test('watch calls the production opt-in and exposes loading, failure and retry w
   reject(new Error('transport failed'));
   await expect
     .element(page.getByRole('alert'))
-    .toHaveTextContent('Unable to watch stream. Try again.');
-  await page.getByRole('button', { name: 'Retry watch stream' }).click();
+    .toHaveTextContent('Unable to view stream. Try again.');
+  await page
+    .getByRole('button', { name: "Retry viewing aria's screen" })
+    .click();
   expect(state.viewDemo).toHaveBeenCalledTimes(2);
-  expect(pin).not.toHaveBeenCalled();
+  state.hasStream = true;
+  await render();
+  await expect
+    .element(page.getByRole('button', { name: 'Unpin aria', exact: true }))
+    .toHaveAttribute('aria-pressed', 'true');
 });
 
 test('unwatched share shows the approved invitation without subscribing or pinning', async () => {
   await render();
   await expect
-    .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
+    .element(
+      page.getByRole('button', { name: "View aria's screen", exact: true })
+    )
     .toBeVisible();
   await expect
     .element(page.getByText("aria's screen", { exact: true }))
@@ -362,19 +485,17 @@ test('unwatched share shows the approved invitation without subscribing or pinni
   expect(state.viewDemo).not.toHaveBeenCalled();
   expect(pin).not.toHaveBeenCalled();
   const button = page
-    .getByRole('button', { name: 'Watch stream', exact: true })
+    .getByRole('button', { name: "View aria's screen", exact: true })
     .element();
   const tile = button.closest('[data-screen-share-card]')!;
-  const styles = getComputedStyle(button);
-  expect(styles.height).toBe('36px');
-  expect(styles.paddingLeft).toBe('16px');
-  expect(styles.gap).toBe('8px');
-  expect(styles.borderRadius).toBe('6px');
-  expect(styles.backgroundColor).toBe('rgb(64, 66, 73)');
-  expect(styles.color).toBe('rgb(242, 243, 245)');
-  expect(styles.fontSize).toBe('14px');
-  expect(styles.lineHeight).toBe('20px');
-  expect(styles.fontWeight).toBe('500');
+  expect(button.getBoundingClientRect().width).toBeCloseTo(
+    tile.getBoundingClientRect().width - 2,
+    0
+  );
+  expect(button.getBoundingClientRect().height).toBeCloseTo(
+    tile.getBoundingClientRect().height - 2,
+    0
+  );
   expect(getComputedStyle(tile).backgroundColor).toBe('rgb(43, 45, 49)');
   expect(getComputedStyle(tile).borderColor).toBe('rgb(68, 70, 77)');
   expect(getComputedStyle(tile).borderRadius).toBe('12px');

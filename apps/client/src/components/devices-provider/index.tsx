@@ -27,6 +27,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 const getDefaultDeviceSettings = (): TDeviceSettings => ({
+  microphoneVolume: 100,
+  playbackVolume: 100,
   microphoneId: undefined,
   playbackId: undefined,
   webcamId: undefined,

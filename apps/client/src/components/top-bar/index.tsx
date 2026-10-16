@@ -9,8 +9,9 @@ import {
   useDmsOpen,
   usePublicServerSettings
 } from '@/features/server/hooks';
+import { getFileUrl } from '@/helpers/get-file-url';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
-import { Button } from '@sharkord/ui';
+import { Avatar, AvatarFallback, AvatarImage, Button } from '@sharkord/ui';
 import { PanelRight, PanelRightClose } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,9 @@ type TTopBarProps = {
 const TopBar = memo(({ onToggleRightSidebar, isOpen }: TTopBarProps) => {
   const { t } = useTranslation('topbar');
   const settings = usePublicServerSettings();
+  const serverName = settings?.name;
+  const trimmedServerName = serverName?.trim();
+  const serverInitial = trimmedServerName?.[0]?.toUpperCase() || 'S';
   const selectedChannelType = useSelectedChannelType();
   const currentVoiceChannelId = useCurrentVoiceChannelId();
   const isCurrentVoiceChannelSelected = useIsCurrentVoiceChannelSelected();
@@ -38,9 +42,18 @@ const TopBar = memo(({ onToggleRightSidebar, isOpen }: TTopBarProps) => {
   return (
     <header className="hidden h-10 w-full shrink-0 grid-cols-[minmax(0,1fr)_minmax(180px,550px)_minmax(0,1fr)] items-center gap-5 border-b border-line bg-rail px-5 lg:grid">
       <div className="flex min-w-0 items-center gap-2.5">
-        <img src="/logo.webp" alt="" className="size-5 object-contain" />
-        <span className="text-sm font-semibold tracking-tight text-foreground">
-          sharkord
+        <Avatar className="size-6 rounded-lg" aria-hidden="true">
+          <AvatarImage
+            src={getFileUrl(settings?.logo)}
+            alt=""
+            className="object-cover"
+          />
+          <AvatarFallback className="rounded-lg bg-sidebar-primary text-[15px] font-semibold text-sidebar-primary-foreground">
+            {serverInitial}
+          </AvatarFallback>
+        </Avatar>
+        <span className="truncate text-sm font-bold tracking-[-0.01em] text-foreground">
+          {serverName}
         </span>
       </div>
 

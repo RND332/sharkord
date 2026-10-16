@@ -36,6 +36,7 @@ const getPublicSettings: () => Promise<TPublicServerSettings> = async () => {
   const publicSettings: TPublicServerSettings = {
     description: settings.description ?? '',
     name: settings.name,
+    logo: settings.logo,
     serverId: settings.serverId,
     storageUploadEnabled: settings.storageUploadEnabled,
     directMessagesEnabled: settings.directMessagesEnabled,

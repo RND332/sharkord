@@ -55,6 +55,8 @@ export enum NoiseSuppression {
 }
 
 export type TDeviceSettings = {
+  microphoneVolume: number;
+  playbackVolume: number;
   microphoneId: string | undefined;
   playbackId: string | undefined;
   webcamId: string | undefined;

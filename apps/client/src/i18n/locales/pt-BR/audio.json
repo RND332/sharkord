@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "Configurações do microfone",
+  "outputSettings": "Configurações dos fones",
+  "inputDevice": "Dispositivo de entrada",
+  "outputDevice": "Dispositivo de saída",
+  "microphoneVolume": "Volume do microfone",
+  "outputVolume": "Volume de saída",
+  "voiceSettings": "Configurações de voz"
+}

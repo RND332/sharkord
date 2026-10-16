@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "Nastavení mikrofonu",
+  "outputSettings": "Nastavení sluchátek",
+  "inputDevice": "Vstupní zařízení",
+  "outputDevice": "Výstupní zařízení",
+  "microphoneVolume": "Hlasitost mikrofonu",
+  "outputVolume": "Hlasitost výstupu",
+  "voiceSettings": "Nastavení hlasu"
+}
