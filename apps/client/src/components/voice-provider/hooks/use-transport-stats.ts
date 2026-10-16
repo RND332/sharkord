@@ -1,6 +1,9 @@
 import { logVoice, logVoiceError } from '@/helpers/browser-logger';
+import { getTRPCClient } from '@/lib/trpc';
+import { StreamKind } from '@sharkord/shared';
 import type { AppData, Producer, Transport } from 'mediasoup-client/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DirectMedia } from '../direct-media';
 
 export type TransportStats = {
   bytesReceived: number;
@@ -50,6 +53,9 @@ type ParsedScreenShareStats = Omit<ScreenShareStats, 'bitrate' | 'layers'> & {
 };
 
 export type TransportStatsData = {
+  serverRtt: number | null;
+  peerRtts: Record<number, number | null>;
+  direct: TransportStats | null;
   producer: TransportStats | null;
   consumer: TransportStats | null;
   screenShare: ScreenShareStats | null;
@@ -62,11 +68,18 @@ export type TransportStatsData = {
 // A request cannot be cancelled. Keep its slot until it settles, including
 // across polling restarts and hook remounts; never accumulate timed-out calls.
 const pendingStatsRequests = new WeakMap<
-  Transport | Producer<AppData>,
+  Transport | Producer<AppData> | RTCPeerConnection,
   Promise<RTCStatsReport>
 >();
 
-const getStats = (target: Transport | Producer<AppData>) => {
+const pendingControlPings = new WeakMap<
+  ReturnType<typeof getTRPCClient>,
+  Promise<number>
+>();
+
+const getStats = (
+  target: Transport | Producer<AppData> | RTCPeerConnection
+) => {
   const pending = pendingStatsRequests.get(target);
   if (pending) return pending;
 
@@ -77,8 +90,44 @@ const getStats = (target: Transport | Producer<AppData>) => {
   return request;
 };
 
-const useTransportStats = () => {
+const selectedRtt = (report: RTCStatsReport): number | null => {
+  let rtt: number | null = null;
+  for (const stat of report.values()) {
+    if (stat.type !== 'transport' || !stat.selectedCandidatePairId) continue;
+    const pair = report.get(stat.selectedCandidatePairId);
+    if (
+      pair?.type !== 'candidate-pair' ||
+      pair.state !== 'succeeded' ||
+      typeof pair.currentRoundTripTime !== 'number' ||
+      !Number.isFinite(pair.currentRoundTripTime) ||
+      pair.currentRoundTripTime < 0
+    )
+      continue;
+    rtt = Math.max(rtt ?? 0, pair.currentRoundTripTime * 1000);
+  }
+  return rtt;
+};
+
+const useTransportStats = (
+  directSources: Pick<DirectMedia, 'getConnections'>[] = []
+) => {
+  const directSourcesRef = useRef(directSources);
+  directSourcesRef.current = directSources;
+  const previousDirectStatsRef = useRef(
+    new WeakMap<RTCPeerConnection, TransportStats>()
+  );
+  const controlPendingRef = useRef<{
+    client: ReturnType<typeof getTRPCClient>;
+    request: Promise<number>;
+  } | null>(null);
+  const controlMeasurementRef = useRef<{
+    rtt: number;
+    timestamp: number;
+  } | null>(null);
   const [stats, setStats] = useState<TransportStatsData>({
+    serverRtt: null,
+    peerRtts: {},
+    direct: null,
     producer: null,
     consumer: null,
     screenShare: null,
@@ -89,6 +138,7 @@ const useTransportStats = () => {
   });
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const monitoringRef = useRef(false);
   const generationRef = useRef(0);
   const collectingRef = useRef<number | null>(null);
   const intervalMsRef = useRef(1000);
@@ -110,10 +160,7 @@ const useTransportStats = () => {
   } | null>(null);
 
   const parseTransportStats = useCallback(
-    (
-      statsReport: RTCStatsReport,
-      isProducer: boolean
-    ): TransportStats | null => {
+    (statsReport: RTCStatsReport, isProducer: boolean): TransportStats => {
       let bytesReceived = 0;
       let bytesSent = 0;
       let packetsReceived = 0;
@@ -256,14 +303,24 @@ const useTransportStats = () => {
     const producerTransport = producerTransportRef.current;
     const consumerTransport = consumerTransportRef.current;
     const screenShareProducer = screenShareProducerRef.current;
+    const directConnections = directSourcesRef.current.flatMap((source) =>
+      source.getConnections()
+    );
     if (
-      [producerTransport, consumerTransport, screenShareProducer].some(
-        (target) => target && pendingStatsRequests.has(target)
-      )
+      [
+        producerTransport,
+        consumerTransport,
+        screenShareProducer,
+        ...directConnections.map((peer) => peer.connection)
+      ].some((target) => target && pendingStatsRequests.has(target))
     )
       return;
     const isCurrent = () => generationRef.current === generation;
-    if (!producerTransportRef.current && !consumerTransportRef.current) {
+    if (
+      !producerTransportRef.current &&
+      !consumerTransportRef.current &&
+      !directSourcesRef.current.length
+    ) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -274,6 +331,40 @@ const useTransportStats = () => {
     }
 
     collectingRef.current = generation;
+    try {
+      const client = getTRPCClient();
+      if (
+        !controlPendingRef.current ||
+        controlPendingRef.current.client !== client
+      ) {
+        if (controlPendingRef.current) controlMeasurementRef.current = null;
+        let request = pendingControlPings.get(client);
+        if (!request) {
+          const start = performance.now();
+          request = client.others.ping
+            .query()
+            .then(() => performance.now() - start)
+            .finally(() => pendingControlPings.delete(client));
+          pendingControlPings.set(client, request);
+        }
+        const pending = { client, request };
+        controlPendingRef.current = pending;
+        request
+          .then((rtt) => {
+            if (isCurrent() && monitoringRef.current)
+              controlMeasurementRef.current = { rtt, timestamp: Date.now() };
+          })
+          .catch(() => {
+            if (isCurrent()) controlMeasurementRef.current = null;
+          })
+          .finally(() => {
+            if (controlPendingRef.current === pending)
+              controlPendingRef.current = null;
+          });
+      }
+    } catch {
+      controlMeasurementRef.current = null;
+    }
     try {
       let producerStats: TransportStats | null = null;
       let consumerStats: TransportStats | null = null;
@@ -302,11 +393,86 @@ const useTransportStats = () => {
         }
       }
 
-      let screenShareStatsResult: ScreenShareStats | null = null;
-
-      if (screenShareProducer && !screenShareProducer.closed) {
+      const peerRtts: Record<number, number | null> = {};
+      const directReports = new Map<RTCPeerConnection, RTCStatsReport>();
+      const directSamples: [RTCPeerConnection, TransportStats][] = [];
+      let directStats: TransportStats | null = null;
+      let directSentDelta = 0;
+      let directReceivedDelta = 0;
+      let directBitrateSent = 0;
+      let directBitrateReceived = 0;
+      for (const peer of directConnections) {
         try {
-          const screenShareReport = await getStats(screenShareProducer);
+          const report = await getStats(peer.connection);
+          if (!isCurrent()) return;
+          if (peer.connection.connectionState !== 'connected') continue;
+          directReports.set(peer.connection, report);
+          const sent = parseTransportStats(report, true);
+          const received = parseTransportStats(report, false);
+          const sample = {
+            ...sent,
+            bytesReceived: received.bytesReceived,
+            packetsReceived: received.packetsReceived,
+            packetsLost: received.packetsLost,
+            jitter: received.jitter
+          };
+          const previous = previousDirectStatsRef.current.get(peer.connection);
+          const sentDelta = Math.max(
+            0,
+            sample.bytesSent - (previous?.bytesSent ?? 0)
+          );
+          const receivedDelta = Math.max(
+            0,
+            sample.bytesReceived - (previous?.bytesReceived ?? 0)
+          );
+          directSentDelta += sentDelta;
+          directReceivedDelta += receivedDelta;
+          if (previous && sample.timestamp > previous.timestamp) {
+            const seconds = (sample.timestamp - previous.timestamp) / 1000;
+            directBitrateSent += sentDelta / seconds;
+            directBitrateReceived += receivedDelta / seconds;
+          }
+          directSamples.push([peer.connection, sample]);
+          if (!directStats) directStats = { ...sample };
+          else {
+            directStats.bytesSent += sample.bytesSent;
+            directStats.bytesReceived += sample.bytesReceived;
+            directStats.packetsSent += sample.packetsSent;
+            directStats.packetsReceived += sample.packetsReceived;
+            directStats.packetsLost += sample.packetsLost;
+          }
+          const rtt = selectedRtt(report);
+          const previousRtt = peerRtts[peer.peerId];
+          peerRtts[peer.peerId] =
+            rtt === null
+              ? (previousRtt ?? null)
+              : Math.max(previousRtt ?? 0, rtt);
+        } catch {
+          if (!isCurrent()) return;
+          peerRtts[peer.peerId] ??= null;
+        }
+      }
+
+      let screenShareStatsResult: ScreenShareStats | null = null;
+      const directScreen = directConnections.find(
+        (peer) =>
+          peer.kind === StreamKind.SCREEN && peer.direction === 'outgoing'
+      );
+      const screenTarget = screenShareProducer ?? directScreen?.connection;
+      const screenOpen =
+        screenTarget &&
+        ('closed' in screenTarget
+          ? !screenTarget.closed
+          : screenTarget.connectionState === 'connected');
+
+      if (screenTarget && screenOpen) {
+        try {
+          const directReport =
+            directScreen && screenTarget === directScreen.connection
+              ? directReports.get(directScreen.connection)
+              : undefined;
+          const screenShareReport =
+            directReport ?? (await getStats(screenTarget));
           if (!isCurrent()) return;
 
           const parsed = parseScreenShareStats(screenShareReport);
@@ -371,7 +537,11 @@ const useTransportStats = () => {
         previousScreenShareStatsRef.current = null;
       }
 
-      if (!producerTransportRef.current && !consumerTransportRef.current) {
+      if (
+        !producerTransportRef.current &&
+        !consumerTransportRef.current &&
+        !directSourcesRef.current.length
+      ) {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
@@ -417,14 +587,27 @@ const useTransportStats = () => {
         }
       }
 
+      for (const [connection, sample] of directSamples)
+        previousDirectStatsRef.current.set(connection, sample);
+      const control = controlMeasurementRef.current;
       setStats((prev) => ({
+        serverRtt:
+          control && Date.now() - control.timestamp <= intervalMsRef.current * 3
+            ? control.rtt
+            : null,
+        peerRtts,
+        direct: directStats,
         producer: producerStats,
         consumer: consumerStats,
         screenShare: screenShareStatsResult,
-        totalBytesReceived: prev.totalBytesReceived + bytesReceivedDelta,
-        totalBytesSent: prev.totalBytesSent + bytesSentDelta,
-        currentBitrateSent,
-        currentBitrateReceived
+        totalBytesReceived:
+          prev.totalBytesReceived +
+          Math.max(0, bytesReceivedDelta) +
+          directReceivedDelta,
+        totalBytesSent:
+          prev.totalBytesSent + Math.max(0, bytesSentDelta) + directSentDelta,
+        currentBitrateSent: currentBitrateSent + directBitrateSent,
+        currentBitrateReceived: currentBitrateReceived + directBitrateReceived
       }));
 
       previousStatsRef.current = {
@@ -440,8 +623,11 @@ const useTransportStats = () => {
 
   const applyPolling = useCallback(() => {
     const hasTransport =
-      !!producerTransportRef.current || !!consumerTransportRef.current;
-    const shouldPoll = hasTransport && subscriberCountRef.current > 0;
+      !!producerTransportRef.current ||
+      !!consumerTransportRef.current ||
+      directSourcesRef.current.length > 0;
+    const shouldPoll =
+      monitoringRef.current && hasTransport && subscriberCountRef.current > 0;
 
     if (shouldPoll === !!intervalRef.current) return;
 
@@ -477,6 +663,7 @@ const useTransportStats = () => {
       consumerTransport?: Transport | null,
       intervalMs: number = 1000
     ) => {
+      monitoringRef.current = true;
       generationRef.current += 1;
       producerTransportRef.current = producerTransport || null;
       consumerTransportRef.current = consumerTransport || null;
@@ -510,6 +697,7 @@ const useTransportStats = () => {
   );
 
   const stopMonitoring = useCallback(() => {
+    monitoringRef.current = false;
     generationRef.current += 1;
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -526,6 +714,9 @@ const useTransportStats = () => {
   const resetStats = useCallback(() => {
     generationRef.current += 1;
     setStats({
+      serverRtt: null,
+      peerRtts: {},
+      direct: null,
       producer: null,
       consumer: null,
       screenShare: null,
@@ -543,6 +734,8 @@ const useTransportStats = () => {
     previousScreenShareStatsRef.current = null;
 
     logVoice('stats: reset');
+    previousDirectStatsRef.current = new WeakMap();
+    controlMeasurementRef.current = null;
   }, []);
 
   const printStats = useCallback(() => {
@@ -562,6 +755,7 @@ const useTransportStats = () => {
 
   useEffect(() => {
     return () => {
+      monitoringRef.current = false;
       generationRef.current += 1;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

@@ -9,6 +9,8 @@ import {
   categoryHasUnreadMentionsSelector,
   categoryUnreadMessagesCountSelector,
   connectedSelector,
+  currentVoicePeersSelector,
+  directMediaPolicySelector,
   disconnectInfoSelector,
   dmsOpenSelector,
   hasSharingScreenUsersSelector,
@@ -51,6 +53,12 @@ export const usePublicServerSettings = () =>
 
 export const useWebRtcSimulcastEnabled = () =>
   useSelector(webRtcSimulcastEnabledSelector);
+
+export const useDirectMediaPolicy = () =>
+  useSelector(directMediaPolicySelector);
+
+export const useCurrentVoicePeers = () =>
+  useSelector(currentVoicePeersSelector);
 
 export const useOwnUserRoles = () => useSelector(ownUserRolesSelector);
 

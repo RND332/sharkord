@@ -2,6 +2,15 @@ import { describe, expect, test } from 'bun:test';
 import { contrast, getThemeVariables, THEMES } from '../themes';
 
 describe('built-in theme catalog', () => {
+  test('Miku uses a turquoise selection instead of a neutral gray highlight', () => {
+    const theme = THEMES.find((item) => item.id === 'hatsune-miku')!;
+    const variables = getThemeVariables(theme);
+    expect(variables['--accent']).toBe('#163d43');
+    expect(
+      contrast(variables['--foreground']!, variables['--accent']!)
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
   test('keeps body text, muted text and action labels readable in every adapted palette', () => {
     for (const theme of THEMES.filter((item) => item.source !== 'sharkord')) {
       const variables = getThemeVariables(theme);

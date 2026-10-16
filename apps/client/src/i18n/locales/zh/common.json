@@ -1,4 +1,5 @@
 {
+  "directMediaFailed": "无法建立媒体连接，请重试。",
   "cancel": "取消",
   "confirm": "确认",
   "close": "关闭",

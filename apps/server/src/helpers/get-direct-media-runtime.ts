@@ -1,4 +1,8 @@
-import { ChannelPermission, ChannelType, Permission } from '@sharkord/shared';
+import {
+  ChannelType,
+  Permission,
+  type TDirectMediaKind
+} from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { channels } from '../db/schema';
@@ -6,10 +10,13 @@ import { VoiceRuntime } from '../runtimes/voice';
 import { invariant } from '../utils/invariant';
 import type { Context } from '../utils/trpc';
 import { assertChannelAccess } from './assert-channel-access';
+import { voiceKindPermissions } from './voice-kind-permissions';
 
-const getDirectScreenRuntime = async (ctx: Context, sharing = false) => {
+const getDirectMediaRuntime = async (ctx: Context, kind?: TDirectMediaKind) => {
   await ctx.needsPermission(Permission.JOIN_VOICE_CHANNELS);
-  if (sharing) await ctx.needsPermission(Permission.SHARE_SCREEN);
+  const mediaPermission = kind ? voiceKindPermissions[kind] : undefined;
+  if (mediaPermission?.server)
+    await ctx.needsPermission(mediaPermission.server);
   invariant(ctx.currentVoiceChannelId, {
     code: 'BAD_REQUEST',
     message: 'User is not in a voice channel'
@@ -32,8 +39,8 @@ const getDirectScreenRuntime = async (ctx: Context, sharing = false) => {
     message: 'Voice runtime not found for this channel'
   });
   await assertChannelAccess(ctx, channelId);
-  if (sharing)
-    await ctx.needsChannelPermission(channelId, ChannelPermission.SHARE_SCREEN);
+  if (mediaPermission)
+    await ctx.needsChannelPermission(channelId, mediaPermission.channel);
   invariant(runtime.getUser(ctx.user.id), {
     code: 'BAD_REQUEST',
     message: 'User is not in this voice channel'
@@ -41,4 +48,4 @@ const getDirectScreenRuntime = async (ctx: Context, sharing = false) => {
   return { runtime, channelId };
 };
 
-export { getDirectScreenRuntime };
+export { getDirectMediaRuntime };

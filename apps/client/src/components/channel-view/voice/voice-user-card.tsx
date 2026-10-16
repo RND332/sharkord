@@ -193,42 +193,46 @@ const VoiceUserCard = memo(
             />
           </div>
 
-          <div
-            className={cn(
-              'absolute top-0 right-0 z-10 justify-end',
-              density.inset,
-              'flex opacity-0 pointer-events-none group-hover/voice-user-card:opacity-100 group-hover/voice-user-card:pointer-events-auto group-focus-within/voice-user-card:opacity-100 group-focus-within/voice-user-card:pointer-events-auto',
-              'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
-            )}
-          >
-            <div className={cardControlsClass(isCompact)}>
-              {showQualityControl && (
-                <QualityButton
-                  streamId={userId}
-                  kind={StreamKind.VIDEO}
-                  disabled={!isSimulcastConsumer(userId, StreamKind.VIDEO)}
-                  size={density.icon}
-                  className={cardControlClass()}
-                />
-              )}
-              {!isOwnUser && !devices.voiceOnlyMode && hasVideoStream && (
-                <HideWebcamButton
-                  userId={userId}
-                  size={density.icon}
-                  className={cardControlClass(webcamHidden)}
-                />
-              )}
-              {!isOwnUser &&
-                !devices.voiceOnlyMode &&
-                voiceUser.state.sharingScreen && (
-                  <ViewDemoButton
-                    userId={userId}
-                    size={density.icon}
-                    className={cardControlClass()}
-                  />
+          {!isOwnUser &&
+            !devices.voiceOnlyMode &&
+            (hasVideoStream || voiceUser.state.sharingScreen) && (
+              <div
+                className={cn(
+                  'absolute top-0 right-0 z-10 justify-end',
+                  density.inset,
+                  'flex opacity-0 pointer-events-none group-hover/voice-user-card:opacity-100 group-hover/voice-user-card:pointer-events-auto group-focus-within/voice-user-card:opacity-100 group-focus-within/voice-user-card:pointer-events-auto',
+                  'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
                 )}
-            </div>
-          </div>
+              >
+                <div className={cardControlsClass(isCompact)}>
+                  {showQualityControl && (
+                    <QualityButton
+                      streamId={userId}
+                      kind={StreamKind.VIDEO}
+                      disabled={!isSimulcastConsumer(userId, StreamKind.VIDEO)}
+                      size={density.icon}
+                      className={cardControlClass()}
+                    />
+                  )}
+                  {!isOwnUser && !devices.voiceOnlyMode && hasVideoStream && (
+                    <HideWebcamButton
+                      userId={userId}
+                      size={density.icon}
+                      className={cardControlClass(webcamHidden)}
+                    />
+                  )}
+                  {!isOwnUser &&
+                    !devices.voiceOnlyMode &&
+                    voiceUser.state.sharingScreen && (
+                      <ViewDemoButton
+                        userId={userId}
+                        size={density.icon}
+                        className={cardControlClass()}
+                      />
+                    )}
+                </div>
+              </div>
+            )}
 
           <div
             className={cn(

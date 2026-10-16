@@ -1,12 +1,12 @@
 import {
   ChannelPermission,
-  DIRECT_SCREEN_SDP_MAX_LENGTH,
+  DIRECT_MEDIA_SDP_MAX_LENGTH,
   Permission
 } from '@sharkord/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { channelUserCan } from '../../db/queries/channels';
-import { getDirectScreenRuntime } from '../../helpers/get-direct-screen-runtime';
+import { getDirectMediaRuntime } from '../../helpers/get-direct-media-runtime';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -15,7 +15,7 @@ import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 const sdp = z
   .string()
   .min(1)
-  .max(DIRECT_SCREEN_SDP_MAX_LENGTH)
+  .max(DIRECT_MEDIA_SDP_MAX_LENGTH)
   .refine(
     (value) =>
       /^v=0(?:\r?\n)/.test(value) &&
@@ -23,10 +23,10 @@ const sdp = z
     'Invalid direct screen SDP'
   );
 
-const signalDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
+const signalDirectMediaRoute = rateLimitedProcedure(protectedProcedure, {
   maxRequests: config.rateLimiters.voiceStream.maxRequests,
   windowMs: config.rateLimiters.voiceStream.windowMs,
-  logLabel: 'signalDirectScreen'
+  logLabel: 'signalDirectMedia'
 })
   .input(
     z.strictObject({
@@ -43,11 +43,10 @@ const signalDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
   .mutation(async ({ input, ctx }) => {
     await ctx.needsPermission(Permission.JOIN_VOICE_CHANNELS);
     const offering = input.signal.type === 'offer';
-    if (offering) await ctx.needsPermission(Permission.SHARE_SCREEN);
     const runtime = ctx.currentVoiceChannelId
       ? VoiceRuntime.findById(ctx.currentVoiceChannelId)
       : undefined;
-    const session = runtime?.getDirectScreenSession(
+    const session = runtime?.getDirectMediaSession(
       input.sessionId,
       ctx.user.id
     );
@@ -61,7 +60,10 @@ const signalDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
       code: 'NOT_FOUND',
       message: 'Direct screen session not found'
     });
-    const current = await getDirectScreenRuntime(ctx, offering);
+    const current = await getDirectMediaRuntime(
+      ctx,
+      offering ? session.kind : undefined
+    );
     const peerId =
       session.senderId === ctx.user.id ? session.peerId : session.senderId;
     if (
@@ -72,7 +74,7 @@ const signalDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
         ChannelPermission.VIEW_CHANNEL
       ))
     ) {
-      current.runtime.invalidateDirectScreenUser(peerId);
+      current.runtime.invalidateDirectMediaUser(peerId);
       invariant(false, {
         code: 'NOT_FOUND',
         message: 'Direct screen session not found'
@@ -87,11 +89,11 @@ const signalDirectScreenRoute = rateLimitedProcedure(protectedProcedure, {
         message: 'Direct screen session not found'
       }
     );
-    current.runtime.signalDirectScreen(
+    current.runtime.signalDirectMedia(
       input.sessionId,
       ctx.user.id,
       input.signal
     );
   });
 
-export { signalDirectScreenRoute };
+export { signalDirectMediaRoute };

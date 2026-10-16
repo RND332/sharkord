@@ -1,11 +1,11 @@
 import {
   StreamKind,
-  type TDirectScreenEvent,
-  type TDirectScreenSession,
-  type TDirectScreenSignal
+  type TDirectMediaEvent,
+  type TDirectMediaSession,
+  type TDirectMediaSignal
 } from '@sharkord/shared';
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { DirectScreenShare } from '../direct-screen-share';
+import { DirectMedia, type TDirectMediaResult } from '../direct-media';
 
 // bun has no native RTC implementation; this double models native state and
 // deferred operations, while browser verification covers SDP and actual media.
@@ -222,7 +222,8 @@ class TestPeer extends EventTarget {
   };
 }
 
-const session = (sessionId = 'outgoing'): TDirectScreenSession => ({
+const session = (sessionId = 'outgoing'): TDirectMediaSession => ({
+  kind: StreamKind.SCREEN,
   sessionId,
   peerId: 2,
   stunUrls: ['stun:example.com:3478']
@@ -230,9 +231,11 @@ const session = (sessionId = 'outgoing'): TDirectScreenSession => ({
 
 const event = (
   sessionId: string,
-  signal: TDirectScreenSignal,
+  signal: TDirectMediaSignal,
   incoming = false
-): TDirectScreenEvent => ({
+): TDirectMediaEvent => ({
+  kind: StreamKind.SCREEN,
+  relayAllowed: false,
   sessionId,
   channelId: 10,
   senderId: incoming ? 2 : 1,
@@ -251,7 +254,7 @@ const capture = () => {
   return { stream, video, audio };
 };
 
-const subjects: DirectScreenShare[] = [];
+const subjects: DirectMedia[] = [];
 const originals = new Map<string, PropertyDescriptor | undefined>();
 let clock: TestClock;
 
@@ -299,31 +302,32 @@ type TObservedScreenStream = {
   kind: StreamKind;
 };
 
-type TDirectScreenFixture = {
-  subject: DirectScreenShare;
-  sent: { sessionId: string; signal: TDirectScreenSignal }[];
+type TDirectMediaFixture = {
+  subject: DirectMedia;
+  sent: { sessionId: string; signal: TDirectMediaSignal }[];
   statuses: string[];
   errors: unknown[];
   streams: TObservedScreenStream[];
   removed: TObservedScreenStream[];
-  start: (stream?: MediaStream) => Promise<boolean>;
-  readonly fallbacks: number;
+  start: (stream?: MediaStream) => Promise<TDirectMediaResult>;
+  readonly failures: number;
 };
 
 const fixture = (
-  prepare: () => Promise<TDirectScreenSession | null> = async () => session(),
-  send?: (sessionId: string, signal: TDirectScreenSignal) => Promise<void>,
+  prepare: () => Promise<TDirectMediaSession | null> = async () => session(),
+  send?: (sessionId: string, signal: TDirectMediaSignal) => Promise<void>,
   canReceive?: (userId: number) => boolean,
   onStopped?: (userId: number) => void,
   canDefer?: () => boolean
-): TDirectScreenFixture => {
-  const sent: { sessionId: string; signal: TDirectScreenSignal }[] = [];
+): TDirectMediaFixture => {
+  const sent: { sessionId: string; signal: TDirectMediaSignal }[] = [];
   const statuses: string[] = [];
   const errors: unknown[] = [];
   const streams: TObservedScreenStream[] = [];
   const removed: TObservedScreenStream[] = [];
-  let fallbacks = 0;
-  const subject = new DirectScreenShare({
+  let failures = 0;
+  const subject = new DirectMedia({
+    kind: StreamKind.SCREEN,
     prepare,
     canReceive,
     canDefer,
@@ -343,8 +347,8 @@ const fixture = (
     subject.start(stream, {
       maxBitrate: 4_000_000,
       codec: 'video/H264',
-      onFallback: async () => {
-        fallbacks++;
+      onFailure: async () => {
+        failures++;
       }
     });
   return {
@@ -355,49 +359,99 @@ const fixture = (
     streams,
     removed,
     start,
-    get fallbacks() {
-      return fallbacks;
+    get failures() {
+      return failures;
     }
   };
 };
 
-const answer = async (subject: DirectScreenShare, sessionId = 'outgoing') => {
+const answer = async (subject: DirectMedia, sessionId = 'outgoing') => {
   await subject.handleSignal(event(sessionId, { type: 'answer', sdp: ANSWER }));
 };
 
-const establish = async (subject: TDirectScreenFixture) => {
+const establish = async (subject: TDirectMediaFixture) => {
   const started = subject.start();
   await flush();
   const peer = TestPeer.instances[0]!;
   await answer(subject.subject);
   peer.connect();
   await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-  expect(await started).toBe(true);
+  expect(await started).toBe('direct');
   return peer;
 };
 
-describe('DirectScreenShare outgoing lifecycle', () => {
+describe('DirectMedia outgoing lifecycle', () => {
+  test('a group transition before preparation completes preserves server relay eligibility', async () => {
+    const pending = deferred<TDirectMediaSession | null>();
+    const subject = fixture(() => pending.promise);
+    const started = subject.start();
+    await flush();
+    await subject.subject.handleSignal({
+      ...event('group-transition', { type: 'fallback' }),
+      relayAllowed: true
+    });
+    pending.resolve(session('group-transition'));
+    await flush();
+    expect(await started).toBe('relay');
+    expect(TestPeer.instances).toHaveLength(0);
+    expect(subject.failures).toBe(0);
+  });
+
+  test('replacement waits for a cancelled preparation and its server stop acknowledgement', async () => {
+    const prepared = deferred<TDirectMediaSession | null>();
+    const stopped = deferred<void>();
+    let preparations = 0;
+    const value = fixture(
+      async () => {
+        preparations++;
+        return preparations === 1 ? prepared.promise : session('replacement');
+      },
+      async (sessionId, signal) => {
+        if (sessionId === 'cancelled' && signal.type === 'stop')
+          await stopped.promise;
+      }
+    );
+    const previous = value.start();
+    await flush();
+    const replacement = value.start();
+    await flush();
+    expect(preparations).toBe(1);
+    prepared.resolve(session('cancelled'));
+    await flush();
+    expect(value.sent).toContainEqual({
+      sessionId: 'cancelled',
+      signal: { type: 'stop' }
+    });
+    expect(preparations).toBe(1);
+    stopped.resolve();
+    await flush();
+    expect(preparations).toBe(2);
+    value.subject.close();
+    expect(await previous).toBe('failed');
+    expect(await replacement).toBe('failed');
+  });
+
   test('stop cancels prepare and safely retires a late session without opening a peer', async () => {
-    const pending = deferred<TDirectScreenSession | null>();
+    const pending = deferred<TDirectMediaSession | null>();
     const subject = fixture(() => pending.promise);
     const media = capture();
     const started = subject.start(media.stream);
     subject.subject.stop();
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
     pending.resolve(session('late'));
     await flush();
     expect(TestPeer.instances).toHaveLength(0);
     expect(subject.sent).toEqual([
       { sessionId: 'late', signal: { type: 'stop' } }
     ]);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
     expect(media.video.stopped + media.audio.stopped).toBe(0);
   });
 
   test('deadline includes prepare and a late response cannot revive a timed-out attempt', async () => {
-    const pending = deferred<TDirectScreenSession | null>();
+    const pending = deferred<TDirectMediaSession | null>();
     const subject = fixture(() => pending.promise);
-    let result: boolean | undefined;
+    let result: TDirectMediaResult | undefined;
     const started = subject.start().then((value) => {
       result = value;
       return value;
@@ -405,24 +459,33 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     await clock.advance(7_999);
     expect(result).toBeUndefined();
     await clock.advance(1);
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
     pending.resolve(session('late'));
     await flush();
     expect(TestPeer.instances).toHaveLength(0);
     expect(subject.sent).toEqual([
       { sessionId: 'late', signal: { type: 'stop' } }
     ]);
-    expect(subject.statuses.at(-1)).toBe('relayed');
+    expect(subject.statuses.at(-1)).toBe('failed');
   });
 
-  test('server declining direct sharing resolves false without established fallback', async () => {
+  test('a prepared P2P session cannot authorize server relay on timeout', async () => {
+    const subject = fixture();
+    const started = subject.start();
+    await flush();
+    await clock.advance(8_000);
+    expect(await started).toBe('failed');
+    expect(subject.statuses.at(-1)).toBe('failed');
+  });
+
+  test('server declining direct sharing authorizes relay without a P2P attempt', async () => {
     const subject = fixture(async () => null);
-    expect(await subject.start()).toBe(false);
+    expect(await subject.start()).toBe('relay');
     expect(TestPeer.instances).toHaveLength(0);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
   });
 
-  test('native peer construction failure retires the prepared server session for SFU fallback', async () => {
+  test('native peer construction failure retires the session without authorizing relay', async () => {
     const descriptor = Object.getOwnPropertyDescriptor(
       globalThis,
       'RTCPeerConnection'
@@ -434,12 +497,12 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     try {
       const subject = fixture();
       const media = capture();
-      expect(await subject.start(media.stream)).toBe(false);
+      expect(await subject.start(media.stream)).toBe('failed');
       await flush();
       expect(subject.sent).toEqual([
         { sessionId: 'outgoing', signal: { type: 'fallback' } }
       ]);
-      expect(subject.fallbacks).toBe(0);
+      expect(subject.failures).toBe(0);
       expect(media.video.stopped + media.audio.stopped).toBe(0);
     } finally {
       if (descriptor)
@@ -447,14 +510,14 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     }
   });
 
-  test('prepare rejection resolves false and reports the real error', async () => {
+  test('prepare rejection fails closed and reports the real error', async () => {
     const error = new Error('prepare failed');
     const subject = fixture(async () => {
       throw error;
     });
-    expect(await subject.start()).toBe(false);
+    expect(await subject.start()).toBe('failed');
     expect(subject.errors).toContain(error);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
   });
 
   test.each(['offer', 'local'] as const)(
@@ -466,7 +529,7 @@ describe('DirectScreenShare outgoing lifecycle', () => {
       const started = subject.start();
       await flush();
       subject.subject.stop();
-      expect(await started).toBe(false);
+      expect(await started).toBe('failed');
       pending.resolve();
       await flush();
       expect(TestPeer.instances[0]!.connectionState).toBe('closed');
@@ -484,13 +547,13 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     const answering = answer(subject.subject);
     await flush();
     subject.subject.stop();
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
     pending.resolve();
     await answering;
     TestPeer.instances[0]!.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
     expect(subject.statuses).not.toContain('direct');
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
   });
 
   test('sends sendonly screen transceivers with native codec preference and gathered SDP', async () => {
@@ -520,12 +583,12 @@ describe('DirectScreenShare outgoing lifecycle', () => {
       }
     ]);
     subject.subject.stop();
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
   });
 
   test('waits for both local connected and receiver ready after answer', async () => {
     const subject = fixture();
-    let result: boolean | undefined;
+    let result: TDirectMediaResult | undefined;
     const started = subject.start().then((value) => {
       result = value;
       return value;
@@ -535,11 +598,11 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
     expect(result).toBeUndefined();
     TestPeer.instances[0]!.connect();
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     expect(subject.statuses.at(-1)).toBe('direct');
   });
 
-  test('native rejection of a remote answer resolves false and preserves capture for SFU', async () => {
+  test('native rejection of a remote answer fails without authorizing relay', async () => {
     const remote = deferred<void>();
     const error = new Error('invalid native SDP');
     TestPeer.plans.push({ remote: remote.promise });
@@ -551,7 +614,7 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     await flush();
     remote.reject(error);
     await handling;
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
     await flush();
     expect(subject.errors).toContain(error);
     expect(TestPeer.instances[0]!.connectionState).toBe('closed');
@@ -560,25 +623,25 @@ describe('DirectScreenShare outgoing lifecycle', () => {
       signal: { type: 'fallback' }
     });
     expect(media.video.stopped + media.audio.stopped).toBe(0);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
   });
 
-  test('failed offer send resolves false without stopping capture or calling established fallback', async () => {
+  test('failed offer send fails without authorizing relay or calling the established failure handler', async () => {
     const error = new Error('signalling failed');
     const subject = fixture(undefined, async () => {
       throw error;
     });
     const media = capture();
-    expect(await subject.start(media.stream)).toBe(false);
+    expect(await subject.start(media.stream)).toBe('failed');
     await flush();
     expect(subject.errors).toContain(error);
     expect(TestPeer.instances[0]!.connectionState).toBe('closed');
     expect(media.video.stopped + media.audio.stopped).toBe(0);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
   });
 
   test('a hanging send stays inside the original eight-second deadline', async () => {
-    const prepare = deferred<TDirectScreenSession | null>();
+    const prepare = deferred<TDirectMediaSession | null>();
     const sending = deferred<void>();
     const subject = fixture(
       () => prepare.promise,
@@ -589,7 +652,7 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     prepare.resolve(session());
     await flush();
     await clock.advance(1_000);
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
     expect(TestPeer.instances[0]!.connectionState).toBe('closed');
     sending.resolve();
     await flush();
@@ -609,7 +672,7 @@ describe('DirectScreenShare outgoing lifecycle', () => {
       { sessionId: 'outgoing', signal: { type: 'offer', sdp: OFFER } }
     ]);
     subject.subject.stop();
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
   });
 
   test('gathering completion sends all native candidates without trickle messages', async () => {
@@ -626,7 +689,7 @@ describe('DirectScreenShare outgoing lifecycle', () => {
       }
     ]);
     subject.subject.stop();
-    expect(await started).toBe(false);
+    expect(await started).toBe('failed');
   });
 
   test('established failure falls back exactly once despite duplicate failure and terminal events', async () => {
@@ -638,13 +701,13 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     await answer(subject.subject);
     peer.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     peer.connect('failed');
     peer.connect('disconnected');
     await subject.subject.handleSignal(event('outgoing', { type: 'fallback' }));
     await flush();
-    expect(subject.fallbacks).toBe(1);
-    expect(subject.statuses.at(-1)).toBe('relayed');
+    expect(subject.failures).toBe(1);
+    expect(subject.statuses.at(-1)).toBe('failed');
     expect(
       subject.sent.filter(({ signal }) => signal.type === 'fallback')
     ).toHaveLength(1);
@@ -674,18 +737,18 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     });
     expect(peer.closeCount).toBe(0);
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
   });
 
   test('restarting does not let a late old prepare stop or replace the new outgoing session', async () => {
-    const oldPrepare = deferred<TDirectScreenSession | null>();
+    const oldPrepare = deferred<TDirectMediaSession | null>();
     let calls = 0;
     const subject = fixture(() =>
       ++calls === 1 ? oldPrepare.promise : Promise.resolve(session('new'))
     );
     const oldStart = subject.start();
     const newStart = subject.start();
-    expect(await oldStart).toBe(false);
+    expect(await oldStart).toBe('failed');
     await flush();
     oldPrepare.resolve(session('old'));
     await flush();
@@ -698,11 +761,11 @@ describe('DirectScreenShare outgoing lifecycle', () => {
     await answer(subject.subject, 'new');
     TestPeer.instances[0]!.connect();
     await subject.subject.handleSignal(event('new', { type: 'ready' }));
-    expect(await newStart).toBe(true);
+    expect(await newStart).toBe('direct');
   });
 });
 
-describe('DirectScreenShare incoming lifecycle', () => {
+describe('DirectMedia incoming lifecycle', () => {
   test('only a validated presenter stop retires received media, not fallback', async () => {
     const stopped: number[] = [];
     const subject = fixture(undefined, undefined, undefined, (userId) => {
@@ -736,7 +799,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     const outgoing = TestPeer.instances[0]!;
     outgoing.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     await subject.subject.handleSignal(
       event('incoming', { type: 'offer', sdp: OFFER }, true)
     );
@@ -761,7 +824,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
       sessionId: 'incoming',
       signal: { type: 'fallback' }
     });
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
     incoming.receive(new TestTrack('audio') as unknown as MediaStreamTrack);
     await subject.subject.handleSignal(
       event('incoming', { type: 'offer', sdp: OFFER }, true)
@@ -1053,8 +1116,8 @@ describe('DirectScreenShare incoming lifecycle', () => {
     expect(viewer.sent).toEqual([]);
     expect(viewer.streams).toEqual([]);
     await clock.advance(8_000);
-    expect(await started).toBe(false);
-    expect(presenter.statuses.at(-1)).toBe('relayed');
+    expect(await started).toBe('failed');
+    expect(presenter.statuses.at(-1)).toBe('failed');
     watching = true;
     expect(viewer.subject.acceptPendingOffer(1)).toBe(false);
     await viewer.subject.handleSignal({
@@ -1082,7 +1145,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     await answer(subject.subject);
     outgoing.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     await subject.subject.handleSignal(
       event('pending', { type: 'offer', sdp: OFFER }, true)
     );
@@ -1099,7 +1162,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     expect(other.closeCount).toBe(0);
     expect(TestPeer.instances).toHaveLength(2);
     expect(media.video.stopped + media.audio.stopped).toBe(0);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
     expect(subject.sent.at(-1)).toEqual({
       sessionId: 'pending',
       signal: { type: 'fallback' }
@@ -1314,7 +1377,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     await clock.advance(8_000);
     expect(incoming.connectionState).toBe('closed');
     expect(outgoing.closeCount).toBe(0);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
     expect(subject.sent.at(-1)).toEqual({
       sessionId: 'incoming',
       signal: { type: 'fallback' }
@@ -1329,7 +1392,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     await answer(subject.subject);
     TestPeer.instances[0]!.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     await subject.subject.handleSignal(
       event('incoming', { type: 'offer', sdp: OFFER }, true)
     );
@@ -1343,7 +1406,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     expect(incoming.connectionState).toBe('closed');
     expect(subject.removed[0]!.stream).toBe(subject.streams[0]!.stream);
     expect(media.video.stopped + media.audio.stopped).toBe(0);
-    expect(subject.fallbacks).toBe(0);
+    expect(subject.failures).toBe(0);
   });
 
   test('stale events cannot remove a new stream or reopen a retired incoming session', async () => {
@@ -1408,7 +1471,7 @@ describe('DirectScreenShare incoming lifecycle', () => {
     await answer(subject.subject);
     TestPeer.instances[0]!.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     expect(subject.statuses.at(-1)).toBe('direct');
     await subject.subject.handleSignal({
       ...event('incoming', { type: 'offer', sdp: OFFER }, true),
@@ -1439,19 +1502,19 @@ describe('DirectScreenShare incoming lifecycle', () => {
     await answer(subject.subject);
     TestPeer.instances[0]!.connect();
     await subject.subject.handleSignal(event('outgoing', { type: 'ready' }));
-    expect(await started).toBe(true);
+    expect(await started).toBe('direct');
     expect(TestPeer.instances[1]!.closeCount).toBe(0);
   });
 
   test('close cancels an old prepare without blocking fresh sessions or reviving the late result', async () => {
-    const pending = deferred<TDirectScreenSession | null>();
+    const pending = deferred<TDirectMediaSession | null>();
     let calls = 0;
     const subject = fixture(() =>
       ++calls === 1 ? pending.promise : Promise.resolve(session('fresh'))
     );
     const oldStart = subject.start();
     subject.subject.close();
-    expect(await oldStart).toBe(false);
+    expect(await oldStart).toBe('failed');
     const freshStart = subject.start();
     await flush();
     pending.resolve(session('late'));
@@ -1466,6 +1529,6 @@ describe('DirectScreenShare incoming lifecycle', () => {
     await answer(subject.subject, 'fresh');
     TestPeer.instances[0]!.connect();
     await subject.subject.handleSignal(event('fresh', { type: 'ready' }));
-    expect(await freshStart).toBe(true);
+    expect(await freshStart).toBe('direct');
   });
 });

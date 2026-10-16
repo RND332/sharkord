@@ -1,5 +1,8 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
-import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
+import {
+  useDirectMediaPolicy,
+  useWebRtcSimulcastEnabled
+} from '@/features/server/hooks';
 import { SoundType } from '@/features/server/types';
 import { updateOwnVoiceState } from '@/features/server/voice/actions';
 import { useOwnVoiceState } from '@/features/server/voice/hooks';
@@ -34,7 +37,6 @@ import { NoiseSuppression, VideoCodec, type TStreamQuality } from '@/types';
 import {
   DEFAULT_BITRATE,
   getErrorMessage,
-  getTrpcError,
   StreamKind,
   type ConsumerType,
   type TStreamQualityLayer,
@@ -81,7 +83,7 @@ import {
   type TRemoteQualityLayers,
   type TStreamQualitySettings
 } from './helpers';
-import { useDirectScreenShare } from './hooks/use-direct-screen-share';
+import { useDirectMedia } from './hooks/use-direct-media';
 import { useLocalStreams } from './hooks/use-local-streams';
 import { useRemoteStreams } from './hooks/use-remote-streams';
 import { useTransportStats } from './hooks/use-transport-stats';
@@ -272,6 +274,17 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const currentVoiceChannelIdRef = useRef(currentVoiceChannelId);
   currentVoiceChannelIdRef.current = currentVoiceChannelId;
   const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
+  const directMediaPolicy = useDirectMediaPolicy();
+  const directMediaPolicyRef = useRef(directMediaPolicy);
+  directMediaPolicyRef.current = directMediaPolicy;
+  const microphoneRouteRef = useRef<'direct' | 'relay' | undefined>(undefined);
+  const webcamRouteRef = useRef<'direct' | 'relay' | undefined>(undefined);
+  const [screenRoute, setScreenRoute] = useState<
+    'direct' | 'relay' | undefined
+  >();
+  const screenRoutingRef = useRef<symbol | undefined>(undefined);
+  const screenPublicationRef = useRef<symbol | undefined>(undefined);
+  const republishScreenRef = useRef<() => Promise<void>>(async () => {});
   const ownVoiceState = useOwnVoiceState();
   const { devices, saveDevices } = useDevices();
   const voiceOnlyMode =
@@ -482,6 +495,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const screenShareGenerationRef = useRef(0);
   const capturedWebcamStreamRef = useRef<MediaStream | undefined>(undefined);
   const webcamGenerationRef = useRef(0);
+  const restartWebcamStreamRef = useRef<() => Promise<void>>(async () => {});
 
   const {
     producerTransport,
@@ -558,9 +572,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     [closeConsumers, removeExternalStream]
   );
 
-  const { directScreenShare } = useDirectScreenShare({
+  const { directMedia } = useDirectMedia({
     channelId: currentVoiceChannelId,
-    enabled: !!devices.directScreenSharing && !voiceOnlyMode,
+    enabled: !!devices.directScreenSharing,
+    voiceOnlyMode,
     isVoiceSessionActive:
       connectionStatus === ConnectionStatus.CONNECTING ||
       connectionStatus === ConnectionStatus.CONNECTED,
@@ -569,6 +584,10 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     addRemoteUserStream,
     removeRemoteUserStream
   });
+
+  const directScreenShare = directMedia[StreamKind.SCREEN];
+  const directMicrophone = directMedia[StreamKind.AUDIO];
+  const directWebcam = directMedia[StreamKind.VIDEO];
 
   const startReceivingDemo = useCallback(
     (userId: number) => directScreenShare.acceptPendingOffer(userId),
@@ -590,7 +609,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     stopMonitoring,
     resetStats,
     setScreenShareProducer
-  } = useTransportStats();
+  } = useTransportStats(Object.values(directMedia));
   const rawMicrophoneStreamRef = useRef<MediaStream | null>(null);
   const transmitMicrophoneTrackRef = useRef<MediaStreamTrack | null>(null);
   const microphoneNoiseGateAudioContextRef = useRef<AudioContext | null>(null);
@@ -604,6 +623,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   );
   const micRecoveryHistoryRef = useRef<number[]>([]);
   const startMicStreamRef = useRef<() => Promise<void>>(async () => {});
+  const republishMicrophoneRef = useRef<() => Promise<void>>(async () => {});
   const micMutedRef = useRef(ownVoiceState.micMuted);
 
   const syncTransmitMicrophoneTrackState = useCallback(() => {
@@ -620,6 +640,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
   const cleanupMicProcessingResources = useCallback(() => {
     logVoice('mic: releasing capture resources');
+    republishMicrophoneRef.current = async () => {};
+    directMicrophone.stop();
 
     if (micRecoveryTimerRef.current !== null) {
       clearTimeout(micRecoveryTimerRef.current);
@@ -650,7 +672,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
     transmitMicrophoneTrackRef.current?.stop();
     transmitMicrophoneTrackRef.current = null;
-  }, []);
+  }, [directMicrophone]);
 
   useEffect(() => {
     micMutedRef.current = ownVoiceState.micMuted;
@@ -868,6 +890,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         microphoneNoiseGateWorkletNodeRef.current = gateNode;
         nsAudioContextsRef.current = nsContexts;
         transmitMicrophoneTrackRef.current = transmitTrack;
+        microphoneRouteRef.current =
+          devices.directScreenSharing &&
+          directMediaPolicyRef.current !== 'relay'
+            ? 'direct'
+            : 'relay';
         setLocalAudioStream(transmitStream);
         syncTransmitMicrophoneTrackState();
 
@@ -881,45 +908,100 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           throw new Error('Producer transport is not available');
         }
 
-        const producer = await transport.produce({
-          track: transmitTrack,
-          codecOptions: {
-            opusStereo: false,
-            opusFec: true,
-            opusDtx: false,
-            opusMaxPlaybackRate: 48000,
-            opusMaxAverageBitrate: 128000
-          },
-          appData: { kind: StreamKind.AUDIO }
-        });
-
-        if (!isCurrentSession()) {
-          producer.close();
-          disposeLocalResources();
-          return;
-        }
-        localAudioProducer.current = producer;
-
-        logVoice('mic: producer created', {
-          producerId: localAudioProducer.current.id
-        });
-
-        localAudioProducer.current?.observer.on('close', async () => {
-          if (!isCurrentSession() || localAudioProducer.current !== producer)
-            return;
-          logVoice('mic: producer closed');
-
-          const trpc = getTRPCClient();
-
+        let publication = 0;
+        const publishMicrophone = async () => {
+          const currentPublication = ++publication;
+          const isCurrentPublication = () =>
+            isCurrentSession() &&
+            rawMicrophoneStreamRef.current === rawStream &&
+            publication === currentPublication;
           try {
-            await trpc.voice.closeProducer.mutate({
-              kind: StreamKind.AUDIO,
-              producerId: producer.id
+            localAudioProducer.current?.close();
+            localAudioProducer.current = undefined;
+            directMicrophone.stop();
+            microphoneRouteRef.current =
+              devices.directScreenSharing &&
+              directMediaPolicyRef.current !== 'relay'
+                ? 'direct'
+                : 'relay';
+            const path = devices.directScreenSharing
+              ? await directMicrophone.start(transmitStream, {
+                  maxBitrate: 128000,
+                  onFailure: async () => {
+                    if (!isCurrentPublication()) return;
+                    await republishMicrophoneRef.current();
+                  }
+                })
+              : 'relay';
+            if (!isCurrentPublication()) return;
+            if (path === 'failed') {
+              toast.error(t('directMediaFailed'));
+              throw new Error(
+                'Direct microphone failed; server relay is disabled'
+              );
+            }
+            microphoneRouteRef.current = path;
+            const producer =
+              path === 'relay'
+                ? await transport.produce({
+                    track: transmitTrack,
+                    stopTracks: false,
+                    codecOptions: {
+                      opusStereo: false,
+                      opusFec: true,
+                      opusDtx: false,
+                      opusMaxPlaybackRate: 48000,
+                      opusMaxAverageBitrate: 128000
+                    },
+                    appData: { kind: StreamKind.AUDIO }
+                  })
+                : undefined;
+
+            if (!isCurrentPublication()) {
+              producer?.close();
+              return;
+            }
+            localAudioProducer.current = producer;
+
+            logVoice('mic: producer created', {
+              producerId: producer?.id,
+              path
+            });
+
+            localAudioProducer.current?.observer.on('close', async () => {
+              if (
+                !producer ||
+                !isCurrentSession() ||
+                localAudioProducer.current !== producer
+              )
+                return;
+              logVoice('mic: producer closed');
+
+              const trpc = getTRPCClient();
+
+              try {
+                await trpc.voice.closeProducer.mutate({
+                  kind: StreamKind.AUDIO,
+                  producerId: producer.id
+                });
+              } catch (error) {
+                logVoiceError(
+                  'mic: closing producer on the server failed',
+                  error
+                );
+              }
             });
           } catch (error) {
-            logVoiceError('mic: closing producer on the server failed', error);
+            if (!isCurrentPublication()) return;
+            logVoiceError('mic: publishing failed', error);
+            cleanupMicProcessingResources();
+            disposeLocalResources();
+            setLocalAudioStream(undefined);
+            throw error;
           }
-        });
+        };
+        republishMicrophoneRef.current = publishMicrophone;
+        await publishMicrophone();
 
         rawAudioTrack.onended = () => {
           if (
@@ -933,7 +1015,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
             track.stop();
           });
           cleanupMicProcessingResources();
-          producer.close();
+          localAudioProducer.current?.close();
           localAudioProducer.current = undefined;
 
           setLocalAudioStream(undefined);
@@ -991,6 +1073,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     setLocalAudioStream,
     localAudioProducer,
     syncTransmitMicrophoneTrackState,
+    directMicrophone,
+    devices.directScreenSharing,
     devices.microphoneId,
     devices.autoGainControl,
     devices.echoCancellation,
@@ -1003,175 +1087,252 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     startMicStreamRef.current = startMicStream;
   }, [startMicStream]);
 
-  const startWebcamStream = useCallback(async () => {
-    if (voiceOnlyModeRef.current) {
-      throw new Error('Voice-only mode does not allow webcam capture');
-    }
-    const generation = ++webcamGenerationRef.current;
-    let capturedStream: MediaStream | undefined;
-    try {
-      logVoice('webcam: starting');
+  useEffect(() => {
+    if (
+      connectionStatus !== ConnectionStatus.CONNECTING &&
+      connectionStatus !== ConnectionStatus.CONNECTED
+    )
+      return;
+    const track = rawMicrophoneStreamRef.current?.getAudioTracks()[0];
+    if (!track || track.readyState !== 'live') return;
+    const path =
+      devices.directScreenSharing && directMediaPolicy !== 'relay'
+        ? 'direct'
+        : 'relay';
+    if (microphoneRouteRef.current === path) return;
+    microphoneRouteRef.current = path;
+    republishMicrophoneRef
+      .current()
+      .catch((error) => logVoiceError('mic: republishing failed', error));
+  }, [
+    connectionStatus,
+    localAudioStream,
+    directMediaPolicy,
+    devices.directScreenSharing,
+    localAudioProducer
+  ]);
 
-      const hasSpecificWebcam =
-        !!devices?.webcamId && devices.webcamId !== 'default';
-
-      const webcamConstraints: MediaStreamConstraints = {
-        video: {
-          deviceId: hasSpecificWebcam ? { exact: devices.webcamId } : undefined,
-          frameRate: devices.webcamFramerate,
-          ...getResWidthHeight(devices?.webcamResolution)
-        },
-        audio: false
-      };
-
-      logVoice('webcam: requesting stream', { constraints: webcamConstraints });
-
-      const stream =
-        await navigator.mediaDevices.getUserMedia(webcamConstraints);
-      capturedStream = stream;
-      if (
-        voiceOnlyModeRef.current ||
-        generation !== webcamGenerationRef.current
-      ) {
-        stream.getTracks().forEach((track) => track.stop());
-        throw new Error('Webcam capture ended');
+  const startWebcamStream = useCallback(
+    async (existingStream?: MediaStream) => {
+      if (voiceOnlyModeRef.current) {
+        throw new Error('Voice-only mode does not allow webcam capture');
       }
-      capturedWebcamStreamRef.current = stream;
+      const generation = ++webcamGenerationRef.current;
+      let capturedStream: MediaStream | undefined;
+      try {
+        logVoice('webcam: starting');
 
-      logVoice('webcam: stream obtained', {
-        trackId: stream.getVideoTracks()[0]?.id,
-        label: stream.getVideoTracks()[0]?.label
-      });
+        const hasSpecificWebcam =
+          !!devices?.webcamId && devices.webcamId !== 'default';
 
-      setLocalVideoStream(stream);
-
-      const videoTrack = stream.getVideoTracks()[0];
-
-      if (videoTrack) {
-        logVoice('webcam: video track obtained', {
-          trackId: videoTrack.id,
-          readyState: videoTrack.readyState,
-          settings: videoTrack.getSettings()
-        });
-
-        const simulcastCodec = simulcastEnabled
-          ? getSimulcastCodec(routerRtpCapabilities.current)
-          : undefined;
-
-        const webcamProducerOptions: ProducerOptions<TVideoProducerAppData> = {
-          track: videoTrack,
-          appData: {
-            kind: StreamKind.VIDEO
-          }
+        const webcamConstraints: MediaStreamConstraints = {
+          video: {
+            deviceId: hasSpecificWebcam
+              ? { exact: devices.webcamId }
+              : undefined,
+            frameRate: devices.webcamFramerate,
+            ...getResWidthHeight(devices?.webcamResolution)
+          },
+          audio: false
         };
-        let simulcastWebcamProducerOptions = webcamProducerOptions;
 
-        if (simulcastCodec) {
-          logVoice('webcam: using vp8 for simulcast', {
-            codec: simulcastCodec.mimeType
-          });
+        logVoice(
+          existingStream
+            ? 'webcam: republishing captured stream'
+            : 'webcam: requesting stream',
+          { constraints: webcamConstraints }
+        );
 
-          const encodings = getSimulcastEncodings(SIMULCAST_WEBCAM_MAX_BITRATE);
-
-          const qualityLayers = getSimulcastQualityLayers(encodings);
-
-          simulcastWebcamProducerOptions = {
-            ...webcamProducerOptions,
-            appData: { kind: StreamKind.VIDEO, qualityLayers },
-            codec: simulcastCodec,
-            encodings
-          };
-        }
-
-        let webcamProducer: typeof localVideoProducer.current;
-        try {
-          webcamProducer = await producerTransport.current?.produce(
-            simulcastWebcamProducerOptions
-          );
-        } catch (error) {
-          if (
-            !simulcastCodec ||
-            voiceOnlyModeRef.current ||
-            generation !== webcamGenerationRef.current
-          )
-            throw error;
-
-          logVoiceWarn(
-            'webcam: simulcast producer failed, retrying without simulcast',
-            { error: getErrorMessage(error) }
-          );
-
-          webcamProducer = await producerTransport.current?.produce(
-            webcamProducerOptions
-          );
-        }
-
-        logVoice('webcam: producer created', {
-          producerId: webcamProducer?.id
-        });
-
-        webcamProducer?.observer.on('close', async () => {
-          logVoice('webcam: producer closed');
-
-          const trpc = getTRPCClient();
-
-          try {
-            await trpc.voice.closeProducer.mutate({
-              kind: StreamKind.VIDEO,
-              producerId: webcamProducer?.id
-            });
-          } catch (error) {
-            logVoiceError(
-              'webcam: closing producer on the server failed',
-              error
-            );
-          }
-        });
+        const stream =
+          existingStream ??
+          (await navigator.mediaDevices.getUserMedia(webcamConstraints));
+        capturedStream = stream;
         if (
           voiceOnlyModeRef.current ||
-          generation !== webcamGenerationRef.current ||
-          capturedWebcamStreamRef.current !== stream
+          generation !== webcamGenerationRef.current
         ) {
-          webcamProducer?.close();
-          stream.getTracks().forEach((track) => track.stop());
           throw new Error('Webcam capture ended');
         }
-        localVideoProducer.current = webcamProducer;
+        capturedWebcamStreamRef.current = stream;
 
-        videoTrack.onended = () => {
-          logVoiceWarn('webcam: track ended, cleaning up');
+        logVoice('webcam: stream obtained', {
+          trackId: stream.getVideoTracks()[0]?.id,
+          label: stream.getVideoTracks()[0]?.label
+        });
 
-          if (capturedWebcamStreamRef.current !== stream) return;
-          stream.getTracks().forEach((track) => track.stop());
+        webcamRouteRef.current =
+          devices.directScreenSharing && directMediaPolicyRef.current === 'all'
+            ? 'direct'
+            : 'relay';
+        setLocalVideoStream(stream);
+
+        const videoTrack = stream.getVideoTracks()[0];
+
+        if (videoTrack) {
+          logVoice('webcam: video track obtained', {
+            trackId: videoTrack.id,
+            readyState: videoTrack.readyState,
+            settings: videoTrack.getSettings()
+          });
+
+          const simulcastCodec = simulcastEnabled
+            ? getSimulcastCodec(routerRtpCapabilities.current)
+            : undefined;
+
+          const webcamProducerOptions: ProducerOptions<TVideoProducerAppData> =
+            {
+              track: videoTrack,
+              stopTracks: false,
+              appData: {
+                kind: StreamKind.VIDEO
+              }
+            };
+          let simulcastWebcamProducerOptions = webcamProducerOptions;
+
+          if (simulcastCodec) {
+            logVoice('webcam: using vp8 for simulcast', {
+              codec: simulcastCodec.mimeType
+            });
+
+            const encodings = getSimulcastEncodings(
+              SIMULCAST_WEBCAM_MAX_BITRATE
+            );
+
+            const qualityLayers = getSimulcastQualityLayers(encodings);
+
+            simulcastWebcamProducerOptions = {
+              ...webcamProducerOptions,
+              appData: { kind: StreamKind.VIDEO, qualityLayers },
+              codec: simulcastCodec,
+              encodings
+            };
+          }
+
+          const path = devices.directScreenSharing
+            ? await directWebcam.start(stream, {
+                maxBitrate: SIMULCAST_WEBCAM_MAX_BITRATE,
+                onFailure: async () => {
+                  if (
+                    capturedWebcamStreamRef.current !== stream ||
+                    generation !== webcamGenerationRef.current
+                  )
+                    return;
+                  await restartWebcamStreamRef.current();
+                }
+              })
+            : 'relay';
+          if (
+            voiceOnlyModeRef.current ||
+            generation !== webcamGenerationRef.current ||
+            capturedWebcamStreamRef.current !== stream
+          )
+            throw new Error('Webcam capture ended');
+          if (path === 'failed') throw new Error(t('directMediaFailed'));
+          webcamRouteRef.current = path;
+          let webcamProducer: typeof localVideoProducer.current;
+          if (path === 'relay') {
+            try {
+              webcamProducer = await producerTransport.current?.produce(
+                simulcastWebcamProducerOptions
+              );
+            } catch (error) {
+              if (
+                !simulcastCodec ||
+                voiceOnlyModeRef.current ||
+                generation !== webcamGenerationRef.current
+              )
+                throw error;
+              logVoiceWarn(
+                'webcam: simulcast producer failed, retrying without simulcast',
+                {
+                  error: getErrorMessage(error)
+                }
+              );
+              webcamProducer = await producerTransport.current?.produce(
+                webcamProducerOptions
+              );
+            }
+          }
+
+          logVoice('webcam: producer created', {
+            producerId: webcamProducer?.id
+          });
+
+          webcamProducer?.observer.on('close', async () => {
+            logVoice('webcam: producer closed');
+
+            const trpc = getTRPCClient();
+
+            try {
+              await trpc.voice.closeProducer.mutate({
+                kind: StreamKind.VIDEO,
+                producerId: webcamProducer?.id
+              });
+            } catch (error) {
+              logVoiceError(
+                'webcam: closing producer on the server failed',
+                error
+              );
+            }
+          });
+          if (
+            voiceOnlyModeRef.current ||
+            generation !== webcamGenerationRef.current ||
+            capturedWebcamStreamRef.current !== stream
+          ) {
+            webcamProducer?.close();
+            throw new Error('Webcam capture ended');
+          }
+          localVideoProducer.current = webcamProducer;
+
+          videoTrack.onended = () => {
+            logVoiceWarn('webcam: track ended, cleaning up');
+
+            if (capturedWebcamStreamRef.current !== stream) return;
+            directWebcam.stop();
+            stream.getTracks().forEach((track) => track.stop());
+            capturedWebcamStreamRef.current = undefined;
+            localVideoProducer.current?.close();
+
+            setLocalVideoStream(undefined);
+          };
+        } else {
+          throw new Error('Failed to obtain video track from webcam');
+        }
+      } catch (error) {
+        if (
+          capturedWebcamStreamRef.current !== capturedStream ||
+          generation === webcamGenerationRef.current
+        )
+          capturedStream?.getTracks().forEach((track) => track.stop());
+        if (
+          capturedWebcamStreamRef.current === capturedStream &&
+          generation === webcamGenerationRef.current
+        ) {
           capturedWebcamStreamRef.current = undefined;
-          localVideoProducer.current?.close();
-
           setLocalVideoStream(undefined);
-        };
-      } else {
-        throw new Error('Failed to obtain video track from webcam');
+        }
+        logVoiceError('webcam: start failed', error);
+        throw error;
       }
-    } catch (error) {
-      capturedStream?.getTracks().forEach((track) => track.stop());
-      if (capturedWebcamStreamRef.current === capturedStream) {
-        capturedWebcamStreamRef.current = undefined;
-        setLocalVideoStream(undefined);
-      }
-      logVoiceError('webcam: start failed', error);
-      throw error;
-    }
-  }, [
-    setLocalVideoStream,
-    localVideoProducer,
-    producerTransport,
-    devices.webcamId,
-    devices.webcamFramerate,
-    devices.webcamResolution,
-    simulcastEnabled
-  ]);
+    },
+    [
+      setLocalVideoStream,
+      localVideoProducer,
+      producerTransport,
+      devices.webcamId,
+      devices.webcamFramerate,
+      devices.webcamResolution,
+      simulcastEnabled,
+      devices.directScreenSharing,
+      directWebcam,
+      t
+    ]
+  );
 
   const stopWebcamStream = useCallback(() => {
     logVoice('webcam: stopping');
+    directWebcam.stop();
 
     webcamGenerationRef.current++;
     const stream = capturedWebcamStreamRef.current;
@@ -1185,10 +1346,88 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     localVideoProducer.current = undefined;
 
     setLocalVideoStream(undefined);
-  }, [setLocalVideoStream, localVideoProducer]);
+  }, [setLocalVideoStream, localVideoProducer, directWebcam]);
+
+  useEffect(() => {
+    restartWebcamStreamRef.current = async () => {
+      const sessionGeneration = sessionGenerationRef.current;
+      const stream = capturedWebcamStreamRef.current;
+      if (!stream || voiceOnlyModeRef.current) return;
+      directWebcam.stop();
+      localVideoProducer.current?.close();
+      localVideoProducer.current = undefined;
+      const pending = startWebcamStream(stream);
+      const generation = webcamGenerationRef.current;
+      try {
+        await pending;
+        if (
+          sessionGeneration !== sessionGenerationRef.current ||
+          generation !== webcamGenerationRef.current ||
+          voiceOnlyModeRef.current
+        )
+          return;
+        const trpc = getTRPCClient();
+        await trpc.voice.updateState.mutate({ webcamEnabled: true });
+      } catch (error) {
+        if (
+          sessionGeneration !== sessionGenerationRef.current ||
+          generation !== webcamGenerationRef.current ||
+          voiceOnlyModeRef.current
+        )
+          return;
+        updateOwnVoiceState({ webcamEnabled: false });
+        try {
+          const trpc = getTRPCClient();
+          await trpc.voice.updateState.mutate({ webcamEnabled: false });
+        } catch (stateError) {
+          logVoiceError('webcam: updating stopped camera failed', stateError);
+        }
+        if (
+          sessionGeneration === sessionGenerationRef.current &&
+          generation === webcamGenerationRef.current
+        )
+          toast.error(t('directMediaFailed'));
+        logVoiceError('webcam: republishing failed', error);
+      }
+    };
+  }, [
+    startWebcamStream,
+    directWebcam,
+    localVideoProducer,
+    sessionGenerationRef,
+    t
+  ]);
+
+  useEffect(() => {
+    if (
+      voiceOnlyMode ||
+      (connectionStatus !== ConnectionStatus.CONNECTING &&
+        connectionStatus !== ConnectionStatus.CONNECTED)
+    )
+      return;
+    const track = capturedWebcamStreamRef.current?.getVideoTracks()[0];
+    if (!track || track.readyState !== 'live') return;
+    const path =
+      devices.directScreenSharing && directMediaPolicy === 'all'
+        ? 'direct'
+        : 'relay';
+    if (webcamRouteRef.current === path) return;
+    webcamRouteRef.current = path;
+    restartWebcamStreamRef
+      .current()
+      .catch((error) => logVoiceError('webcam: rerouting failed', error));
+  }, [
+    voiceOnlyMode,
+    connectionStatus,
+    localVideoStream,
+    directMediaPolicy,
+    devices.directScreenSharing
+  ]);
 
   const stopScreenShareStream = useCallback(() => {
     logVoice('screen: stopping');
+    setScreenRoute(undefined);
+    screenRoutingRef.current = undefined;
 
     screenShareGenerationRef.current++;
     const stream = capturedScreenStreamRef.current;
@@ -1282,6 +1521,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         const screenShareProducerOptions: ProducerOptions<TVideoProducerAppData> =
           {
             track: videoTrack,
+            stopTracks: false,
             codec: screenCodec,
             codecOptions: {
               videoGoogleStartBitrate: Math.min(2000, maxBitrateKbps),
@@ -1375,6 +1615,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
           const screenAudioProducer = await transport.produce({
             track: audioTrack,
+            stopTracks: false,
             codecOptions: {
               opusStereo: true,
               opusFec: true,
@@ -1433,6 +1674,137 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       setScreenShareProducer
     ]
   );
+
+  const publishScreenShare = useCallback(
+    async (stream: MediaStream) => {
+      const publication = Symbol();
+      screenPublicationRef.current = publication;
+      const videoTrack = stream.getVideoTracks()[0];
+      const path = devices.directScreenSharing
+        ? await directScreenShare.start(stream, {
+            maxBitrate: (devices.screenBitrate ?? DEFAULT_BITRATE) * 1000,
+            codec: devices.screenCodec,
+            onFailure: async (relayAllowed) => {
+              if (
+                capturedScreenStreamRef.current !== stream ||
+                screenPublicationRef.current !== publication
+              )
+                return;
+              if (relayAllowed) {
+                await republishScreenRef.current();
+                return;
+              }
+              stopScreenShareStream();
+              const generation = screenShareGenerationRef.current;
+              updateOwnVoiceState({ sharingScreen: false });
+              try {
+                const trpc = getTRPCClient();
+                await trpc.voice.updateState.mutate({ sharingScreen: false });
+              } catch (error) {
+                logVoiceError('screen: updating stopped share failed', error);
+              }
+              if (generation === screenShareGenerationRef.current)
+                toast.error(t('directMediaFailed'));
+            }
+          })
+        : 'relay';
+      if (
+        voiceOnlyModeRef.current ||
+        capturedScreenStreamRef.current !== stream ||
+        videoTrack?.readyState !== 'live'
+      )
+        throw new Error('Screen share ended');
+      if (path === 'failed') throw new Error(t('directMediaFailed'));
+      if (path === 'relay') await produceScreenShareStream(stream);
+      if (
+        capturedScreenStreamRef.current !== stream ||
+        voiceOnlyModeRef.current
+      )
+        throw new Error('Screen share ended');
+      setScreenRoute(path);
+      return videoTrack;
+    },
+    [
+      devices.directScreenSharing,
+      devices.screenBitrate,
+      devices.screenCodec,
+      directScreenShare,
+      produceScreenShareStream,
+      stopScreenShareStream,
+      t
+    ]
+  );
+
+  useEffect(() => {
+    republishScreenRef.current = async () => {
+      const stream = capturedScreenStreamRef.current;
+      if (!stream || voiceOnlyModeRef.current || screenRoutingRef.current)
+        return;
+      const token = Symbol();
+      screenRoutingRef.current = token;
+      setScreenRoute(undefined);
+      localScreenShareProducer.current?.close();
+      localScreenShareAudioProducer.current?.close();
+      localScreenShareProducer.current = undefined;
+      localScreenShareAudioProducer.current = undefined;
+      setScreenShareProducer(undefined);
+      directScreenShare.stop();
+      try {
+        await publishScreenShare(stream);
+      } catch (error) {
+        if (
+          capturedScreenStreamRef.current !== stream ||
+          screenRoutingRef.current !== token
+        )
+          return;
+        stopScreenShareStream();
+        updateOwnVoiceState({ sharingScreen: false });
+        try {
+          const trpc = getTRPCClient();
+          await trpc.voice.updateState.mutate({ sharingScreen: false });
+        } catch (stateError) {
+          logVoiceError('screen: updating stopped share failed', stateError);
+        }
+        toast.error(t('directMediaFailed'));
+        logVoiceError('screen: republishing failed', error);
+      } finally {
+        if (screenRoutingRef.current === token)
+          screenRoutingRef.current = undefined;
+      }
+    };
+  }, [
+    publishScreenShare,
+    stopScreenShareStream,
+    directScreenShare,
+    localScreenShareProducer,
+    localScreenShareAudioProducer,
+    setScreenShareProducer,
+    t
+  ]);
+
+  useEffect(() => {
+    if (
+      !screenRoute ||
+      voiceOnlyMode ||
+      (connectionStatus !== ConnectionStatus.CONNECTING &&
+        connectionStatus !== ConnectionStatus.CONNECTED)
+    )
+      return;
+    const path =
+      devices.directScreenSharing && directMediaPolicy === 'all'
+        ? 'direct'
+        : 'relay';
+    if (screenRoute === path) return;
+    republishScreenRef
+      .current()
+      .catch((error) => logVoiceError('screen: rerouting failed', error));
+  }, [
+    screenRoute,
+    voiceOnlyMode,
+    connectionStatus,
+    directMediaPolicy,
+    devices.directScreenSharing
+  ]);
 
   const startScreenShareStream = useCallback(async () => {
     if (voiceOnlyModeRef.current) {
@@ -1532,47 +1904,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         throw new Error('Screen share ended');
       }
 
-      const direct =
-        devices.directScreenSharing &&
-        !voiceOnlyModeRef.current &&
-        (await directScreenShare.start(stream, {
-          maxBitrate: (devices.screenBitrate ?? DEFAULT_BITRATE) * 1000,
-          codec: devices.screenCodec,
-          onFallback: async () => {
-            if (capturedScreenStreamRef.current !== stream) return;
-            try {
-              await produceScreenShareStream(stream);
-            } catch (error) {
-              if (capturedScreenStreamRef.current !== stream) return;
-              stopScreenShareStream();
-              updateOwnVoiceState({ sharingScreen: false });
-              try {
-                const trpc = getTRPCClient();
-                await trpc.voice.updateState.mutate({ sharingScreen: false });
-              } catch (stateError) {
-                logVoiceError(
-                  'screen: updating stopped share failed',
-                  stateError
-                );
-              }
-              toast.error(
-                getTrpcError(error, t('failedUpdateScreenShareState'))
-              );
-            }
-          }
-        }));
-
-      if (
-        voiceOnlyModeRef.current ||
-        capturedScreenStreamRef.current !== stream ||
-        videoTrack.readyState !== 'live'
-      ) {
-        throw new Error('Screen share ended');
-      }
-      if (!direct) {
-        await produceScreenShareStream(stream);
-      }
-      return videoTrack;
+      return await publishScreenShare(stream);
     } catch (error) {
       if (generation === screenShareGenerationRef.current) {
         stopScreenShareStream();
@@ -1583,17 +1915,12 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   }, [
     setLocalScreenShare,
     setLocalScreenShareAudio,
-    directScreenShare,
-    produceScreenShareStream,
+    publishScreenShare,
     producerTransport,
     stopScreenShareStream,
     localScreenShareAudioProducer,
-    t,
     devices.screenResolution,
     devices.screenFramerate,
-    devices.screenCodec,
-    devices.screenBitrate,
-    devices.directScreenSharing,
     devices.restrictOwnAudio,
     devices.suppressLocalAudioPlayback,
     devices.screenCursor
@@ -1640,7 +1967,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     micRecoveryHistoryRef.current = [];
     stopWebcamStream();
     stopScreenShareStream();
-    directScreenShare.close();
+    const directCoordinators = Object.values(directMedia);
+    directCoordinators.forEach((coordinator) => coordinator.close());
     clearLocalStreams();
     clearRemoteUserStreams();
     clearExternalStreams();
@@ -1657,7 +1985,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     cleanupMicProcessingResources,
     stopWebcamStream,
     stopScreenShareStream,
-    directScreenShare,
+    directMedia,
     clearLocalStreams,
     clearRemoteUserStreams,
     clearExternalStreams,
@@ -1744,7 +2072,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         await createConsumerTransport(device);
         assertCurrentSession();
         await consumeExistingProducers(recvRtpCapabilities, {
-          isViewingDemo: () => false
+          isViewingDemo: (userId) => isViewingDemoRef.current(userId)
         });
         assertCurrentSession();
         await startMicStream();

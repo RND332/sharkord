@@ -19,6 +19,7 @@ export const ThemePreview = memo(({ theme }: { theme: TTheme }) => {
   return (
     <div
       aria-label={t('themePreviewLabel')}
+      data-theme-preview={theme.id}
       className="overflow-hidden rounded-lg border"
       style={{
         backgroundColor: theme.bg,
