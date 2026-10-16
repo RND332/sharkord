@@ -2,6 +2,7 @@ import { getTheme } from '@/components/theme-provider/themes';
 import { useTheme } from '@/components/theme-provider/use-theme';
 import { Button, Switch } from '@sharkord/ui';
 import { memo, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ThemeCatalog } from './theme-catalog';
 import { ThemePreview } from './theme-preview';
@@ -41,19 +42,21 @@ export const Themes = memo(() => {
           />
         </label>
       </div>
-      {previewId && (
-        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-nav p-3 shadow-sm">
-          <span className="text-sm">
-            {t('previewingTheme', { name: preview.name })}
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancel}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleApply}>{t('applyTheme')}</Button>
-          </div>
-        </div>
-      )}
+      {previewId &&
+        createPortal(
+          <div className="fixed bottom-6 left-1/2 z-[110] flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-line bg-nav p-3 shadow-xl">
+            <span className="min-w-0 text-sm" role="status">
+              {t('previewingTheme', { name: preview.name })}
+            </span>
+            <div className="ml-auto flex shrink-0 gap-2">
+              <Button variant="outline" onClick={handleCancel}>
+                {t('cancel')}
+              </Button>
+              <Button onClick={handleApply}>{t('applyTheme')}</Button>
+            </div>
+          </div>,
+          document.body
+        )}
       <ThemeCatalog selectedId={preview.id} onPreview={handlePreview} />
       <p className="text-xs text-muted-foreground">{t('themesColorsOnly')}</p>
     </div>

@@ -60,7 +60,7 @@ test('stored personal theme survives remount and restores default variables when
   localStorage.setItem('vite-ui-theme', 'hatsune-miku');
   await render();
   expect(document.documentElement.dataset.theme).toBe('hatsune-miku');
-  expect(getComputedStyle(host).backgroundColor).toBe('rgb(22, 36, 38)');
+  expect(getComputedStyle(host).backgroundColor).toBe('rgb(27, 32, 37)');
   root!.unmount();
   host.remove();
   await render();
@@ -151,3 +151,33 @@ test('every catalog palette is applied to real browser surfaces and portal desce
       );
   }
 }, 30_000);
+
+test('Miku accents use complete borders and keep the upload composer surface', async () => {
+  localStorage.setItem('vite-ui-theme', 'hatsune-miku');
+  await render();
+  const rail = document.createElement('nav');
+  rail.setAttribute('aria-label', 'Application');
+  const composer = document.createElement('div');
+  composer.className = 'compose-scroll-row bg-muted';
+  const preview = document.createElement('div');
+  preview.dataset.themePreview = 'hatsune-miku';
+  preview.append(document.createElement('div'));
+  host.append(rail, composer, preview);
+  expect(getComputedStyle(rail).boxShadow).toBe('none');
+  const signature = getComputedStyle(rail, '::after');
+  expect(signature.content).toBe('"01"');
+  expect([
+    signature.borderTopWidth,
+    signature.borderRightWidth,
+    signature.borderBottomWidth,
+    signature.borderLeftWidth
+  ]).toEqual(['1px', '1px', '1px', '1px']);
+  expect(getComputedStyle(composer).backgroundColor).toBe('rgb(40, 47, 54)');
+  expect(getComputedStyle(composer).boxShadow).toBe(
+    'rgb(61, 73, 82) 0px 0px 0px 1px inset'
+  );
+  expect(getComputedStyle(preview).boxShadow).toBe(
+    'rgb(57, 197, 207) 0px 0px 0px 2px inset'
+  );
+  expect(getComputedStyle(preview.firstElementChild!).boxShadow).toBe('none');
+});

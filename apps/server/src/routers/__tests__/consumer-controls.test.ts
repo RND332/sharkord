@@ -26,7 +26,7 @@ const screenParameters: RtpParameters = {
   encodings: [{ ssrc: 45454545 }]
 };
 
-const join = async (overrides?: Partial<Context>) => {
+const join = async (overrides?: Partial<Context>, resume = true) => {
   const runtime = new VoiceRuntime(2);
   runtime.addUser(1, { micMuted: false, soundMuted: false });
   runtime.addUser(2, { micMuted: false, soundMuted: false });
@@ -49,6 +49,13 @@ const join = async (overrides?: Partial<Context>) => {
     rtpCapabilities: runtime.getRouter().rtpCapabilities
   };
   await caller.voice.consume(input);
+  if (resume) {
+    await caller.voice.resumeConsumer({
+      remoteId: 2,
+      kind: StreamKind.SCREEN,
+      consumerId: runtime.getConsumer(1, 2, StreamKind.SCREEN)!.id
+    });
+  }
   return { runtime, caller, transport, screen, input };
 };
 
@@ -86,6 +93,41 @@ const controls: Array<'pauseConsumer' | 'resumeConsumer'> = [
 
 // native transports exercise pause state; real websocket delivery is covered by browser smoke.
 describe('screen consumer controls', () => {
+  test('holds the first video keyframe until the receiving consumer is ready', async () => {
+    const { runtime, caller } = await join(undefined, false);
+    try {
+      const consumer = runtime.getConsumer(1, 2, StreamKind.SCREEN)!;
+      expect(consumer.paused).toBe(true);
+      await caller.voice.resumeConsumer({
+        remoteId: 2,
+        kind: StreamKind.SCREEN,
+        consumerId: runtime.getConsumer(1, 2, StreamKind.SCREEN)!.id
+      });
+      expect(consumer.paused).toBe(false);
+    } finally {
+      await runtime.destroy();
+    }
+  });
+
+  test('a stale ready message cannot resume a replacement video consumer', async () => {
+    const { runtime, caller, input } = await join(undefined, false);
+    try {
+      const previous = runtime.getConsumer(1, 2, StreamKind.SCREEN)!;
+      await caller.voice.consume(input);
+      const replacement = runtime.getConsumer(1, 2, StreamKind.SCREEN)!;
+      await expect(
+        caller.voice.resumeConsumer({
+          remoteId: 2,
+          kind: StreamKind.SCREEN,
+          consumerId: previous.id
+        })
+      ).rejects.toThrow('Consumer not found');
+      expect(replacement.paused).toBe(true);
+    } finally {
+      await runtime.destroy();
+    }
+  });
+
   test('pauses and resumes screen video and audio without changing microphone or presenter', async () => {
     const { runtime, caller, transport, screen } = await join();
     try {
@@ -130,11 +172,13 @@ describe('screen consumer controls', () => {
       expect(screenAudio.paused).toBe(false);
       await caller.voice.resumeConsumer({
         remoteId: 2,
-        kind: StreamKind.SCREEN
+        kind: StreamKind.SCREEN,
+        consumerId: runtime.getConsumer(1, 2, StreamKind.SCREEN)!.id
       });
       await caller.voice.resumeConsumer({
         remoteId: 2,
-        kind: StreamKind.SCREEN_AUDIO
+        kind: StreamKind.SCREEN_AUDIO,
+        consumerId: runtime.getConsumer(1, 2, StreamKind.SCREEN_AUDIO)!.id
       });
       expect(screenConsumer.paused).toBe(false);
       expect(audioConsumer.paused).toBe(false);
@@ -162,7 +206,11 @@ describe('screen consumer controls', () => {
         );
       const { caller } = await initTest(2);
       await expect(
-        caller.voice[control]({ remoteId: 1, kind: StreamKind.SCREEN })
+        caller.voice[control]({
+          remoteId: 1,
+          kind: StreamKind.SCREEN,
+          consumerId: 'missing'
+        })
       ).rejects.toThrow('Insufficient permissions');
     }
   );
@@ -170,7 +218,11 @@ describe('screen consumer controls', () => {
   test.each(controls)('%s rejects a caller outside voice', async (control) => {
     const { caller } = await initTest(1);
     await expect(
-      caller.voice[control]({ remoteId: 2, kind: StreamKind.SCREEN })
+      caller.voice[control]({
+        remoteId: 2,
+        kind: StreamKind.SCREEN,
+        consumerId: 'missing'
+      })
     ).rejects.toThrow('User is not in a voice channel');
   });
 
@@ -179,7 +231,11 @@ describe('screen consumer controls', () => {
       currentVoiceChannelId: 2
     });
     await expect(
-      caller.voice[control]({ remoteId: 2, kind: StreamKind.SCREEN })
+      caller.voice[control]({
+        remoteId: 2,
+        kind: StreamKind.SCREEN,
+        consumerId: 'missing'
+      })
     ).rejects.toThrow('Voice runtime not found for this channel');
   });
 
@@ -192,10 +248,18 @@ describe('screen consumer controls', () => {
           currentVoiceChannelId: 2
         });
         await expect(
-          otherViewer.voice[control]({ remoteId: 2, kind: StreamKind.SCREEN })
+          otherViewer.voice[control]({
+            remoteId: 2,
+            kind: StreamKind.SCREEN,
+            consumerId: 'missing'
+          })
         ).rejects.toThrow('Consumer not found');
         await expect(
-          caller.voice[control]({ remoteId: 3, kind: StreamKind.SCREEN })
+          caller.voice[control]({
+            remoteId: 3,
+            kind: StreamKind.SCREEN,
+            consumerId: 'missing'
+          })
         ).rejects.toThrow('Consumer not found');
         expect(runtime.getConsumer(1, 2, StreamKind.SCREEN)!.paused).toBe(
           false
@@ -214,13 +278,15 @@ describe('screen consumer controls', () => {
         await expect(
           caller.voice[control]({
             remoteId: '2' as never,
-            kind: StreamKind.SCREEN
+            kind: StreamKind.SCREEN,
+            consumerId: 'missing'
           })
         ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
         await expect(
           caller.voice[control]({
             remoteId: 2,
-            kind: StreamKind.AUDIO as never
+            kind: StreamKind.AUDIO as never,
+            consumerId: 'missing'
           })
         ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
         expect(runtime.getConsumer(1, 2, StreamKind.SCREEN)!.paused).toBe(
@@ -240,7 +306,11 @@ describe('screen consumer controls', () => {
         const consumer = runtime.getConsumer(1, 2, StreamKind.SCREEN)!;
         await caller.voice.updateState({ voiceOnlyMode: true });
         await expect(
-          caller.voice[control]({ remoteId: 2, kind: StreamKind.SCREEN })
+          caller.voice[control]({
+            remoteId: 2,
+            kind: StreamKind.SCREEN,
+            consumerId: 'missing'
+          })
         ).rejects.toMatchObject({ code: 'FORBIDDEN' });
         expect(consumer.closed).toBe(true);
         expect(runtime.getConsumer(1, 2, StreamKind.SCREEN)).toBeUndefined();
@@ -260,7 +330,8 @@ describe('screen consumer controls', () => {
           gate.arm();
           const pending = caller.voice[control]({
             remoteId: 2,
-            kind: StreamKind.SCREEN
+            kind: StreamKind.SCREEN,
+            consumerId: runtime.getConsumer(1, 2, StreamKind.SCREEN)!.id
           });
           const rejected = pending.catch((error: unknown) => error);
           await gate.entered;
@@ -274,6 +345,11 @@ describe('screen consumer controls', () => {
           }
           await caller.voice.consume(input);
           const replacement = runtime.getConsumer(1, 2, StreamKind.SCREEN)!;
+          await caller.voice.resumeConsumer({
+            remoteId: 2,
+            kind: StreamKind.SCREEN,
+            consumerId: runtime.getConsumer(1, 2, StreamKind.SCREEN)!.id
+          });
           if (control === 'resumeConsumer') {
             await caller.voice.pauseConsumer({
               remoteId: 2,

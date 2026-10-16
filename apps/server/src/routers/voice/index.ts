@@ -6,7 +6,7 @@ import { consumeRoute } from './consume';
 import { createConsumerTransportRoute } from './create-consumer-transport';
 import { createProducerTransportRoute } from './create-producer-transport';
 import {
-  onDirectScreenSignalRoute,
+  onDirectMediaSignalRoute,
   onUserJoinVoiceRoute,
   onUserLeaveVoiceRoute,
   onUserUpdateVoiceStateRoute,
@@ -27,8 +27,8 @@ import { produceRoute } from './produce';
 import { resumeConsumerRoute } from './resume-consumer';
 import { sendVoiceReactionRoute } from './send-reaction';
 import { setConsumerQualityRoute } from './set-consumer-quality';
-import { signalDirectScreenRoute } from './signal-direct-screen';
-import { startDirectScreenRoute } from './start-direct-screen';
+import { signalDirectMediaRoute } from './signal-direct-media';
+import { startDirectMediaRoute } from './start-direct-media';
 import { updateVoiceStateRoute } from './update-state';
 
 export const voiceRouter = t.router({
@@ -37,9 +37,9 @@ export const voiceRouter = t.router({
   moveUser: moveUserRoute,
   updateState: updateVoiceStateRoute,
   sendReaction: sendVoiceReactionRoute,
-  startDirectScreen: startDirectScreenRoute,
-  signalDirectScreen: signalDirectScreenRoute,
-  onDirectScreenSignal: onDirectScreenSignalRoute,
+  startDirectMedia: startDirectMediaRoute,
+  signalDirectMedia: signalDirectMediaRoute,
+  onDirectMediaSignal: onDirectMediaSignalRoute,
   createProducerTransport: createProducerTransportRoute,
   connectProducerTransport: connectProducerTransportRoute,
   createConsumerTransport: createConsumerTransportRoute,

@@ -1,3 +1,5 @@
+import { directMediaPolicySelector } from '@/features/server/selectors';
+import { store } from '@/features/store';
 import {
   logVoice,
   logVoiceError,
@@ -22,6 +24,18 @@ import {
 } from 'mediasoup-client/types';
 import { useCallback, useEffect, useRef } from 'react';
 import { getStoredStreamQuality } from '../helpers';
+
+const canConsumeRelay = (kind: StreamKind) => {
+  const policy = directMediaPolicySelector(store.getState());
+  if (kind === StreamKind.AUDIO) return policy === 'relay';
+  if (
+    kind === StreamKind.VIDEO ||
+    kind === StreamKind.SCREEN ||
+    kind === StreamKind.SCREEN_AUDIO
+  )
+    return policy !== 'all';
+  return true;
+};
 
 type TUseTransportParams = {
   voiceOnlyMode: boolean;
@@ -91,6 +105,7 @@ const useTransports = ({
   }>({});
   const consumerStreams = useRef<Map<string, MediaStream>>(new Map());
   const consumerCodecs = useRef<Map<string, string>>(new Map());
+  const pendingConsumerResumes = useRef(new Set<string>());
   const consumeOperationsInProgress = useRef<Map<string, Promise<void>>>(
     new Map()
   );
@@ -120,6 +135,7 @@ const useTransports = ({
       }
       // Detach first so a synchronous close event cannot clear a replacement.
       if (consumer) {
+        pendingConsumerResumes.current.delete(consumer.id);
         delete consumers.current[remoteId][kind];
         if (!Object.keys(consumers.current[remoteId]).length) {
           delete consumers.current[remoteId];
@@ -491,6 +507,7 @@ const useTransports = ({
       rtpCapabilities: RtpCapabilities
     ): Promise<void> => {
       if (kind !== StreamKind.AUDIO && voiceOnlyModeRef.current) return;
+      if (!canConsumeRelay(kind)) return;
       const isScreen =
         kind === StreamKind.SCREEN || kind === StreamKind.SCREEN_AUDIO;
       if (isScreen && !canConsumeScreen(remoteId)) return;
@@ -547,7 +564,9 @@ const useTransports = ({
             (!voiceOnlyModeRef.current &&
               generation === nonVoiceGenerationRef.current));
         const canContinue = () =>
-          isCurrent() && (!isScreen || canConsumeScreen(remoteId));
+          isCurrent() &&
+          canConsumeRelay(kind) &&
+          (!isScreen || canConsumeScreen(remoteId));
 
         try {
           if (!canContinue()) return;
@@ -561,14 +580,23 @@ const useTransports = ({
             !existing.closed &&
             existing.track.readyState === 'live'
           ) {
-            if (!existing.paused) return;
-            await trpc.voice.resumeConsumer.mutate({ remoteId, kind });
+            if (
+              !existing.paused &&
+              !pendingConsumerResumes.current.has(existing.id)
+            )
+              return;
+            await trpc.voice.resumeConsumer.mutate({
+              remoteId,
+              kind,
+              consumerId: existing.id
+            });
+            pendingConsumerResumes.current.delete(existing.id);
             if (
               canContinue() &&
               existing.track.readyState === 'live' &&
               consumers.current[remoteId]?.[kind] === existing
             ) {
-              existing.resume();
+              if (existing.paused) existing.resume();
             } else if (
               isCurrent() &&
               !existing.closed &&
@@ -665,6 +693,7 @@ const useTransports = ({
                 return;
 
               // Delete before closing: close emits @close synchronously.
+              pendingConsumerResumes.current.delete(newConsumer.id);
               delete consumers.current[remoteId][consumerKind];
               if (!Object.keys(consumers.current[remoteId]).length) {
                 delete consumers.current[remoteId];
@@ -750,7 +779,33 @@ const useTransports = ({
             consumerStreams.current.set(`${remoteId}-${consumerKind}`, stream);
             addRemoteUserStream(remoteId, stream, consumerKind);
           }
+
+          // the server holds video until native receive and its stream owner are ready.
+          if (
+            consumerKind === StreamKind.SCREEN ||
+            consumerKind === StreamKind.VIDEO ||
+            consumerKind === StreamKind.EXTERNAL_VIDEO
+          ) {
+            pendingConsumerResumes.current.add(newConsumer.id);
+            await trpc.voice.resumeConsumer.mutate({
+              remoteId,
+              kind: consumerKind,
+              consumerId: newConsumer.id
+            });
+            pendingConsumerResumes.current.delete(newConsumer.id);
+            if (
+              isScreen &&
+              isCurrent() &&
+              !canConsumeScreen(remoteId) &&
+              !newConsumer.closed &&
+              consumers.current[remoteId]?.[consumerKind] === newConsumer
+            ) {
+              newConsumer.pause();
+              await trpc.voice.pauseConsumer.mutate({ remoteId, kind });
+            }
+          }
         } catch (error) {
+          if (!canConsumeRelay(kind)) return;
           logVoiceError('consumer: consume failed', error, { remoteId, kind });
         } finally {
           if (
@@ -903,6 +958,7 @@ const useTransports = ({
     consumers.current = {};
     consumerStreams.current.clear();
     consumerCodecs.current.clear();
+    pendingConsumerResumes.current.clear();
 
     clearRemoteConsumerMetadata();
 

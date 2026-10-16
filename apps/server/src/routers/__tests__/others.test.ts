@@ -20,6 +20,10 @@ import { pluginManager } from '../../plugins';
 import { drainLoginsQueue } from '../../queues/logins';
 
 describe('others router', () => {
+  test('authenticated control ping returns without media or database payloads', async () => {
+    const { caller } = await initTest(1);
+    expect(await caller.others.ping()).toBeNull();
+  });
   test('should throw when user tries to join with no handshake', async () => {
     const { caller } = await getCaller(1);
 

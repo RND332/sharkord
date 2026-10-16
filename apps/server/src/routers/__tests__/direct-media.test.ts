@@ -3,7 +3,7 @@ import {
   Permission,
   ServerEvents,
   StreamKind,
-  type TDirectScreenEvent
+  type TDirectMediaEvent
 } from '@sharkord/shared';
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
@@ -31,23 +31,25 @@ test('ends a direct screen session when a third participant joins', async () => 
   config.webRtc.directScreenSharing = true;
   const signals: string[] = [];
   const observation = pubsub
-    .subscribeFor(1, ServerEvents.DIRECT_SCREEN_SIGNAL)
+    .subscribeFor(1, ServerEvents.DIRECT_MEDIA_SIGNAL)
     .subscribe({ next: (event) => signals.push(event.signal.type) });
   let senderSubscription: { unsubscribe: () => void } | undefined;
   let receiverSubscription: { unsubscribe: () => void } | undefined;
   try {
     senderSubscription = (
-      await sender.voice.onDirectScreenSignal({ enabled: true })
+      await sender.voice.onDirectMediaSignal({ enabled: true })
     ).subscribe({ next: () => {} });
     receiverSubscription = (
-      await receiver.voice.onDirectScreenSignal({ enabled: true })
+      await receiver.voice.onDirectMediaSignal({ enabled: true })
     ).subscribe({ next: () => {} });
-    const session = await sender.voice.startDirectScreen({});
+    const session = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN
+    });
     expect(session?.peerId).toBe(2);
     runtime.addUser(3, { micMuted: false, soundMuted: false });
     expect(signals).toEqual(['fallback']);
     await expect(
-      sender.voice.signalDirectScreen({
+      sender.voice.signalDirectMedia({
         sessionId: session!.sessionId,
         signal: { type: 'offer', sdp: 'v=0\r\n' }
       })
@@ -130,9 +132,9 @@ const pair = async (channelId = 2) => {
 };
 
 const listen = async (caller: TTestCaller, enabled = true) => {
-  const events: TDirectScreenEvent[] = [];
+  const events: TDirectMediaEvent[] = [];
   const subscription = (
-    await caller.voice.onDirectScreenSignal({ enabled })
+    await caller.voice.onDirectMediaSignal({ enabled })
   ).subscribe({
     next: (event) => events.push(event)
   });
@@ -144,10 +146,82 @@ const prepared = async () => {
   const result = await pair();
   const sending = await listen(result.sender);
   const receiving = await listen(result.receiver);
-  const session = await result.sender.voice.startDirectScreen({});
+  const session = await result.sender.voice.startDirectMedia({
+    kind: StreamKind.SCREEN
+  });
   expect(session).not.toBeNull();
   return { ...result, sending, receiving, session: session! };
 };
+
+test.each([false, true])(
+  'termination reports live server relay eligibility (third participant: %s)',
+  async (third) => {
+    const { runtime, sender, receiving, session } = await prepared();
+    if (third) runtime.addUser(3, { micMuted: false, soundMuted: false });
+    else
+      await sender.voice.signalDirectMedia({
+        sessionId: session.sessionId,
+        signal: { type: 'fallback' }
+      });
+    expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', third);
+  }
+);
+
+test('allocates independent microphone, webcam and screen sessions for one opted-in pair', async () => {
+  const { sender, receiver, runtime } = await pair();
+  await listen(sender);
+  await listen(receiver);
+  const kinds = [
+    StreamKind.AUDIO,
+    StreamKind.VIDEO,
+    StreamKind.SCREEN
+  ] as const;
+  const sessions = await Promise.allSettled(
+    kinds.map((kind) => sender.voice.startDirectMedia({ kind }))
+  );
+  expect(sessions.map((result) => result.status)).toEqual([
+    'fulfilled',
+    'fulfilled',
+    'fulfilled'
+  ]);
+  const ids = new Set<string>();
+  sessions.forEach((result, index) => {
+    if (result.status !== 'fulfilled') throw result.reason;
+    expect(result.value?.kind).toBe(kinds[index]);
+    expect(result.value?.peerId).toBe(2);
+    ids.add(result.value!.sessionId);
+    expect(
+      runtime.getDirectMediaSession(result.value!.sessionId, 1)
+    ).toBeDefined();
+  });
+  expect(ids.size).toBe(3);
+});
+
+test('publishes live direct capability and clears it only for the current subscription', async () => {
+  const { sender } = await pair();
+  const updates: unknown[] = [];
+  const observation = pubsub
+    .subscribe(ServerEvents.USER_VOICE_STATE_UPDATE)
+    .subscribe({
+      next: (event) => updates.push(event)
+    });
+  subscriptions.push(observation);
+  const current = await listen(sender);
+  expect(updates).toEqual([
+    {
+      channelId: 2,
+      userId: 1,
+      state: expect.objectContaining({ directMediaEnabled: true })
+    }
+  ]);
+  current.subscription.unsubscribe();
+  expect(updates).toHaveLength(2);
+  expect(updates[1]).toEqual({
+    channelId: 2,
+    userId: 1,
+    state: expect.objectContaining({ directMediaEnabled: false })
+  });
+});
 
 const revoke = async (permission: Permission) => {
   await tdb
@@ -164,31 +238,226 @@ test('voice-only mode ends direct media and blocks capability until disabled', a
   const { runtime, sender, receiver, sending, receiving, session } =
     await prepared();
   await receiver.voice.updateState({ voiceOnlyMode: true });
-  expect(runtime.hasDirectScreenCapability(2)).toBe(false);
-  expect(runtime.getDirectScreenSession(session.sessionId, 1)).toBeUndefined();
+  expect(runtime.hasDirectMediaCapability(2, StreamKind.SCREEN)).toBe(false);
+  expect(runtime.getDirectMediaSession(session.sessionId, 1)).toBeUndefined();
   expect(sending.events.map((event) => event.signal.type)).toEqual([
     'fallback'
   ]);
   expect(receiving.events.map((event) => event.signal.type)).toEqual([
     'fallback'
   ]);
-  expect(await sender.voice.startDirectScreen({})).toBeNull();
-  const replacement = runtime.registerDirectScreenSubscriber(2, true);
-  expect(runtime.hasDirectScreenCapability(2)).toBe(false);
+  expect(
+    await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+  ).toBeNull();
+  const replacement = runtime.registerDirectMediaSubscriber(2, true);
+  expect(runtime.hasDirectMediaCapability(2, StreamKind.SCREEN)).toBe(false);
   await receiver.voice.updateState({ voiceOnlyMode: false });
-  expect(runtime.hasDirectScreenCapability(2)).toBe(true);
-  expect(await sender.voice.startDirectScreen({})).not.toBeNull();
+  expect(runtime.hasDirectMediaCapability(2, StreamKind.SCREEN)).toBe(true);
+  expect(
+    await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+  ).not.toBeNull();
   replacement.unregister();
 });
 
+test.each([
+  StreamKind.AUDIO,
+  StreamKind.VIDEO,
+  StreamKind.SCREEN,
+  StreamKind.SCREEN_AUDIO
+])(
+  'does not allocate an SFU %s consumer after the pair enables direct media',
+  async (kind) => {
+    const { runtime, sender, receiver } = await pair();
+    await listen(sender);
+    await runtime.init();
+    const transport = await runtime.getRouter().createDirectTransport();
+    try {
+      const audio =
+        kind === StreamKind.AUDIO || kind === StreamKind.SCREEN_AUDIO;
+      const producer = await transport.produce({
+        kind: audio ? 'audio' : 'video',
+        rtpParameters: {
+          codecs: [
+            audio
+              ? {
+                  mimeType: 'audio/opus',
+                  payloadType: 111,
+                  clockRate: 48000,
+                  channels: 2
+                }
+              : { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+          ],
+          encodings: [{ ssrc: 12345 }]
+        }
+      });
+      runtime.addProducer(1, kind, producer);
+      await runtime.createConsumerTransport(2);
+      const consume = spyOn(runtime.getConsumerTransport(2)!, 'consume');
+      await listen(receiver);
+      const available = await receiver.voice.getProducers();
+      expect(available.remoteAudioIds).toEqual([]);
+      expect(available.remoteVideoIds).toEqual([]);
+      expect(available.remoteScreenIds).toEqual([]);
+      expect(available.remoteScreenAudioIds).toEqual([]);
+      await expect(
+        receiver.voice.consume({
+          kind,
+          remoteId: 1,
+          rtpCapabilities: runtime.getRouter().rtpCapabilities
+        })
+      ).rejects.toThrow('Both participants enabled P2P');
+      expect(consume).not.toHaveBeenCalled();
+    } finally {
+      transport.close();
+    }
+  }
+);
+
+test.each([
+  StreamKind.AUDIO,
+  StreamKind.VIDEO,
+  StreamKind.SCREEN,
+  StreamKind.SCREEN_AUDIO
+])(
+  'closes a late SFU %s consumer when the pair opts into direct media',
+  async (kind) => {
+    const { runtime, sender, receiver } = await pair();
+    await listen(sender);
+    await runtime.init();
+    const transport = await runtime.getRouter().createDirectTransport();
+    try {
+      const audio =
+        kind === StreamKind.AUDIO || kind === StreamKind.SCREEN_AUDIO;
+      const producer = await transport.produce({
+        kind: audio ? 'audio' : 'video',
+        rtpParameters: {
+          codecs: [
+            audio
+              ? {
+                  mimeType: 'audio/opus',
+                  payloadType: 111,
+                  clockRate: 48000,
+                  channels: 2
+                }
+              : { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+          ],
+          encodings: [{ ssrc: 12345 }]
+        }
+      });
+      runtime.addProducer(1, kind, producer);
+      const consumer = await transport.consume({
+        producerId: producer.id,
+        rtpCapabilities: runtime.getRouter().rtpCapabilities
+      });
+      await listen(receiver);
+      expect(() => runtime.addConsumer(2, 1, kind, consumer)).toThrow(
+        'Both participants enabled P2P'
+      );
+      expect(consumer.closed).toBe(true);
+      expect(runtime.getConsumer(2, 1, kind)).toBeUndefined();
+    } finally {
+      transport.close();
+    }
+  }
+);
+
 describe('direct screen configuration', () => {
-  test('keeps existing deployments on the relayed path', async () => {
+  test.each([StreamKind.SCREEN, StreamKind.SCREEN_AUDIO])(
+    'never allocates an SFU %s producer when both participants enable P2P',
+    async (kind) => {
+      const { runtime, sender, receiver } = await pair();
+      await listen(sender);
+      await listen(receiver);
+      await runtime.init();
+      const params = await runtime.createProducerTransport(1);
+      const produce = spyOn(runtime.getProducerTransport(1)!, 'produce');
+      const video = kind === StreamKind.SCREEN;
+      await expect(
+        sender.voice.produce({
+          transportId: params.id,
+          kind,
+          rtpParameters: {
+            codecs: [
+              video
+                ? { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+                : {
+                    mimeType: 'audio/opus',
+                    payloadType: 111,
+                    clockRate: 48000,
+                    channels: 2
+                  }
+            ],
+            encodings: [{ ssrc: 7788 }]
+          }
+        })
+      ).rejects.toThrow('Both participants enabled P2P');
+      expect(produce).not.toHaveBeenCalled();
+      expect(runtime.getProducer(kind, 1)).toBeUndefined();
+    }
+  );
+
+  test.each([true, false])(
+    'permits SFU when only one participant opts in (sender=%s)',
+    async (senderEnabled) => {
+      const { runtime, sender, receiver } = await pair();
+      await listen(sender, senderEnabled);
+      await listen(receiver, !senderEnabled);
+      expect(
+        await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+      ).toBeNull();
+      await runtime.init();
+      const params = await runtime.createProducerTransport(1);
+      const producerId = await sender.voice.produce({
+        transportId: params.id,
+        kind: StreamKind.SCREEN,
+        rtpParameters: {
+          codecs: [
+            { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+          ],
+          encodings: [{ ssrc: 5566 }]
+        }
+      });
+      expect(runtime.getProducer(StreamKind.SCREEN, 1)?.id).toBe(producerId);
+    }
+  );
+
+  test('late SFU production is closed when the second participant opts into P2P', async () => {
+    const { runtime, sender, receiver } = await pair();
+    await listen(sender);
+    await runtime.init();
+    const transport = await runtime.getRouter().createDirectTransport();
+    try {
+      const producer = await transport.produce({
+        kind: 'video',
+        rtpParameters: {
+          codecs: [
+            { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+          ],
+          encodings: [{ ssrc: 8899 }]
+        }
+      });
+      await listen(receiver);
+      expect(() => runtime.addProducer(1, StreamKind.SCREEN, producer)).toThrow(
+        'Both participants enabled P2P'
+      );
+      expect(producer.closed).toBe(true);
+      expect(runtime.getProducer(StreamKind.SCREEN, 1)).toBeUndefined();
+    } finally {
+      transport.close();
+    }
+  });
+
+  test('server opt-out cannot silently relay mutually enabled P2P', async () => {
     const { sender, receiver } = await pair();
     await listen(sender);
     await listen(receiver);
     config.webRtc.directScreenSharing =
       zConfig.parse(defaultConfig).webRtc.directScreenSharing;
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    await expect(
+      sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow(
+      'Direct screen sharing is unavailable; server relay is disabled'
+    );
   });
 
   test('validates STUN-only lists and their bounds', () => {
@@ -252,31 +521,43 @@ describe('direct screen configuration', () => {
   });
 });
 
-describe('startDirectScreen', () => {
+describe('startDirectMedia', () => {
   test('requires two actual opted-in subscribers, not just observable creation', async () => {
     const { sender, receiver } = await pair();
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     await listen(sender);
-    const observable = await receiver.voice.onDirectScreenSignal({
+    const observable = await receiver.voice.onDirectMediaSignal({
       enabled: true
     });
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     const subscription = observable.subscribe({ next: () => {} });
     subscriptions.push(subscription);
-    expect((await sender.voice.startDirectScreen({}))?.peerId).toBe(2);
+    expect(
+      (await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN }))?.peerId
+    ).toBe(2);
   });
 
   test('declines legacy, disabled and group peers', async () => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
     await listen(receiver, false);
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     await listen(receiver);
     runtime.addUser(3, { micMuted: false, soundMuted: false });
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     runtime.removeUser(2);
     runtime.removeUser(3);
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
   });
 
   test('derives peer and session identifiers and returns configured STUN servers', async () => {
@@ -284,58 +565,124 @@ describe('startDirectScreen', () => {
     await listen(sender);
     await listen(receiver);
     config.webRtc.directScreenStunUrls = ['stun:example.org:3478'];
-    const session = await sender.voice.startDirectScreen({});
+    const session = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN
+    });
     expect(session).toEqual({
+      kind: StreamKind.SCREEN,
       sessionId: expect.any(String),
       peerId: 2,
       stunUrls: ['stun:example.org:3478']
     });
     expect(session!.sessionId).toMatch(/^[0-9a-f-]{36}$/);
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    await expect(
+      sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow(
+      'Direct screen sharing is unavailable; server relay is disabled'
+    );
   });
 
   test('allows independent simultaneous opposite shares', async () => {
     const { sender, receiver, session } = await prepared();
-    const opposite = await receiver.voice.startDirectScreen({});
+    const opposite = await receiver.voice.startDirectMedia({
+      kind: StreamKind.SCREEN
+    });
     expect(opposite?.peerId).toBe(1);
     expect(opposite?.sessionId).not.toBe(session.sessionId);
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: { type: 'stop' }
     });
-    await receiver.voice.signalDirectScreen({
+    await receiver.voice.signalDirectMedia({
       sessionId: opposite!.sessionId,
       signal: offer
     });
   });
 
-  test('does not upgrade an existing relayed share or an external stream', async () => {
-    const { runtime, sender, receiver } = await pair();
-    await listen(sender);
-    await listen(receiver);
-    await runtime.init();
-    const transport = await runtime.getRouter().createDirectTransport();
-    const producer = await transport.produce({
-      kind: 'video',
-      rtpParameters: {
-        codecs: [{ mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }],
-        encodings: [{ ssrc: 1234 }]
+  for (const kind of [
+    StreamKind.AUDIO,
+    StreamKind.VIDEO,
+    StreamKind.SCREEN
+  ] as const) {
+    test(`upgrades only the selected ${kind} SFU producer to direct media`, async () => {
+      const { runtime, sender, receiver } = await pair();
+      await listen(sender);
+      await runtime.init();
+      const transport = await runtime.getRouter().createDirectTransport();
+      const producer = await transport.produce({
+        kind: kind === StreamKind.AUDIO ? 'audio' : 'video',
+        rtpParameters: {
+          codecs:
+            kind === StreamKind.AUDIO
+              ? [
+                  {
+                    mimeType: 'audio/opus',
+                    payloadType: 111,
+                    clockRate: 48000,
+                    channels: 2
+                  }
+                ]
+              : [{ mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }],
+          encodings: [{ ssrc: 1234 }]
+        }
+      });
+      const other = await transport.produce({
+        kind: 'video',
+        rtpParameters: {
+          codecs: [
+            { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+          ],
+          encodings: [{ ssrc: 5678 }]
+        }
+      });
+      try {
+        const otherKind =
+          kind === StreamKind.VIDEO ? StreamKind.SCREEN : StreamKind.VIDEO;
+        runtime.addProducer(1, kind, producer);
+        runtime.addProducer(1, otherKind, other);
+        await listen(receiver);
+        const session = await sender.voice.startDirectMedia({ kind });
+        expect(session).toMatchObject({ kind, peerId: 2 });
+        expect(producer.closed).toBe(true);
+        expect(runtime.getProducer(kind, 1)).toBeUndefined();
+        expect(other.closed).toBe(false);
+      } finally {
+        transport.close();
       }
     });
-    try {
-      runtime.addProducer(1, StreamKind.SCREEN, producer);
-      expect(await sender.voice.startDirectScreen({})).toBeNull();
-      runtime.removeProducer(1, StreamKind.SCREEN);
-      runtime.createExternalStream({
-        title: 'external',
-        key: 'key',
-        pluginId: 'plugin',
-        producers: {}
+  }
+
+  test('external streams preserve direct human media without enabling human SFU relay', async () => {
+    const { runtime, sender, session } = await prepared();
+    const externalId = runtime.createExternalStream({
+      title: 'external',
+      key: 'key',
+      pluginId: 'plugin',
+      producers: {}
+    });
+    expect(runtime.getDirectMediaSession(session.sessionId, 1)).toBeDefined();
+    await sender.voice.signalDirectMedia({
+      sessionId: session.sessionId,
+      signal: offer
+    });
+    for (const kind of [StreamKind.AUDIO, StreamKind.VIDEO] as const)
+      expect(await sender.voice.startDirectMedia({ kind })).toMatchObject({
+        kind,
+        peerId: 2
       });
-      expect(await sender.voice.startDirectScreen({})).toBeNull();
-    } finally {
-      transport.close();
-    }
+    for (const kind of [
+      StreamKind.AUDIO,
+      StreamKind.VIDEO,
+      StreamKind.SCREEN,
+      StreamKind.SCREEN_AUDIO
+    ])
+      expect(() => runtime.assertMediaRelayAllowed(1, kind)).toThrow(
+        'Both participants enabled P2P'
+      );
+    for (const kind of [StreamKind.EXTERNAL_AUDIO, StreamKind.EXTERNAL_VIDEO])
+      expect(() =>
+        runtime.assertMediaRelayAllowed(externalId, kind)
+      ).not.toThrow();
   });
 
   for (const permission of [
@@ -345,46 +692,48 @@ describe('startDirectScreen', () => {
     test(`rejects missing global ${permission} permission`, async () => {
       const { receiver } = await pair();
       await revoke(permission);
-      await expect(receiver.voice.startDirectScreen({})).rejects.toThrow(
-        'Insufficient permissions'
-      );
+      await expect(
+        receiver.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+      ).rejects.toThrow('Insufficient permissions');
     });
   }
 
   test('checks runtime existence, actual membership and input shape', async () => {
     const { sender } = await pair();
     const { caller: absent } = await initTest(3);
-    await expect(absent.voice.startDirectScreen({})).rejects.toThrow(
-      'User is not in a voice channel'
-    );
+    await expect(
+      absent.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow('User is not in a voice channel');
     const { caller: missing } = await initTest(3, undefined, {
       currentVoiceChannelId: 999999
     });
-    await expect(missing.voice.startDirectScreen({})).rejects.toThrow();
+    await expect(
+      missing.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow();
     const { caller: outsider } = await initTest(3, undefined, {
       currentVoiceChannelId: 2
     });
-    await expect(outsider.voice.startDirectScreen({})).rejects.toThrow(
-      'User is not in this voice channel'
-    );
     await expect(
-      sender.voice.startDirectScreen({ peerId: 3 } as never)
+      outsider.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow('User is not in this voice channel');
+    await expect(
+      sender.voice.startDirectMedia({ peerId: 3 } as never)
     ).rejects.toThrow();
     for (const channelId of [1, 3]) {
       const { caller } = await initTest(1, undefined, {
         currentVoiceChannelId: channelId
       });
-      await expect(caller.voice.startDirectScreen({})).rejects.toThrow(
-        'Channel is not a voice channel'
-      );
+      await expect(
+        caller.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+      ).rejects.toThrow('Channel is not a voice channel');
     }
   });
 
   test('rejects a sender without channel view or share access', async () => {
     const { receiver } = await pair(4);
-    await expect(receiver.voice.startDirectScreen({})).rejects.toThrow(
-      'Insufficient channel permissions'
-    );
+    await expect(
+      receiver.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow('Insufficient channel permissions');
     await tdb.insert(channelRolePermissions).values({
       channelId: 4,
       roleId: 2,
@@ -392,9 +741,9 @@ describe('startDirectScreen', () => {
       allow: true,
       createdAt: Date.now()
     });
-    await expect(receiver.voice.startDirectScreen({})).rejects.toThrow(
-      'Insufficient channel permissions'
-    );
+    await expect(
+      receiver.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow('Insufficient channel permissions');
   });
 
   test('declines a receiver who cannot view the channel', async () => {
@@ -411,7 +760,9 @@ describe('startDirectScreen', () => {
     await tdb
       .delete(channelRolePermissions)
       .where(eq(channelRolePermissions.channelId, 4));
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
   });
 
   test('rate limits session preparation', async () => {
@@ -421,32 +772,34 @@ describe('startDirectScreen', () => {
       index < config.rateLimiters.voiceStream.maxRequests;
       index++
     ) {
-      expect(await sender.voice.startDirectScreen({})).toBeNull();
+      expect(
+        await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+      ).toBeNull();
     }
-    await expect(sender.voice.startDirectScreen({})).rejects.toThrow(
-      'Too many requests'
-    );
+    await expect(
+      sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).rejects.toThrow('Too many requests');
   });
 });
 
-describe('onDirectScreenSignal', () => {
+describe('onDirectMediaSignal', () => {
   test('requires membership, current runtime and channel visibility', async () => {
     await pair();
     const { caller: absent } = await initTest(3);
     await expect(
-      absent.voice.onDirectScreenSignal({ enabled: true })
+      absent.voice.onDirectMediaSignal({ enabled: true })
     ).rejects.toThrow();
     const { caller: outsider } = await initTest(3, undefined, {
       currentVoiceChannelId: 2
     });
     await expect(
-      outsider.voice.onDirectScreenSignal({ enabled: true })
+      outsider.voice.onDirectMediaSignal({ enabled: true })
     ).rejects.toThrow('User is not in this voice channel');
     const { caller: missing } = await initTest(3, undefined, {
       currentVoiceChannelId: 999999
     });
     await expect(
-      missing.voice.onDirectScreenSignal({ enabled: true })
+      missing.voice.onDirectMediaSignal({ enabled: true })
     ).rejects.toThrow();
     const privateRuntime = new VoiceRuntime(4);
     runtimes.push(privateRuntime);
@@ -455,18 +808,18 @@ describe('onDirectScreenSignal', () => {
       currentVoiceChannelId: 4
     });
     await expect(
-      privateCaller.voice.onDirectScreenSignal({ enabled: true })
+      privateCaller.voice.onDirectMediaSignal({ enabled: true })
     ).rejects.toThrow('Insufficient channel permissions');
   });
 
   test('checks global join permission and validates enabled', async () => {
     const { receiver } = await pair();
     await expect(
-      receiver.voice.onDirectScreenSignal({ enabled: 'true' } as never)
+      receiver.voice.onDirectMediaSignal({ enabled: 'true' } as never)
     ).rejects.toThrow();
     await revoke(Permission.JOIN_VOICE_CHANNELS);
     await expect(
-      receiver.voice.onDirectScreenSignal({ enabled: true })
+      receiver.voice.onDirectMediaSignal({ enabled: true })
     ).rejects.toThrow('Insufficient permissions');
   });
 
@@ -476,13 +829,19 @@ describe('onDirectScreenSignal', () => {
     const old = await listen(receiver);
     const current = await listen(receiver);
     old.subscription.unsubscribe();
-    expect(await sender.voice.startDirectScreen({})).not.toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).not.toBeNull();
     const disabled = await listen(receiver, false);
     disabled.subscription.unsubscribe();
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     current.subscription.unsubscribe();
     await listen(receiver);
-    expect(await sender.voice.startDirectScreen({})).not.toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).not.toBeNull();
   });
 
   test('rate limits subscription registration attempts', async () => {
@@ -492,42 +851,50 @@ describe('onDirectScreenSignal', () => {
       index < config.rateLimiters.voiceStream.maxRequests;
       index++
     ) {
-      await sender.voice.onDirectScreenSignal({ enabled: true });
+      await sender.voice.onDirectMediaSignal({ enabled: true });
     }
     await expect(
-      sender.voice.onDirectScreenSignal({ enabled: true })
+      sender.voice.onDirectMediaSignal({ enabled: true })
     ).rejects.toThrow('Too many requests');
   });
 
   test('a delayed observable cannot revive capability after leave and rejoin', async () => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
-    const delayed = await receiver.voice.onDirectScreenSignal({
+    const delayed = await receiver.voice.onDirectMediaSignal({
       enabled: true
     });
     runtime.removeUser(2);
     runtime.addUser(2, { micMuted: false, soundMuted: false });
     subscriptions.push(delayed.subscribe({ next: () => {} }));
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
   });
 
   test('a moderator move blocks delayed and fresh capability subscriptions until rejoin', async () => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
-    const delayed = await receiver.voice.onDirectScreenSignal({
+    const delayed = await receiver.voice.onDirectMediaSignal({
       enabled: true
     });
     await sender.voice.moveUser({ userId: 2, channelId: 4 });
     subscriptions.push(delayed.subscribe({ next: () => {} }));
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     await listen(receiver);
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     runtime.removeUser(2);
     runtime.addUser(2, { micMuted: false, soundMuted: false });
     await listen(receiver);
-    const session = await sender.voice.startDirectScreen({});
+    const session = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN
+    });
     expect(session?.peerId).toBe(2);
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session!.sessionId,
       signal: { type: 'stop' }
     });
@@ -538,39 +905,45 @@ describe('onDirectScreenSignal', () => {
     await listen(sender);
     const current = await listen(receiver);
     current.subscription.unsubscribe();
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     await listen(receiver);
-    const session = await sender.voice.startDirectScreen({});
+    const session = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN
+    });
     expect(session?.peerId).toBe(2);
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session!.sessionId,
       signal: { type: 'stop' }
     });
   });
 });
 
-describe('signalDirectScreen', () => {
+describe('signalDirectMedia', () => {
   test('delivers SDP only to its paired peer and never broadcasts it', async () => {
     const { sender, receiver, sending, receiving, session } = await prepared();
-    const broadcasts: TDirectScreenEvent[] = [];
-    const others: TDirectScreenEvent[] = [];
+    const broadcasts: TDirectMediaEvent[] = [];
+    const others: TDirectMediaEvent[] = [];
     subscriptions.push(
       pubsub
-        .subscribe(ServerEvents.DIRECT_SCREEN_SIGNAL)
+        .subscribe(ServerEvents.DIRECT_MEDIA_SIGNAL)
         .subscribe({ next: (event) => broadcasts.push(event) })
     );
     subscriptions.push(
       pubsub
-        .subscribeFor(3, ServerEvents.DIRECT_SCREEN_SIGNAL)
+        .subscribeFor(3, ServerEvents.DIRECT_MEDIA_SIGNAL)
         .subscribe({ next: (event) => others.push(event) })
     );
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: offer
     });
     expect(sending.events).toEqual([]);
     expect(receiving.events).toEqual([
       {
+        kind: StreamKind.SCREEN,
+        relayAllowed: false,
         sessionId: session.sessionId,
         channelId: 2,
         senderId: 1,
@@ -579,11 +952,11 @@ describe('signalDirectScreen', () => {
         signal: offer
       }
     ]);
-    await receiver.voice.signalDirectScreen({
+    await receiver.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: answer
     });
-    await receiver.voice.signalDirectScreen({
+    await receiver.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: { type: 'ready' }
     });
@@ -604,8 +977,8 @@ describe('signalDirectScreen', () => {
 
   test('enforces direction and offer-answer-ready order without advancing on rejection', async () => {
     const { sender, receiver, session } = await prepared();
-    const send = sender.voice.signalDirectScreen;
-    const receive = receiver.voice.signalDirectScreen;
+    const send = sender.voice.signalDirectMedia;
+    const receive = receiver.voice.signalDirectMedia;
     await expect(
       receive({ sessionId: session.sessionId, signal: offer })
     ).rejects.toThrow();
@@ -653,27 +1026,27 @@ describe('signalDirectScreen', () => {
       { type: 'ready', peerId: 3 }
     ])
       await expect(
-        sender.voice.signalDirectScreen({
+        sender.voice.signalDirectMedia({
           sessionId: session.sessionId,
           signal
         } as never)
       ).rejects.toThrow();
     await expect(
-      sender.voice.signalDirectScreen({ sessionId: '', signal: offer })
+      sender.voice.signalDirectMedia({ sessionId: '', signal: offer })
     ).rejects.toThrow();
     await expect(
-      sender.voice.signalDirectScreen({
+      sender.voice.signalDirectMedia({
         sessionId: 'not-a-uuid',
         signal: offer
       })
     ).rejects.toThrow();
     await expect(
-      sender.voice.signalDirectScreen({
+      sender.voice.signalDirectMedia({
         sessionId: crypto.randomUUID(),
         signal: offer
       })
     ).rejects.toThrow('Direct screen session not found');
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: offer
     });
@@ -685,22 +1058,22 @@ describe('signalDirectScreen', () => {
       currentVoiceChannelId: 2
     });
     await expect(
-      outsider.voice.signalDirectScreen({
+      outsider.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: offer
       })
     ).rejects.toThrow('Direct screen session not found');
     for (const signal of [{ type: 'fallback' }, { type: 'stop' }] as const) {
-      await outsider.voice.signalDirectScreen({
+      await outsider.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal
       });
-      await outsider.voice.signalDirectScreen({
+      await outsider.voice.signalDirectMedia({
         sessionId: crypto.randomUUID(),
         signal
       });
     }
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: offer
     });
@@ -711,7 +1084,7 @@ describe('signalDirectScreen', () => {
       currentVoiceChannelId: 4
     });
     await expect(
-      elsewhere.voice.signalDirectScreen({
+      elsewhere.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: offer
       })
@@ -726,11 +1099,11 @@ describe('signalDirectScreen', () => {
       const { receiver, session } = await prepared();
       const outgoing =
         permission === Permission.SHARE_SCREEN
-          ? await receiver.voice.startDirectScreen({})
+          ? await receiver.voice.startDirectMedia({ kind: StreamKind.SCREEN })
           : session;
       await revoke(permission);
       await expect(
-        receiver.voice.signalDirectScreen({
+        receiver.voice.signalDirectMedia({
           sessionId: outgoing!.sessionId,
           signal: permission === Permission.SHARE_SCREEN ? offer : answer
         })
@@ -742,16 +1115,16 @@ describe('signalDirectScreen', () => {
     const { sender, sending, receiving, session } = await prepared();
     config.webRtc.directScreenSharing = false;
     await expect(
-      sender.voice.signalDirectScreen({
+      sender.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: offer
       })
     ).rejects.toThrow();
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: { type: 'fallback' }
     });
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: { type: 'stop' }
     });
@@ -761,7 +1134,7 @@ describe('signalDirectScreen', () => {
     expect(receiving.events.map((event) => event.signal.type)).toEqual([
       'fallback'
     ]);
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: crypto.randomUUID(),
       signal: { type: 'stop' }
     });
@@ -776,11 +1149,11 @@ describe('signalDirectScreen', () => {
       index++
     ) {
       await expect(
-        sender.voice.signalDirectScreen({ sessionId, signal: offer })
+        sender.voice.signalDirectMedia({ sessionId, signal: offer })
       ).rejects.toThrow('Direct screen session not found');
     }
     await expect(
-      sender.voice.signalDirectScreen({ sessionId, signal: offer })
+      sender.voice.signalDirectMedia({ sessionId, signal: offer })
     ).rejects.toThrow('Too many requests');
   });
 });
@@ -791,8 +1164,7 @@ describe('direct screen lifecycle', () => {
     'move',
     'subscription',
     'capture',
-    'destroy',
-    'external'
+    'destroy'
   ] as const) {
     test(`ends sessions on ${action} without stale session resurrection`, async () => {
       const { runtime, sender, receiver, sending, receiving, session } =
@@ -804,28 +1176,21 @@ describe('direct screen lifecycle', () => {
       if (action === 'capture')
         await sender.voice.updateState({ sharingScreen: false });
       if (action === 'destroy') await runtime.destroy();
-      if (action === 'external')
-        runtime.createExternalStream({
-          title: 'external',
-          key: 'key',
-          pluginId: 'plugin',
-          producers: {}
-        });
       expect(sending.events.map((event) => event.signal.type)).toEqual([
         action === 'capture' || action === 'destroy' ? 'stop' : 'fallback'
       ]);
       if (action !== 'subscription') expect(receiving.events).toHaveLength(1);
       await expect(
-        sender.voice.signalDirectScreen({
+        sender.voice.signalDirectMedia({
           sessionId: session.sessionId,
           signal: offer
         })
       ).rejects.toThrow();
-      await sender.voice.signalDirectScreen({
+      await sender.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: { type: 'stop' }
       });
-      await receiver.voice.signalDirectScreen({
+      await receiver.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: { type: 'fallback' }
       });
@@ -836,9 +1201,11 @@ describe('direct screen lifecycle', () => {
     const { runtime, sender, session } = await prepared();
     runtime.removeUser(2);
     runtime.addUser(2, { micMuted: false, soundMuted: false });
-    expect(await sender.voice.startDirectScreen({})).toBeNull();
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
     await expect(
-      sender.voice.signalDirectScreen({
+      sender.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: offer
       })
@@ -853,14 +1220,16 @@ describe('direct screen lifecycle', () => {
       'fallback'
     ]);
     await expect(
-      sender.voice.signalDirectScreen({
+      sender.voice.signalDirectMedia({
         sessionId: session.sessionId,
         signal: offer
       })
     ).rejects.toThrow('Direct screen session not found');
-    const replacement = await sender.voice.startDirectScreen({});
+    const replacement = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN
+    });
     expect(replacement).not.toBeNull();
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: replacement!.sessionId,
       signal: { type: 'stop' }
     });
@@ -869,15 +1238,15 @@ describe('direct screen lifecycle', () => {
   test('ready clears the pending deadline', async () => {
     const time = clock();
     const { sender, receiver, sending, session } = await prepared();
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: offer
     });
-    await receiver.voice.signalDirectScreen({
+    await receiver.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: answer
     });
-    await receiver.voice.signalDirectScreen({
+    await receiver.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: { type: 'ready' }
     });
@@ -886,7 +1255,7 @@ describe('direct screen lifecycle', () => {
       'answer',
       'ready'
     ]);
-    await sender.voice.signalDirectScreen({
+    await sender.voice.signalDirectMedia({
       sessionId: session.sessionId,
       signal: { type: 'stop' }
     });
@@ -896,14 +1265,14 @@ describe('direct screen lifecycle', () => {
 
 test('all direct screen endpoints require authentication', async () => {
   const { caller } = await getCaller(1, undefined, { authenticated: false });
-  await expect(caller.voice.startDirectScreen({})).rejects.toThrow(
-    'You must be authenticated'
-  );
   await expect(
-    caller.voice.onDirectScreenSignal({ enabled: true })
+    caller.voice.startDirectMedia({ kind: StreamKind.SCREEN })
   ).rejects.toThrow('You must be authenticated');
   await expect(
-    caller.voice.signalDirectScreen({
+    caller.voice.onDirectMediaSignal({ enabled: true })
+  ).rejects.toThrow('You must be authenticated');
+  await expect(
+    caller.voice.signalDirectMedia({
       sessionId: crypto.randomUUID(),
       signal: { type: 'stop' }
     })
@@ -930,12 +1299,14 @@ test('screen signalling rechecks channel permissions before exposing SDP', async
   ]);
   const sending = await listen(sender);
   const receiving = await listen(receiver);
-  const session = await sender.voice.startDirectScreen({});
+  const session = await sender.voice.startDirectMedia({
+    kind: StreamKind.SCREEN
+  });
   await tdb
     .delete(channelRolePermissions)
     .where(eq(channelRolePermissions.channelId, 4));
   await expect(
-    sender.voice.signalDirectScreen({
+    sender.voice.signalDirectMedia({
       sessionId: session!.sessionId,
       signal: offer
     })
@@ -968,9 +1339,13 @@ test('screen offers need channel share permission but receive and cleanup do not
   ]);
   await listen(sender);
   await listen(receiver);
-  const session = await sender.voice.startDirectScreen({});
-  const opposite = await receiver.voice.startDirectScreen({});
-  await sender.voice.signalDirectScreen({
+  const session = await sender.voice.startDirectMedia({
+    kind: StreamKind.SCREEN
+  });
+  const opposite = await receiver.voice.startDirectMedia({
+    kind: StreamKind.SCREEN
+  });
+  await sender.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: offer
   });
@@ -983,24 +1358,24 @@ test('screen offers need channel share permission but receive and cleanup do not
       )
     );
   await expect(
-    receiver.voice.signalDirectScreen({
+    receiver.voice.signalDirectMedia({
       sessionId: opposite!.sessionId,
       signal: offer
     })
   ).rejects.toThrow('Insufficient channel permissions');
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: answer
   });
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: { type: 'ready' }
   });
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: opposite!.sessionId,
     signal: { type: 'stop' }
   });
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: { type: 'fallback' }
   });
@@ -1011,16 +1386,18 @@ test('a receive-only peer without global share permission can negotiate and clea
   await revoke(Permission.SHARE_SCREEN);
   const sending = await listen(sender);
   await listen(receiver);
-  const session = await sender.voice.startDirectScreen({});
-  await sender.voice.signalDirectScreen({
+  const session = await sender.voice.startDirectMedia({
+    kind: StreamKind.SCREEN
+  });
+  await sender.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: offer
   });
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: answer
   });
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: { type: 'ready' }
   });
@@ -1028,15 +1405,15 @@ test('a receive-only peer without global share permission can negotiate and clea
     'answer',
     'ready'
   ]);
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: { type: 'stop' }
   });
-  await receiver.voice.signalDirectScreen({
+  await receiver.voice.signalDirectMedia({
     sessionId: session!.sessionId,
     signal: { type: 'fallback' }
   });
-  await expect(receiver.voice.startDirectScreen({})).rejects.toThrow(
-    'Insufficient permissions'
-  );
+  await expect(
+    receiver.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+  ).rejects.toThrow('Insufficient permissions');
 });

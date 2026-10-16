@@ -1,4 +1,12 @@
 {
+  "connection": "Соединение",
+  "ping": "Пинг",
+  "serverControl": "Сервер (управление)",
+  "rateLabel": "Скорость",
+  "packetsLabel": "Пакеты",
+  "lostLabel": "Потери",
+  "peerPingDescription": "Измеренный ICE RTT до участника; показано наибольшее значение среди активных P2P-соединений.",
+  "serverPingDescription": "Время запроса к серверу приложения, не задержка SFU или STUN.",
   "server": "Сервер",
   "addCategory": "Добавить категорию",
   "serverSettings": "Настройки сервера",

@@ -1,4 +1,12 @@
 {
+  "connection": "Connessione",
+  "ping": "Ping",
+  "serverControl": "Server (controllo)",
+  "rateLabel": "Velocità",
+  "packetsLabel": "Pacchetti",
+  "lostLabel": "Persi",
+  "peerPingDescription": "RTT ICE misurato verso questo partecipante; viene mostrato il percorso P2P attivo più lento.",
+  "serverPingDescription": "Tempo di andata e ritorno al server applicativo, non latenza SFU o STUN.",
   "server": "Server",
   "addCategory": "Aggiungi categoria",
   "serverSettings": "Impostazioni server",

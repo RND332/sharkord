@@ -8,7 +8,13 @@ const resumeConsumerRoute = protectedProcedure
   .input(
     z.object({
       remoteId: z.number(),
-      kind: z.enum([StreamKind.SCREEN, StreamKind.SCREEN_AUDIO])
+      consumerId: z.string().min(1),
+      kind: z.enum([
+        StreamKind.VIDEO,
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO,
+        StreamKind.EXTERNAL_VIDEO
+      ])
     })
   )
   .mutation(async ({ input, ctx }) => {
@@ -21,7 +27,7 @@ const resumeConsumerRoute = protectedProcedure
       input.kind
     );
 
-    invariant(consumer, {
+    invariant(consumer && consumer.id === input.consumerId, {
       code: 'NOT_FOUND',
       message: 'Consumer not found'
     });

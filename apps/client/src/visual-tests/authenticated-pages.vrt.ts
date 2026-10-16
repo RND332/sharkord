@@ -17,7 +17,7 @@ import {
   closeServerScreens,
   openServerScreen
 } from '@/features/server-screens/actions';
-import { setDmsOpen } from '@/features/server/actions';
+import { markChannelAsRead, setDmsOpen } from '@/features/server/actions';
 import {
   setCurrentVoiceChannelId,
   setSelectedChannelId
@@ -863,6 +863,7 @@ test('direct messages match the Paper design', async () => {
 });
 
 test('voice channel matches the Paper design', async () => {
+  await markChannelAsRead(3, true);
   setSelectedChannelId(2);
   setAlwaysShowVoiceControls(true);
   await joinVoice(2);
@@ -903,19 +904,17 @@ test('voice channel matches the Paper design', async () => {
     const stage = controls!.parentElement!.parentElement!;
     expect(getComputedStyle(stage).backgroundColor).toBe('rgb(30, 31, 34)');
     const tile = caption.element().closest('.group\\/voice-user-card')!;
+    expect(tile.querySelector('div.absolute.top-0.right-0')).toBeNull();
     expect(getComputedStyle(tile.firstElementChild!).backgroundImage).toBe(
       'none'
     );
-    const pin = tile.querySelector<HTMLButtonElement>('button')!;
-    pin.focus();
-    await expect.element(page.elementLocator(pin)).toBeVisible();
-    await userEvent.keyboard('{Shift>}{Tab}{/Shift}');
-    await userEvent.keyboard('{Tab}');
-    expect(document.activeElement).toBe(pin);
-    await expect
-      .poll(() => getComputedStyle(pin).boxShadow)
-      .toContain('rgb(194, 199, 255)');
-    pin.blur();
+    await page.elementLocator(tile).click({ button: 'right' });
+    const pin = page.getByRole('menuitem', { name: 'Pin', exact: true });
+    await expect.element(pin).toBeVisible();
+    await userEvent.keyboard('{ArrowDown}');
+    await expect.poll(() => document.activeElement).toBe(pin.element());
+    await userEvent.keyboard('{Escape}');
+    await expect.element(pin).not.toBeInTheDocument();
     const stats = page
       .getByRole('button', { name: 'Transport Statistics' })
       .element();
@@ -1039,11 +1038,9 @@ test('screen sharing states match the Paper design', async () => {
     await waitForRender();
     await snapshot('screen-sharing-focus');
   } finally {
-    document
-      .querySelector<HTMLButtonElement>(
-        'button[aria-label="Stop Screen Share"]'
-      )
-      ?.click();
+    await page
+      .getByRole('button', { name: 'Stop screen share', exact: true })
+      .click();
     resolveStateUpdate();
     await Promise.all(stateUpdates);
     await waitForRender();
@@ -1141,6 +1138,34 @@ test('personal theme preview applies to settings, chat and body portals', async 
   }
 });
 
+test('theme confirmation floats above settings without moving the catalog', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+  await page
+    .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
+    .filter({ hasText: 'Appearance & language' })
+    .click();
+  const search = page.getByRole('textbox', { name: 'Search themes' });
+  await search.fill('Miku');
+  const catalog = page.getByRole('region', { name: 'Themes', exact: true });
+  const before = catalog.element().getBoundingClientRect();
+  await page
+    .getByRole('button', { name: 'Preview Hatsune Miku', exact: true })
+    .click();
+  const after = catalog.element().getBoundingClientRect();
+  expect(after.y).toBe(before.y);
+  expect(after.height).toBe(before.height);
+  const apply = page.getByRole('button', { name: 'Apply theme', exact: true });
+  const confirmation = apply.element().parentElement!.parentElement!;
+  expect(getComputedStyle(confirmation).position).toBe('fixed');
+  expect(confirmation.parentElement).toBe(document.body);
+  await expect(page.elementLocator(confirmation)).toMatchScreenshot(
+    'theme-preview-toast',
+    { timeout: 3_000 }
+  );
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  expect(catalog.element().getBoundingClientRect().y).toBe(before.y);
+});
+
 test('theme catalog is one searchable list containing every theme', async () => {
   openServerScreen(ServerScreen.USER_SETTINGS);
   await page
@@ -1188,6 +1213,7 @@ test('theme catalog is one searchable list containing every theme', async () => 
 });
 
 test('Miku uses its pink rail accent and light mode reaches settings and dialogs', async () => {
+  await markChannelAsRead(3, true);
   openServerScreen(ServerScreen.USER_SETTINGS);
   await page
     .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
@@ -1204,9 +1230,28 @@ test('Miku uses its pink rail accent and light mode reaches settings and dialogs
   try {
     await expect.element(server).toBeVisible();
     expect(getComputedStyle(server.element()).backgroundColor).toBe(
-      'rgb(239, 118, 167)'
+      'rgb(232, 72, 141)'
     );
     expect(getComputedStyle(server.element()).color).toBe('rgb(0, 0, 0)');
+    expect(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--primary')
+        .trim()
+    ).toBe('#39c5cf');
+    const rail = page.getByRole('navigation', {
+      name: 'Application',
+      exact: true
+    });
+    expect(getComputedStyle(rail.element(), '::after').content).toBe('"01"');
+    expect(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--accent')
+        .trim()
+    ).toBe('#163d43');
+    expect(
+      getComputedStyle(document.querySelector('.compose-scroll-row')!)
+        .backgroundColor
+    ).toBe('rgb(40, 47, 54)');
     await expect(
       page.elementLocator(document.documentElement)
     ).toMatchScreenshot('theme-miku-chat', { timeout: 3_000 });

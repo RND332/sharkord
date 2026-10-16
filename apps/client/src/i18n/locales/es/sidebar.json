@@ -1,4 +1,12 @@
 {
+  "connection": "Conexión",
+  "ping": "Ping",
+  "serverControl": "Servidor (control)",
+  "rateLabel": "Tasa",
+  "packetsLabel": "Paquetes",
+  "lostLabel": "Perdidos",
+  "peerPingDescription": "RTT ICE medido hasta este participante; se muestra la ruta P2P activa más lenta.",
+  "serverPingDescription": "Tiempo de ida y vuelta al servidor de la aplicación, no la latencia SFU o STUN.",
   "server": "Servidor",
   "addCategory": "Añadir categoría",
   "serverSettings": "Ajustes del servidor",
