@@ -9,19 +9,16 @@ import {
   useVoice
 } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
+import {
+  ComputerDesktopIcon,
+  MicrophoneIcon,
+  PhoneXMarkIcon,
+  VideoCameraIcon,
+  VideoCameraSlashIcon
+} from '@heroicons/react/24/outline';
 import { ChannelPermission, Permission } from '@sharkord/shared';
 import { Button, Tooltip } from '@sharkord/ui';
-import {
-  HeadphoneOff,
-  Headphones,
-  Mic,
-  MicOff,
-  Monitor,
-  PhoneOff,
-  ScreenShareOff,
-  Video,
-  VideoOff
-} from 'lucide-react';
+import { HeadphoneOff, Headphones, MicOff, ScreenShareOff } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { ControlToggleButton } from './control-toggle-button';
 import { ReactionsButton } from './reactions-button';
@@ -77,7 +74,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           enabledLabel="Unmute"
           disabledLabel="Mute"
           enabledIcon={MicOff}
-          disabledIcon={Mic}
+          disabledIcon={MicrophoneIcon}
           enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
           onClick={toggleMic}
           disabled={!permissions.canSpeak || ownVoiceState.soundMuted}
@@ -97,8 +94,8 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           enabled={ownVoiceState.webcamEnabled}
           enabledLabel="Stop Video"
           disabledLabel="Start Video"
-          enabledIcon={Video}
-          disabledIcon={VideoOff}
+          enabledIcon={VideoCameraIcon}
+          disabledIcon={VideoCameraSlashIcon}
           enabledClassName="bg-success-solid text-white hover:bg-success-solid/90 hover:text-white"
           onClick={toggleWebcam}
           disabled={!permissions.canWebcam || devices.voiceOnlyMode}
@@ -110,7 +107,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             enabledLabel="Stop Sharing"
             disabledLabel="Share Screen"
             enabledIcon={ScreenShareOff}
-            disabledIcon={Monitor}
+            disabledIcon={ComputerDesktopIcon}
             enabledClassName="bg-success-solid text-white hover:bg-success-solid/90 hover:text-white"
             onClick={toggleScreenShare}
             disabled={!permissions.canShareScreen || devices.voiceOnlyMode}
@@ -125,11 +122,11 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
         <Tooltip content="Disconnect">
           <Button
             variant="destructive"
-            className="size-11 rounded-full p-0 sm:size-12"
+            className="size-11 rounded-full p-0 sm:h-12 sm:w-18"
             onClick={handleLeaveVoice}
             aria-label="Disconnect"
           >
-            <PhoneOff className="size-4.5" fill="currentColor" />
+            <PhoneXMarkIcon className="size-4.5" />
           </Button>
         </Tooltip>
       </div>
