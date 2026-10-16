@@ -6,6 +6,7 @@ import {
 import type { TEmojiItem } from '@/components/tiptap-input/helpers';
 import { QUICK_VOICE_REACTION_EMOJIS } from '@/features/server/voice/statics';
 import { getTRPCClient } from '@/lib/trpc';
+import { FaceSmileIcon } from '@heroicons/react/24/outline';
 import { getTrpcError } from '@sharkord/shared';
 import {
   Button,
@@ -14,7 +15,7 @@ import {
   PopoverTrigger,
   Tooltip
 } from '@sharkord/ui';
-import { Plus, Smile } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -92,10 +93,10 @@ const ReactionsButton = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="size-11 rounded-full border border-control-border bg-raised text-foreground transition-colors duration-150 hover:bg-panel sm:size-12"
+            className="size-11 rounded-full bg-raised text-foreground transition-colors duration-150 hover:bg-panel sm:size-12"
             aria-label={t('sendVoiceReaction')}
           >
-            <Smile className="size-4.5" />
+            <FaceSmileIcon className="size-4.5 sm:size-5" />
           </Button>
         </PopoverTrigger>
       </Tooltip>
