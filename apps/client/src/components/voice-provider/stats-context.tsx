@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect } from 'react';
 import type { TransportStatsData } from './hooks/use-transport-stats';
 
 const DEFAULT_STATS: TransportStatsData = {
+  serverRtt: null,
+  peerRtts: {},
+  direct: null,
   producer: null,
   consumer: null,
   screenShare: null,

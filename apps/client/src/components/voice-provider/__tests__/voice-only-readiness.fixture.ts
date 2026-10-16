@@ -212,6 +212,8 @@ mock.module('@/features/server/hooks', () => ({
   useTotalUnreadCount: () => 0,
   usePublicServerSettings: () => ({}),
   useWebRtcSimulcastEnabled: () => false,
+  useDirectMediaPolicy: () => 'relay',
+  useCurrentVoicePeers: () => [],
   useOwnUserRoles: () => [],
   useHiddenPluginComponents: () => [],
   useInfo: () => ({}),
@@ -342,14 +344,20 @@ mock.module('mediasoup-client', () => ({
     async load() {}
   }
 }));
-mock.module('../hooks/use-direct-screen-share', () => ({
-  useDirectScreenShare: () => ({
-    directScreenShare: {
-      start: async () => true,
-      close() {},
-      stop() {},
-      acceptPendingOffer() {},
-      stopReceiving() {}
+const directMediaStub = () => ({
+  start: async () => 'relay' as const,
+  close() {},
+  stop() {},
+  getConnections: () => [],
+  acceptPendingOffer() {},
+  stopReceiving() {}
+});
+mock.module('../hooks/use-direct-media', () => ({
+  useDirectMedia: () => ({
+    directMedia: {
+      audio: directMediaStub(),
+      video: directMediaStub(),
+      screen: directMediaStub()
     }
   })
 }));

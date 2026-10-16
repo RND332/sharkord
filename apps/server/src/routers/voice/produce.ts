@@ -1,36 +1,14 @@
 import {
-  ChannelPermission,
   getMediasoupKind,
-  Permission,
   PRODUCIBLE_STREAM_KINDS,
-  ServerEvents,
-  StreamKind,
-  type TProducibleStreamKind
+  ServerEvents
 } from '@sharkord/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
+import { voiceKindPermissions } from '../../helpers/voice-kind-permissions';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
-
-const KIND_PERMISSIONS: Record<
-  TProducibleStreamKind,
-  { channel: ChannelPermission; server?: Permission }
-> = {
-  [StreamKind.AUDIO]: { channel: ChannelPermission.SPEAK },
-  [StreamKind.VIDEO]: {
-    channel: ChannelPermission.WEBCAM,
-    server: Permission.ENABLE_WEBCAM
-  },
-  [StreamKind.SCREEN]: {
-    channel: ChannelPermission.SHARE_SCREEN,
-    server: Permission.SHARE_SCREEN
-  },
-  [StreamKind.SCREEN_AUDIO]: {
-    channel: ChannelPermission.SHARE_SCREEN,
-    server: Permission.SHARE_SCREEN
-  }
-};
 
 const produceRoute = rateLimitedProcedure(protectedProcedure, {
   maxRequests: config.rateLimiters.voiceStream.maxRequests,
@@ -56,7 +34,7 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
     const { runtime, channelId, mediaGeneration } =
       await getCurrentVoiceRuntime(ctx);
 
-    const { channel, server } = KIND_PERMISSIONS[input.kind];
+    const { channel, server } = voiceKindPermissions[input.kind];
 
     await ctx.needsChannelPermission(channelId, channel);
 
@@ -64,6 +42,7 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
       await ctx.needsPermission(server);
     }
     runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
+    runtime.assertMediaRelayAllowed(ctx.user.id, input.kind);
 
     const producerTransport = runtime.getProducerTransport(ctx.user.id);
 

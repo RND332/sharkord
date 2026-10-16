@@ -118,7 +118,7 @@ const Devices = memo(() => {
     [onChange]
   );
 
-  const handleDirectScreenSharingChange = useCallback(
+  const handleDirectMediaSharingChange = useCallback(
     (enabled: boolean) => onChange('directScreenSharing', enabled),
     [onChange]
   );
@@ -652,7 +652,7 @@ const Devices = memo(() => {
                 currentVoiceChannelId !== undefined ||
                 typeof RTCPeerConnection === 'undefined'
               }
-              onCheckedChange={handleDirectScreenSharingChange}
+              onCheckedChange={handleDirectMediaSharingChange}
             />
           </Group>
           <Group

@@ -1,5 +1,5 @@
 import type { IceCandidate, IceParameters } from 'mediasoup/types';
-import type { StreamKind, TExternalStreamTracks } from './types';
+import { StreamKind, type TExternalStreamTracks } from './types';
 
 export type { ConsumerType } from 'mediasoup/types';
 
@@ -9,6 +9,7 @@ export type TVoiceUserState = {
   webcamEnabled: boolean;
   sharingScreen: boolean;
   voiceOnlyMode?: boolean;
+  directMediaEnabled?: boolean;
 };
 
 export type TVoiceUser = {
@@ -58,28 +59,38 @@ export type TVoiceProducerInfo = {
   paused: boolean;
 };
 
-export const DIRECT_SCREEN_CONNECT_TIMEOUT_MS = 8000;
-export const DIRECT_SCREEN_ICE_GATHER_TIMEOUT_MS = 2000;
-export const DIRECT_SCREEN_SDP_MAX_LENGTH = 65536;
+export const DIRECT_MEDIA_CONNECT_TIMEOUT_MS = 8000;
+export const DIRECT_MEDIA_ICE_GATHER_TIMEOUT_MS = 2000;
+export const DIRECT_MEDIA_SDP_MAX_LENGTH = 65536;
 
-export type TDirectScreenSignal =
+export const DIRECT_MEDIA_KINDS = [
+  StreamKind.AUDIO,
+  StreamKind.VIDEO,
+  StreamKind.SCREEN
+] as const;
+export type TDirectMediaKind = (typeof DIRECT_MEDIA_KINDS)[number];
+
+export type TDirectMediaSignal =
   | { type: 'offer'; sdp: string }
   | { type: 'answer'; sdp: string }
   | { type: 'ready' }
   | { type: 'fallback' }
   | { type: 'stop' };
 
-export type TDirectScreenSession = {
+export type TDirectMediaSession = {
+  kind: TDirectMediaKind;
   sessionId: string;
   peerId: number;
   stunUrls: string[];
 };
 
-export type TDirectScreenEvent = {
+export type TDirectMediaEvent = {
+  kind: TDirectMediaKind;
+  relayAllowed: boolean;
   sessionId: string;
   channelId: number;
   senderId: number;
   fromUserId: number;
   stunUrls: string[];
-  signal: TDirectScreenSignal;
+  signal: TDirectMediaSignal;
 };

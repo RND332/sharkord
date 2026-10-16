@@ -1,4 +1,12 @@
 {
+  "connection": "Connection",
+  "ping": "Ping",
+  "serverControl": "Server (control)",
+  "rateLabel": "Rate",
+  "packetsLabel": "Packets",
+  "lostLabel": "Lost",
+  "peerPingDescription": "Measured ICE RTT to this peer; the slowest measured active P2P path is shown.",
+  "serverPingDescription": "Application-server request round trip, not SFU or STUN latency.",
   "server": "Server",
   "addCategory": "Add Category",
   "serverSettings": "Server Settings",

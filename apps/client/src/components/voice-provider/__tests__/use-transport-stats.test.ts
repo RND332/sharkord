@@ -1,3 +1,4 @@
+import { StreamKind } from '@sharkord/shared';
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test';
 import type { AppData, Producer, Transport } from 'mediasoup-client/types';
 import * as React from 'react';
@@ -37,6 +38,9 @@ mock.module('@/helpers/browser-logger', () => ({
   logVoiceError: () => {},
   logDebug: () => {}
 }));
+const pingServer = mock(async (): Promise<null> => null);
+const trpc = { others: { ping: { query: pingServer } } };
+mock.module('@/lib/trpc', () => ({ getTRPCClient: () => trpc }));
 const { useTransportStats } = await import('../hooks/use-transport-stats');
 
 const deferred = <T>() => {
@@ -83,6 +87,8 @@ const tick = async (count = 1) => {
   }
 };
 beforeEach(() => {
+  pingServer.mockReset();
+  pingServer.mockResolvedValue(null);
   stateWrites = 0;
   cleanups = [];
   timers = new Map();
@@ -101,6 +107,75 @@ afterEach(() => {
   globalThis.setInterval = originalInterval;
   globalThis.clearInterval = originalClearInterval;
   globalThis.window = originalWindow;
+});
+
+test('control RTT is separate and a pending ping never blocks or multiplies media sampling', async () => {
+  const pending = deferred<null>();
+  pingServer.mockImplementationOnce(() => pending.promise);
+  const hook = useTransportStats();
+  hook.subscribe();
+  hook.startMonitoring(transport(async () => report()));
+  try {
+    await tick(10);
+    expect(state.producer?.bytesSent).toBe(100);
+    expect(pingServer).toHaveBeenCalledTimes(1);
+    expect(state).toMatchObject({ serverRtt: null, peerRtts: {} });
+    pending.resolve(null);
+    await flush();
+    await tick();
+    expect(state).toMatchObject({
+      serverRtt: expect.any(Number),
+      peerRtts: {}
+    });
+  } finally {
+    pending.resolve(null);
+    await flush();
+  }
+});
+
+test('peer ping uses the selected direct candidate pair and direct traffic is counted', async () => {
+  const stats = new Map<string, unknown>(report(700, 900));
+  stats.set('selected', {
+    id: 'selected',
+    type: 'candidate-pair',
+    state: 'succeeded',
+    currentRoundTripTime: 0.019
+  });
+  stats.set('other', {
+    id: 'other',
+    type: 'candidate-pair',
+    state: 'succeeded',
+    currentRoundTripTime: 0.31
+  });
+  stats.set('transport', {
+    id: 'transport',
+    type: 'transport',
+    selectedCandidatePairId: 'selected'
+  });
+  const connection = {
+    connectionState: 'connected',
+    getStats: mock(async () => stats)
+  } as unknown as RTCPeerConnection;
+  const hook = useTransportStats([
+    {
+      getConnections: () => [
+        {
+          peerId: 2,
+          kind: StreamKind.AUDIO,
+          direction: 'outgoing' as const,
+          connection
+        }
+      ]
+    }
+  ]);
+  hook.subscribe();
+  hook.startMonitoring(transport(async () => report(0, 0)));
+  await flush();
+  expect(state).toMatchObject({
+    peerRtts: { 2: 19 },
+    totalBytesSent: 700,
+    totalBytesReceived: 900
+  });
 });
 
 test('a new session polls without waiting for the old session and ignores its late result', async () => {

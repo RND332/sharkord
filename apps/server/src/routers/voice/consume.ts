@@ -1,4 +1,4 @@
-import { ServerEvents, StreamKind } from '@sharkord/shared';
+import { getMediasoupKind, ServerEvents, StreamKind } from '@sharkord/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
@@ -21,6 +21,7 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
     const { runtime, channelId, mediaGeneration } =
       await getCurrentVoiceRuntime(ctx);
     runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
+    runtime.assertMediaRelayAllowed(input.remoteId, input.kind);
 
     const producer = runtime.getProducer(input.kind, input.remoteId);
 
@@ -50,7 +51,7 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
     const consumer = await userConsumerTransport.consume({
       producerId: producer.id,
       rtpCapabilities: input.rtpCapabilities,
-      paused: false
+      paused: getMediasoupKind(input.kind) === 'video'
     });
 
     runtime.addConsumer(

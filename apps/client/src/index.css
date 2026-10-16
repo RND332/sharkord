@@ -168,6 +168,42 @@
   --success-solid: #248046;
 }
 
+/* miku's graphite costume, twin turquoise trims and headset-pink detailing. */
+[data-theme='hatsune-miku'] nav[aria-label='Application'] {
+  position: relative;
+  background-image: linear-gradient(180deg, #39c5cf18, transparent 40%);
+}
+
+[data-theme='hatsune-miku'] nav[aria-label='Application']::after {
+  content: '01';
+  position: absolute;
+  bottom: 76px;
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--theme-secondary);
+  padding-inline: 5px;
+  pointer-events: none;
+}
+
+[data-theme='hatsune-miku'] nav[aria-label='Application'] [aria-current='page'] {
+  box-shadow: 0 0 0 3px var(--rail), 0 0 0 4px #39c5cf80;
+}
+
+[data-theme='hatsune-miku'] nav[aria-label='Application'] [aria-current='page']::before {
+  background: var(--primary);
+}
+
+[data-theme='hatsune-miku'] .compose-scroll-row {
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+[data-theme-preview='hatsune-miku'] {
+  box-shadow: inset 0 0 0 2px #39c5cf;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

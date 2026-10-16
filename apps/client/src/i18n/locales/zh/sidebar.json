@@ -1,4 +1,12 @@
 {
+  "connection": "连接",
+  "ping": "延迟",
+  "serverControl": "服务器（控制）",
+  "rateLabel": "速率",
+  "packetsLabel": "数据包",
+  "lostLabel": "丢包",
+  "peerPingDescription": "与此参与者之间测得的 ICE 往返延迟；显示活动 P2P 路径中的最大测量值。",
+  "serverPingDescription": "应用服务器请求的往返时间，并非 SFU 或 STUN 延迟。",
   "server": "服务器",
   "addCategory": "添加分类",
   "serverSettings": "服务器设置",
