@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "Ajustes del micrófono",
+  "outputSettings": "Ajustes de los auriculares",
+  "inputDevice": "Dispositivo de entrada",
+  "outputDevice": "Dispositivo de salida",
+  "microphoneVolume": "Volumen del micrófono",
+  "outputVolume": "Volumen de salida",
+  "voiceSettings": "Ajustes de voz"
+}

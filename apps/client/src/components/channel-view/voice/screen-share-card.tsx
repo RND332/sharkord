@@ -8,8 +8,11 @@ import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@sharkord/shared';
-import { Monitor, Play } from 'lucide-react';
+import { Monitor } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';
 import { cardControlClass, cardControlsClass, cardDensity } from './helpers';
 import { useFullscreen } from './hooks/use-fullscreen';
@@ -21,7 +24,6 @@ import { useScreenShareZoom } from './hooks/use-screen-share-zoom';
 import { useVideoStats } from './hooks/use-video-stats';
 import { useVoiceRefs } from './hooks/use-voice-refs';
 import { QualityButton } from './quality-button';
-import { ViewDemoButton } from './view-demo-button';
 import { VoiceCardContextMenu } from './voice-card-context-menu';
 
 type TScreenShareCardProps = {
@@ -51,6 +53,7 @@ const ScreenShareCard = memo(
     showPinControls = true,
     isAnyCardPinned = false
   }: TScreenShareCardProps) => {
+    const { t } = useTranslation('common');
     const user = useUserById(userId);
     const ownUserId = useOwnUserId();
     const { devices } = useDevices();
@@ -72,6 +75,9 @@ const ScreenShareCard = memo(
       setWatchState('loading');
       try {
         await viewDemo(userId);
+        if (request !== watchRequest.current || !isViewingDemo(userId)) return;
+        if (showPinControls)
+          onPin({ id: cardId, type: PinnedCardType.SCREEN_SHARE, userId });
         // Media arrival, not the RPC completing, ends the loading state.
       } catch {
         if (request !== watchRequest.current) return;
@@ -83,7 +89,15 @@ const ScreenShareCard = memo(
         }
         if (request === watchRequest.current) setWatchState('error');
       }
-    }, [viewDemo, stopViewingDemo, userId]);
+    }, [
+      viewDemo,
+      stopViewingDemo,
+      userId,
+      isViewingDemo,
+      showPinControls,
+      onPin,
+      cardId
+    ]);
     const { getUserScreenVolumeKey } = useVolumeControl();
     const isOwnUser = ownUserId === userId;
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
@@ -173,12 +187,8 @@ const ScreenShareCard = memo(
       resetZoom
     } = useScreenShareZoom();
 
-    const {
-      isFullscreen,
-      isOverlayVisible,
-      toggleFullscreen,
-      handleDoubleClick
-    } = useFullscreen(containerRef);
+    const { isFullscreen, isOverlayVisible, toggleFullscreen } =
+      useFullscreen(containerRef);
 
     const handleToggleFullscreen = useCallback(() => {
       resetZoom();
@@ -198,43 +208,66 @@ const ScreenShareCard = memo(
       }
     }, [isPinned, onPin, onUnpin, cardId, userId, resetZoom]);
 
+    const handleStopWatching = useCallback(async () => {
+      watchRequest.current++;
+      setWatchState('idle');
+      if (isPinned) onUnpin();
+      resetZoom();
+      try {
+        await stopViewingDemo(userId);
+      } catch {
+        toast.error(t('failedStopWatching'));
+      }
+    }, [stopViewingDemo, userId, isPinned, onUnpin, resetZoom, t]);
+
     if (!user || devices.voiceOnlyMode) return null;
 
     if (!isOwnUser && (!isViewingDemo(userId) || !hasScreenShareStream)) {
       return (
-        <div
-          data-screen-share-card
-          className={cn(SCREEN_SHARE_SHELL_CLASS, 'bg-nav', className)}
+        <VoiceCardContextMenu
+          demo={{ isViewing: viewing, onToggle: handleStopWatching }}
         >
-          <button
-            type="button"
-            onClick={handleWatch}
-            disabled={watchState === 'loading'}
-            aria-busy={watchState === 'loading'}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] border border-line bg-raised px-4 text-sm font-medium leading-5 text-foreground hover:bg-hover focus-visible:outline-2 focus-visible:outline-ring"
+          <div
+            data-screen-share-card
+            className={cn(SCREEN_SHARE_SHELL_CLASS, 'bg-nav', className)}
           >
-            <Play aria-hidden="true" className="size-4" fill="currentColor" />
-            {watchState === 'loading'
-              ? 'Connecting…'
-              : watchState === 'error'
-                ? 'Retry watch stream'
-                : 'Watch stream'}
-          </button>
-          {watchState === 'error' && (
-            <p
-              role="alert"
-              className="absolute top-2.5 inset-x-2.5 text-center text-xs text-foreground"
+            <button
+              type="button"
+              onClick={handleWatch}
+              disabled={watchState === 'loading'}
+              aria-busy={watchState === 'loading'}
+              aria-label={
+                watchState === 'loading'
+                  ? t('connectingStream')
+                  : t(
+                      watchState === 'error' ? 'retryWatching' : 'watchScreen',
+                      { name: user.name }
+                    )
+              }
+              className="absolute inset-0 z-1 flex cursor-pointer items-center justify-center rounded-[inherit] text-[13px] leading-5 text-muted-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring disabled:cursor-wait"
             >
-              Unable to watch stream. Try again.
-            </p>
-          )}
-          <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'text-foreground')}>
-            <Monitor aria-hidden="true" className="size-[18px] shrink-0" />
-            <p className="truncate text-[13px] font-medium leading-[17px]">
-              {user.name}'s screen
-            </p>
+              {watchState === 'loading'
+                ? t('connectingStream')
+                : watchState === 'error'
+                  ? t('retryWatching')
+                  : t('clickToWatch')}
+            </button>
+            {watchState === 'error' && (
+              <p
+                role="alert"
+                className="absolute top-2.5 inset-x-2.5 text-center text-xs text-foreground"
+              >
+                {t('unableWatchStream')}
+              </p>
+            )}
+            <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'text-foreground')}>
+              <Monitor aria-hidden="true" className="size-[18px] shrink-0" />
+              <p className="truncate text-[13px] font-medium leading-[17px]">
+                {user.name}'s screen
+              </p>
+            </div>
           </div>
-        </div>
+        </VoiceCardContextMenu>
       );
     }
 
@@ -244,9 +277,6 @@ const ScreenShareCard = memo(
       <VoiceCardContextMenu
         volumeKey={
           !isOwnUser && hasScreenShareAudioStream ? volumeKey : undefined
-        }
-        pinControl={
-          showPinControls ? { isPinned, onToggle: handlePinToggle } : undefined
         }
         pictureInPicture={{ videoRef: screenShareRef }}
         fullscreen={{ isFullscreen, onToggle: handleToggleFullscreen }}
@@ -259,10 +289,7 @@ const ScreenShareCard = memo(
           !isOwnUser
             ? {
                 isViewing: isViewingDemo(userId),
-                onToggle: () =>
-                  isViewingDemo(userId)
-                    ? stopViewingDemo(userId)
-                    : void viewDemo(userId)
+                onToggle: handleStopWatching
               }
             : undefined
         }
@@ -281,11 +308,17 @@ const ScreenShareCard = memo(
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          onDoubleClick={handleDoubleClick}
           style={{
             cursor: isFullscreen && !isOverlayVisible ? 'none' : getCursor()
           }}
         >
+          {showPinControls && !isFullscreen && (
+            <CardPinButton
+              name={user.name}
+              isPinned={isPinned}
+              onToggle={handlePinToggle}
+            />
+          )}
           <CardTheme />
 
           <video
@@ -323,13 +356,6 @@ const ScreenShareCard = memo(
                   disabled={!isSimulcastScreenConsumer}
                   size={density.icon}
                   className={cardControlClass()}
-                />
-              )}
-              {!isOwnUser && (
-                <ViewDemoButton
-                  userId={userId}
-                  size={density.icon}
-                  className={cardControlClass(true)}
                 />
               )}
             </div>

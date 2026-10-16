@@ -633,7 +633,7 @@ test('composer has no resize handle or hint and grows naturally with multiline i
   await expect
     .poll(() => page.getByRole('button', { name: 'Send message' }).query())
     .toBeNull();
-  await page.getByText('sharkord', { exact: true }).hover();
+  await page.getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME).hover();
 });
 
 test('global search stays centered across desktop widths', async () => {
@@ -652,7 +652,9 @@ test('global search stays centered across desktop widths', async () => {
       ).toBeLessThanOrEqual(1);
       expect(rect.width).toBeLessThanOrEqual(550);
       const header = search.closest('header')!;
-      const logo = header.querySelector('img')!.getBoundingClientRect();
+      const logo = header
+        .querySelector('[data-slot="avatar"]')!
+        .getBoundingClientRect();
       const actions = header.lastElementChild!.getBoundingClientRect();
       expect(rect.left).toBeGreaterThan(logo.right);
       expect(rect.right).toBeLessThanOrEqual(actions.left);
@@ -875,13 +877,13 @@ test('voice channel matches the Paper design', async () => {
     .toBeVisible();
 
   try {
-    await page.getByText('sharkord', { exact: true }).hover();
+    await page.getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME).hover();
     const controls = document.querySelector<HTMLElement>(
       '[data-voice-controls]'
     );
     expect(controls).not.toBeNull();
     expect(controls!.getBoundingClientRect().height).toBe(64);
-    expect(controls!.getBoundingClientRect().width).toBe(368);
+    expect(controls!.getBoundingClientRect().width).toBe(408);
     expect(getComputedStyle(controls!).padding).toBe('8px');
     expect(getComputedStyle(controls!).gap).toBe('8px');
     expect(getComputedStyle(controls!).backgroundColor).toBe('rgb(43, 45, 49)');
@@ -896,8 +898,20 @@ test('voice channel matches the Paper design', async () => {
     expect(disconnect.getBoundingClientRect().height).toBe(48);
     expect(disconnect.querySelector('svg')!.getAttribute('fill')).toBe('none');
     const callControls = Array.from(controls!.querySelectorAll('button'));
-    expect(callControls).toHaveLength(6);
-    for (const button of callControls.slice(0, -1)) {
+    expect(callControls).toHaveLength(8);
+    const settingsButtons = callControls.filter((button) =>
+      ['Microphone settings', 'Headphone settings'].includes(
+        button.ariaLabel ?? ''
+      )
+    );
+    expect(settingsButtons).toHaveLength(2);
+    for (const button of settingsButtons) {
+      expect(button.getBoundingClientRect().width).toBe(20);
+      expect(button.getBoundingClientRect().height).toBe(44);
+    }
+    for (const button of callControls.filter(
+      (button) => button !== disconnect && !settingsButtons.includes(button)
+    )) {
       expect(button.getBoundingClientRect().width).toBe(48);
       expect(button.getBoundingClientRect().height).toBe(48);
       expect(getComputedStyle(button).borderWidth).toBe('0px');
@@ -926,13 +940,21 @@ test('voice channel matches the Paper design', async () => {
     expect(getComputedStyle(tile.firstElementChild!).backgroundImage).toBe(
       'none'
     );
-    await page.elementLocator(tile).click({ button: 'right' });
-    const pin = page.getByRole('menuitem', { name: 'Pin', exact: true });
-    await expect.element(pin).toBeVisible();
-    await userEvent.keyboard('{ArrowDown}');
-    await expect.poll(() => document.activeElement).toBe(pin.element());
-    await userEvent.keyboard('{Escape}');
-    await expect.element(pin).not.toBeInTheDocument();
+    const pin = page.elementLocator(
+      tile.querySelector<HTMLButtonElement>('button[aria-pressed]')!
+    );
+    const pinLabel = pin.element().getAttribute('aria-label')!;
+    const unpin = page.getByRole('button', {
+      name: pinLabel.replace(/^Pin /, 'Unpin '),
+      exact: true
+    });
+    await expect.element(pin).toHaveAttribute('aria-pressed', 'false');
+    await pin.click();
+    await expect.element(unpin).toHaveAttribute('aria-pressed', 'true');
+    await unpin.click();
+    await expect
+      .element(page.getByRole('button', { name: pinLabel, exact: true }))
+      .toHaveAttribute('aria-pressed', 'false');
     const stats = page
       .getByRole('button', { name: 'Transport Statistics' })
       .element();
@@ -949,12 +971,15 @@ test('voice channel matches the Paper design', async () => {
 });
 
 test('remote screen share stays in the real voice grid before watching', async () => {
+  await markChannelAsRead(3, true);
   setSelectedChannelId(2);
   addVoiceParticipants(2);
   await waitForRender();
   try {
     await expect
-      .element(page.getByRole('button', { name: 'Watch stream', exact: true }))
+      .element(
+        page.getByRole('button', { name: "View aria's screen", exact: true })
+      )
       .toBeVisible();
     const tile = document.querySelector<HTMLElement>(
       '[data-screen-share-card]'
@@ -993,7 +1018,7 @@ test('remote screen share stays in the real voice grid before watching', async (
       await page.viewport(1440, 900);
       await waitForRender();
     }
-    await page.getByText('sharkord', { exact: true }).hover();
+    await page.getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME).hover();
     await snapshot('screen-sharing-not-watching');
   } finally {
     removeVoiceParticipants();
@@ -1479,7 +1504,9 @@ test('profile setup dialog matches the Paper design', async () => {
   await expect.element(page.getByRole('dialog')).toBeVisible();
 
   // The previous dialog's input can leave the pointer over the upload cover.
-  await page.getByText('sharkord', { exact: true }).hover({ force: true });
+  await page
+    .getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME)
+    .hover({ force: true });
   await snapshot('profile-setup-dialog');
 });
 

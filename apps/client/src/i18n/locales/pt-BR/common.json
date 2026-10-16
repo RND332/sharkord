@@ -132,5 +132,23 @@
 
   "attachFiles": "Anexar arquivos",
   "addEmoji": "Adicionar emoji",
-  "sendMessage": "Enviar mensagem"
+  "sendMessage": "Enviar mensagem",
+  "pinCard": "Fixar {{name}}",
+  "unpinCard": "Desafixar {{name}}",
+  "volume": "Volume",
+  "stopWatching": "Parar de assistir",
+  "enableZoom": "Ativar zoom",
+  "disableZoom": "Desativar zoom",
+  "showWebcam": "Mostrar webcam",
+  "hideWebcam": "Ocultar webcam",
+  "pictureInPicture": "Picture-in-picture",
+  "exitPictureInPicture": "Sair do modo picture-in-picture",
+  "fullscreen": "Tela cheia",
+  "exitFullscreen": "Sair da tela cheia",
+  "watchScreen": "Ver a tela de {{name}}",
+  "clickToWatch": "Clique para assistir",
+  "connectingStream": "Conectando…",
+  "retryWatching": "Tentar ver a tela de {{name}} novamente",
+  "unableWatchStream": "Não foi possível visualizar a transmissão. Tente novamente.",
+  "failedStopWatching": "Não foi possível parar de assistir"
 }

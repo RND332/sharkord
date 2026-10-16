@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "麦克风设置",
+  "outputSettings": "耳机设置",
+  "inputDevice": "输入设备",
+  "outputDevice": "输出设备",
+  "microphoneVolume": "麦克风音量",
+  "outputVolume": "输出音量",
+  "voiceSettings": "语音设置"
+}

@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "Microphone settings",
+  "outputSettings": "Headphone settings",
+  "inputDevice": "Input device",
+  "outputDevice": "Output device",
+  "microphoneVolume": "Microphone volume",
+  "outputVolume": "Output volume",
+  "voiceSettings": "Voice settings"
+}

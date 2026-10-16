@@ -31,6 +31,7 @@ const useVoiceRefs = (
     getExternalVolumeKey
   } = useVolumeControl();
   const { devices } = useDevices();
+  const playbackGain = (devices.playbackVolume ?? 100) / 100;
 
   const {
     videoRef,
@@ -109,7 +110,7 @@ const useVoiceRefs = (
       audioRef.current.srcObject = audioStream;
     }
 
-    audioRef.current.volume = userVolume / 100;
+    audioRef.current.volume = (userVolume / 100) * playbackGain;
     audioRef.current.muted = ownVoiceState.soundMuted;
 
     applyAudioOutputDevice(audioRef.current, devices.playbackId);
@@ -117,6 +118,7 @@ const useVoiceRefs = (
     audioStream,
     audioRef,
     userVolume,
+    playbackGain,
     devices.playbackId,
     ownVoiceState.soundMuted
   ]);
@@ -133,7 +135,8 @@ const useVoiceRefs = (
       screenShareAudioRef.current.srcObject = screenShareAudioStream;
     }
 
-    screenShareAudioRef.current.volume = userScreenVolume / 100;
+    screenShareAudioRef.current.volume =
+      (userScreenVolume / 100) * playbackGain;
     screenShareAudioRef.current.muted = ownVoiceState.soundMuted;
 
     applyAudioOutputDevice(screenShareAudioRef.current, devices.playbackId);
@@ -142,6 +145,7 @@ const useVoiceRefs = (
     screenShareAudioRef,
     screenShareVisible,
     userScreenVolume,
+    playbackGain,
     devices.playbackId,
     ownVoiceState.soundMuted
   ]);
@@ -162,7 +166,7 @@ const useVoiceRefs = (
       externalAudioRef.current.srcObject = externalAudioStream;
     }
 
-    externalAudioRef.current.volume = externalVolume / 100;
+    externalAudioRef.current.volume = (externalVolume / 100) * playbackGain;
     externalAudioRef.current.muted = ownVoiceState.soundMuted;
 
     applyAudioOutputDevice(externalAudioRef.current, devices.playbackId);
@@ -170,6 +174,7 @@ const useVoiceRefs = (
     externalAudioStream,
     externalAudioRef,
     externalVolume,
+    playbackGain,
     devices.playbackId,
     ownVoiceState.soundMuted
   ]);

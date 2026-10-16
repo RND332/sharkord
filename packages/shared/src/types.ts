@@ -70,6 +70,7 @@ export type TPublicServerSettings = Pick<
   | 'storageSignedUrlsEnabled'
 > & {
   webRtcMaxBitrate: number;
+  logo: TFile | null;
 };
 
 export type TMessageMediaMetadata = {
