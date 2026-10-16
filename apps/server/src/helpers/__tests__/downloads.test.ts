@@ -75,6 +75,7 @@ beforeAll(async () => {
   // Bun.serve recomputes content-length, so the header check needs a server that will send a
   // length the body does not match. anything oversized enough to be caught by the running
   // total instead would prove nothing about the header
+  // keep the response open until teardown so a truncated-body EOF cannot race the header check
   liar = Bun.listen({
     hostname: '127.0.0.1',
     port: 0,
@@ -84,7 +85,6 @@ beforeAll(async () => {
           `HTTP/1.1 200 OK\r\nContent-Length: ${MAX_DOWNLOAD_BYTES + 1}\r\n\r\n`
         );
         socket.write(CHUNK.subarray(0, 16));
-        socket.end();
       }
     }
   });
