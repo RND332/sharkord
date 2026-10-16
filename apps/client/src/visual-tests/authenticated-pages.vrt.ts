@@ -881,6 +881,9 @@ test('voice channel matches the Paper design', async () => {
     );
     expect(controls).not.toBeNull();
     expect(controls!.getBoundingClientRect().height).toBe(64);
+    expect(controls!.getBoundingClientRect().width).toBe(368);
+    expect(getComputedStyle(controls!).padding).toBe('8px');
+    expect(getComputedStyle(controls!).gap).toBe('8px');
     expect(getComputedStyle(controls!).backgroundColor).toBe('rgb(43, 45, 49)');
     const mute = page
       .getByRole('button', { name: 'Mute', exact: true })
@@ -889,6 +892,21 @@ test('voice channel matches the Paper design', async () => {
     const disconnect = controls!.querySelector<HTMLButtonElement>(
       'button[aria-label="Disconnect"]'
     )!;
+    expect(disconnect.getBoundingClientRect().width).toBe(72);
+    expect(disconnect.getBoundingClientRect().height).toBe(48);
+    expect(disconnect.querySelector('svg')!.getAttribute('fill')).toBe('none');
+    const callControls = Array.from(controls!.querySelectorAll('button'));
+    expect(callControls).toHaveLength(6);
+    for (const button of callControls.slice(0, -1)) {
+      expect(button.getBoundingClientRect().width).toBe(48);
+      expect(button.getBoundingClientRect().height).toBe(48);
+      expect(getComputedStyle(button).borderWidth).toBe('0px');
+      expect(getComputedStyle(button).backgroundColor).toBe('rgb(64, 66, 73)');
+      expect(button.querySelector('svg')!.getBoundingClientRect().width).toBe(
+        20
+      );
+      expect(button.querySelector('svg')!.getAttribute('fill')).toBe('none');
+    }
     expect(disconnect.classList.contains('active:bg-danger-solid/80')).toBe(
       true
     );
