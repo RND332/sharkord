@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "Настройки микрофона",
+  "outputSettings": "Настройки наушников",
+  "inputDevice": "Устройство ввода",
+  "outputDevice": "Устройство вывода",
+  "microphoneVolume": "Громкость микрофона",
+  "outputVolume": "Громкость вывода",
+  "voiceSettings": "Настройки голоса"
+}

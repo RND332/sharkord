@@ -339,7 +339,7 @@ test('native picture-in-picture stays an explicit video-card context-menu action
   const pipItem = await vi.waitFor(() => {
     const item = [
       ...document.querySelectorAll<HTMLElement>('[role="menuitem"]')
-    ].find((el) => el.textContent?.trim() === 'Picture-in-picture');
+    ].find((el) => el.textContent?.trim() === 'pictureInPicture');
     expect(item).toBeTruthy();
     return item!;
   });

@@ -130,5 +130,23 @@
 
   "attachFiles": "Připojit soubory",
   "addEmoji": "Přidat emoji",
-  "sendMessage": "Odeslat zprávu"
+  "sendMessage": "Odeslat zprávu",
+  "pinCard": "Připnout {{name}}",
+  "unpinCard": "Odepnout {{name}}",
+  "volume": "Hlasitost",
+  "stopWatching": "Přestat sledovat",
+  "enableZoom": "Zapnout přiblížení",
+  "disableZoom": "Vypnout přiblížení",
+  "showWebcam": "Zobrazit webkameru",
+  "hideWebcam": "Skrýt webkameru",
+  "pictureInPicture": "Obraz v obraze",
+  "exitPictureInPicture": "Ukončit režim obrazu v obraze",
+  "fullscreen": "Celá obrazovka",
+  "exitFullscreen": "Ukončit režim celé obrazovky",
+  "watchScreen": "Zobrazit obrazovku uživatele {{name}}",
+  "clickToWatch": "Kliknutím začnete sledovat",
+  "connectingStream": "Připojování…",
+  "retryWatching": "Zkusit znovu sledovat obrazovku uživatele {{name}}",
+  "unableWatchStream": "Přenos nelze zobrazit. Zkuste to znovu.",
+  "failedStopWatching": "Sledování se nepodařilo ukončit"
 }

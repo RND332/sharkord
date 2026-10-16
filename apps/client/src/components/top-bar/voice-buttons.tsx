@@ -10,7 +10,6 @@ import { MessageSquare } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UnreadCount } from '../unread-count';
-import { VoiceOptionsController } from './voice-options-controller';
 import { VolumeController } from './volume-controller';
 
 type TVoiceButtonsProps = {
@@ -40,7 +39,6 @@ const VoiceButtons = memo(({ currentVoiceChannelId }: TVoiceButtonsProps) => {
 
   return (
     <>
-      <VoiceOptionsController />
       <VolumeController channelId={currentVoiceChannelId} />
       <Button
         variant="ghost"

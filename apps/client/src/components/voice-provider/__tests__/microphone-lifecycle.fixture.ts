@@ -87,6 +87,8 @@ mock.module('@/features/server/voice/hooks', () => ({
   useVoice: () => voice
 }));
 const devices = {
+  microphoneId: 'default',
+  microphoneVolume: 100,
   noiseSuppression: 'disabled',
   noiseGateEnabled: false,
   directScreenSharing: false
@@ -274,6 +276,20 @@ mock.module('@/helpers/audio-worklet/ns-worklet', () => ({
 }));
 const contexts: Context[] = [];
 class Context {
+  currentTime = 0;
+  gainNode = {
+    gain: {
+      value: 1,
+      setTargetAtTime(value: number) {
+        this.value = value;
+      }
+    },
+    connect() {},
+    disconnect() {}
+  };
+  createGain() {
+    return this.gainNode;
+  }
   closed = false;
   closeCalls = 0;
   rejectClose = false;
@@ -336,6 +352,8 @@ beforeEach(() => {
   channelId = 1;
   micMuted = false;
   devices.noiseGateEnabled = false;
+  devices.microphoneVolume = 100;
+  devices.microphoneId = 'default';
   devices.noiseSuppression = 'disabled';
   devices.directScreenSharing = false;
   directPolicy = 'relay';
@@ -375,6 +393,41 @@ beforeEach(() => {
     localStorage: { getItem: () => null, setItem() {} }
   });
   render();
+});
+
+test('microphone volume changes the published processing gain without recapturing', async () => {
+  devices.microphoneVolume = 40;
+  render();
+  effects.forEach((effect) => effect());
+  await initializeSession(1);
+  const context = contexts.find((candidate) => !candidate.closed);
+  expect(context).toBeDefined();
+  expect(context?.gainNode.gain.value).toBe(0.4);
+  const captures = capture.mock.calls.length;
+  devices.microphoneVolume = 0;
+  render();
+  effects.forEach((effect) => effect());
+  expect(context?.gainNode.gain.value).toBe(0);
+  expect(capture.mock.calls.length).toBe(captures);
+});
+
+test('changing the selected microphone replaces live capture without reconnecting', async () => {
+  const firstCapture = new Stream();
+  capture.mockImplementationOnce(async () => firstCapture);
+  await initializeSession(1);
+  const activeTransport = send.current;
+  devices.microphoneId = 'usb-mic';
+  render();
+  effects.forEach((effect) => effect());
+  await flush();
+  expect(capture).toHaveBeenCalledTimes(2);
+  expect(capture).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      audio: expect.objectContaining({ deviceId: { exact: 'usb-mic' } })
+    })
+  );
+  expect(firstCapture.tracks[0]!.readyState).toBe('ended');
+  expect(send.current).toBe(activeTransport);
 });
 
 test('upgrades a captured share to P2P without opening the picker again', async () => {
@@ -560,7 +613,7 @@ test('upgrades an active microphone from SFU to P2P when the pair opts in', asyn
   expect(capture).toHaveBeenCalledTimes(1);
   expect(first.tracks[0]!.readyState).toBe('live');
   expect(render().localAudioStream?.getAudioTracks()[0]).toBe(
-    first.tracks[0] as unknown as MediaStreamTrack
+    contexts[0]!.output.tracks[0] as unknown as MediaStreamTrack
   );
   directPolicy = 'relay';
   directAudioStart.mockImplementation(async () => 'relay');
@@ -602,7 +655,7 @@ test('publishes microphone over P2P without creating an SFU producer', async () 
   expect(directAudioStart).toHaveBeenCalledTimes(1);
   expect(send.current!.produce).not.toHaveBeenCalled();
   expect(render().localAudioStream?.getAudioTracks()[0]).toBe(
-    raw.tracks[0] as unknown as MediaStreamTrack
+    contexts[0]!.output.tracks[0] as unknown as MediaStreamTrack
   );
   expect(raw.tracks[0]!.readyState).toBe('live');
 });
@@ -628,7 +681,7 @@ test('an externally ended microphone recovers capture without rejoining voice', 
   expect(send.current).toBe(currentTransport);
   expect(currentTransport.produce).toHaveBeenCalledTimes(2);
   expect(oldContext.closed).toBe(true);
-  expect(contexts[1]!.closed).toBe(false);
+  expect(contexts.at(-1)!.closed).toBe(false);
   expect(replacement.tracks[0]!.readyState).toBe('live');
   expect(render().localAudioStream?.getAudioTracks()[0]?.readyState).toBe(
     'live'
@@ -1238,7 +1291,9 @@ test('late A capture cannot publish into B or replace B microphone', async () =>
   pending.resolve(a);
   await old;
   expect(current.produce).toHaveBeenCalledTimes(1);
-  expect(render().localAudioStream).toBe(b as unknown as MediaStream);
+  expect(render().localAudioStream).toBe(
+    contexts.at(-1)!.output as unknown as MediaStream
+  );
   expect(a.tracks[0]!.readyState).toBe('ended');
   expect(b.tracks[0]!.readyState).toBe('live');
 });

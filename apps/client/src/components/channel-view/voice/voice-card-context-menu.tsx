@@ -7,33 +7,34 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-  ContextMenuTrigger
+  ContextMenuTrigger,
+  Slider
 } from '@sharkord/ui';
 import {
   Maximize,
   Minimize,
-  Monitor,
   MonitorOff,
   PictureInPicture2,
-  Pin,
-  PinOff,
   Video,
   VideoOff,
-  Volume2,
-  VolumeX,
   ZoomIn,
   ZoomOut
 } from 'lucide-react';
-import { memo, useRef, type ReactNode, type RefObject } from 'react';
+import {
+  memo,
+  useCallback,
+  useRef,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePictureInPicture } from './hooks/use-picture-in-picture';
 
 type TVoiceCardContextMenuProps = {
   children: ReactNode;
   volumeKey?: TVolumeKey;
-  pinControl?: {
-    isPinned: boolean;
-    onToggle: () => void;
-  };
   pictureInPicture?: {
     videoRef: RefObject<HTMLVideoElement | null>;
   };
@@ -59,14 +60,36 @@ const VoiceCardContextMenu = memo(
   ({
     children,
     volumeKey,
-    pinControl,
     pictureInPicture,
     fullscreen,
     zoom,
     webcam,
     demo
   }: TVoiceCardContextMenuProps) => {
-    const { getVolume, toggleMute } = useVolumeControl();
+    const { t } = useTranslation('common');
+    const { getVolume, setVolume } = useVolumeControl();
+    const sliderRef = useRef<HTMLSpanElement>(null);
+    const volume = volumeKey === undefined ? 100 : getVolume(volumeKey);
+    const handleVolumeChange = useCallback(
+      ([value]: number[]) => {
+        if (volumeKey !== undefined && value !== undefined)
+          setVolume(volumeKey, value);
+      },
+      [volumeKey, setVolume]
+    );
+    const handleVolumeSelect = useCallback((event: Event) => {
+      event.preventDefault();
+      const thumb =
+        sliderRef.current?.querySelector<HTMLElement>('[role="slider"]');
+      thumb?.focus();
+    }, []);
+    const handleSliderKeyDown = useCallback((event: KeyboardEvent) => {
+      if (event.key !== 'Escape' && event.key !== 'Tab')
+        event.stopPropagation();
+    }, []);
+    const handleSliderClick = useCallback((event: MouseEvent) => {
+      event.stopPropagation();
+    }, []);
     const fallbackVideoRef = useRef<HTMLVideoElement>(null);
     const { isSupported, isActive, togglePictureInPicture } =
       usePictureInPicture(
@@ -74,17 +97,15 @@ const VoiceCardContextMenu = memo(
         !!pictureInPicture
       );
 
-    const isMuted = volumeKey !== undefined && getVolume(volumeKey) === 0;
     const showPip = !!pictureInPicture && isSupported;
 
     const hasItems =
       volumeKey !== undefined ||
-      !!pinControl ||
       showPip ||
       !!fullscreen ||
       !!zoom ||
       !!webcam ||
-      !!demo;
+      !!demo?.isViewing;
 
     if (!hasItems) {
       return <>{children}</>;
@@ -93,41 +114,54 @@ const VoiceCardContextMenu = memo(
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-        <ContextMenuContent className="w-56">
-          {demo && (
+        <ContextMenuContent className="w-60 gap-0.5 rounded-lg p-1.5">
+          {demo?.isViewing && (
             <ContextMenuItem onSelect={demo.onToggle}>
-              {demo.isViewing ? <MonitorOff /> : <Monitor />}
-              {demo.isViewing ? 'Stop viewing demo' : 'Watch stream'}
-            </ContextMenuItem>
-          )}
-          {pinControl && (
-            <ContextMenuItem onSelect={pinControl.onToggle}>
-              {pinControl.isPinned ? <PinOff /> : <Pin />}
-              {pinControl.isPinned ? 'Unpin' : 'Pin'}
+              <MonitorOff />
+              {t('stopWatching')}
             </ContextMenuItem>
           )}
           {zoom && (
             <ContextMenuItem onSelect={zoom.onToggle}>
               {zoom.isEnabled ? <ZoomOut /> : <ZoomIn />}
-              {zoom.isEnabled ? 'Disable zoom' : 'Enable zoom'}
+              {zoom.isEnabled ? t('disableZoom') : t('enableZoom')}
             </ContextMenuItem>
           )}
           {webcam && (
             <ContextMenuItem onSelect={webcam.onToggle}>
               {webcam.isHidden ? <Video /> : <VideoOff />}
-              {webcam.isHidden ? 'Show webcam' : 'Hide webcam'}
+              {webcam.isHidden ? t('showWebcam') : t('hideWebcam')}
             </ContextMenuItem>
           )}
           {volumeKey !== undefined && (
-            <ContextMenuItem onSelect={() => toggleMute(volumeKey)}>
-              {isMuted ? <VolumeX /> : <Volume2 />}
-              {isMuted ? 'Unmute' : 'Mute'}
+            <ContextMenuItem
+              onSelect={handleVolumeSelect}
+              className="flex-col items-stretch gap-3 px-2.5 py-3 focus:bg-transparent"
+            >
+              <div className="flex items-center justify-between leading-5">
+                <span>{t('volume')}</span>
+                <span className="text-[13px] text-muted-foreground">
+                  {volume}%
+                </span>
+              </div>
+              <Slider
+                ref={sliderRef}
+                aria-label={t('volume')}
+                value={[volume]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={handleVolumeChange}
+                onKeyDown={handleSliderKeyDown}
+                onClick={handleSliderClick}
+                className="h-4 [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-thumb]]:size-3.5"
+              />
             </ContextMenuItem>
           )}
           {showPip && (
             <ContextMenuItem onSelect={togglePictureInPicture}>
               <PictureInPicture2 />
-              {isActive ? 'Exit picture-in-picture' : 'Picture-in-picture'}
+              {isActive ? t('exitPictureInPicture') : t('pictureInPicture')}
             </ContextMenuItem>
           )}
           {fullscreen && (
@@ -135,7 +169,9 @@ const VoiceCardContextMenu = memo(
               <ContextMenuSeparator />
               <ContextMenuItem onSelect={fullscreen.onToggle}>
                 {fullscreen.isFullscreen ? <Minimize /> : <Maximize />}
-                {fullscreen.isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                {fullscreen.isFullscreen
+                  ? t('exitFullscreen')
+                  : t('fullscreen')}
               </ContextMenuItem>
             </>
           )}

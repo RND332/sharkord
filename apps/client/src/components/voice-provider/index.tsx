@@ -613,6 +613,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const rawMicrophoneStreamRef = useRef<MediaStream | null>(null);
   const transmitMicrophoneTrackRef = useRef<MediaStreamTrack | null>(null);
   const microphoneNoiseGateAudioContextRef = useRef<AudioContext | null>(null);
+  const microphoneVolumeContextRef = useRef<AudioContext | null>(null);
+  const microphoneGainRef = useRef<GainNode | null>(null);
+  const microphoneVolumeRef = useRef(devices.microphoneVolume);
   const microphoneNoiseGateWorkletNodeRef = useRef<AudioWorkletNode | null>(
     null
   );
@@ -623,6 +626,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   );
   const micRecoveryHistoryRef = useRef<number[]>([]);
   const startMicStreamRef = useRef<() => Promise<void>>(async () => {});
+  const selectedMicrophoneIdRef = useRef(devices.microphoneId);
   const republishMicrophoneRef = useRef<() => Promise<void>>(async () => {});
   const micMutedRef = useRef(ownVoiceState.micMuted);
 
@@ -651,6 +655,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     const disposePendingStartup = pendingMicStartupDisposerRef.current;
     pendingMicStartupDisposerRef.current = null;
     disposePendingStartup?.();
+
+    microphoneGainRef.current?.disconnect();
+    microphoneGainRef.current = null;
+    closeAudioContext(microphoneVolumeContextRef.current);
+    microphoneVolumeContextRef.current = null;
 
     if (microphoneNoiseGateWorkletNodeRef.current) {
       microphoneNoiseGateWorkletNodeRef.current.disconnect();
@@ -698,6 +707,19 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     });
   }, [devices.noiseGateThresholdDb]);
 
+  useEffect(() => {
+    microphoneVolumeRef.current = devices.microphoneVolume;
+    const gain = microphoneGainRef.current;
+    const context = microphoneVolumeContextRef.current;
+    if (!gain || !context) return;
+
+    gain.gain.setTargetAtTime(
+      devices.microphoneVolume / 100,
+      context.currentTime,
+      0.01
+    );
+  }, [devices.microphoneVolume]);
+
   const startMicStream = useCallback(async () => {
     const sessionGeneration = sessionGenerationRef.current;
     const transport = producerTransport.current;
@@ -708,10 +730,14 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       transport === producerTransport.current;
     let rawStream: MediaStream | undefined;
     let gateContext: AudioContext | null = null;
+    let volumeContext: AudioContext | null = null;
+    let volumeGain: GainNode | null = null;
     let gateNode: AudioWorkletNode | null = null;
     let nsContexts: AudioContext[] = [];
     const tracks = new Set<MediaStreamTrack>();
     const disposeLocalResources = () => {
+      volumeGain?.disconnect();
+      closeAudioContext(volumeContext);
       gateNode?.disconnect();
       closeAudioContext(gateContext);
       nsContexts.forEach(closeAudioContext);
@@ -885,6 +911,20 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           disposeLocalResources();
           return;
         }
+        volumeContext = new window.AudioContext();
+        const volumeSource =
+          volumeContext.createMediaStreamSource(transmitStream);
+        volumeGain = volumeContext.createGain();
+        volumeGain.gain.value = microphoneVolumeRef.current / 100;
+        const volumeDestination = volumeContext.createMediaStreamDestination();
+        volumeSource.connect(volumeGain);
+        volumeGain.connect(volumeDestination);
+        const volumeTracks = volumeDestination.stream.getAudioTracks();
+        transmitTrack = volumeTracks[0]!;
+        tracks.add(transmitTrack);
+        transmitStream = volumeDestination.stream;
+        microphoneVolumeContextRef.current = volumeContext;
+        microphoneGainRef.current = volumeGain;
         rawMicrophoneStreamRef.current = rawStream;
         microphoneNoiseGateAudioContextRef.current = gateContext;
         microphoneNoiseGateWorkletNodeRef.current = gateNode;
@@ -1086,6 +1126,20 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   useEffect(() => {
     startMicStreamRef.current = startMicStream;
   }, [startMicStream]);
+
+  useEffect(() => {
+    if (selectedMicrophoneIdRef.current === devices.microphoneId) return;
+    selectedMicrophoneIdRef.current = devices.microphoneId;
+    if (
+      !rawMicrophoneStreamRef.current &&
+      !pendingMicStartupDisposerRef.current
+    )
+      return;
+
+    startMicStreamRef
+      .current()
+      .catch((error) => logVoiceError('mic: device change failed', error));
+  }, [devices.microphoneId]);
 
   useEffect(() => {
     if (

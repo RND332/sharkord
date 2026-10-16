@@ -69,7 +69,8 @@ export const i18nReady = i18n
       'topbar',
       'dialogs',
       'settings',
-      'permissions'
+      'permissions',
+      'audio'
     ],
     defaultNS: 'common',
     fallbackNS: 'common',

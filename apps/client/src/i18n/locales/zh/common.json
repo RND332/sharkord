@@ -130,5 +130,23 @@
 
   "attachFiles": "附加文件",
   "addEmoji": "添加表情",
-  "sendMessage": "发送消息"
+  "sendMessage": "发送消息",
+  "pinCard": "固定 {{name}}",
+  "unpinCard": "取消固定 {{name}}",
+  "volume": "音量",
+  "stopWatching": "停止观看",
+  "enableZoom": "启用缩放",
+  "disableZoom": "禁用缩放",
+  "showWebcam": "显示摄像头画面",
+  "hideWebcam": "隐藏摄像头画面",
+  "pictureInPicture": "画中画",
+  "exitPictureInPicture": "退出画中画",
+  "fullscreen": "全屏",
+  "exitFullscreen": "退出全屏",
+  "watchScreen": "查看 {{name}} 的屏幕",
+  "clickToWatch": "点击观看",
+  "connectingStream": "正在连接…",
+  "retryWatching": "重试查看 {{name}} 的屏幕",
+  "unableWatchStream": "无法观看直播，请重试。",
+  "failedStopWatching": "无法停止观看"
 }

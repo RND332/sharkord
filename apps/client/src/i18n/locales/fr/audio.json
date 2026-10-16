@@ -1,0 +1,9 @@
+{
+  "microphoneSettings": "Paramètres du microphone",
+  "outputSettings": "Paramètres du casque",
+  "inputDevice": "Périphérique d’entrée",
+  "outputDevice": "Périphérique de sortie",
+  "microphoneVolume": "Volume du microphone",
+  "outputVolume": "Volume de sortie",
+  "voiceSettings": "Paramètres vocaux"
+}

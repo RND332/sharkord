@@ -131,5 +131,23 @@
 
   "attachFiles": "Прикрепить файлы",
   "addEmoji": "Добавить эмодзи",
-  "sendMessage": "Отправить сообщение"
+  "sendMessage": "Отправить сообщение",
+  "pinCard": "Закрепить {{name}}",
+  "unpinCard": "Открепить {{name}}",
+  "volume": "Громкость",
+  "stopWatching": "Прекратить просмотр",
+  "enableZoom": "Включить масштабирование",
+  "disableZoom": "Выключить масштабирование",
+  "showWebcam": "Показать веб-камеру",
+  "hideWebcam": "Скрыть веб-камеру",
+  "pictureInPicture": "Картинка в картинке",
+  "exitPictureInPicture": "Выйти из режима «Картинка в картинке»",
+  "fullscreen": "На весь экран",
+  "exitFullscreen": "Выйти из полноэкранного режима",
+  "watchScreen": "Смотреть экран {{name}}",
+  "clickToWatch": "Нажмите для просмотра",
+  "connectingStream": "Подключение…",
+  "retryWatching": "Повторить просмотр экрана {{name}}",
+  "unableWatchStream": "Не удалось просмотреть трансляцию. Попробуйте ещё раз.",
+  "failedStopWatching": "Не удалось прекратить просмотр"
 }
