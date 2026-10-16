@@ -448,10 +448,10 @@ Every new behaviour needs tests and the whole suite must pass, see [Testing](#te
 
 ## Agent workflow for this fork
 
-- Work on a branch `agent/<task>` from `development`. Never push to `main` or `development`
-  directly; open a PR into `development`.
+- Work on a branch `agent/<task>` from `master`. Never push to `master` directly; open a PR
+  into `master`.
 - Before reporting done, run and report: `bun run format:check`, `bun run check-types`,
   `bun run lint`, `bun run test`. Report any gate you could not run.
-- Do not bump the version unless the task is a release. Releases run on merge to `main`.
+- Do not bump the version unless the task is a release. Releases run on merge to `master`.
 - Visual tests (`bun run test:visual` in `apps/client`) need the Paper design as reference
   for UI changes; see the sharkord-paper-ui-verification skill.

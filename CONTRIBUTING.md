@@ -58,7 +58,7 @@ Once your issue has been discussed and validated, you may submit a PR.
 ### Requirements
 
 - Must reference an existing issue
-- Must target the `development` branch
+- Must target the `master` branch
 - One feature or fix per PR
 - Large architectural changes must be discussed and approved before implementation
 - All CI checks must pass before review
@@ -143,12 +143,11 @@ When applicable, please include unit and integration tests for your changes. Thi
 
 ## Fork workflow (RND332/sharkord)
 
-This fork ships from `main`. Upstream rules above still apply to code style and tests.
+This fork has a single branch, `master`. Upstream rules above still apply to code style and tests.
 
-- `main`: releases only. Protected: no force-push, no deletion, linear history, changes via PR.
-- `development`: integration branch. Protected the same way.
-- `agent/<task>` or `feat/<task>`: one change per branch, PR into `development`.
-- Release: a merge into `main` runs `.github/workflows/release.yml`. The version comes from
+- `master`: the only branch. Protected: no force-push, no deletion, linear history, changes via PR.
+- `agent/<task>` or `feat/<task>`: one change per branch, PR into `master`.
+- Release: a merge into `master` runs `.github/workflows/release.yml`. The version comes from
   `package.json`. The workflow fails if the tag already exists, so bump the version in the PR.
 - Before opening a PR: `bun run format:check`, `bun run check-types`, `bun run lint`,
   `bun run test`. Add tests for new behaviour.
