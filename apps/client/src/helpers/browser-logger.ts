@@ -1,5 +1,6 @@
 import { getErrorMessage } from '@sharkord/shared';
 import { isDebug } from './is-debug';
+import { captureError } from './sentry';
 import { pushVoiceDebugEvent } from './voice-debug';
 
 const logVoice = (message: string, data?: object) => {
@@ -28,6 +29,8 @@ const logVoiceError = (message: string, error: unknown, data?: object) => {
   };
 
   pushVoiceDebugEvent('error', message, payload);
+
+  captureError(error, { area: 'voice' });
 
   console.error(
     '%c[VOICE]',

@@ -34,7 +34,8 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       VITE_APP_VERSION: JSON.stringify(pkg.version),
-      VITE_SERVER_PORT: JSON.stringify(env.SERVER_PORT || '4991')
+      VITE_SERVER_PORT: JSON.stringify(env.SERVER_PORT || '4991'),
+      VITE_SENTRY_DSN: JSON.stringify(env.SENTRY_DSN || '')
     },
     server: {
       proxy: {

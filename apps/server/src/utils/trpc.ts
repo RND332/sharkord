@@ -9,6 +9,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import chalk from 'chalk';
 import type WebSocket from 'ws';
 import { config } from '../config';
+import { captureError, shouldReportError } from '../helpers/sentry';
 import { logger } from '../logger';
 import type { TConnectionInfo } from '../types';
 import { invariant } from './invariant';
@@ -51,6 +52,18 @@ export type Context = {
 };
 
 const t = initTRPC.context<Context>().create();
+
+const errorMiddleware = t.middleware(async ({ next, path }) => {
+  try {
+    return await next();
+  } catch (error) {
+    if (shouldReportError(error)) {
+      captureError(error, { path });
+    }
+
+    throw error;
+  }
+});
 
 const timingMiddleware = t.middleware(async ({ path, next }) => {
   if (!config.server.debug) {
@@ -134,8 +147,9 @@ const rateLimitedProcedure = (
 // it prevents users that only are connected to the wss but did not join the server from accessing protected procedures
 const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(authMiddleware);
+  .use(authMiddleware)
+  .use(errorMiddleware);
 
-const publicProcedure = t.procedure.use(timingMiddleware);
+const publicProcedure = t.procedure.use(timingMiddleware).use(errorMiddleware);
 
 export { protectedProcedure, publicProcedure, rateLimitedProcedure, t };

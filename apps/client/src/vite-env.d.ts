@@ -30,6 +30,7 @@ declare global {
 
   const VITE_APP_VERSION: string;
   const VITE_SERVER_PORT: string;
+  const VITE_SENTRY_DSN: string;
 }
 
 // this provides type definitions for i18n setup
