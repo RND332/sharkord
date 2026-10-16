@@ -19,8 +19,11 @@ import { ThemeProvider } from './components/theme-provider/index.tsx';
 import { exposePluginStore } from './features/server/plugins/plugin-store.ts';
 import { store } from './features/store.ts';
 import { exposeLibs, exposeReact } from './helpers/exposes.ts';
+import { initSentry } from './helpers/sentry.ts';
 import { LocalStorageKey } from './helpers/storage.ts';
 import './index.css';
+
+initSentry(VITE_SENTRY_DSN, import.meta.env.MODE, VITE_APP_VERSION);
 
 exposeReact();
 exposeLibs();

@@ -14,6 +14,7 @@ import { config, SERVER_PRIVATE_IP } from './config';
 import { loadCrons } from './crons';
 import { loadDb } from './db';
 import { getHost } from './helpers/get-host';
+import { initSentry } from './helpers/sentry';
 import { updater } from './helpers/updater';
 import { pluginManager } from './plugins';
 import { enqueueActivityLog } from './queues/activity-log';
@@ -21,6 +22,8 @@ import { initVoiceRuntimes } from './runtimes';
 import { createServers } from './utils/create-servers';
 import { loadMediasoup } from './utils/mediasoup';
 import { printDebug } from './utils/print-debug';
+
+initSentry();
 
 await loadDb();
 await pluginManager.init();

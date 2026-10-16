@@ -1,4 +1,5 @@
 import { ErrorBoundary as BaseErrorBoundary } from '@/components/error-boundary';
+import { captureError } from '@/helpers/sentry';
 import {
   Button,
   Card,
@@ -150,6 +151,7 @@ const GlobalErrorBoundary = memo(({ children }: TGlobalErrorBoundaryProps) => {
       fallback={(error, reset) => (
         <GlobalErrorFallback error={error} reset={reset} />
       )}
+      onError={(error) => captureError(error, { area: 'react' })}
     >
       {children}
     </BaseErrorBoundary>
