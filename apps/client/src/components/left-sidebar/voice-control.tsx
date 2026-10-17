@@ -30,6 +30,12 @@ import { VoiceAudioStreams } from '../channel-view/voice/voice-audio-streams';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
 import { StatsPopover } from './stats-popover';
 
+const activeActionClass =
+  'border-primary bg-accent text-success hover:bg-accent hover:text-success';
+
+const inactiveActionClass =
+  'border-transparent bg-panel text-foreground hover:bg-panel/80';
+
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
   const { devices } = useDevices();
@@ -52,30 +58,26 @@ const VoiceControl = memo(() => {
         return {
           icon: <Loader2 className="size-4 animate-spin" />,
           text: t('voiceConnecting'),
-          color: 'text-yellow-500',
-          iconBackground: 'bg-yellow-500/15'
+          color: 'text-yellow-500'
         };
       case 'connected':
         return {
           icon: <Wifi className="size-4" />,
           text: t('voiceConnected'),
-          color: 'text-success',
-          iconBackground: 'bg-success/15'
+          color: 'text-success'
         };
       case 'failed':
         return {
           icon: <AlertTriangle className="size-4" />,
           text: t('voiceFailed'),
-          color: 'text-red-400',
-          iconBackground: 'bg-red-500/15'
+          color: 'text-red-400'
         };
       case 'disconnected':
       default:
         return {
           icon: <WifiOff className="size-4" />,
           text: t('voiceDisconnected'),
-          color: 'text-red-400',
-          iconBackground: 'bg-red-500/15'
+          color: 'text-red-400'
         };
     }
   }, [connectionStatus, t]);
@@ -99,6 +101,10 @@ const VoiceControl = memo(() => {
     }
   }, [devices.voiceOnlyMode, setVoiceOnlyMode, t]);
 
+  const handleDisconnect = useCallback(() => {
+    leaveVoice({ reason: 'user_disconnect_button' });
+  }, []);
+
   const pluginSlotProps = useMemo(
     () => (voiceChannelId ? { channelId: voiceChannelId } : undefined),
     [voiceChannelId]
@@ -108,20 +114,23 @@ const VoiceControl = memo(() => {
     return null;
   }
 
+  const isWebcamActive = ownVoiceState.webcamEnabled;
+  const isScreenShareActive = ownVoiceState.sharingScreen;
+  const isVoiceOnlyModeActive = devices.voiceOnlyMode;
+
   return (
     <>
       <VoiceAudioStreams channelId={voiceChannelId} />
       <ExternalAudioStreams channelId={voiceChannelId} />
-      <div data-voice-dock className="h-24 shrink-0 overflow-hidden bg-rail">
-        <div className="flex h-[52px] items-center justify-between gap-2 px-2.5 py-1">
+      <div className="flex h-[76px] w-full shrink-0 flex-col bg-canvas">
+        <div className="flex h-11 w-full shrink-0 items-center gap-1.5 bg-canvas px-2.5 py-1">
           <StatsPopover>
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                'size-8 shrink-0 rounded-md p-2 hover:bg-transparent',
-                connectionInfo.color,
-                connectionInfo.iconBackground
+                'size-6 shrink-0 rounded-[6px] border border-primary bg-accent p-0 hover:bg-accent',
+                connectionInfo.color
               )}
               title={t('transportStats')}
               aria-label={t('transportStats')}
@@ -129,7 +138,7 @@ const VoiceControl = memo(() => {
               {connectionInfo.icon}
             </Button>
           </StatsPopover>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-px">
+          <div className="flex h-8 min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden">
             <span
               className={cn(
                 'truncate text-xs font-semibold leading-[17px]',
@@ -145,15 +154,15 @@ const VoiceControl = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 shrink-0 rounded p-[7px] text-muted-foreground hover:bg-raised hover:text-foreground"
-            onClick={() => leaveVoice({ reason: 'user_disconnect_button' })}
+            className="h-7 w-[22px] shrink-0 rounded p-0 text-muted-foreground hover:bg-raised hover:text-foreground"
+            onClick={handleDisconnect}
             title={t('disconnectVoice')}
           >
             <PhoneOff className="size-[18px]" />
           </Button>
         </div>
 
-        <div className="flex h-11 items-center gap-2 px-2.5 pb-2 pt-1">
+        <div className="flex h-8 w-full shrink-0 items-center gap-[5px] bg-canvas px-2.5 pt-[3px] pb-[5px]">
           <PluginSlotRenderer
             slotId={PluginSlot.VOICE_CONTROLS}
             props={pluginSlotProps}
@@ -162,23 +171,19 @@ const VoiceControl = memo(() => {
             variant="ghost"
             size="icon"
             className={cn(
-              'h-8 min-w-0 flex-1 rounded-md bg-raised p-1.5 text-foreground hover:bg-raised/80',
-              ownVoiceState.webcamEnabled && 'text-success'
+              'h-6 min-w-0 flex-1 rounded-[6px] border p-0',
+              isWebcamActive ? activeActionClass : inactiveActionClass
             )}
             onClick={toggleWebcam}
-            title={
-              ownVoiceState.webcamEnabled
-                ? t('turnOffCamera')
-                : t('turnOnCamera')
-            }
+            title={isWebcamActive ? t('turnOffCamera') : t('turnOnCamera')}
             disabled={
               devices.voiceOnlyMode || !channelCan(ChannelPermission.WEBCAM)
             }
           >
-            {ownVoiceState.webcamEnabled ? (
-              <Video className="size-5" />
+            {isWebcamActive ? (
+              <Video className="size-[18px]" />
             ) : (
-              <VideoOff className="size-5" />
+              <VideoOff className="size-[18px]" />
             )}
           </Button>
 
@@ -187,12 +192,12 @@ const VoiceControl = memo(() => {
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 min-w-0 flex-1 rounded-md bg-raised p-1.5 text-foreground hover:bg-raised/80',
-                ownVoiceState.sharingScreen && 'text-success'
+                'h-6 min-w-0 flex-1 rounded-[6px] border p-0',
+                isScreenShareActive ? activeActionClass : inactiveActionClass
               )}
               onClick={toggleScreenShare}
               title={
-                ownVoiceState.sharingScreen
+                isScreenShareActive
                   ? t('stopScreenShare')
                   : t('startScreenShare')
               }
@@ -201,7 +206,7 @@ const VoiceControl = memo(() => {
                 !channelCan(ChannelPermission.SHARE_SCREEN)
               }
             >
-              {ownVoiceState.sharingScreen ? (
+              {isScreenShareActive ? (
                 <Monitor className="size-5" />
               ) : (
                 <MonitorOff className="size-5" />
@@ -213,18 +218,16 @@ const VoiceControl = memo(() => {
             variant="ghost"
             size="icon"
             className={cn(
-              'h-8 min-w-0 flex-1 rounded-md bg-raised p-1.5 hover:bg-raised/80',
-              devices.voiceOnlyMode
-                ? 'text-success hover:!text-success'
-                : 'text-foreground'
+              'h-6 min-w-0 flex-1 rounded-[6px] border p-0',
+              isVoiceOnlyModeActive ? activeActionClass : inactiveActionClass
             )}
             onClick={toggleVoiceOnlyMode}
             title={t('settings:voiceOnlyModeDesc')}
             aria-label={t('settings:voiceOnlyModeLabel')}
-            aria-pressed={devices.voiceOnlyMode}
+            aria-pressed={isVoiceOnlyModeActive}
             disabled={isVoiceOnlyModePending}
           >
-            {devices.voiceOnlyMode ? (
+            {isVoiceOnlyModeActive ? (
               <EyeOff className="size-5" />
             ) : (
               <Eye className="size-5" />

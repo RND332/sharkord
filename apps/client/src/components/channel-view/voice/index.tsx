@@ -7,11 +7,14 @@ import {
   useHideOwnScreenShare,
   useVoiceChannelExternalStreamsList
 } from '@/features/server/voice/hooks';
+import { cn } from '@/lib/utils';
 import { memo, useMemo } from 'react';
 import { ControlsBar } from './controls-bar';
 import { ExternalStreamCard } from './external-stream-card';
+import { useMouseActivity } from './hooks/use-mouse-activity';
 import { usePinCardController } from './hooks/use-pin-card-controller';
 import { ScreenShareCard } from './screen-share-card';
+import { VoiceChatButton } from './voice-chat-button';
 import { VoiceGrid } from './voice-grid';
 import { VoiceUserCard } from './voice-user-card';
 
@@ -28,6 +31,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const ownUserId = useOwnUserId();
   const { viewedRemoteDemos } = useDemoVisibility();
   const { devices } = useDevices();
+  const { isVisible: isChatButtonVisible, stageRef } = useMouseActivity();
   const isAnyCardPinned = pinnedCard !== undefined;
 
   const cards = useMemo(() => {
@@ -153,10 +157,21 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   }
 
   return (
-    <div className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-rail">
+    <div
+      ref={stageRef}
+      className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-rail"
+    >
       <VoiceGrid pinnedCardId={pinnedCard?.id} tileAspectRatio={16 / 9}>
         {cards}
       </VoiceGrid>
+      <div
+        className={cn(
+          'absolute right-3 top-3 z-10 transition-opacity duration-200 focus-within:pointer-events-auto focus-within:opacity-100',
+          isChatButtonVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      >
+        <VoiceChatButton channelId={channelId} />
+      </div>
       <ControlsBar channelId={channelId} />
     </div>
   );

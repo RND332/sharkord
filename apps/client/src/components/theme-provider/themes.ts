@@ -15,6 +15,8 @@ export type TTheme = {
   secondary?: string;
   sidebarAccent?: string;
   selection?: string;
+  rail?: string;
+  raised?: string;
 };
 
 export const SHARKORD_THEMES: TTheme[] = [
@@ -75,7 +77,9 @@ export const PERSONAL_THEMES: TTheme[] = [
     accent: '#39c5cf',
     secondary: '#e8488d',
     sidebarAccent: '#e8488d',
-    selection: '#163d43'
+    selection: '#163d43',
+    rail: '#101418',
+    raised: '#303b43'
   }
 ];
 
@@ -171,12 +175,12 @@ export const getThemeVariables = (theme: TTheme): Record<string, string> => {
     '--sidebar-accent-foreground': fg,
     '--sidebar-border': border,
     '--sidebar-ring': accentText,
-    '--rail': nav,
+    '--rail': theme.rail ?? nav,
     '--theme-secondary': theme.secondary ?? accent,
     '--nav': nav,
     '--canvas': bg,
     '--panel': panel,
-    '--raised': border,
+    '--raised': theme.raised ?? border,
     '--line': border,
     '--subtle-foreground': muted,
     '--success': success,

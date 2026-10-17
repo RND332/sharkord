@@ -44,14 +44,24 @@ vi.mock('@/components/voice-provider/demo-visibility-context', async () => {
 });
 vi.mock('@/features/server/users/hooks', () => ({
   useUserById: () => ({ id: 2, name: 'aria' }),
-  useOwnUserId: () => state.ownId
+  useOwnUserId: () => state.ownId,
+  useIsOwnUser: () => false
 }));
 vi.mock('@/features/server/hooks', () => ({
   useWebRtcSimulcastEnabled: () => false,
   useVoiceUsersByChannelId: () => [
     { id: 2, name: 'aria', state: { sharingScreen: true } }
   ],
-  useCurrentVoicePeers: () => []
+  useCurrentVoicePeers: () => [],
+  useHasUnreadMentions: () => false,
+  useUnreadMessagesCount: () => 0,
+  useCan: () => () => false,
+  useHiddenPluginComponents: () => [],
+  usePublicServerSettings: () => undefined,
+  useUserRoles: () => []
+}));
+vi.mock('@/components/channel-view/voice/voice-chat-button', () => ({
+  VoiceChatButton: () => null
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useVoice: () => ({ getConsumerCodec: () => undefined }),

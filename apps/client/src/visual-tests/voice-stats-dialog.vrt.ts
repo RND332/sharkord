@@ -22,7 +22,11 @@ vi.mock('@/features/server/channels/hooks', () => ({
 vi.mock('@/features/server/hooks', () => ({
   useCurrentVoicePeers: () => [],
   useChannelCan: () => () => true,
-  useServerName: () => 'Test server'
+  useServerName: () => 'Test server',
+  useCan: () => () => true,
+  useHiddenPluginComponents: () => [],
+  usePublicServerSettings: () => undefined,
+  useUserRoles: () => []
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useVoice: () => ({

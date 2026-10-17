@@ -933,7 +933,8 @@ test('voice channel matches the Paper design', async () => {
     await expect.element(caption).toBeVisible();
     expect(getComputedStyle(caption.element()).fontSize).toBe('12px');
     expect(getComputedStyle(caption.element()).lineHeight).toBe('18px');
-    const stage = controls!.parentElement!.parentElement!;
+    const stage = document.querySelector<HTMLElement>('.group\\/voice-stage')!;
+    expect(stage.parentElement).not.toBeNull();
     expect(getComputedStyle(stage).backgroundColor).toBe('rgb(30, 31, 34)');
     const tile = caption.element().closest('.group\\/voice-user-card')!;
     expect(tile.querySelector('div.absolute.top-0.right-0')).toBeNull();
@@ -958,9 +959,9 @@ test('voice channel matches the Paper design', async () => {
     const stats = page
       .getByRole('button', { name: 'Transport Statistics' })
       .element();
-    expect(
-      getComputedStyle(stats.parentElement!.parentElement!).backgroundColor
-    ).toBe('rgb(30, 31, 34)');
+    const voiceDock = document.querySelector<HTMLElement>('[data-voice-dock]')!;
+    expect(voiceDock.contains(stats)).toBe(true);
+    expect(getComputedStyle(voiceDock).backgroundColor).toBe('rgb(49, 51, 56)');
     await snapshot('voice-channel');
   } finally {
     await leaveVoice({ reason: 'user_disconnect_button' });

@@ -189,46 +189,54 @@ test.each([
   StreamKind.VIDEO,
   StreamKind.SCREEN,
   StreamKind.SCREEN_AUDIO
-])('never requests an SFU %s consumer for a direct-only pair', async (kind) => {
-  const request = vi.fn(async () => {
-    throw new Error('SFU must not be attempted');
-  });
-  vi.mocked(trpc.getTRPCClient).mockReturnValue({
-    voice: { consume: { mutate: request } }
-  } as unknown as ReturnType<typeof trpc.getTRPCClient>);
-  setCurrentVoiceChannelId(2);
-  for (const id of [1, 2])
-    addUserToVoiceChannel(id, 2, {
-      micMuted: false,
-      soundMuted: false,
-      webcamEnabled: false,
-      sharingScreen: false,
-      directMediaEnabled: true
+])(
+  'keeps the SFU relay available as a %s fallback for a direct pair',
+  async (kind) => {
+    const request = vi.fn(async () => {
+      throw new Error('relay fallback attempted');
     });
-  const Fixture = () => {
-    hook = useTransports({
-      voiceOnlyMode: false,
-      canConsumeScreen: () => true,
-      addRemoteUserStream: vi.fn(),
-      removeRemoteUserStream: vi.fn(),
-      addExternalStreamTrack: vi.fn(),
-      removeExternalStreamTrack: vi.fn(),
-      setRemoteConsumerType: vi.fn(),
-      setRemoteStreamQualityLayers: vi.fn(),
-      clearRemoteConsumerMetadata: vi.fn()
+    vi.mocked(trpc.getTRPCClient).mockReturnValue({
+      voice: { consume: { mutate: request } }
+    } as unknown as ReturnType<typeof trpc.getTRPCClient>);
+    setCurrentVoiceChannelId(2);
+    for (const id of [1, 2])
+      addUserToVoiceChannel(id, 2, {
+        micMuted: false,
+        soundMuted: false,
+        webcamEnabled: false,
+        sharingScreen: false,
+        directMediaEnabled: true
+      });
+    const Fixture = () => {
+      hook = useTransports({
+        voiceOnlyMode: false,
+        canConsumeScreen: () => true,
+        addRemoteUserStream: vi.fn(),
+        removeRemoteUserStream: vi.fn(),
+        addExternalStreamTrack: vi.fn(),
+        removeExternalStreamTrack: vi.fn(),
+        setRemoteConsumerType: vi.fn(),
+        setRemoteStreamQualityLayers: vi.fn(),
+        clearRemoteConsumerMetadata: vi.fn()
+      });
+      return null;
+    };
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    root.render(createElement(Fixture));
+    await expect.poll(() => hook).toBeDefined();
+    hook!.consumerTransport.current = {
+      closed: false,
+      close: vi.fn(),
+      consume: vi.fn()
+    } as unknown as Transport;
+    await hook!.consume(2, kind, { codecs: [] }).catch(() => {});
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith({
+      remoteId: 2,
+      kind,
+      rtpCapabilities: { codecs: [] }
     });
-    return null;
-  };
-  host = document.createElement('div');
-  document.body.append(host);
-  root = createRoot(host);
-  root.render(createElement(Fixture));
-  await expect.poll(() => hook).toBeDefined();
-  hook!.consumerTransport.current = {
-    closed: false,
-    close: vi.fn(),
-    consume: vi.fn()
-  } as unknown as Transport;
-  await hook!.consume(2, kind, { codecs: [] });
-  expect(request).not.toHaveBeenCalled();
-});
+  }
+);
