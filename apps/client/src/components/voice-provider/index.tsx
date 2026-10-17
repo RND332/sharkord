@@ -1,5 +1,6 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import {
+  useCurrentVoicePeers,
   useDirectMediaPolicy,
   useWebRtcSimulcastEnabled
 } from '@/features/server/hooks';
@@ -30,15 +31,23 @@ import {
   getSuppressLocalAudioPlaybackSupport
 } from '@/helpers/get-display-media-support';
 import { getResWidthHeight } from '@/helpers/get-res-with-height';
+import {
+  getScreenShareCodecCandidates,
+  getScreenShareContentHint,
+  getScreenSharePreset,
+  getScreenSharePresetSettings,
+  ScreenSharePreset
+} from '@/helpers/screen-share-presets';
 import { registerVoiceDebugSource } from '@/helpers/voice-debug';
 import { useScreenShareSupport } from '@/hooks/use-screen-share-support';
 import { getTRPCClient } from '@/lib/trpc';
-import { NoiseSuppression, VideoCodec, type TStreamQuality } from '@/types';
+import { NoiseSuppression, type TStreamQuality } from '@/types';
 import {
   DEFAULT_BITRATE,
   getErrorMessage,
   StreamKind,
   type ConsumerType,
+  type TDirectMediaKind,
   type TStreamQualityLayer,
   type TVoiceUserState
 } from '@sharkord/shared';
@@ -629,6 +638,36 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const selectedMicrophoneIdRef = useRef(devices.microphoneId);
   const republishMicrophoneRef = useRef<() => Promise<void>>(async () => {});
   const micMutedRef = useRef(ownVoiceState.micMuted);
+  const p2pFallbackKindsRef = useRef(new Set<TDirectMediaKind>());
+  const currentVoicePeers = useCurrentVoicePeers();
+  const currentVoicePeerIds = useMemo(
+    () => currentVoicePeers.map((peer) => peer.id).join(','),
+    [currentVoicePeers]
+  );
+
+  const shouldAttemptDirect = useCallback(
+    (kind: TDirectMediaKind) => {
+      if (!devices.directScreenSharing || p2pFallbackKindsRef.current.has(kind))
+        return false;
+      const policy = directMediaPolicyRef.current;
+      if (kind === StreamKind.SCREEN) return policy === 'all';
+      return policy !== 'relay';
+    },
+    [devices.directScreenSharing]
+  );
+
+  const markP2pFallback = useCallback((kind: TDirectMediaKind) => {
+    p2pFallbackKindsRef.current.add(kind);
+  }, []);
+
+  const voiceIdentity = `${currentVoiceChannelId ?? ''}:${currentVoicePeerIds}`;
+  // a new channel or participant changes who could be dialled, so a previous
+  // failed attempt must not pin the room to relay for the rest of the session.
+  const previousVoiceIdentityRef = useRef(voiceIdentity);
+  if (previousVoiceIdentityRef.current !== voiceIdentity) {
+    previousVoiceIdentityRef.current = voiceIdentity;
+    p2pFallbackKindsRef.current.clear();
+  }
 
   const syncTransmitMicrophoneTrackState = useCallback(() => {
     const track = transmitMicrophoneTrackRef.current;
@@ -930,11 +969,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         microphoneNoiseGateWorkletNodeRef.current = gateNode;
         nsAudioContextsRef.current = nsContexts;
         transmitMicrophoneTrackRef.current = transmitTrack;
-        microphoneRouteRef.current =
-          devices.directScreenSharing &&
-          directMediaPolicyRef.current !== 'relay'
-            ? 'direct'
-            : 'relay';
+        microphoneRouteRef.current = shouldAttemptDirect(StreamKind.AUDIO)
+          ? 'direct'
+          : 'relay';
         setLocalAudioStream(transmitStream);
         syncTransmitMicrophoneTrackState();
 
@@ -959,30 +996,27 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
             localAudioProducer.current?.close();
             localAudioProducer.current = undefined;
             directMicrophone.stop();
-            microphoneRouteRef.current =
-              devices.directScreenSharing &&
-              directMediaPolicyRef.current !== 'relay'
-                ? 'direct'
-                : 'relay';
-            const path = devices.directScreenSharing
+            const attemptDirect = shouldAttemptDirect(StreamKind.AUDIO);
+            microphoneRouteRef.current = attemptDirect ? 'direct' : 'relay';
+            const path = attemptDirect
               ? await directMicrophone.start(transmitStream, {
                   maxBitrate: 128000,
                   onFailure: async () => {
                     if (!isCurrentPublication()) return;
+                    markP2pFallback(StreamKind.AUDIO);
                     await republishMicrophoneRef.current();
                   }
                 })
               : 'relay';
             if (!isCurrentPublication()) return;
-            if (path === 'failed') {
-              toast.error(t('directMediaFailed'));
-              throw new Error(
-                'Direct microphone failed; server relay is disabled'
-              );
+            if (attemptDirect && path !== 'direct') {
+              markP2pFallback(StreamKind.AUDIO);
+              logVoiceWarn('mic: P2P failed, falling back to relay');
+              toast.info(t('p2pFallbackToRelay'));
             }
-            microphoneRouteRef.current = path;
+            microphoneRouteRef.current = path === 'direct' ? 'direct' : 'relay';
             const producer =
-              path === 'relay'
+              path !== 'direct'
                 ? await transport.produce({
                     track: transmitTrack,
                     stopTracks: false,
@@ -1114,7 +1148,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     localAudioProducer,
     syncTransmitMicrophoneTrackState,
     directMicrophone,
-    devices.directScreenSharing,
+    shouldAttemptDirect,
+    markP2pFallback,
     devices.microphoneId,
     devices.autoGainControl,
     devices.echoCancellation,
@@ -1149,10 +1184,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       return;
     const track = rawMicrophoneStreamRef.current?.getAudioTracks()[0];
     if (!track || track.readyState !== 'live') return;
-    const path =
-      devices.directScreenSharing && directMediaPolicy !== 'relay'
-        ? 'direct'
-        : 'relay';
+    const path = shouldAttemptDirect(StreamKind.AUDIO) ? 'direct' : 'relay';
     if (microphoneRouteRef.current === path) return;
     microphoneRouteRef.current = path;
     republishMicrophoneRef
@@ -1162,7 +1194,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     connectionStatus,
     localAudioStream,
     directMediaPolicy,
-    devices.directScreenSharing,
+    shouldAttemptDirect,
     localAudioProducer
   ]);
 
@@ -1214,10 +1246,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           label: stream.getVideoTracks()[0]?.label
         });
 
-        webcamRouteRef.current =
-          devices.directScreenSharing && directMediaPolicyRef.current === 'all'
-            ? 'direct'
-            : 'relay';
+        webcamRouteRef.current = shouldAttemptDirect(StreamKind.VIDEO)
+          ? 'direct'
+          : 'relay';
         setLocalVideoStream(stream);
 
         const videoTrack = stream.getVideoTracks()[0];
@@ -1262,7 +1293,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
             };
           }
 
-          const path = devices.directScreenSharing
+          const attemptDirect = shouldAttemptDirect(StreamKind.VIDEO);
+          const path = attemptDirect
             ? await directWebcam.start(stream, {
                 maxBitrate: SIMULCAST_WEBCAM_MAX_BITRATE,
                 onFailure: async () => {
@@ -1271,6 +1303,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
                     generation !== webcamGenerationRef.current
                   )
                     return;
+                  markP2pFallback(StreamKind.VIDEO);
                   await restartWebcamStreamRef.current();
                 }
               })
@@ -1281,10 +1314,14 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
             capturedWebcamStreamRef.current !== stream
           )
             throw new Error('Webcam capture ended');
-          if (path === 'failed') throw new Error(t('directMediaFailed'));
-          webcamRouteRef.current = path;
+          if (attemptDirect && path !== 'direct') {
+            markP2pFallback(StreamKind.VIDEO);
+            logVoiceWarn('webcam: P2P failed, falling back to relay');
+            toast.info(t('p2pFallbackToRelay'));
+          }
+          webcamRouteRef.current = path === 'direct' ? 'direct' : 'relay';
           let webcamProducer: typeof localVideoProducer.current;
-          if (path === 'relay') {
+          if (path !== 'direct') {
             try {
               webcamProducer = await producerTransport.current?.produce(
                 simulcastWebcamProducerOptions
@@ -1378,7 +1415,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       devices.webcamFramerate,
       devices.webcamResolution,
       simulcastEnabled,
-      devices.directScreenSharing,
+      shouldAttemptDirect,
+      markP2pFallback,
       directWebcam,
       t
     ]
@@ -1461,10 +1499,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       return;
     const track = capturedWebcamStreamRef.current?.getVideoTracks()[0];
     if (!track || track.readyState !== 'live') return;
-    const path =
-      devices.directScreenSharing && directMediaPolicy === 'all'
-        ? 'direct'
-        : 'relay';
+    const path = shouldAttemptDirect(StreamKind.VIDEO) ? 'direct' : 'relay';
     if (webcamRouteRef.current === path) return;
     webcamRouteRef.current = path;
     restartWebcamStreamRef
@@ -1475,7 +1510,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     connectionStatus,
     localVideoStream,
     directMediaPolicy,
-    devices.directScreenSharing
+    shouldAttemptDirect
   ]);
 
   const stopScreenShareStream = useCallback(() => {
@@ -1538,27 +1573,41 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         });
 
         let preferredCodec: RtpCodecCapability | undefined;
+        const screenPreset = getScreenSharePreset({
+          screenResolution: devices.screenResolution,
+          screenFramerate: devices.screenFramerate,
+          screenBitrate: devices.screenBitrate
+        });
+        const presetSettings = screenPreset
+          ? getScreenSharePresetSettings(screenPreset)
+          : undefined;
+        // motion already asks the encoder for every frame; simulcast multiplies
+        // that load without helping constrained viewers enough to justify it.
+        const effectiveSimulcast =
+          screenShareSimulcastEnabled &&
+          screenPreset !== ScreenSharePreset.MOTION;
 
-        if (
-          !screenShareSimulcastEnabled &&
-          devices.screenCodec &&
-          devices.screenCodec !== VideoCodec.AUTO &&
-          routerRtpCapabilities.current?.codecs
-        ) {
-          preferredCodec = routerRtpCapabilities.current.codecs.find(
-            (c) =>
-              c.mimeType.toLowerCase() === devices.screenCodec.toLowerCase()
+        if (!effectiveSimulcast && routerRtpCapabilities.current?.codecs) {
+          const candidates = getScreenShareCodecCandidates(
+            screenPreset,
+            devices.screenCodec
           );
-
-          if (preferredCodec) {
-            logVoice('screen: using preferred codec', {
-              codec: preferredCodec.mimeType
-            });
+          for (const candidate of candidates) {
+            preferredCodec = routerRtpCapabilities.current.codecs.find(
+              (codec) =>
+                codec.mimeType.toLowerCase() === candidate.toLowerCase()
+            );
+            if (preferredCodec) {
+              logVoice('screen: using preferred codec', {
+                codec: preferredCodec.mimeType
+              });
+              break;
+            }
           }
         }
 
         const maxBitrateKbps = devices.screenBitrate ?? DEFAULT_BITRATE;
-        const simulcastCodec = screenShareSimulcastEnabled
+        const simulcastCodec = effectiveSimulcast
           ? getSimulcastCodec(routerRtpCapabilities.current)
           : undefined;
         const screenCodec = simulcastCodec ?? preferredCodec;
@@ -1567,18 +1616,30 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           logVoice('screen: using vp8 for simulcast', {
             codec: simulcastCodec.mimeType
           });
-        } else if (screenShareSimulcastEnabled) {
+        } else if (effectiveSimulcast) {
           logVoice(
             'VP8 is unavailable, creating screen share without simulcast'
           );
         }
+        const startBitrateKbps = Math.min(
+          presetSettings?.startBitrateKbps ?? 2000,
+          maxBitrateKbps
+        );
         const screenShareProducerOptions: ProducerOptions<TVideoProducerAppData> =
           {
             track: videoTrack,
             stopTracks: false,
             codec: screenCodec,
+            encodings: simulcastCodec
+              ? undefined
+              : [
+                  {
+                    maxBitrate: maxBitrateKbps * 1000,
+                    maxFramerate: devices.screenFramerate
+                  }
+                ],
             codecOptions: {
-              videoGoogleStartBitrate: Math.min(2000, maxBitrateKbps),
+              videoGoogleStartBitrate: startBitrateKbps,
               videoGoogleMaxBitrate: maxBitrateKbps,
               videoGoogleMinBitrate: Math.min(200, maxBitrateKbps)
             },
@@ -1721,6 +1782,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     [
       devices.screenCodec,
       devices.screenBitrate,
+      devices.screenResolution,
+      devices.screenFramerate,
       screenShareSimulcastEnabled,
       localScreenShareProducer,
       localScreenShareAudioProducer,
@@ -1734,9 +1797,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       const publication = Symbol();
       screenPublicationRef.current = publication;
       const videoTrack = stream.getVideoTracks()[0];
-      const path = devices.directScreenSharing
+      const attemptDirect = shouldAttemptDirect(StreamKind.SCREEN);
+      const path = attemptDirect
         ? await directScreenShare.start(stream, {
             maxBitrate: (devices.screenBitrate ?? DEFAULT_BITRATE) * 1000,
+            maxFramerate: devices.screenFramerate,
             codec: devices.screenCodec,
             onFailure: async (relayAllowed) => {
               if (
@@ -1745,6 +1810,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
               )
                 return;
               if (relayAllowed) {
+                markP2pFallback(StreamKind.SCREEN);
                 await republishScreenRef.current();
                 return;
               }
@@ -1768,23 +1834,29 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         videoTrack?.readyState !== 'live'
       )
         throw new Error('Screen share ended');
-      if (path === 'failed') throw new Error(t('directMediaFailed'));
-      if (path === 'relay') await produceScreenShareStream(stream);
+      if (attemptDirect && path !== 'direct') {
+        markP2pFallback(StreamKind.SCREEN);
+        logVoiceWarn('screen: P2P failed, falling back to relay');
+        toast.info(t('p2pFallbackToRelay'));
+      }
+      if (path !== 'direct') await produceScreenShareStream(stream);
       if (
         capturedScreenStreamRef.current !== stream ||
         voiceOnlyModeRef.current
       )
         throw new Error('Screen share ended');
-      setScreenRoute(path);
+      setScreenRoute(path === 'direct' ? 'direct' : 'relay');
       return videoTrack;
     },
     [
-      devices.directScreenSharing,
       devices.screenBitrate,
       devices.screenCodec,
+      devices.screenFramerate,
       directScreenShare,
       produceScreenShareStream,
       stopScreenShareStream,
+      shouldAttemptDirect,
+      markP2pFallback,
       t
     ]
   );
@@ -1844,10 +1916,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         connectionStatus !== ConnectionStatus.CONNECTED)
     )
       return;
-    const path =
-      devices.directScreenSharing && directMediaPolicy === 'all'
-        ? 'direct'
-        : 'relay';
+    const path = shouldAttemptDirect(StreamKind.SCREEN) ? 'direct' : 'relay';
     if (screenRoute === path) return;
     republishScreenRef
       .current()
@@ -1857,7 +1926,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     voiceOnlyMode,
     connectionStatus,
     directMediaPolicy,
-    devices.directScreenSharing
+    shouldAttemptDirect
   ]);
 
   const startScreenShareStream = useCallback(async () => {
@@ -1924,8 +1993,13 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       // A game redraws every pixel of every frame, and `detail` maps to
       // maintain-resolution, so the encoder dropped frames instead of
       // resolution and viewers saw a slideshow instead of a fullscreen game.
-      // `motion` trades sharpness for a frame rate that holds up.
-      videoTrack.contentHint = 'motion';
+      // `motion` trades sharpness for a frame rate that holds up. The text
+      // preset flips it back so code and slides stay legible.
+      videoTrack.contentHint = getScreenShareContentHint({
+        screenResolution: devices.screenResolution,
+        screenFramerate: devices.screenFramerate,
+        screenBitrate: devices.screenBitrate
+      });
       videoTrack.onended = stopScreenShareStream;
       if (audioTrack) {
         setLocalScreenShareAudio(new MediaStream([audioTrack]));
@@ -1975,6 +2049,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     localScreenShareAudioProducer,
     devices.screenResolution,
     devices.screenFramerate,
+    devices.screenBitrate,
     devices.restrictOwnAudio,
     devices.suppressLocalAudioPlayback,
     devices.screenCursor
@@ -2019,6 +2094,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     resetStats();
     cleanupMicProcessingResources();
     micRecoveryHistoryRef.current = [];
+    p2pFallbackKindsRef.current.clear();
     stopWebcamStream();
     stopScreenShareStream();
     const directCoordinators = Object.values(directMedia);

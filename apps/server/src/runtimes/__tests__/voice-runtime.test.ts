@@ -1,6 +1,7 @@
 import { ServerEvents, StreamKind } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import type { Consumer, Producer } from 'mediasoup/types';
+import { config } from '../../config';
 import { eventBus } from '../../plugins/event-bus';
 import { pubsub } from '../../utils/pubsub';
 import { EXTERNAL_STREAM_ID_BASE, VoiceRuntime } from '../voice';
@@ -558,6 +559,143 @@ describe('VoiceRuntime voice-only mode', () => {
       expect(producer.closed).toBe(false);
       expect(consumer.closed).toBe(false);
     } finally {
+      await runtime.destroy();
+    }
+  });
+});
+
+describe('VoiceRuntime direct media fallback', () => {
+  test('keeps relay producers visible while both participants require direct media', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const previous = config.webRtc.directScreenSharing;
+    config.webRtc.directScreenSharing = true;
+    try {
+      runtime.registerDirectMediaSubscriber(1, true);
+      runtime.registerDirectMediaSubscriber(2, true);
+      const relayProducer = createProducerStub();
+      runtime.addProducer(
+        2,
+        StreamKind.AUDIO,
+        relayProducer as unknown as Producer
+      );
+
+      expect(runtime.isDirectMediaRequired(2, StreamKind.AUDIO)).toBe(true);
+      expect(runtime.getRemoteIds(1).remoteAudioIds).toEqual([2]);
+      expect(relayProducer.closed).toBe(false);
+    } finally {
+      config.webRtc.directScreenSharing = previous;
+      await runtime.destroy();
+    }
+  });
+
+  test('a failed attempt disables direct for both and allows relay immediately', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const previous = config.webRtc.directScreenSharing;
+    config.webRtc.directScreenSharing = true;
+    const updates: number[] = [];
+    const signals: { userId: number; relayAllowed: boolean }[] = [];
+    const stateSubscription = pubsub
+      .subscribe(ServerEvents.USER_VOICE_STATE_UPDATE)
+      .subscribe({
+        next: ({ userId, channelId }) => {
+          if (channelId === runtime.id) updates.push(userId);
+        }
+      });
+    const senderSignal = pubsub
+      .subscribeFor(1, ServerEvents.DIRECT_MEDIA_SIGNAL)
+      .subscribe({
+        next: (event) => signals.push({ userId: 1, ...event })
+      });
+    const peerSignal = pubsub
+      .subscribeFor(2, ServerEvents.DIRECT_MEDIA_SIGNAL)
+      .subscribe({
+        next: (event) => signals.push({ userId: 2, ...event })
+      });
+    try {
+      runtime.registerDirectMediaSubscriber(1, true);
+      runtime.registerDirectMediaSubscriber(2, true);
+      const session = runtime.startDirectMedia(1, StreamKind.AUDIO);
+      expect(session).not.toBeNull();
+
+      runtime.signalDirectMedia(session!.sessionId, 1, { type: 'fallback' });
+
+      expect(runtime.getUserState(1).directMediaEnabled).toBe(false);
+      expect(runtime.getUserState(2).directMediaEnabled).toBe(false);
+      expect(runtime.isDirectMediaRequired(1, StreamKind.AUDIO)).toBe(false);
+      expect(runtime.hasDirectMediaCapability(1, StreamKind.AUDIO)).toBe(false);
+      expect(runtime.startDirectMedia(1, StreamKind.AUDIO)).toBeNull();
+      expect(updates).toEqual(expect.arrayContaining([1, 2]));
+      expect(signals).toHaveLength(2);
+      signals.forEach((signal) => expect(signal.relayAllowed).toBe(true));
+    } finally {
+      stateSubscription.unsubscribe();
+      senderSignal.unsubscribe();
+      peerSignal.unsubscribe();
+      config.webRtc.directScreenSharing = previous;
+      await runtime.destroy();
+    }
+  });
+
+  test('the feature flag disables direct while relay stays usable', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const previous = config.webRtc.directScreenSharing;
+    config.webRtc.directScreenSharing = false;
+    try {
+      runtime.registerDirectMediaSubscriber(1, true);
+      runtime.registerDirectMediaSubscriber(2, true);
+      const relayProducer = createProducerStub();
+      runtime.addProducer(
+        2,
+        StreamKind.AUDIO,
+        relayProducer as unknown as Producer
+      );
+
+      expect(runtime.getUserState(1).directMediaEnabled).toBe(false);
+      expect(runtime.isDirectMediaRequired(1, StreamKind.AUDIO)).toBe(false);
+      expect(runtime.startDirectMedia(1, StreamKind.AUDIO)).toBeNull();
+      expect(runtime.getRemoteIds(1).remoteAudioIds).toEqual([2]);
+    } finally {
+      config.webRtc.directScreenSharing = previous;
+      await runtime.destroy();
+    }
+  });
+});
+
+describe('VoiceRuntime relay during a direct attempt', () => {
+  test('a relay producer disables direct for both and stays published', async () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const previous = config.webRtc.directScreenSharing;
+    config.webRtc.directScreenSharing = true;
+    try {
+      runtime.registerDirectMediaSubscriber(1, true);
+      runtime.registerDirectMediaSubscriber(2, true);
+      const session = runtime.startDirectMedia(1, StreamKind.AUDIO);
+      expect(session).not.toBeNull();
+
+      const relayProducer = createProducerStub();
+      runtime.addProducer(
+        1,
+        StreamKind.AUDIO,
+        relayProducer as unknown as Producer
+      );
+
+      expect(relayProducer.closed).toBe(false);
+      expect(runtime.getUserState(1).directMediaEnabled).toBe(false);
+      expect(runtime.getUserState(2).directMediaEnabled).toBe(false);
+      expect(
+        runtime.getDirectMediaSession(session!.sessionId, 1)
+      ).toBeUndefined();
+      expect(runtime.getRemoteIds(2).remoteAudioIds).toEqual([1]);
+    } finally {
+      config.webRtc.directScreenSharing = previous;
       await runtime.destroy();
     }
   });

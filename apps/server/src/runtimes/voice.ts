@@ -1,5 +1,6 @@
 import {
-  DIRECT_MEDIA_CONNECT_TIMEOUT_MS,
+  DIRECT_MEDIA_SERVER_AUDIO_CONNECT_TIMEOUT_MS,
+  DIRECT_MEDIA_SERVER_CONNECT_TIMEOUT_MS,
   ServerEvents,
   StreamKind,
   type TChannelState,
@@ -8,6 +9,7 @@ import {
   type TDirectMediaSession,
   type TDirectMediaSignal,
   type TExternalStreamsMap,
+  type TIceServer,
   type TRemoteProducerIds,
   type TStreamQualityLayer,
   type TTransportParams,
@@ -24,6 +26,7 @@ import type {
   WebRtcTransport
 } from 'mediasoup/types';
 import { config } from '../config';
+import { getIceServers } from '../helpers/get-ice-servers';
 import { logger } from '../logger';
 import { eventBus } from '../plugins/event-bus';
 import { invariant } from '../utils/invariant';
@@ -148,7 +151,7 @@ type TDirectMediaRuntimeSession = {
   id: string;
   senderId: number;
   peerId: number;
-  stunUrls: string[];
+  iceServers: TIceServer[];
   phase: 'pending' | 'offered' | 'answered' | 'ready';
   deadline?: NodeJS.Timeout;
 };
@@ -622,9 +625,13 @@ class VoiceRuntime {
     ) {
       return { unregister: () => {}, isCurrent: () => false };
     }
-    this.directMediaSubscriptions.set(userId, { token, enabled });
-    this.publishDirectMediaCapability(userId, enabled);
-    if (!enabled) this.endDirectMediaSessionsForUser(userId);
+    const effectiveEnabled = enabled && config.webRtc.directScreenSharing;
+    this.directMediaSubscriptions.set(userId, {
+      token,
+      enabled: effectiveEnabled
+    });
+    this.publishDirectMediaCapability(userId, effectiveEnabled);
+    if (!effectiveEnabled) this.endDirectMediaSessionsForUser(userId);
     return {
       isCurrent: () =>
         this.directMediaSubscriptions.get(userId)?.token === token,
@@ -642,6 +649,7 @@ class VoiceRuntime {
     kind: TDirectMediaKind
   ) => {
     return (
+      config.webRtc.directScreenSharing &&
       !this.destroyed &&
       !this.directMediaMovedMembers.has(userId) &&
       !!this.getUser(userId) &&
@@ -671,22 +679,6 @@ class VoiceRuntime {
     );
   };
 
-  public assertMediaRelayAllowed = (userId: number, kind: StreamKind) => {
-    if (
-      kind !== StreamKind.AUDIO &&
-      kind !== StreamKind.VIDEO &&
-      kind !== StreamKind.SCREEN &&
-      kind !== StreamKind.SCREEN_AUDIO
-    )
-      return;
-    const mediaKind =
-      kind === StreamKind.SCREEN_AUDIO ? StreamKind.SCREEN : kind;
-    invariant(!this.isDirectMediaRequired(userId, mediaKind), {
-      code: 'BAD_REQUEST',
-      message: 'Both participants enabled P2P; server media relay is disabled'
-    });
-  };
-
   public startDirectMedia = (
     senderId: number,
     kind: TDirectMediaKind
@@ -708,13 +700,17 @@ class VoiceRuntime {
       id: crypto.randomUUID(),
       senderId,
       peerId: peer.userId,
-      stunUrls: [...config.webRtc.directScreenStunUrls],
+      iceServers: getIceServers(senderId),
       phase: 'pending'
     };
+    const timeout =
+      kind === StreamKind.AUDIO
+        ? DIRECT_MEDIA_SERVER_AUDIO_CONNECT_TIMEOUT_MS
+        : DIRECT_MEDIA_SERVER_CONNECT_TIMEOUT_MS;
     session.deadline = setTimeout(() => {
       if (this.directMediaSessions.get(session.id) !== session) return;
-      this.endDirectMediaSession(session, 'fallback');
-    }, DIRECT_MEDIA_CONNECT_TIMEOUT_MS);
+      this.endDirectMediaSession(session, 'fallback', true);
+    }, timeout);
     session.deadline.unref();
     this.directMediaSessions.set(session.id, session);
     this.directMediaOutgoing.set(`${senderId}-${kind}`, session.id);
@@ -722,7 +718,12 @@ class VoiceRuntime {
       sessionId: session.id,
       kind: session.kind,
       peerId: session.peerId,
-      stunUrls: [...session.stunUrls]
+      iceServers: session.iceServers.map((iceServer) => ({
+        ...iceServer,
+        urls: Array.isArray(iceServer.urls)
+          ? [...iceServer.urls]
+          : iceServer.urls
+      }))
     };
   };
 
@@ -749,7 +750,11 @@ class VoiceRuntime {
       message: 'Direct screen session not found'
     });
     if (signal.type === 'fallback' || signal.type === 'stop') {
-      this.endDirectMediaSession(session, signal.type);
+      this.endDirectMediaSession(
+        session,
+        signal.type,
+        signal.type === 'fallback'
+      );
       return;
     }
     invariant(config.webRtc.directScreenSharing && !this.destroyed, {
@@ -794,12 +799,13 @@ class VoiceRuntime {
   ) => {
     const event: TDirectMediaEvent = {
       kind: session.kind,
-      relayAllowed: !this.isDirectMediaRequired(session.senderId, session.kind),
+      // direct media is only an attempt: relay is always a valid destination.
+      relayAllowed: true,
       sessionId: session.id,
       channelId: this.id,
       senderId: session.senderId,
       fromUserId,
-      stunUrls: session.stunUrls,
+      iceServers: session.iceServers,
       signal
     };
     pubsub.publishFor(recipients, ServerEvents.DIRECT_MEDIA_SIGNAL, event);
@@ -807,12 +813,22 @@ class VoiceRuntime {
 
   private endDirectMediaSession = (
     session: TDirectMediaRuntimeSession,
-    type: 'fallback' | 'stop'
+    type: 'fallback' | 'stop',
+    disableDirect = false
   ) => {
     if (this.directMediaSessions.get(session.id) !== session) return;
     this.directMediaSessions.delete(session.id);
     this.directMediaOutgoing.delete(`${session.senderId}-${session.kind}`);
     clearTimeout(session.deadline);
+    if (disableDirect) {
+      // a failed attempt must not retry in a loop: both participants lose direct
+      // capability until they subscribe again on the next channel join.
+      for (const userId of [session.senderId, session.peerId]) {
+        const subscription = this.directMediaSubscriptions.get(userId);
+        if (subscription) subscription.enabled = false;
+        this.publishDirectMediaCapability(userId, false);
+      }
+    }
     this.publishDirectMediaSignal(session, session.peerId, { type }, [
       session.senderId
     ]);
@@ -853,7 +869,7 @@ class VoiceRuntime {
     this.router = router;
   };
 
-  public createTransport = async () => {
+  public createTransport = async (userId: number) => {
     const router = this.getRouter();
 
     const maxBitrate = config.webRtc.maxBitrate;
@@ -874,14 +890,15 @@ class VoiceRuntime {
       id: transport.id,
       iceParameters: transport.iceParameters,
       iceCandidates: transport.iceCandidates,
-      dtlsParameters: transport.dtlsParameters
+      dtlsParameters: transport.dtlsParameters,
+      iceServers: getIceServers(userId)
     };
 
     return { transport, params };
   };
 
   public createConsumerTransport = async (userId: number) => {
-    const { transport, params } = await this.createTransport();
+    const { transport, params } = await this.createTransport(userId);
 
     this.consumerTransports[userId]?.close();
     this.consumerTransports[userId] = transport;
@@ -922,7 +939,7 @@ class VoiceRuntime {
   };
 
   public createProducerTransport = async (userId: number) => {
-    const { params, transport } = await this.createTransport();
+    const { params, transport } = await this.createTransport(userId);
 
     this.producerTransports[userId]?.close();
     this.producerTransports[userId] = transport;
@@ -987,7 +1004,6 @@ class VoiceRuntime {
   ) => {
     try {
       this.assertMediaAllowed(userId, type, generation);
-      this.assertMediaRelayAllowed(userId, type);
     } catch (error) {
       producer.close();
       throw error;
@@ -997,14 +1013,22 @@ class VoiceRuntime {
       qualityLayers
     );
 
-    if (type === StreamKind.SCREEN || type === StreamKind.SCREEN_AUDIO) {
-      const sessionId = this.directMediaOutgoing.get(
-        `${userId}-${StreamKind.SCREEN}`
-      );
+    const directKind =
+      type === StreamKind.SCREEN_AUDIO
+        ? StreamKind.SCREEN
+        : type === StreamKind.AUDIO ||
+            type === StreamKind.VIDEO ||
+            type === StreamKind.SCREEN
+          ? type
+          : undefined;
+    if (directKind) {
+      // a relay producer arriving during a direct attempt means the sender gave
+      // up on P2P, so both participants must switch to relay for this media.
+      const sessionId = this.directMediaOutgoing.get(`${userId}-${directKind}`);
       const session = sessionId
         ? this.directMediaSessions.get(sessionId)
         : undefined;
-      if (session) this.endDirectMediaSession(session, 'fallback');
+      if (session) this.endDirectMediaSession(session, 'fallback', true);
     }
     this.removeProducer(userId, type);
 
@@ -1101,7 +1125,6 @@ class VoiceRuntime {
   ) => {
     try {
       this.assertMediaAllowed(userId, kind, generation);
-      this.assertMediaRelayAllowed(remoteId, kind);
     } catch (error) {
       consumer.close();
       throw error;
@@ -1422,18 +1445,15 @@ class VoiceRuntime {
   };
 
   public getRemoteIds = (userId: number): TRemoteProducerIds => {
-    const relayIds = (producers: TProducerMap, kind: TDirectMediaKind) =>
+    const producerIds = (producers: TProducerMap) =>
       Object.keys(producers)
         .map(Number)
-        .filter((id) => id !== userId && !this.isDirectMediaRequired(id, kind));
+        .filter((id) => id !== userId);
     return {
-      remoteVideoIds: relayIds(this.videoProducers, StreamKind.VIDEO),
-      remoteAudioIds: relayIds(this.audioProducers, StreamKind.AUDIO),
-      remoteScreenIds: relayIds(this.screenProducers, StreamKind.SCREEN),
-      remoteScreenAudioIds: relayIds(
-        this.screenAudioProducers,
-        StreamKind.SCREEN
-      ),
+      remoteVideoIds: producerIds(this.videoProducers),
+      remoteAudioIds: producerIds(this.audioProducers),
+      remoteScreenIds: producerIds(this.screenProducers),
+      remoteScreenAudioIds: producerIds(this.screenAudioProducers),
       remoteExternalStreamIds: Object.keys(this.externalStreamsInternal).map(
         (id) => +id
       )

@@ -48,7 +48,8 @@ vi.mock('@/features/server/channels/hooks', () => ({
 }));
 vi.mock('@/features/server/hooks', () => ({
   useWebRtcSimulcastEnabled: () => false,
-  useDirectMediaPolicy: () => 'relay'
+  useDirectMediaPolicy: () => 'relay',
+  useCurrentVoicePeers: () => []
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useOwnVoiceState: () => ({ micMuted: false, soundMuted: false })

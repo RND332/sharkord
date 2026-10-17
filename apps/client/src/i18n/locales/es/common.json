@@ -1,5 +1,6 @@
 {
   "directMediaFailed": "No se pudo establecer la conexión multimedia. Inténtalo de nuevo.",
+  "p2pFallbackToRelay": "La conexión directa falló, cambiando al relay del servidor.",
   "cancel": "Cancelar",
   "confirm": "Confirmar",
   "close": "Cerrar",

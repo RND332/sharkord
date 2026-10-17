@@ -226,7 +226,7 @@ const session = (sessionId = 'outgoing'): TDirectMediaSession => ({
   kind: StreamKind.SCREEN,
   sessionId,
   peerId: 2,
-  stunUrls: ['stun:example.com:3478']
+  iceServers: [{ urls: 'stun:example.com:3478' }]
 });
 
 const event = (
@@ -240,7 +240,7 @@ const event = (
   channelId: 10,
   senderId: incoming ? 2 : 1,
   fromUserId: 2,
-  stunUrls: ['stun:example.com:3478'],
+  iceServers: [{ urls: 'stun:example.com:3478' }],
   signal
 });
 
@@ -469,7 +469,7 @@ describe('DirectMedia outgoing lifecycle', () => {
     expect(subject.statuses.at(-1)).toBe('failed');
   });
 
-  test('a prepared P2P session cannot authorize server relay on timeout', async () => {
+  test('a prepared P2P session reports failure on timeout', async () => {
     const subject = fixture();
     const started = subject.start();
     await flush();
@@ -485,7 +485,7 @@ describe('DirectMedia outgoing lifecycle', () => {
     expect(subject.failures).toBe(0);
   });
 
-  test('native peer construction failure retires the session without authorizing relay', async () => {
+  test('native peer construction failure retires the session', async () => {
     const descriptor = Object.getOwnPropertyDescriptor(
       globalThis,
       'RTCPeerConnection'
@@ -563,7 +563,7 @@ describe('DirectMedia outgoing lifecycle', () => {
     await flush();
     const peer = TestPeer.instances[0]!;
     expect(peer.configuration).toEqual({
-      iceServers: [{ urls: ['stun:example.com:3478'] }]
+      iceServers: [{ urls: 'stun:example.com:3478' }]
     });
     expect(peer.transceivers).toHaveLength(2);
     expect(peer.transceivers[0]!.track).toBe(media.stream.getVideoTracks()[0]);
@@ -1464,7 +1464,7 @@ describe('DirectMedia incoming lifecycle', () => {
   });
 
   test('default empty STUN configuration negotiates simultaneous direct screen peers', async () => {
-    const subject = fixture(async () => ({ ...session(), stunUrls: [] }));
+    const subject = fixture(async () => ({ ...session(), iceServers: [] }));
     const started = subject.start();
     await flush();
     expect(TestPeer.instances).toHaveLength(1);
@@ -1475,7 +1475,7 @@ describe('DirectMedia incoming lifecycle', () => {
     expect(subject.statuses.at(-1)).toBe('direct');
     await subject.subject.handleSignal({
       ...event('incoming', { type: 'offer', sdp: OFFER }, true),
-      stunUrls: []
+      iceServers: []
     });
     expect(TestPeer.instances).toHaveLength(2);
     const incoming = TestPeer.instances[1]!;

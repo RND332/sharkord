@@ -50,7 +50,7 @@ test.each([StreamKind.SCREEN, StreamKind.VIDEO, StreamKind.AUDIO] as const)(
     const session = {
       sessionId: crypto.randomUUID(),
       peerId: 2,
-      stunUrls: [],
+      iceServers: [],
       kind
     };
     const failed = vi.fn(async () => {});
@@ -65,7 +65,7 @@ test.each([StreamKind.SCREEN, StreamKind.VIDEO, StreamKind.AUDIO] as const)(
       channelId: 42,
       senderId: 1,
       fromUserId,
-      stunUrls: [],
+      iceServers: [],
       kind,
       signal
     });

@@ -8,7 +8,6 @@ import { config } from '../../config';
 import { channelUserCan } from '../../db/queries/channels';
 import { getDirectMediaRuntime } from '../../helpers/get-direct-media-runtime';
 import { VoiceRuntime } from '../../runtimes/voice';
-import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 const startDirectMediaRoute = rateLimitedProcedure(protectedProcedure, {
@@ -43,14 +42,7 @@ const startDirectMediaRoute = rateLimitedProcedure(protectedProcedure, {
     )
       return null;
     const session = runtime.startDirectMedia(ctx.user.id, input.kind);
-    invariant(
-      session || !runtime.isDirectMediaRequired(ctx.user.id, input.kind),
-      {
-        code: 'BAD_REQUEST',
-        message:
-          'Direct screen sharing is unavailable; server relay is disabled'
-      }
-    );
+    // direct media is optional: a null session tells the client to use relay.
     return session;
   });
 

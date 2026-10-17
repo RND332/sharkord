@@ -1,5 +1,6 @@
 {
   "directMediaFailed": "Mediální spojení se nepodařilo navázat. Zkuste to znovu.",
+  "p2pFallbackToRelay": "Přímé spojení selhalo, přepínám na serverový relay.",
   "cancel": "Zrušit",
   "confirm": "Potvrdit",
   "close": "Zavřít",

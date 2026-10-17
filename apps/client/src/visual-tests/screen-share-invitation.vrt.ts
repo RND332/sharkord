@@ -50,7 +50,8 @@ vi.mock('@/features/server/hooks', () => ({
   useWebRtcSimulcastEnabled: () => false,
   useVoiceUsersByChannelId: () => [
     { id: 2, name: 'aria', state: { sharingScreen: true } }
-  ]
+  ],
+  useCurrentVoicePeers: () => []
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useVoice: () => ({ getConsumerCodec: () => undefined }),
