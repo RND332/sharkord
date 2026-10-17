@@ -504,6 +504,31 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const webcamGenerationRef = useRef(0);
   const restartWebcamStreamRef = useRef<() => Promise<void>>(async () => {});
 
+  const directScreenPeersRef = useRef(new Set<number>());
+  const closeConsumerRef = useRef<(remoteId: number, kind: StreamKind) => void>(
+    () => {}
+  );
+  const addRelayRemoteUserStream = useCallback(
+    (
+      userId: number,
+      stream: MediaStream,
+      kind: Parameters<typeof addRemoteUserStream>[2]
+    ) => {
+      if (
+        kind === StreamKind.SCREEN &&
+        directScreenPeersRef.current.has(userId)
+      ) {
+        // the direct stream won the race with the relay consumer; retire it.
+        closeConsumerRef.current(userId, StreamKind.SCREEN);
+        closeConsumerRef.current(userId, StreamKind.SCREEN_AUDIO);
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      addRemoteUserStream(userId, stream, kind);
+    },
+    [addRemoteUserStream]
+  );
+
   const {
     producerTransport,
     consumerTransport,
@@ -524,12 +549,13 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     canConsumeScreen,
     addExternalStreamTrack,
     removeExternalStreamTrack,
-    addRemoteUserStream,
+    addRemoteUserStream: addRelayRemoteUserStream,
     removeRemoteUserStream,
     setRemoteConsumerType,
     setRemoteStreamQualityLayers,
     clearRemoteConsumerMetadata
   });
+  closeConsumerRef.current = closeConsumer;
   const voiceSessionAttemptRef = useRef<TVoiceSessionAttempt | undefined>(
     undefined
   );
@@ -587,6 +613,9 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       stream: MediaStream,
       kind: Parameters<typeof addRemoteUserStream>[2]
     ) => {
+      if (kind === StreamKind.SCREEN) {
+        directScreenPeersRef.current.add(userId);
+      }
       addRemoteUserStream(userId, stream, kind);
       if (kind !== StreamKind.SCREEN) return;
       closeConsumer(userId, StreamKind.SCREEN);
@@ -603,6 +632,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     ) => {
       removeRemoteUserStream(userId, kind, stream);
       if (kind !== StreamKind.SCREEN) return;
+      directScreenPeersRef.current.delete(userId);
       if (!isViewingDemoRef.current(userId)) return;
       const rtps = deviceRtpCapabilities.current;
       if (!rtps) return;
@@ -2057,6 +2087,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     micRecoveryHistoryRef.current = [];
     p2pFallbackKindsRef.current.clear();
     screenFallbackPeersRef.current.clear();
+    directScreenPeersRef.current.clear();
     stopWebcamStream();
     stopScreenShareStream();
     const directCoordinators = Object.values(directMedia);
