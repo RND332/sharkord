@@ -21,7 +21,6 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
     const { runtime, channelId, mediaGeneration } =
       await getCurrentVoiceRuntime(ctx);
     runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
-    runtime.assertMediaRelayAllowed(input.remoteId, input.kind);
 
     const producer = runtime.getProducer(input.kind, input.remoteId);
 

@@ -14,6 +14,11 @@ import {
   getRestrictOwnAudioSupport,
   getSuppressLocalAudioPlaybackSupport
 } from '@/helpers/get-display-media-support';
+import {
+  getScreenSharePreset,
+  getScreenSharePresetSettings,
+  ScreenSharePreset
+} from '@/helpers/screen-share-presets';
 import { getTRPCClient } from '@/lib/trpc';
 import {
   NoiseSuppression,
@@ -126,6 +131,32 @@ const Devices = memo(() => {
   const handleScreenShareSimulcastChange = useCallback(
     (enabled: boolean) => onChange('screenShareSimulcastEnabled', enabled),
     [onChange]
+  );
+
+  const screenSharePreset = useMemo(
+    () =>
+      getScreenSharePreset({
+        screenResolution: values.screenResolution,
+        screenFramerate: values.screenFramerate,
+        screenBitrate: values.screenBitrate
+      }),
+    [values.screenResolution, values.screenFramerate, values.screenBitrate]
+  );
+
+  const handleScreenSharePresetChange = useCallback(
+    (value: string) => {
+      const preset = value as ScreenSharePreset;
+      const presetSettings = getScreenSharePresetSettings(preset);
+      onChange('screenResolution', presetSettings.resolution);
+      onChange('screenFramerate', presetSettings.framerate);
+      onChange('screenCodec', presetSettings.codec);
+      onChange('screenBitrate', presetSettings.bitrateKbps);
+      onChange(
+        'screenShareSimulcastEnabled',
+        presetSettings.simulcast && !!settings?.webRtcSimulcastEnabled
+      );
+    },
+    [onChange, settings?.webRtcSimulcastEnabled]
   );
 
   const {
@@ -608,6 +639,29 @@ const Devices = memo(() => {
           />
         </Group>
         <Group label={t('screenSharingLabel')}>
+          <Group
+            label={t('screenSharePresetLabel')}
+            description={t('screenSharePresetDesc')}
+          >
+            <Select
+              value={screenSharePreset ?? ''}
+              onValueChange={handleScreenSharePresetChange}
+            >
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder={t('screenSharePresetCustom')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value={ScreenSharePreset.MOTION}>
+                    {t('screenSharePresetMotion')}
+                  </SelectItem>
+                  <SelectItem value={ScreenSharePreset.TEXT}>
+                    {t('screenSharePresetText')}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Group>
           <div className="flex">
             <ResolutionFpsControl
               framerate={values.screenFramerate}

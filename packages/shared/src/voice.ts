@@ -31,11 +31,18 @@ export type TChannelState = {
   externalStreams: { [streamId: number]: TExternalStream };
 };
 
+export type TIceServer = {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+};
+
 export type TTransportParams = {
   id: string;
   iceParameters: IceParameters;
   iceCandidates: IceCandidate[];
   dtlsParameters: any;
+  iceServers?: TIceServer[];
 };
 
 export type TVoiceMap = {
@@ -59,7 +66,11 @@ export type TVoiceProducerInfo = {
   paused: boolean;
 };
 
+// the client waits longer than the server so a server fallback always wins the race
 export const DIRECT_MEDIA_CONNECT_TIMEOUT_MS = 8000;
+export const DIRECT_MEDIA_AUDIO_CONNECT_TIMEOUT_MS = 5000;
+export const DIRECT_MEDIA_SERVER_CONNECT_TIMEOUT_MS = 7500;
+export const DIRECT_MEDIA_SERVER_AUDIO_CONNECT_TIMEOUT_MS = 4500;
 export const DIRECT_MEDIA_ICE_GATHER_TIMEOUT_MS = 2000;
 export const DIRECT_MEDIA_SDP_MAX_LENGTH = 65536;
 
@@ -81,7 +92,7 @@ export type TDirectMediaSession = {
   kind: TDirectMediaKind;
   sessionId: string;
   peerId: number;
-  stunUrls: string[];
+  iceServers: TIceServer[];
 };
 
 export type TDirectMediaEvent = {
@@ -91,6 +102,6 @@ export type TDirectMediaEvent = {
   channelId: number;
   senderId: number;
   fromUserId: number;
-  stunUrls: string[];
+  iceServers: TIceServer[];
   signal: TDirectMediaSignal;
 };

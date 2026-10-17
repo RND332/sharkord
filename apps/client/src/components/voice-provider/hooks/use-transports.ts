@@ -1,5 +1,3 @@
-import { directMediaPolicySelector } from '@/features/server/selectors';
-import { store } from '@/features/store';
 import {
   logVoice,
   logVoiceError,
@@ -25,17 +23,9 @@ import {
 import { useCallback, useEffect, useRef } from 'react';
 import { getStoredStreamQuality } from '../helpers';
 
-const canConsumeRelay = (kind: StreamKind) => {
-  const policy = directMediaPolicySelector(store.getState());
-  if (kind === StreamKind.AUDIO) return policy === 'relay';
-  if (
-    kind === StreamKind.VIDEO ||
-    kind === StreamKind.SCREEN ||
-    kind === StreamKind.SCREEN_AUDIO
-  )
-    return policy !== 'all';
-  return true;
-};
+// the server only exposes a relay producer when no direct session owns that
+// kind, so filtering by the local policy would only drop a producer during the
+// fallback race and leave the peer silent.
 
 type TUseTransportParams = {
   voiceOnlyMode: boolean;
@@ -507,7 +497,6 @@ const useTransports = ({
       rtpCapabilities: RtpCapabilities
     ): Promise<void> => {
       if (kind !== StreamKind.AUDIO && voiceOnlyModeRef.current) return;
-      if (!canConsumeRelay(kind)) return;
       const isScreen =
         kind === StreamKind.SCREEN || kind === StreamKind.SCREEN_AUDIO;
       if (isScreen && !canConsumeScreen(remoteId)) return;
@@ -564,9 +553,7 @@ const useTransports = ({
             (!voiceOnlyModeRef.current &&
               generation === nonVoiceGenerationRef.current));
         const canContinue = () =>
-          isCurrent() &&
-          canConsumeRelay(kind) &&
-          (!isScreen || canConsumeScreen(remoteId));
+          isCurrent() && (!isScreen || canConsumeScreen(remoteId));
 
         try {
           if (!canContinue()) return;
@@ -805,7 +792,6 @@ const useTransports = ({
             }
           }
         } catch (error) {
-          if (!canConsumeRelay(kind)) return;
           logVoiceError('consumer: consume failed', error, { remoteId, kind });
         } finally {
           if (
