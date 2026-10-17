@@ -154,7 +154,7 @@ const prepared = async () => {
 };
 
 test.each([false, true])(
-  'termination reports live server relay eligibility (third participant: %s)',
+  'termination always reports relay as available (third participant: %s)',
   async (third) => {
     const { runtime, sender, receiving, session } = await prepared();
     if (third) runtime.addUser(3, { micMuted: false, soundMuted: false });
@@ -163,7 +163,7 @@ test.each([false, true])(
         sessionId: session.sessionId,
         signal: { type: 'fallback' }
       });
-    expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', third);
+    expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', true);
   }
 );
 
@@ -265,7 +265,7 @@ test.each([
   StreamKind.SCREEN,
   StreamKind.SCREEN_AUDIO
 ])(
-  'does not allocate an SFU %s consumer after the pair enables direct media',
+  'keeps the SFU %s consumer available after the pair enables direct media',
   async (kind) => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
@@ -295,18 +295,18 @@ test.each([
       const consume = spyOn(runtime.getConsumerTransport(2)!, 'consume');
       await listen(receiver);
       const available = await receiver.voice.getProducers();
-      expect(available.remoteAudioIds).toEqual([]);
-      expect(available.remoteVideoIds).toEqual([]);
-      expect(available.remoteScreenIds).toEqual([]);
-      expect(available.remoteScreenAudioIds).toEqual([]);
-      await expect(
-        receiver.voice.consume({
-          kind,
-          remoteId: 1,
-          rtpCapabilities: runtime.getRouter().rtpCapabilities
-        })
-      ).rejects.toThrow('Both participants enabled P2P');
-      expect(consume).not.toHaveBeenCalled();
+      expect([
+        ...available.remoteAudioIds,
+        ...available.remoteVideoIds,
+        ...available.remoteScreenIds,
+        ...available.remoteScreenAudioIds
+      ]).toContain(1);
+      await receiver.voice.consume({
+        kind,
+        remoteId: 1,
+        rtpCapabilities: runtime.getRouter().rtpCapabilities
+      });
+      expect(consume).toHaveBeenCalled();
     } finally {
       transport.close();
     }
@@ -319,7 +319,7 @@ test.each([
   StreamKind.SCREEN,
   StreamKind.SCREEN_AUDIO
 ])(
-  'closes a late SFU %s consumer when the pair opts into direct media',
+  'keeps a late SFU %s consumer when the pair opts into direct media',
   async (kind) => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
@@ -350,11 +350,9 @@ test.each([
         rtpCapabilities: runtime.getRouter().rtpCapabilities
       });
       await listen(receiver);
-      expect(() => runtime.addConsumer(2, 1, kind, consumer)).toThrow(
-        'Both participants enabled P2P'
-      );
-      expect(consumer.closed).toBe(true);
-      expect(runtime.getConsumer(2, 1, kind)).toBeUndefined();
+      expect(() => runtime.addConsumer(2, 1, kind, consumer)).not.toThrow();
+      expect(consumer.closed).toBe(false);
+      expect(runtime.getConsumer(2, 1, kind)).toBe(consumer);
     } finally {
       transport.close();
     }
@@ -363,7 +361,7 @@ test.each([
 
 describe('direct screen configuration', () => {
   test.each([StreamKind.SCREEN, StreamKind.SCREEN_AUDIO])(
-    'never allocates an SFU %s producer when both participants enable P2P',
+    'keeps SFU %s production available when both participants enable P2P',
     async (kind) => {
       const { runtime, sender, receiver } = await pair();
       await listen(sender);
@@ -372,27 +370,25 @@ describe('direct screen configuration', () => {
       const params = await runtime.createProducerTransport(1);
       const produce = spyOn(runtime.getProducerTransport(1)!, 'produce');
       const video = kind === StreamKind.SCREEN;
-      await expect(
-        sender.voice.produce({
-          transportId: params.id,
-          kind,
-          rtpParameters: {
-            codecs: [
-              video
-                ? { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
-                : {
-                    mimeType: 'audio/opus',
-                    payloadType: 111,
-                    clockRate: 48000,
-                    channels: 2
-                  }
-            ],
-            encodings: [{ ssrc: 7788 }]
-          }
-        })
-      ).rejects.toThrow('Both participants enabled P2P');
-      expect(produce).not.toHaveBeenCalled();
-      expect(runtime.getProducer(kind, 1)).toBeUndefined();
+      const producerId = await sender.voice.produce({
+        transportId: params.id,
+        kind,
+        rtpParameters: {
+          codecs: [
+            video
+              ? { mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }
+              : {
+                  mimeType: 'audio/opus',
+                  payloadType: 111,
+                  clockRate: 48000,
+                  channels: 2
+                }
+          ],
+          encodings: [{ ssrc: 7788 }]
+        }
+      });
+      expect(produce).toHaveBeenCalled();
+      expect(runtime.getProducer(kind, 1)?.id).toBe(producerId);
     }
   );
 
@@ -421,7 +417,7 @@ describe('direct screen configuration', () => {
     }
   );
 
-  test('late SFU production is closed when the second participant opts into P2P', async () => {
+  test('keeps late SFU production when the second participant opts into P2P', async () => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
     await runtime.init();
@@ -437,27 +433,35 @@ describe('direct screen configuration', () => {
         }
       });
       await listen(receiver);
-      expect(() => runtime.addProducer(1, StreamKind.SCREEN, producer)).toThrow(
-        'Both participants enabled P2P'
-      );
-      expect(producer.closed).toBe(true);
-      expect(runtime.getProducer(StreamKind.SCREEN, 1)).toBeUndefined();
+      expect(() =>
+        runtime.addProducer(1, StreamKind.SCREEN, producer)
+      ).not.toThrow();
+      expect(producer.closed).toBe(false);
+      expect(runtime.getProducer(StreamKind.SCREEN, 1)).toBe(producer);
     } finally {
       transport.close();
     }
   });
 
-  test('server opt-out cannot silently relay mutually enabled P2P', async () => {
-    const { sender, receiver } = await pair();
+  test('server opt-out disables direct media and keeps relay available', async () => {
+    const { runtime, sender, receiver } = await pair();
     await listen(sender);
     await listen(receiver);
     config.webRtc.directScreenSharing =
       zConfig.parse(defaultConfig).webRtc.directScreenSharing;
     await expect(
       sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
-    ).rejects.toThrow(
-      'Direct screen sharing is unavailable; server relay is disabled'
-    );
+    ).resolves.toBeNull();
+    expect(runtime.isDirectMediaRequired(1, StreamKind.SCREEN)).toBe(false);
+    expect(runtime.hasDirectMediaCapability(1, StreamKind.SCREEN)).toBe(false);
+  });
+
+  test('passes configured ICE servers to mediasoup transports', async () => {
+    const { runtime } = await pair();
+    config.webRtc.directScreenStunUrls = ['stun:example.org:3478'];
+    await runtime.init();
+    const params = await runtime.createProducerTransport(1);
+    expect(params.iceServers).toEqual([{ urls: ['stun:example.org:3478'] }]);
   });
 
   test('validates STUN-only lists and their bounds', () => {
@@ -485,6 +489,36 @@ describe('direct screen configuration', () => {
       Array.from({ length: 9 }, () => 'stun:example.org')
     ])
       expect(() => parse(value)).toThrow();
+  });
+
+  test('validates TURN URLs and the shared secret', () => {
+    const parse = (turnUrls: unknown, turnSecret = '0123456789abcdef') =>
+      zConfig.parse({
+        ...defaultConfig,
+        webRtc: { ...defaultConfig.webRtc, turnUrls, turnSecret }
+      });
+    expect(
+      parse(
+        'turn:example.org:3478?transport=udp,turn:example.org:3478?transport=tcp,turns:example.org:5349'
+      ).webRtc.turnUrls
+    ).toEqual([
+      'turn:example.org:3478?transport=udp',
+      'turn:example.org:3478?transport=tcp',
+      'turns:example.org:5349'
+    ]);
+    expect(parse([]).webRtc.turnUrls).toEqual([]);
+    for (const value of [
+      ['stun:example.org:3478'],
+      ['https://example.org'],
+      ['turn:'],
+      ['turn:example.org/path'],
+      ['turn:user@host'],
+      ['turn:host?transport=sctp'],
+      ['turn:host:99999'],
+      Array.from({ length: 9 }, () => 'turn:example.org')
+    ])
+      expect(() => parse(value)).toThrow();
+    expect(() => parse([], 'short')).toThrow();
   });
 
   test('supports validated environment opt-in and STUN configuration', () => {
@@ -560,7 +594,7 @@ describe('startDirectMedia', () => {
     ).toBeNull();
   });
 
-  test('derives peer and session identifiers and returns configured STUN servers', async () => {
+  test('derives peer and session identifiers and returns configured ICE servers', async () => {
     const { sender, receiver } = await pair();
     await listen(sender);
     await listen(receiver);
@@ -572,14 +606,12 @@ describe('startDirectMedia', () => {
       kind: StreamKind.SCREEN,
       sessionId: expect.any(String),
       peerId: 2,
-      stunUrls: ['stun:example.org:3478']
+      iceServers: [{ urls: ['stun:example.org:3478'] }]
     });
     expect(session!.sessionId).toMatch(/^[0-9a-f-]{36}$/);
     await expect(
       sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
-    ).rejects.toThrow(
-      'Direct screen sharing is unavailable; server relay is disabled'
-    );
+    ).resolves.toBeNull();
   });
 
   test('allows independent simultaneous opposite shares', async () => {
@@ -652,7 +684,7 @@ describe('startDirectMedia', () => {
     });
   }
 
-  test('external streams preserve direct human media without enabling human SFU relay', async () => {
+  test('external streams preserve direct human media alongside relay media', async () => {
     const { runtime, sender, session } = await prepared();
     const externalId = runtime.createExternalStream({
       title: 'external',
@@ -670,19 +702,9 @@ describe('startDirectMedia', () => {
         kind,
         peerId: 2
       });
-    for (const kind of [
-      StreamKind.AUDIO,
-      StreamKind.VIDEO,
-      StreamKind.SCREEN,
-      StreamKind.SCREEN_AUDIO
-    ])
-      expect(() => runtime.assertMediaRelayAllowed(1, kind)).toThrow(
-        'Both participants enabled P2P'
-      );
-    for (const kind of [StreamKind.EXTERNAL_AUDIO, StreamKind.EXTERNAL_VIDEO])
-      expect(() =>
-        runtime.assertMediaRelayAllowed(externalId, kind)
-      ).not.toThrow();
+    expect(runtime.getRemoteIds(1).remoteExternalStreamIds).toEqual([
+      externalId
+    ]);
   });
 
   for (const permission of [
@@ -943,12 +965,12 @@ describe('signalDirectMedia', () => {
     expect(receiving.events).toEqual([
       {
         kind: StreamKind.SCREEN,
-        relayAllowed: false,
+        relayAllowed: true,
         sessionId: session.sessionId,
         channelId: 2,
         senderId: 1,
         fromUserId: 1,
-        stunUrls: [],
+        iceServers: [],
         signal: offer
       }
     ]);
@@ -1212,9 +1234,9 @@ describe('direct screen lifecycle', () => {
     ).rejects.toThrow('Direct screen session not found');
   });
 
-  test('expires a pending session and frees the outgoing slot', async () => {
+  test('expires a pending session and blocks retries until a new subscription', async () => {
     const time = clock();
-    const { sender, sending, session } = await prepared();
+    const { runtime, sender, sending, session } = await prepared();
     time.advance(8200);
     expect(sending.events.map((event) => event.signal.type)).toEqual([
       'fallback'
@@ -1225,6 +1247,13 @@ describe('direct screen lifecycle', () => {
         signal: offer
       })
     ).rejects.toThrow('Direct screen session not found');
+    expect(runtime.getUserState(1).directMediaEnabled).toBe(false);
+    expect(runtime.getUserState(2).directMediaEnabled).toBe(false);
+    expect(
+      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
+    ).toBeNull();
+    runtime.registerDirectMediaSubscriber(1, true);
+    runtime.registerDirectMediaSubscriber(2, true);
     const replacement = await sender.voice.startDirectMedia({
       kind: StreamKind.SCREEN
     });

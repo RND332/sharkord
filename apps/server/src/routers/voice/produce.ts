@@ -42,7 +42,6 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
       await ctx.needsPermission(server);
     }
     runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
-    runtime.assertMediaRelayAllowed(ctx.user.id, input.kind);
 
     const producerTransport = runtime.getProducerTransport(ctx.user.id);
 

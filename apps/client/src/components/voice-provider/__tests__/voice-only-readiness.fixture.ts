@@ -337,7 +337,10 @@ mock.module('react-i18next', () => ({
   ...ActualI18n,
   useTranslation: () => ({ t: translation })
 }));
-mock.module('sonner', () => ({ ...ActualSonner, toast: { error() {} } }));
+mock.module('sonner', () => ({
+  ...ActualSonner,
+  toast: { error() {}, info() {} }
+}));
 mock.module('mediasoup-client', () => ({
   Device: class {
     rtpCapabilities = { codecs: [] };

@@ -19,7 +19,10 @@ vi.mock('@/features/server/channels/hooks', () => ({
   useCurrentVoiceChannelId: () => 1,
   useIsCurrentVoiceChannelSelected: () => true
 }));
-vi.mock('@/features/server/hooks', () => ({ useChannelCan: () => () => true }));
+vi.mock('@/features/server/hooks', () => ({
+  useChannelCan: () => () => true,
+  useCurrentVoicePeers: () => []
+}));
 vi.mock('@/features/server/users/hooks', () => ({
   useOwnPublicUser: () => ({ id: 1, name: 'Test', status: 'online' })
 }));

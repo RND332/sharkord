@@ -34,6 +34,18 @@ const zStunUrl = z.string().refine((value) => {
     return false;
   }
 }, 'Only STUN and STUNS host URLs are allowed');
+const zTurnUrl = z.string().refine((value) => {
+  if (!/^turns?:[^\s/?#@]+(?:\?transport=(?:udp|tcp))?$/.test(value))
+    return false;
+  const authority = value.slice(value.indexOf(':') + 1).split('?')[0]!;
+  if (authority.endsWith(':')) return false;
+  try {
+    const url = new URL(`http://${authority}`);
+    return !!url.hostname && (!url.port || Number(url.port) > 0);
+  } catch {
+    return false;
+  }
+}, 'Only TURN and TURNS host URLs are allowed');
 const zConfig = z.object({
   server: z.object({
     host: z.string().trim(),
@@ -90,7 +102,22 @@ const zConfig = z.object({
         if (typeof value === 'string') return value.split(',');
         return value;
       }, z.array(zStunUrl).max(8))
-      .default([])
+      .default([]),
+    turnUrls: z
+      .preprocess((value) => {
+        if (value === '') return [];
+        if (typeof value === 'string') return value.split(',');
+        return value;
+      }, z.array(zTurnUrl).max(8))
+      .default([]),
+    turnSecret: z
+      .string()
+      .default('')
+      .refine(
+        (value) => value === '' || value.length >= 16,
+        'TURN secret must be at least 16 characters'
+      ),
+    turnTtl: z.coerce.number().int().positive().default(3600)
   }),
   rateLimiters: z.object({
     sendAndEditMessage: zRateLimiter,
@@ -153,7 +180,10 @@ const defaultConfig: TConfig = {
     announcedAddress: '',
     maxBitrate: 30_000_000, // 30 Mbps
     directScreenSharing: false,
-    directScreenStunUrls: []
+    directScreenStunUrls: [],
+    turnUrls: [],
+    turnSecret: '',
+    turnTtl: 3600
   },
   rateLimiters: {
     sendAndEditMessage: {
@@ -308,7 +338,10 @@ const envOverridesMap: Record<string, string> = {
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE',
   'webRtc.directScreenSharing': 'SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING',
-  'webRtc.directScreenStunUrls': 'SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS'
+  'webRtc.directScreenStunUrls': 'SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS',
+  'webRtc.turnUrls': 'SHARKORD_WEBRTC_TURN_URLS',
+  'webRtc.turnSecret': 'SHARKORD_WEBRTC_TURN_SECRET',
+  'webRtc.turnTtl': 'SHARKORD_WEBRTC_TURN_TTL'
 };
 
 // validated again after the overrides, otherwise an env var could put a value

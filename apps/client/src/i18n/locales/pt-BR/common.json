@@ -1,5 +1,6 @@
 {
   "directMediaFailed": "Não foi possível estabelecer a conexão de mídia. Tente novamente.",
+  "p2pFallbackToRelay": "A conexão direta falhou, alternando para o relay do servidor.",
   "cancel": "Cancelar",
   "confirm": "Confirmar",
   "close": "Fechar",

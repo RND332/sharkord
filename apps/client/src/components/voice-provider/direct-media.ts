@@ -1,5 +1,6 @@
 import type { TDirectMediaKind, TProducibleStreamKind } from '@sharkord/shared';
 import {
+  DIRECT_MEDIA_AUDIO_CONNECT_TIMEOUT_MS,
   DIRECT_MEDIA_CONNECT_TIMEOUT_MS,
   DIRECT_MEDIA_ICE_GATHER_TIMEOUT_MS,
   StreamKind,
@@ -39,6 +40,7 @@ type TDirectMediaCallbacks = {
 
 type TDirectMediaOptions = {
   maxBitrate: number;
+  maxFramerate?: number;
   codec?: string;
   onFailure: (relayAllowed: boolean) => Promise<void>;
 };
@@ -82,6 +84,11 @@ export class DirectMedia {
     this.callbacks = callbacks;
   }
 
+  private getConnectTimeout = (): number =>
+    this.callbacks.kind === StreamKind.AUDIO
+      ? DIRECT_MEDIA_AUDIO_CONNECT_TIMEOUT_MS
+      : DIRECT_MEDIA_CONNECT_TIMEOUT_MS;
+
   getConnections = (): TDirectMediaConnection[] => {
     const peers = Array.from(this.peers.values());
     const connected = peers.filter(
@@ -106,7 +113,7 @@ export class DirectMedia {
         controller: new AbortController(),
         timer: setTimeout(() => {
           this.failOutgoing(attempt);
-        }, DIRECT_MEDIA_CONNECT_TIMEOUT_MS),
+        }, this.getConnectTimeout()),
         resolve,
         settled: false,
         established: false,
@@ -314,7 +321,7 @@ export class DirectMedia {
 
     attempt.sessionId = session.sessionId;
     const connection = new RTCPeerConnection({
-      iceServers: session.stunUrls.length ? [{ urls: session.stunUrls }] : []
+      iceServers: session.iceServers ?? []
     });
     const peer: TDirectPeer = {
       sessionId: session.sessionId,
@@ -340,7 +347,12 @@ export class DirectMedia {
     const transceiver = connection.addTransceiver(primary, {
       direction: 'sendonly',
       streams: [stream],
-      sendEncodings: [{ maxBitrate: options.maxBitrate }]
+      sendEncodings: [
+        {
+          maxBitrate: options.maxBitrate,
+          maxFramerate: options.maxFramerate
+        }
+      ]
     });
     if (primary.kind === 'video') this.preferCodec(transceiver, options.codec);
     const audio = stream.getAudioTracks()[0];
@@ -385,7 +397,7 @@ export class DirectMedia {
     let peer: TDirectPeer | undefined;
     try {
       const connection = new RTCPeerConnection({
-        iceServers: event.stunUrls.length ? [{ urls: event.stunUrls }] : []
+        iceServers: event.iceServers ?? []
       });
       peer = {
         sessionId: event.sessionId,
@@ -413,7 +425,7 @@ export class DirectMedia {
       const incoming = peer;
       peer.timer = setTimeout(() => {
         this.failPeer(incoming);
-      }, DIRECT_MEDIA_CONNECT_TIMEOUT_MS);
+      }, this.getConnectTimeout());
       this.listenForConnection(peer);
       connection.addEventListener(
         'track',
