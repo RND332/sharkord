@@ -58,13 +58,18 @@ vi.mock('@/components/devices-provider/hooks/use-devices', () => ({
 }));
 vi.mock('@/features/server/channels/hooks', () => ({
   useChannelById: () => ({ name: 'Voice room' }),
-  useCurrentVoiceChannelId: () => state.voiceChannelId
+  useCurrentVoiceChannelId: () => state.voiceChannelId,
+  useChannelPermissionsById: () => ({})
 }));
 vi.mock('@/features/server/hooks', () => ({
   useCurrentVoicePeers: () => [],
   useChannelCan: () => (permission: string) =>
     permission === 'WEBCAM' ? state.canUseWebcam : state.canShareScreen,
-  useServerName: () => 'Test server'
+  useServerName: () => 'Test server',
+  useCan: () => () => true,
+  useHiddenPluginComponents: () => [],
+  usePublicServerSettings: () => undefined,
+  useUserRoles: () => []
 }));
 vi.mock('@/features/store', () => ({
   store: {
@@ -96,6 +101,8 @@ vi.mock('@/features/dialogs/actions', () => ({
   openDialog: state.openDialog
 }));
 vi.mock('@/lib/trpc', () => ({
+  cleanup: vi.fn(),
+  connectToTRPC: vi.fn(),
   getTRPCClient: () => ({
     voice: { updateState: { mutate: state.updateVoiceState } }
   })
@@ -108,6 +115,7 @@ vi.mock('sonner', async (importOriginal) => {
   };
 });
 vi.mock('react-i18next', () => ({
+  initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({
     t: (key: string) =>
       ({
@@ -159,7 +167,7 @@ const render = async (remount = false) => {
   document.documentElement.classList.add('dark');
   if (!root) {
     host = document.createElement('div');
-    host.style.cssText = 'position:fixed;left:0;top:0;width:252px;height:96px';
+    host.style.cssText = 'position:fixed;left:0;top:0;width:252px;height:76px';
     document.body.append(host);
     root = createRoot(host);
   }
@@ -574,7 +582,7 @@ test('voice-only controls preserve separate camera and screen-share permission g
     .toBeDisabled();
 });
 
-test('voice dock gives every icon padded hit targets without clipping', async () => {
+test('voice dock uses the compact connection summary controls', async () => {
   await render();
   const wifi = page
     .getByRole('button', { name: 'Transport stats', exact: true })
@@ -582,33 +590,37 @@ test('voice dock gives every icon padded hit targets without clipping', async ()
   const disconnect = page
     .getByRole('button', { name: 'Disconnect voice', exact: true })
     .element();
-  expect(wifi.getBoundingClientRect().width).toBe(32);
-  expect(wifi.getBoundingClientRect().height).toBe(32);
-  expect(getComputedStyle(wifi).padding).toBe('8px');
-  expect(disconnect.getBoundingClientRect().width).toBe(32);
-  expect(disconnect.getBoundingClientRect().height).toBe(32);
-  expect(getComputedStyle(disconnect).padding).toBe('7px');
-  for (const name of [
-    'Turn on camera',
-    'Start screen share',
-    'Voice-only mode'
-  ]) {
+  expect(wifi.getBoundingClientRect().width).toBe(24);
+  expect(wifi.getBoundingClientRect().height).toBe(24);
+  expect(getComputedStyle(wifi).padding).toBe('0px');
+  expect(wifi.querySelector('svg')!.getBoundingClientRect().height).toBe(16);
+  expect(disconnect.getBoundingClientRect().width).toBe(22);
+  expect(disconnect.getBoundingClientRect().height).toBe(28);
+  expect(getComputedStyle(disconnect).padding).toBe('0px');
+  expect(disconnect.querySelector('svg')!.getBoundingClientRect().height).toBe(
+    18
+  );
+  for (const [name, iconSize] of [
+    ['Turn on camera', 18],
+    ['Start screen share', 20],
+    ['Voice-only mode', 20]
+  ] as const) {
     const button = page.getByRole('button', { name, exact: true }).element();
     const icon = button.querySelector('svg')!;
-    expect(button.getBoundingClientRect().height).toBe(32);
-    expect(getComputedStyle(button).paddingTop).toBe('6px');
-    expect(icon.getBoundingClientRect().height).toBe(20);
+    expect(button.getBoundingClientRect().height).toBe(24);
+    expect(getComputedStyle(button).paddingTop).toBe('0px');
+    expect(icon.getBoundingClientRect().height).toBe(iconSize);
   }
 });
 
-test('dock has room for padded controls and removes the upper-row activity control', async () => {
+test('dock content is the 44px summary plus 32px action row', async () => {
   await render();
 
   const dock = host?.firstElementChild as HTMLDivElement;
   const [topRow, bottomRow] = Array.from(dock.children) as HTMLDivElement[];
-  expect(dock.getBoundingClientRect().height).toBe(96);
-  expect(topRow.getBoundingClientRect().height).toBe(52);
-  expect(bottomRow.getBoundingClientRect().height).toBe(44);
+  expect(dock.getBoundingClientRect().height).toBe(76);
+  expect(topRow.getBoundingClientRect().height).toBe(44);
+  expect(bottomRow.getBoundingClientRect().height).toBe(32);
   expect(topRow.children).toHaveLength(3);
   expect(dock.querySelector('.lucide-activity')).toBeNull();
   expect(dock.querySelectorAll('button')).toHaveLength(5);

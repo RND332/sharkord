@@ -11,6 +11,24 @@ describe('built-in theme catalog', () => {
     ).toBeGreaterThanOrEqual(4.5);
   });
 
+  test('Miku maps the rail and raised surfaces to the dock palette', () => {
+    const theme = THEMES.find((item) => item.id === 'hatsune-miku')!;
+    const variables = getThemeVariables(theme);
+    expect(theme.rail).toBe('#101418');
+    expect(theme.raised).toBe('#303b43');
+    expect(variables['--rail']).toBe('#101418');
+    expect(variables['--raised']).toBe('#303b43');
+  });
+
+  test('themes without dock surfaces keep the nav and border fallbacks', () => {
+    const theme = THEMES.find((item) => item.id === 'ryuko')!;
+    const variables = getThemeVariables(theme);
+    expect(theme.rail).toBeUndefined();
+    expect(theme.raised).toBeUndefined();
+    expect(variables['--rail']).toBe(theme.nav);
+    expect(variables['--raised']).toBe(theme.border);
+  });
+
   test('keeps body text, muted text and action labels readable in every adapted palette', () => {
     for (const theme of THEMES.filter((item) => item.source !== 'sharkord')) {
       const variables = getThemeVariables(theme);

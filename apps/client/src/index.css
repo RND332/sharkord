@@ -195,6 +195,10 @@
   background: var(--primary);
 }
 
+[data-theme='hatsune-miku'] [data-testid='channel-item'][data-selected] {
+  border-color: var(--primary);
+}
+
 [data-theme='hatsune-miku'] .compose-scroll-row {
   background: var(--panel);
   box-shadow: inset 0 0 0 1px var(--line);

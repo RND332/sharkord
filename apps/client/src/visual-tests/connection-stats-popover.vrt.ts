@@ -17,7 +17,22 @@ vi.mock('@/features/server/hooks', () => ({
   useCurrentVoicePeers: () => [
     { id: 2, name: 'aria' },
     { id: 3, name: 'jules' }
-  ]
+  ],
+  useCan: () => () => false,
+  useHiddenPluginComponents: () => [],
+  usePublicServerSettings: () => undefined,
+  useUserRoles: () => []
+}));
+vi.mock('@/features/server/users/hooks', () => ({
+  useUserById: (userId: number) => ({
+    id: userId,
+    name: userId === 2 ? 'aria' : 'jules',
+    avatar: null,
+    avatarId: 0,
+    profileColor: '#456a55',
+    status: 'ONLINE'
+  }),
+  useIsOwnUser: () => false
 }));
 
 let root: Root | undefined;
@@ -118,14 +133,17 @@ for (const available of [true, false]) {
     )!;
     await expect
       .poll(() => content.getBoundingClientRect().width)
-      .toBeCloseTo(236, 1);
+      .toBeCloseTo(264, 1);
     const box = content.getBoundingClientRect();
     const dock = host.getBoundingClientRect();
     expect(box.left).toBeCloseTo(dock.left + 8, 1);
-    expect(box.right).toBeCloseTo(dock.right - 8, 1);
-    expect(dock.top - box.bottom).toBeCloseTo(12, 1);
-    expect(box.height).toBeCloseTo(376, 1);
-    expect(getComputedStyle(content).backgroundColor).toBe('rgb(21, 28, 34)');
+    expect(dock.top - box.bottom).toBeCloseTo(4, 1);
+    expect(box.height).toBeCloseTo(384, 1);
+    expect(getComputedStyle(content).backgroundColor).toBe('rgb(40, 47, 54)');
+    const pingRows = content.querySelectorAll('tbody tr');
+    expect(pingRows[0]?.querySelector('[data-slot="avatar"]')).not.toBeNull();
+    expect(pingRows[1]?.querySelector('[data-slot="avatar"]')).not.toBeNull();
+    expect(pingRows[2]?.querySelector('[data-slot="avatar"]')).toBeNull();
     expect(
       getComputedStyle(page.getByText('83', { exact: true }).element()).color
     ).not.toBe(
@@ -134,14 +152,15 @@ for (const available of [true, false]) {
     );
     for (const node of [content, ...content.querySelectorAll('*')]) {
       const style = getComputedStyle(node);
-      expect(
-        new Set([
-          style.borderTopWidth,
-          style.borderRightWidth,
-          style.borderBottomWidth,
-          style.borderLeftWidth
-        ]).size
-      ).toBe(1);
+      expect(style.borderLeftWidth).toBe(style.borderRightWidth);
+      expect(style.borderBottomWidth).toBe(style.borderLeftWidth);
+    }
+    const sectionBorders = Array.from(
+      content.querySelectorAll<HTMLElement>(':scope > div > div.border-t')
+    );
+    expect(sectionBorders).toHaveLength(4);
+    for (const node of sectionBorders) {
+      expect(getComputedStyle(node).borderTopWidth).toBe('1px');
     }
     expect(content.textContent).toContain('Microphone');
     expect(content.textContent).toContain('RNNoise');

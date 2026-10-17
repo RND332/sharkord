@@ -99,10 +99,7 @@ const ServerView = memo(() => {
         className="flex h-dvh flex-col bg-background text-foreground"
         {...swipeHandlers}
       >
-        <TopBar
-          onToggleRightSidebar={handleDesktopRightSidebarToggle}
-          isOpen={isDesktopRightSidebarOpen}
-        />
+        <TopBar />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <PreventBrowser />
 

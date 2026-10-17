@@ -61,8 +61,13 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       <div className="flex-1 overflow-y-auto">
         {dmsOpen ? <DirectMessages /> : <Categories />}
       </div>
-      <VoiceControl />
-      <UserControl />
+      <div
+        data-voice-dock
+        className="mx-2 mb-2 flex shrink-0 flex-col overflow-hidden rounded-[10px] border border-line bg-canvas"
+      >
+        <VoiceControl />
+        <UserControl />
+      </div>
     </ResizableSidebar>
   );
 });

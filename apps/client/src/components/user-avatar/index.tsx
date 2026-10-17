@@ -15,6 +15,7 @@ type TUserAvatarProps = {
   className?: string;
   showUserPopover?: boolean;
   showStatusBadge?: boolean;
+  statusBadgeClassName?: string;
   onClick?: () => void;
 };
 
@@ -24,6 +25,7 @@ const UserAvatar = memo(
     className,
     showUserPopover = false,
     showStatusBadge = true,
+    statusBadgeClassName,
     onClick
   }: TUserAvatarProps) => {
     const user = useUserById(userId);
@@ -51,7 +53,7 @@ const UserAvatar = memo(
         {showStatusBadge && (
           <UserStatusBadge
             status={user.status || UserStatus.OFFLINE}
-            className="absolute bottom-0 right-0"
+            className={cn('absolute bottom-0 right-0', statusBadgeClassName)}
           />
         )}
       </div>

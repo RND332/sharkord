@@ -1,5 +1,6 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { Dialog } from '@/components/dialogs/dialogs';
+import { UserAvatar } from '@/components/user-avatar';
 import { useVoiceStats } from '@/components/voice-provider/stats-context';
 import { openDialog } from '@/features/dialogs/actions';
 import { useCurrentVoicePeers } from '@/features/server/hooks';
@@ -22,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 type StatsPopoverProps = {
   children: React.ReactNode;
 };
+
+const POPOVER_WIDTH = 264;
 
 const hardwareEncoders = [
   'external',
@@ -102,7 +105,7 @@ const ConnectionPing = ({
   return (
     <td
       className={cn(
-        'pt-1 pl-2 text-right font-semibold leading-5',
+        'p-0 pl-2 text-right align-middle text-[12px] font-semibold leading-[18px]',
         control || !available ? 'text-muted-foreground' : 'text-primary'
       )}
       title={t(control ? 'serverPingDescription' : 'peerPingDescription')}
@@ -134,7 +137,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
           return new DOMRect(
             sidebar.left + 8,
             reference.top,
-            Math.max(0, sidebar.width - 16),
+            POPOVER_WIDTH,
             reference.height
           );
         },
@@ -170,14 +173,14 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
     if (hardwareEncoders.some((hw) => lowerImpl.includes(hw))) {
       return {
         label: t('gpuEncoder', { encoder: screenShare.encoderImplementation }),
-        isHardware: true
+        valueClassName: 'text-green-400'
       };
     }
 
     if (softwareEncoders.some((sw) => lowerImpl.includes(sw))) {
       return {
         label: t('cpuEncoder', { encoder: screenShare.encoderImplementation }),
-        isHardware: false
+        valueClassName: 'text-yellow-400'
       };
     }
 
@@ -185,7 +188,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
       label: t('unknownEncoder', {
         encoder: screenShare.encoderImplementation
       }),
-      isHardware: null
+      valueClassName: undefined
     };
   }, [screenShare?.encoderImplementation, t]);
 
@@ -205,6 +208,10 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
     openDialog(Dialog.VOICE_DEBUG);
   }, []);
 
+  const handleToggleSimulcastLayers = useCallback(() => {
+    setShowSimulcastLayers((show) => !show);
+  }, []);
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild ref={triggerRef}>
@@ -215,16 +222,16 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
       <PopoverContent
         side="top"
         align="start"
-        sideOffset={12}
-        className="w-(--radix-popover-trigger-width) max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-xl border border-line bg-nav p-3"
+        sideOffset={4}
+        className="w-[264px] max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
       >
-        <div className="flex flex-col gap-2.5 text-xs leading-4">
-          <div className="flex h-6 items-center gap-2">
-            <h3 className="font-semibold text-sm text-foreground">
+        <div className="flex flex-col">
+          <div className="flex h-10 shrink-0 items-center justify-between gap-2 p-2">
+            <h3 className="text-sm font-semibold leading-5 text-foreground">
               {t('transportStats')}
             </h3>
             <IconButton
-              className="ml-auto size-6 p-[3px]"
+              className="size-6 p-[3px] [&_svg]:size-[18px]"
               variant="ghost"
               size="sm"
               icon={Stethoscope}
@@ -233,93 +240,127 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
               onClick={handleOpenDiagnostics}
             />
           </div>
-          <table
-            className="w-full table-fixed border-collapse text-xs"
-            aria-label={t('connection')}
-          >
-            <colgroup>
-              <col />
-              <col className="w-[68px]" />
-            </colgroup>
-            <thead>
-              <tr className="h-[18px] text-muted-foreground">
-                <th scope="col" className="text-left font-medium">
-                  {t('connection')}
-                </th>
-                <th scope="col" className="pl-2 text-right font-medium">
-                  {t('ping')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {peers.map((peer) => (
-                <tr key={peer.id}>
-                  <td className="pt-1 leading-5">
-                    <span className="block truncate" title={peer.name}>
-                      {peer.name}
+          <div className="flex w-full flex-col gap-1 border-t border-line px-2 py-1">
+            <table
+              className="w-[210px] table-fixed border-separate [border-spacing:0_4px]"
+              aria-label={t('connection')}
+            >
+              <colgroup>
+                <col className="w-[142px]" />
+                <col className="w-[68px]" />
+              </colgroup>
+              <thead>
+                <tr className="h-[18px] text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="p-0 text-left text-[12px] font-medium leading-[18px]"
+                  >
+                    {t('connection')}
+                  </th>
+                  <th
+                    scope="col"
+                    className="p-0 pl-2 text-right text-[12px] font-medium leading-[18px]"
+                  >
+                    {t('ping')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {peers.map((peer) => (
+                  <tr key={peer.id} className="h-5">
+                    <td className="p-0 align-middle text-[12px] leading-[18px] text-foreground">
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span
+                          aria-hidden="true"
+                          className="flex size-[18px] shrink-0 items-center justify-center"
+                        >
+                          <UserAvatar
+                            userId={peer.id}
+                            className="size-[18px]"
+                            showStatusBadge={false}
+                          />
+                        </span>
+                        <span className="truncate" title={peer.name}>
+                          {peer.name}
+                        </span>
+                      </span>
+                    </td>
+                    <ConnectionPing value={peerRtts[peer.id]} />
+                  </tr>
+                ))}
+                <tr className="h-5">
+                  <td className="p-0 align-middle text-[12px] leading-[18px] text-foreground">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="size-[18px] shrink-0" />
+                      <span className="truncate" title={t('serverControl')}>
+                        {t('serverControl')}
+                      </span>
                     </span>
                   </td>
-                  <ConnectionPing value={peerRtts[peer.id]} />
+                  <ConnectionPing value={serverRtt} control />
                 </tr>
-              ))}
-              <tr>
-                <td className="pt-1 leading-5">
-                  <span className="block truncate" title={t('serverControl')}>
-                    {t('serverControl')}
-                  </span>
-                </td>
-                <ConnectionPing value={serverRtt} control />
-              </tr>
-            </tbody>
-          </table>
-          <div className="grid grid-cols-[48px_minmax(0,1fr)_minmax(0,1fr)] gap-x-1.5 gap-y-1 pt-2 leading-[18px]">
-            <span />
-            <span className="font-semibold text-success">{t('outgoing')}</span>
-            <span className="font-semibold text-primary">{t('incoming')}</span>
-            <span className="text-muted-foreground">{t('rateLabel')}</span>
-            <span>
-              {producer || direct
-                ? `${filesize(currentBitrateSent)}/s`
-                : '\u2014'}
-            </span>
-            <span>
-              {consumer || direct
-                ? `${filesize(currentBitrateReceived)}/s`
-                : '\u2014'}
-            </span>
-            <span className="text-muted-foreground">{t('packetsLabel')}</span>
-            <span>
-              {producer || direct
-                ? formatBigNumber(
-                    (producer?.packetsSent ?? 0) + (direct?.packetsSent ?? 0)
-                  )
-                : '\u2014'}
-            </span>
-            <span>
-              {consumer || direct
-                ? formatBigNumber(
-                    (consumer?.packetsReceived ?? 0) +
-                      (direct?.packetsReceived ?? 0)
-                  )
-                : '\u2014'}
-            </span>
-            <span className="text-muted-foreground">{t('lostLabel')}</span>
-            <span className="text-muted-foreground">{'\u2014'}</span>
-            <span className="text-destructive">
-              {consumer || direct
-                ? formatBigNumber(
-                    (consumer?.packetsLost ?? 0) + (direct?.packetsLost ?? 0)
-                  )
-                : '\u2014'}
-            </span>
+              </tbody>
+            </table>
+          </div>
+          <div className="flex w-full flex-col gap-1 border-t border-line p-2">
+            <div className="flex h-[18px] w-full items-center gap-1.5 pl-[54px]">
+              <span className="w-[75px] shrink-0 text-[12px] font-semibold leading-[18px] text-success">
+                {t('outgoing')}
+              </span>
+              <span className="w-[75px] shrink-0 text-[12px] font-semibold leading-[18px] text-primary">
+                {t('incoming')}
+              </span>
+            </div>
+            <div className="grid h-[18px] w-full grid-cols-[48px_75px_75px] items-center gap-1.5 text-[12px] leading-[18px]">
+              <span className="text-muted-foreground">{t('rateLabel')}</span>
+              <span>
+                {producer || direct
+                  ? `${filesize(currentBitrateSent)}/s`
+                  : '\u2014'}
+              </span>
+              <span>
+                {consumer || direct
+                  ? `${filesize(currentBitrateReceived)}/s`
+                  : '\u2014'}
+              </span>
+            </div>
+            <div className="grid h-[18px] w-full grid-cols-[48px_75px_75px] items-center gap-1.5 text-[12px] leading-[18px]">
+              <span className="text-muted-foreground">{t('packetsLabel')}</span>
+              <span>
+                {producer || direct
+                  ? formatBigNumber(
+                      (producer?.packetsSent ?? 0) + (direct?.packetsSent ?? 0)
+                    )
+                  : '\u2014'}
+              </span>
+              <span>
+                {consumer || direct
+                  ? formatBigNumber(
+                      (consumer?.packetsReceived ?? 0) +
+                        (direct?.packetsReceived ?? 0)
+                    )
+                  : '\u2014'}
+              </span>
+            </div>
+            <div className="grid h-[18px] w-full grid-cols-[48px_75px_75px] items-center gap-1.5 text-[12px] leading-[18px]">
+              <span className="text-muted-foreground">{t('lostLabel')}</span>
+              <span className="text-muted-foreground">{'\u2014'}</span>
+              <span className="text-destructive">
+                {consumer || direct
+                  ? formatBigNumber(
+                      (consumer?.packetsLost ?? 0) + (direct?.packetsLost ?? 0)
+                    )
+                  : '\u2014'}
+              </span>
+            </div>
           </div>
 
           {hasNoiseSuppression && (
-            <div className="pt-2">
-              <h4 className="mb-1.5 text-[13px] font-semibold leading-5 text-foreground">
+            <div className="flex w-full flex-col gap-1.5 border-t border-line p-2">
+              <h4 className="text-[13px] font-semibold leading-5 text-foreground">
                 {t('microphone')}
               </h4>
-              <div className="leading-[18px]">
+              <div className="flex h-[18px] items-center gap-1.5 text-[12px] leading-[18px]">
                 <StatsLabelValue
                   label={t('noiseSuppression')}
                   value={noiseSuppressionLabel}
@@ -329,11 +370,11 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
           )}
 
           {screenShare && (
-            <div className="pt-2">
-              <h4 className="font-medium text-blue-400 mb-1">
+            <div className="flex w-full flex-col gap-1 border-t border-line p-2">
+              <h4 className="text-[13px] font-semibold leading-5 text-foreground">
                 {t('screenShare')}
               </h4>
-              <div className="space-y-1">
+              <div className="space-y-1 text-[12px] leading-[18px]">
                 {screenShare.codec && (
                   <div>
                     <StatsLabelValue text={t('codec', { codec })} />
@@ -344,13 +385,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
                     <StatsLabelValue
                       label={t('encoder').replace(/:$/, '')}
                       value={encoder.label}
-                      valueClassName={
-                        encoder.isHardware === true
-                          ? 'text-green-400'
-                          : encoder.isHardware === false
-                            ? 'text-yellow-400'
-                            : undefined
-                      }
+                      valueClassName={encoder.valueClassName}
                     />
                   </div>
                 )}
@@ -381,7 +416,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
                     <button
                       className="text-left hover:underline"
                       type="button"
-                      onClick={() => setShowSimulcastLayers((show) => !show)}
+                      onClick={handleToggleSimulcastLayers}
                     >
                       <StatsLabelValue
                         text={t('simulcastLayers', {
@@ -469,16 +504,16 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
             </div>
           )}
 
-          <div className="pt-2">
-            <h4 className="mb-1.5 text-[13px] font-semibold leading-5 text-foreground">
+          <div className="flex w-full flex-col gap-1.5 border-t border-line p-2">
+            <h4 className="text-[13px] font-semibold leading-5 text-foreground">
               {t('sessionTotals')}
             </h4>
-            <div className="grid grid-cols-2 gap-3 leading-[18px] text-foreground">
-              <div className="flex gap-1.5">
+            <div className="flex h-[18px] w-full gap-3 text-[12px] leading-[18px] text-foreground">
+              <div className="flex flex-1 gap-1.5">
                 <span className="text-muted-foreground">↑</span>
                 {filesize(totalBytesSent)}
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex flex-1 gap-1.5">
                 <span className="text-muted-foreground">↓</span>
                 {filesize(totalBytesReceived)}
               </div>
