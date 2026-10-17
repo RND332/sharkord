@@ -20,7 +20,7 @@ export type TTheme = {
 export const SHARKORD_THEMES: TTheme[] = [
   {
     id: 'dark',
-    name: 'Sharkord Dark',
+    name: 'Dodecagon Dark',
     source: 'sharkord',
     mode: 'dark',
     bg: '#313338',
@@ -33,7 +33,7 @@ export const SHARKORD_THEMES: TTheme[] = [
   },
   {
     id: 'light',
-    name: 'Sharkord Light',
+    name: 'Dodecagon Light',
     source: 'sharkord',
     mode: 'light',
     bg: '#ffffff',

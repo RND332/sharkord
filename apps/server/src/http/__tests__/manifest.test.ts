@@ -20,8 +20,8 @@ describe('/manifest.json', () => {
     expect(manifest).toHaveProperty('description');
     expect(manifest).toHaveProperty('start_url', '/');
     expect(manifest).toHaveProperty('display', 'standalone');
-    expect(manifest).toHaveProperty('background_color', '#171717');
-    expect(manifest).toHaveProperty('theme_color', '#171717');
+    expect(manifest).toHaveProperty('background_color', '#15171C');
+    expect(manifest).toHaveProperty('theme_color', '#15171C');
     expect(manifest).toHaveProperty('icons');
 
     expect(Array.isArray(manifest.icons)).toBe(true);

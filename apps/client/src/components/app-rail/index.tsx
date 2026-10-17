@@ -54,7 +54,7 @@ const AppRail = memo(() => {
               "bg-sidebar-primary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground before:absolute before:-left-3.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-foreground before:content-['']"
           )}
         >
-          {serverName?.trim().charAt(0).toUpperCase() || 'S'}
+          {serverName?.trim().charAt(0).toUpperCase() || 'D'}
         </button>
       </Tooltip>
       {settings?.directMessagesEnabled && (

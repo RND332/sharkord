@@ -159,7 +159,7 @@ const Connect = memo(() => {
   return (
     <div className="relative flex h-full flex-col items-center justify-center bg-canvas px-6 py-12">
       <header className="absolute inset-x-0 top-0 flex h-16 items-center justify-between border-b border-line bg-rail px-7">
-        <span className="text-[17px] font-bold tracking-tight">sharkord</span>
+        <span className="text-[17px] font-bold tracking-tight">dodecagon</span>
         <LanguageSwitcher
           variant="full"
           className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
@@ -180,7 +180,7 @@ const Connect = memo(() => {
                 </div>
               )}
               <div className="text-[13px] font-normal leading-[18px] text-muted-foreground">
-                Connect to this Sharkord server
+                Connect to this Dodecagon server
               </div>
             </div>
           </CardTitle>
@@ -290,7 +290,7 @@ const Connect = memo(() => {
       <div className="absolute bottom-5 flex items-center justify-center gap-2 text-xs text-subtle-foreground select-none">
         <span>v{VITE_APP_VERSION}</span>
         <a
-          href="https://github.com/sharkord/sharkord"
+          href="https://github.com/RND332/sharkord"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -299,11 +299,11 @@ const Connect = memo(() => {
 
         <a
           className="text-xs"
-          href="https://sharkord.com"
+          href="https://github.com/RND332/sharkord"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Sharkord
+          Dodecagon
         </a>
       </div>
     </div>

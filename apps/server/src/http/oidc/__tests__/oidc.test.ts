@@ -745,7 +745,7 @@ describe('/oidc/callback', () => {
       .get();
 
     expect(created!.name).not.toBe('__deleted_user__');
-    expect(created!.name).toStartWith('SharkordUser');
+    expect(created!.name).toStartWith('DodecagonUser');
   });
 
   test('should refuse a name past the length the interface allows', async () => {
