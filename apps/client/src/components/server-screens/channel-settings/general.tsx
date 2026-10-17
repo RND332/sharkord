@@ -1,8 +1,9 @@
+import { SettingsRow } from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { useAdminChannelGeneral } from '@/features/server/admin/hooks';
 import { getTRPCClient } from '@/lib/trpc';
-import { Group, Input, LoadingCard, Switch, Textarea } from '@sharkord/ui';
+import { Input, LoadingCard, Switch, Textarea } from '@sharkord/ui';
 import { memo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -60,25 +61,62 @@ const General = memo(({ channelId }: TGeneralProps) => {
     return <LoadingCard className="h-64" />;
   }
 
+  const displayName = values.name || channel?.name || '';
+  const title =
+    channel?.type === 'TEXT'
+      ? `#${displayName}`
+      : displayName || t('channelInfoTitle');
+
   return (
-    <SettingsSection
-      title={t('channelInfoTitle')}
-      description={t('channelInfoDesc')}
-    >
-      <Group label={t('channelNameLabel')}>
-        <Input placeholder={t('channelNamePlaceholder')} {...r('name')} />
-      </Group>
+    <SettingsSection title={title} description={t('channelInfoDesc')}>
+      <div className="flex w-full max-w-[900px] flex-col gap-[22px]">
+        <div className="flex w-full max-w-[880px] flex-col gap-4">
+          <div className="flex flex-col gap-[7px]">
+            <label
+              className="text-sm font-semibold leading-[18px] text-foreground"
+              htmlFor="channel-name"
+            >
+              {t('channelNameLabel')}
+            </label>
+            <Input
+              id="channel-name"
+              placeholder={t('channelNamePlaceholder')}
+              className="h-[44px] max-w-[550px] rounded-[8px] border-control-border px-[13px] text-sm"
+              {...r('name')}
+            />
+          </div>
 
-      <Group label={t('channelTopicLabel')}>
-        <Textarea placeholder={t('channelTopicPlaceholder')} {...r('topic')} />
-      </Group>
+          <div className="flex flex-col gap-[7px]">
+            <label
+              className="text-sm font-semibold leading-[18px] text-foreground"
+              htmlFor="channel-topic"
+            >
+              {t('channelTopicLabel')}
+            </label>
+            <Textarea
+              id="channel-topic"
+              rows={2}
+              placeholder={t('channelTopicPlaceholder')}
+              className="min-h-[62px] max-w-[550px] rounded-[8px] border-control-border px-[13px] py-[13px] text-sm"
+              {...r('topic')}
+            />
+          </div>
+        </div>
 
-      <Group label={t('privateLabel')} description={t('privateDesc')}>
-        <Switch
-          checked={values.private}
-          onCheckedChange={handlePrivateChange}
-        />
-      </Group>
+        <div className="w-full max-w-[650px]">
+          <SettingsRow
+            label={t('privateLabel')}
+            description={t('privateDesc')}
+            className="border-b-0"
+          >
+            <Switch
+              aria-label={t('privateLabel')}
+              checked={values.private}
+              onCheckedChange={handlePrivateChange}
+            />
+          </SettingsRow>
+        </div>
+      </div>
     </SettingsSection>
   );
 });

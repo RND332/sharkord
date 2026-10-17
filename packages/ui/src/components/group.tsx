@@ -11,6 +11,7 @@ type TGroupProps = {
   help?: React.ReactNode;
   required?: boolean;
   className?: string;
+  variant?: 'default' | 'settings';
 };
 
 const Group = memo(
@@ -20,8 +21,11 @@ const Group = memo(
     description,
     help,
     required,
-    className
+    className,
+    variant = 'default'
   }: TGroupProps) => {
+    const isSettings = variant === 'settings';
+
     let helpComponent = null;
 
     if (help) {
@@ -33,16 +37,34 @@ const Group = memo(
     }
 
     return (
-      <div className={cn('flex flex-col gap-2', className)}>
+      <div
+        className={cn(
+          'flex flex-col',
+          isSettings ? 'gap-[7px]' : 'gap-2',
+          className
+        )}
+      >
         <div className="flex flex-col gap-1">
           <div className="flex items-center">
-            <Label className="text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+            <Label
+              className={
+                isSettings
+                  ? 'text-sm font-semibold leading-[18px] text-foreground'
+                  : 'text-xs font-semibold uppercase tracking-[0.04em] text-muted-foreground'
+              }
+            >
               {label} {required && <span className="text-destructive">*</span>}
             </Label>
             {helpComponent}
           </div>
           {description && (
-            <span className="text-[13px] text-subtle-foreground">
+            <span
+              className={
+                isSettings
+                  ? 'text-xs leading-4 text-subtle-foreground'
+                  : 'text-[13px] text-subtle-foreground'
+              }
+            >
               {description}
             </span>
           )}

@@ -31,6 +31,7 @@ const CategorySettings = memo(
         title={t('categorySettingsTitle')}
         close={close}
         entries={entries}
+        groupLabel={t('groupCategory')}
       />
     );
   }

@@ -1,3 +1,4 @@
+import { SettingsRow } from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import {
@@ -16,7 +17,7 @@ import {
   useMessageSentSound,
   useNotificationSounds
 } from '@/features/app/hooks';
-import { Group, Switch } from '@sharkord/ui';
+import { Switch } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -85,43 +86,67 @@ const Notifications = memo(() => {
       title={t('notificationsTitle')}
       description={t('notificationsDesc')}
     >
-      <Group label={t('allMessagesLabel')} description={t('allMessagesDesc')}>
-        <Switch checked={values.all} onCheckedChange={handleAllChange} />
-      </Group>
-      <Group label={t('mentionsOnlyLabel')} description={t('mentionsOnlyDesc')}>
-        <Switch
-          checked={values.mentions}
-          onCheckedChange={handleMentionsChange}
-        />
-      </Group>
-      <Group
-        label={t('dmNotificationsLabel')}
-        description={t('dmNotificationsDesc')}
-      >
-        <Switch checked={values.dms} onCheckedChange={handleDmsChange} />
-      </Group>
-      <Group
-        label={t('repliesNotificationsLabel')}
-        description={t('repliesNotificationsDesc')}
-      >
-        <Switch
-          checked={values.replies}
-          onCheckedChange={handleRepliesChange}
-        />
-      </Group>
-      <Group label={t('soundsLabel')} description={t('soundsDesc')}>
-        <Switch checked={values.sounds} onCheckedChange={handleSoundsChange} />
-      </Group>
-      <Group
-        label={t('messageSentSoundLabel')}
-        description={t('messageSentSoundDesc')}
-      >
-        <Switch
-          checked={values.sentSound}
-          disabled={!values.sounds}
-          onCheckedChange={handleSentSoundChange}
-        />
-      </Group>
+      <div className="flex max-w-[1040px] flex-col">
+        <SettingsRow
+          label={t('allMessagesLabel')}
+          description={t('allMessagesDesc')}
+        >
+          <Switch
+            aria-label={t('allMessagesLabel')}
+            checked={values.all}
+            onCheckedChange={handleAllChange}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('mentionsOnlyLabel')}
+          description={t('mentionsOnlyDesc')}
+        >
+          <Switch
+            aria-label={t('mentionsOnlyLabel')}
+            checked={values.mentions}
+            onCheckedChange={handleMentionsChange}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('dmNotificationsLabel')}
+          description={t('dmNotificationsDesc')}
+        >
+          <Switch
+            aria-label={t('dmNotificationsLabel')}
+            checked={values.dms}
+            onCheckedChange={handleDmsChange}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('repliesNotificationsLabel')}
+          description={t('repliesNotificationsDesc')}
+        >
+          <Switch
+            aria-label={t('repliesNotificationsLabel')}
+            checked={values.replies}
+            onCheckedChange={handleRepliesChange}
+          />
+        </SettingsRow>
+        <SettingsRow label={t('soundsLabel')} description={t('soundsDesc')}>
+          <Switch
+            aria-label={t('soundsLabel')}
+            checked={values.sounds}
+            onCheckedChange={handleSoundsChange}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('messageSentSoundLabel')}
+          description={t('messageSentSoundDesc')}
+          className="border-b-0"
+        >
+          <Switch
+            aria-label={t('messageSentSoundLabel')}
+            checked={values.sentSound}
+            disabled={!values.sounds}
+            onCheckedChange={handleSentSoundChange}
+          />
+        </SettingsRow>
+      </div>
     </SettingsSection>
   );
 });

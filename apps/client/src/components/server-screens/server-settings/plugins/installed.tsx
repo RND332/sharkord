@@ -1,21 +1,11 @@
-import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { usePluginsEnabled } from '@/features/server/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import type { TPluginInfo } from '@sharkord/shared';
 import { getTrpcError, TestId } from '@sharkord/shared';
-import {
-  Alert,
-  AlertDescription,
-  Badge,
-  Button,
-  IconButton,
-  LoadingCard,
-  Switch,
-  Tooltip
-} from '@sharkord/ui';
-import { AlertCircle, Package, RefreshCw, Trash2, User } from 'lucide-react';
+import { Button, IconButton, LoadingCard, Switch, Tooltip } from '@sharkord/ui';
+import { AlertCircle, Package, RefreshCw, Trash2 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -68,88 +58,66 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
   return (
     <div
       data-testid={TestId.INSTALLED_PLUGIN_ITEM}
-      className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+      className="flex w-full items-center gap-[14px] border-b border-line py-[14px] last:border-b-0"
     >
-      <div className="flex-shrink-0">
+      <div className="flex size-[42px] shrink-0 items-center justify-center overflow-hidden rounded-[9px] bg-raised">
         {plugin.logo ? (
           <ImageWithFallback
             src={plugin.logo}
             alt={`${plugin.name} logo`}
-            className="w-12 h-12 rounded-md object-cover"
-            iconFallback={<Package className="w-6 h-6 text-muted-foreground" />}
+            className="size-full object-cover"
+            iconFallback={<Package className="size-6 text-muted-foreground" />}
           />
         ) : (
-          <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center">
-            <Package className="w-6 h-6 text-muted-foreground" />
-          </div>
+          <Package className="size-6 text-muted-foreground" />
         )}
       </div>
 
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base leading-tight">
-              {plugin.name}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {plugin.description}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Tooltip content={t('removeBtn')}>
-              <IconButton
-                icon={Trash2}
-                variant="ghost"
-                size="sm"
-                onClick={handleRemove}
-                disabled={isRemoving}
-              />
-            </Tooltip>
-            {plugin.loadError ? (
-              <Badge variant="destructive">{t('errorBadge')}</Badge>
-            ) : (
-              <Badge variant={plugin.enabled ? 'default' : 'outline'}>
-                {plugin.enabled ? t('enabledBadge') : t('disabledBadge')}
-              </Badge>
-            )}
-            <Switch
-              checked={plugin.enabled}
-              onCheckedChange={handleToggle}
-              disabled={isToggling}
-            />
-          </div>
-        </div>
-
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <h3 className="truncate text-[15px] font-semibold leading-[18px] text-foreground">
+          {plugin.name}
+        </h3>
+        <p className="truncate text-sm leading-4 text-muted-foreground">
+          {plugin.description}
+        </p>
         {plugin.loadError && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              {plugin.loadError}
-            </AlertDescription>
-          </Alert>
+          <p className="text-xs leading-4 text-destructive">
+            {plugin.loadError}
+          </p>
         )}
+      </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <span className="font-mono">v{plugin.version}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <User className="w-3.5 h-3.5" />
-            <span>{plugin.author}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            {plugin.homepage ? (
-              <a
-                href={plugin.homepage}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-accent-text transition-colors"
-              >
-                {plugin.homepage}
-              </a>
-            ) : null}
-          </div>
-        </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <span
+          className={
+            plugin.loadError
+              ? 'text-sm leading-4 text-destructive'
+              : plugin.enabled
+                ? 'text-sm leading-4 text-success'
+                : 'text-sm leading-4 text-muted-foreground'
+          }
+        >
+          {plugin.loadError
+            ? t('errorBadge')
+            : plugin.enabled
+              ? t('enabledBadge')
+              : t('disabledBadge')}
+        </span>
+        <Switch
+          aria-label={plugin.name}
+          checked={plugin.enabled}
+          onCheckedChange={handleToggle}
+          disabled={isToggling}
+        />
+        <Tooltip content={t('removeBtn')}>
+          <IconButton
+            icon={Trash2}
+            variant="ghost"
+            size="sm"
+            onClick={handleRemove}
+            disabled={isRemoving}
+          />
+        </Tooltip>
       </div>
     </div>
   );
@@ -248,10 +216,8 @@ const InstalledPlugins = memo(
     }
 
     return (
-      <SettingsSection
-        title={t('pluginsTitle')}
-        description={t('pluginsManageDesc')}
-        action={
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex items-center justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -263,10 +229,9 @@ const InstalledPlugins = memo(
             />
             {t('refreshBtn')}
           </Button>
-        }
-      >
+        </div>
         {content}
-      </SettingsSection>
+      </div>
     );
   }
 );

@@ -5,12 +5,14 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Group,
   Input
 } from '@sharkord/ui';
+import { Plus } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';
@@ -48,23 +50,28 @@ const CreateCategoryDialog = memo(
         <DialogContent onInteractOutside={close} close={close}>
           <DialogHeader>
             <DialogTitle>{t('createCategoryTitle')}</DialogTitle>
+            <DialogDescription>{t('createCategoryDesc')}</DialogDescription>
           </DialogHeader>
 
-          <Group label={t('categoryNameLabel')}>
-            <AutoFocus>
-              <Input
-                {...r('name')}
-                placeholder={t('categoryNamePlaceholder')}
-                onEnter={onSubmit}
-              />
-            </AutoFocus>
-          </Group>
+          <div className="flex flex-col gap-7">
+            <Group label={t('categoryNameLabel')}>
+              <AutoFocus>
+                <Input
+                  {...r('name')}
+                  placeholder={t('categoryNamePlaceholder')}
+                  onEnter={onSubmit}
+                />
+              </AutoFocus>
+            </Group>
 
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={close}>
-              {t('cancel')}
-            </Button>
+            <p className="text-sm leading-[21px] text-muted-foreground">
+              {t('createCategoryHint')}
+            </p>
+          </div>
+
+          <DialogFooter>
             <Button onClick={onSubmit} disabled={loading}>
+              <Plus className="size-5" />
               {t('createCategoryBtn')}
             </Button>
           </DialogFooter>

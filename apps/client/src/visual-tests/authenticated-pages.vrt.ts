@@ -363,7 +363,7 @@ test('destructive confirmations use a solid high-contrast action', async () => {
     expect(style.backgroundColor).toBe('rgb(179, 38, 62)');
     expect(style.color).toBe('rgb(255, 255, 255)');
     const dialog = page.getByRole('alertdialog').element();
-    expect(getComputedStyle(dialog).backgroundColor).toBe('rgb(43, 45, 49)');
+    expect(getComputedStyle(dialog).backgroundColor).toBe('rgb(49, 51, 56)');
     expect(getComputedStyle(dialog).borderRadius).toBe('12px');
   } finally {
     const state = store.getState();
@@ -1170,7 +1170,7 @@ test('personal theme preview applies to settings, chat and body portals', async 
       .filter({ hasText: 'Appearance & language' })
       .click();
     await page
-      .getByRole('button', { name: 'Preview Sharkord Dark', exact: true })
+      .getByRole('button', { name: 'Preview Dodecagon Dark', exact: true })
       .click();
     await page
       .getByRole('button', { name: 'Apply theme', exact: true })
@@ -1304,7 +1304,7 @@ test('Miku uses its pink rail accent and light mode reaches settings and dialogs
       .filter({ hasText: 'Appearance & language' })
       .click();
     await page
-      .getByRole('button', { name: 'Preview Sharkord Light', exact: true })
+      .getByRole('button', { name: 'Preview Dodecagon Light', exact: true })
       .click();
     await page
       .getByRole('button', { name: 'Apply theme', exact: true })
@@ -1332,7 +1332,7 @@ test('Miku uses its pink rail accent and light mode reaches settings and dialogs
       .filter({ hasText: 'Appearance & language' })
       .click();
     await page
-      .getByRole('button', { name: 'Preview Sharkord Dark', exact: true })
+      .getByRole('button', { name: 'Preview Dodecagon Dark', exact: true })
       .click();
     await page
       .getByRole('button', { name: 'Apply theme', exact: true })
@@ -1454,14 +1454,14 @@ test('create channel uses the Paper sheet geometry and selectable options', asyn
   const text = page.getByRole('radio', { name: 'Text channel' });
   const voice = page.getByRole('radio', { name: 'Voice channel' });
   expect(text.element().getAttribute('aria-checked')).toBe('true');
-  expect(text.element().getBoundingClientRect().height).toBe(44);
-  expect(getComputedStyle(text.element()).paddingLeft).toBe('12px');
+  expect(text.element().getBoundingClientRect().height).toBe(50);
+  expect(getComputedStyle(text.element()).paddingLeft).toBe('15px');
   expect(getComputedStyle(text.element()).borderTopWidth).toBe('1px');
   await voice.click();
   expect(voice.element().getAttribute('aria-checked')).toBe('true');
   expect(text.element().getAttribute('aria-checked')).toBe('false');
   const footer = dialog.querySelector('[data-slot="dialog-footer"]')!;
-  expect(footer.getBoundingClientRect().height).toBe(73);
+  expect(footer.getBoundingClientRect().height).toBe(72);
   expect(footer.getBoundingClientRect().bottom).toBeCloseTo(
     dialog.getBoundingClientRect().bottom - 1,
     0
@@ -1554,7 +1554,7 @@ test.each([
       await expect.element(locator).toBeVisible();
       const element = locator.element();
       const style = getComputedStyle(element);
-      expect(style.backgroundColor).toBe('rgb(43, 45, 49)');
+      expect(style.backgroundColor).toBe('rgb(49, 51, 56)');
       expect(style.borderRadius).toBe('12px');
       expect(element.getBoundingClientRect().width).toBe(410);
       expect(element.getBoundingClientRect().top).toBeGreaterThanOrEqual(0);
@@ -1630,7 +1630,7 @@ test('search results show real fixture matches with the shared surface hierarchy
       .element(dialog.getByTestId(TestId.SEARCH_RESULT_JUMP).first())
       .toBeEnabled();
     const element = dialog.element();
-    expect(getComputedStyle(element).backgroundColor).toBe('rgb(43, 45, 49)');
+    expect(getComputedStyle(element).backgroundColor).toBe('rgb(49, 51, 56)');
     expect(getComputedStyle(element).borderRadius).toBe('12px');
   } finally {
     resetDialogs();

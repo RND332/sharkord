@@ -1,3 +1,4 @@
+import { SettingsRow } from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { useAdminStorage } from '@/features/server/admin/hooks';
@@ -166,66 +167,78 @@ const Storage = memo(() => {
 
       <PluginStorageUsage pluginStorage={pluginStorage} />
 
-      <Group label={t('allowUploadsLabel')} description={t('allowUploadsDesc')}>
-        <Switch
-          checked={!!values.storageUploadEnabled}
-          onCheckedChange={(checked) =>
-            onChange('storageUploadEnabled', checked)
-          }
-        />
-      </Group>
+      <div className="flex w-full max-w-[1040px] flex-col">
+        <SettingsRow label={t('allowUploadsLabel')}>
+          <Switch
+            aria-label={t('allowUploadsLabel')}
+            checked={!!values.storageUploadEnabled}
+            onCheckedChange={(checked) =>
+              onChange('storageUploadEnabled', checked)
+            }
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          label={t('allowFileSharingInDMsLabel')}
+          className="border-b-0"
+        >
+          <Switch
+            aria-label={t('allowFileSharingInDMsLabel')}
+            checked={!!values.storageFileSharingInDirectMessages}
+            onCheckedChange={(checked) =>
+              onChange('storageFileSharingInDirectMessages', checked)
+            }
+            disabled={!values.storageUploadEnabled}
+          />
+        </SettingsRow>
+      </div>
+
+      <div className="grid w-full max-w-[1040px] gap-5 md:grid-cols-2">
+        <Group
+          variant="settings"
+          label={t('quotaLabel')}
+          description={t('quotaDesc')}
+          help={t('quotaHelp')}
+        >
+          <StorageSizeControl
+            value={Number(values.storageQuota)}
+            max={STORAGE_MAX_QUOTA}
+            min={STORAGE_MIN_QUOTA}
+            disabled={!values.storageUploadEnabled}
+            onChange={(value) => onChange('storageQuota', value)}
+            preview={
+              <>
+                {labels.storageQuota.value} {labels.storageQuota.unit}
+              </>
+            }
+            presets={QUOTA_PRESETS}
+          />
+        </Group>
+
+        <Group
+          variant="settings"
+          label={t('maxFileSizeLabel')}
+          description={t('maxFileSizeDesc')}
+        >
+          <StorageSizeControl
+            value={Number(values.storageUploadMaxFileSize)}
+            max={STORAGE_MAX_FILE_SIZE}
+            min={STORAGE_MIN_FILE_SIZE}
+            disabled={!values.storageUploadEnabled}
+            onChange={(value) => onChange('storageUploadMaxFileSize', value)}
+            preview={
+              <>
+                {labels.storageUploadMaxFileSize.value}{' '}
+                {labels.storageUploadMaxFileSize.unit}
+              </>
+            }
+            presets={MAX_FILE_SIZE_PRESETS}
+          />
+        </Group>
+      </div>
 
       <Group
-        label={t('allowFileSharingInDMsLabel')}
-        description={t('allowFileSharingInDMsDesc')}
-      >
-        <Switch
-          checked={!!values.storageFileSharingInDirectMessages}
-          onCheckedChange={(checked) =>
-            onChange('storageFileSharingInDirectMessages', checked)
-          }
-          disabled={!values.storageUploadEnabled}
-        />
-      </Group>
-
-      <Group
-        label={t('quotaLabel')}
-        description={t('quotaDesc')}
-        help={t('quotaHelp')}
-      >
-        <StorageSizeControl
-          value={Number(values.storageQuota)}
-          max={STORAGE_MAX_QUOTA}
-          min={STORAGE_MIN_QUOTA}
-          disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageQuota', value)}
-          preview={
-            <>
-              {labels.storageQuota.value} {labels.storageQuota.unit}
-            </>
-          }
-          presets={QUOTA_PRESETS}
-        />
-      </Group>
-
-      <Group label={t('maxFileSizeLabel')} description={t('maxFileSizeDesc')}>
-        <StorageSizeControl
-          value={Number(values.storageUploadMaxFileSize)}
-          max={STORAGE_MAX_FILE_SIZE}
-          min={STORAGE_MIN_FILE_SIZE}
-          disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageUploadMaxFileSize', value)}
-          preview={
-            <>
-              {labels.storageUploadMaxFileSize.value}{' '}
-              {labels.storageUploadMaxFileSize.unit}
-            </>
-          }
-          presets={MAX_FILE_SIZE_PRESETS}
-        />
-      </Group>
-
-      <Group
+        variant="settings"
         label={t('maxAvatarSizeLabel')}
         description={t('maxAvatarSizeDesc')}
       >
@@ -246,6 +259,7 @@ const Storage = memo(() => {
       </Group>
 
       <Group
+        variant="settings"
         label={t('maxBannerSizeLabel')}
         description={t('maxBannerSizeDesc')}
       >
@@ -265,7 +279,11 @@ const Storage = memo(() => {
         />
       </Group>
 
-      <Group label={t('quotaPerUserLabel')} description={t('quotaPerUserDesc')}>
+      <Group
+        variant="settings"
+        label={t('quotaPerUserLabel')}
+        description={t('quotaPerUserDesc')}
+      >
         <StorageSizeControl
           value={Number(values.storageSpaceQuotaByUser)}
           max={STORAGE_MAX_QUOTA_PER_USER}
@@ -287,6 +305,7 @@ const Storage = memo(() => {
       </Group>
 
       <Group
+        variant="settings"
         label={t('maxFilesPerMessageLabel')}
         description={t('maxFilesPerMessageDesc')}
       >
@@ -325,6 +344,7 @@ const Storage = memo(() => {
       </Group>
 
       <Group
+        variant="settings"
         label={t('overflowActionLabel')}
         description={t('overflowActionDesc')}
       >
@@ -352,6 +372,7 @@ const Storage = memo(() => {
       <Separator />
 
       <Group
+        variant="settings"
         label={t('imageOptimizationLabel')}
         description={t('imageOptimizationDesc')}
       >
@@ -364,7 +385,11 @@ const Storage = memo(() => {
         />
       </Group>
 
-      <Group label={t('imageQualityLabel')} description={t('imageQualityDesc')}>
+      <Group
+        variant="settings"
+        label={t('imageQualityLabel')}
+        description={t('imageQualityDesc')}
+      >
         <div className="max-w-150 space-y-2">
           <Slider
             value={[Number(values.storageImageOptimizationQuality)]}
@@ -411,7 +436,11 @@ const Storage = memo(() => {
 
       <Separator />
 
-      <Group label={t('signedUrlsLabel')} description={t('signedUrlsDesc')}>
+      <Group
+        variant="settings"
+        label={t('signedUrlsLabel')}
+        description={t('signedUrlsDesc')}
+      >
         <Switch
           checked={!!values.storageSignedUrlsEnabled}
           onCheckedChange={(checked) =>
@@ -421,6 +450,7 @@ const Storage = memo(() => {
       </Group>
 
       <Group
+        variant="settings"
         label={t('signedUrlsTtlLabel')}
         description={t('signedUrlsTtlDesc')}
       >
