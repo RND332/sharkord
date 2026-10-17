@@ -167,6 +167,61 @@ test.each([false, true])(
   }
 );
 
+test('a receiver fallback ends the direct attempt and lets the presenter relay', async () => {
+  const { runtime, sender, receiver, sending, receiving, session } =
+    await prepared();
+  await sender.voice.signalDirectMedia({
+    sessionId: session.sessionId,
+    signal: offer
+  });
+  await receiver.voice.signalDirectMedia({
+    sessionId: session.sessionId,
+    signal: answer
+  });
+  await receiver.voice.signalDirectMedia({
+    sessionId: session.sessionId,
+    signal: { type: 'ready' }
+  });
+  expect(runtime.getDirectMediaSession(session.sessionId, 2)?.phase).toBe(
+    'ready'
+  );
+
+  await receiver.voice.signalDirectMedia({
+    sessionId: session.sessionId,
+    signal: { type: 'fallback' }
+  });
+
+  expect(sending.events.at(-1)).toMatchObject({
+    relayAllowed: true,
+    senderId: 1,
+    fromUserId: 2,
+    signal: { type: 'fallback' }
+  });
+  expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', true);
+  expect(runtime.getDirectMediaSession(session.sessionId, 1)).toBeUndefined();
+  for (const userId of [1, 2]) {
+    expect(runtime.isDirectMediaRequired(userId, StreamKind.SCREEN)).toBe(
+      false
+    );
+    expect(runtime.hasDirectMediaCapability(userId, StreamKind.SCREEN)).toBe(
+      false
+    );
+  }
+
+  await runtime.init();
+  const transport = await runtime.createProducerTransport(1);
+  const producerId = await sender.voice.produce({
+    transportId: transport.id,
+    kind: StreamKind.SCREEN,
+    rtpParameters: {
+      codecs: [{ mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }],
+      encodings: [{ ssrc: 7788 }]
+    }
+  });
+  expect(runtime.getProducer(StreamKind.SCREEN, 1)?.id).toBe(producerId);
+  expect(runtime.getRemoteIds(2).remoteScreenIds).toEqual([1]);
+});
+
 test('allocates independent microphone, webcam and screen sessions for one opted-in pair', async () => {
   const { sender, receiver, runtime } = await pair();
   await listen(sender);
