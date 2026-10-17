@@ -160,6 +160,7 @@ const DemoVisibilityProvider = memo(
       removeExternalStream,
       clearRemoteUserStreamsForUser,
       clearViewedDemo,
+      onScreenViewerStarted: voice.onScreenViewerStarted,
       rtpCapabilitiesRef,
       isVoiceSessionActive:
         voice.connectionStatus === 'connecting' ||

@@ -222,11 +222,30 @@ class TestPeer extends EventTarget {
   };
 }
 
-const session = (sessionId = 'outgoing'): TDirectMediaSession => ({
+const session = (sessionId = 'outgoing', peerId = 2): TDirectMediaSession => ({
   kind: StreamKind.SCREEN,
   sessionId,
-  peerId: 2,
+  peerId,
   iceServers: [{ urls: 'stun:example.com:3478' }]
+});
+
+test('starts one outgoing screen session per viewer', async () => {
+  const prepared: (number | undefined)[] = [];
+  const subject = fixture(async (peerId) => {
+    prepared.push(peerId);
+    return peerId === 3 ? session('outgoing-3', 3) : session('outgoing-2', 2);
+  });
+  const options = {
+    maxBitrate: 4_000_000,
+    onFailure: async () => {}
+  };
+  subject.subject.startForPeer(2, capture().stream, options);
+  subject.subject.startForPeer(3, capture().stream, options);
+  await flush();
+  expect(prepared).toEqual([2, 3]);
+  expect(
+    subject.sent.filter(({ signal }) => signal.type === 'offer')
+  ).toHaveLength(2);
 });
 
 const event = (
@@ -314,7 +333,9 @@ type TDirectMediaFixture = {
 };
 
 const fixture = (
-  prepare: () => Promise<TDirectMediaSession | null> = async () => session(),
+  prepare: (
+    peerId: number | undefined
+  ) => Promise<TDirectMediaSession | null> = async () => session(),
   send?: (sessionId: string, signal: TDirectMediaSignal) => Promise<void>,
   canReceive?: (userId: number) => boolean,
   onStopped?: (userId: number) => void,

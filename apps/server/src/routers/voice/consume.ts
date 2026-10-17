@@ -14,7 +14,8 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
     z.object({
       kind: z.enum(StreamKind),
       remoteId: z.number(),
-      rtpCapabilities: z.any()
+      rtpCapabilities: z.any(),
+      requestDirect: z.boolean().optional()
     })
   )
   .mutation(async ({ input, ctx }) => {
@@ -60,6 +61,24 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
       consumer,
       mediaGeneration
     );
+
+    if (
+      input.kind === StreamKind.SCREEN &&
+      channelId &&
+      input.requestDirect !== false
+    ) {
+      // the presenter keeps its relay producer, and a direct screen session is
+      // attempted per viewer only once that viewer starts consuming the share.
+      ctx.pubsub.publishFor(
+        [input.remoteId],
+        ServerEvents.VOICE_SCREEN_CONSUMER_STARTED,
+        {
+          channelId,
+          producerId: producer.id,
+          peerId: ctx.user.id
+        }
+      );
+    }
 
     consumer.on('producerclose', () => {
       if (!channelId) return;

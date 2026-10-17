@@ -112,6 +112,13 @@ const directStart = mock(
     _options: Parameters<DirectMedia['start']>[1]
   ): Promise<TDirectMediaResult> => 'direct'
 );
+const directStartForPeer = mock(
+  async (
+    _peerId: number,
+    _stream: Stream,
+    _options: Parameters<DirectMedia['startForPeer']>[2]
+  ): Promise<TDirectMediaResult> => 'direct'
+);
 const directAudioStart = mock(async (): Promise<TDirectMediaResult> => 'relay');
 const directVideoStart = mock(async (): Promise<TDirectMediaResult> => 'relay');
 mock.module('../hooks/use-direct-media', () => ({
@@ -121,6 +128,7 @@ mock.module('../hooks/use-direct-media', () => ({
       [StreamKind.VIDEO]: { start: directVideoStart, close() {}, stop() {} },
       [StreamKind.SCREEN]: {
         start: directStart,
+        startForPeer: directStartForPeer,
         close() {},
         stop() {},
         acceptPendingOffer() {},
@@ -363,6 +371,8 @@ beforeEach(() => {
   directPolicy = 'relay';
   directStart.mockReset();
   directStart.mockImplementation(async () => 'direct');
+  directStartForPeer.mockReset();
+  directStartForPeer.mockImplementation(async () => 'direct');
   directAudioStart.mockReset();
   directAudioStart.mockImplementation(async () => 'relay');
   directVideoStart.mockReset();
@@ -434,10 +444,9 @@ test('changing the selected microphone replaces live capture without reconnectin
   expect(send.current).toBe(activeTransport);
 });
 
-test('upgrades a captured share to P2P without opening the picker again', async () => {
+test('produces relay and starts a per-viewer direct screen session without recapturing', async () => {
   devices.directScreenSharing = true;
-  directPolicy = 'relay';
-  directStart.mockImplementation(async () => 'relay');
+  directPolicy = 'all';
   const video = new Track();
   video.kind = 'video';
   const audio = new Track();
@@ -447,31 +456,18 @@ test('upgrades a captured share to P2P without opening the picker again', async 
   await initializeSession(1);
   await voice.toggleScreenShare();
   const transport = send.current!;
-  directPolicy = 'all';
-  directAudioStart.mockImplementation(async () => 'direct');
-  directStart.mockImplementation(async () => 'direct');
-  render();
-  effects.forEach((effect) => effect());
-  await flush();
-  expect(directStart).toHaveBeenCalledTimes(1);
-  expect(picker).toHaveBeenCalledTimes(1);
   expect(transport.produce).toHaveBeenCalledTimes(3);
-  expect(transport.produce.mock.calls[1]![0]).toHaveProperty(
-    'stopTracks',
-    false
-  );
-  expect(transport.produce.mock.calls[2]![0]).toHaveProperty(
-    'stopTracks',
-    false
-  );
+  await voice.onScreenViewerStarted(2);
+  expect(directStartForPeer).toHaveBeenCalledTimes(1);
+  expect(directStartForPeer.mock.calls[0]![0]).toBe(2);
+  expect(picker).toHaveBeenCalledTimes(1);
   expect(video.readyState).toBe('live');
   expect(audio.readyState).toBe('live');
 });
 
-test('an established direct share returns to SFU for a group without recapturing', async () => {
+test('a direct screen failure keeps the relay share and capture alive', async () => {
   devices.directScreenSharing = true;
   directPolicy = 'all';
-  directAudioStart.mockImplementation(async () => 'direct');
   const video = new Track();
   video.kind = 'video';
   const audio = new Track();
@@ -480,27 +476,22 @@ test('an established direct share returns to SFU for a group without recapturing
   Object.assign(navigator.mediaDevices, { getDisplayMedia: picker });
   await initializeSession(1);
   await voice.toggleScreenShare();
-  directStart.mockImplementation(async () => 'relay');
-  const failure = directStart.mock.calls[0]![1].onFailure(true);
-  directPolicy = 'relay';
-  directAudioStart.mockImplementation(async () => 'relay');
-  render();
-  effects.forEach((effect) => effect());
-  await failure;
-  await flush();
-  expect(directStart).toHaveBeenCalledTimes(1);
+  await voice.onScreenViewerStarted(2);
+  const failure = directStartForPeer.mock.calls[0]![2].onFailure;
+  await failure(true, 2);
+  expect(directStartForPeer).toHaveBeenCalledTimes(1);
   expect(picker).toHaveBeenCalledTimes(1);
   expect(video.readyState).toBe('live');
   expect(audio.readyState).toBe('live');
+  expect(send.current!.produce).toHaveBeenCalledTimes(3);
   expect(render().localScreenShareStream?.getVideoTracks()[0]).toBe(
     video as unknown as MediaStreamTrack
   );
 });
 
-test('a retired direct publication cannot stop the replacement captured share', async () => {
+test('a retired direct peer cannot stop the replacement captured share', async () => {
   devices.directScreenSharing = true;
   directPolicy = 'all';
-  directAudioStart.mockImplementation(async () => 'direct');
   const video = new Track();
   video.kind = 'video';
   const stream = new Stream([video]);
@@ -509,24 +500,39 @@ test('a retired direct publication cannot stop the replacement captured share', 
   });
   await initializeSession(1);
   await voice.toggleScreenShare();
-  const oldFailure = directStart.mock.calls[0]![1].onFailure;
-  directPolicy = 'relay';
-  directStart.mockImplementation(async () => 'relay');
-  render();
-  effects.forEach((effect) => effect());
-  await flush();
-  expect(directStart).toHaveBeenCalledTimes(1);
-  await oldFailure(false);
+  await voice.onScreenViewerStarted(2);
+  const oldFailure = directStartForPeer.mock.calls[0]![2].onFailure;
+  await oldFailure(false, 2);
   expect(video.readyState).toBe('live');
   expect(render().localScreenShareStream?.getVideoTracks()[0]).toBe(
     video as unknown as MediaStreamTrack
   );
 });
 
-test('an established screen failure never relays when direct replacement also fails', async () => {
+test('starts an independent direct screen session for each viewer', async () => {
   devices.directScreenSharing = true;
   directPolicy = 'all';
-  directAudioStart.mockImplementation(async () => 'direct');
+  const video = new Track();
+  video.kind = 'video';
+  const stream = new Stream([video]);
+  Object.assign(navigator.mediaDevices, {
+    getDisplayMedia: mock(async () => stream)
+  });
+  await initializeSession(1);
+  await voice.toggleScreenShare();
+  await voice.onScreenViewerStarted(2);
+  await voice.onScreenViewerStarted(3);
+  expect(directStartForPeer).toHaveBeenCalledTimes(2);
+  expect(directStartForPeer.mock.calls.map((call) => call[0])).toEqual([2, 3]);
+  const firstFailure = directStartForPeer.mock.calls[0]![2].onFailure;
+  await firstFailure(true, 2);
+  expect(video.readyState).toBe('live');
+  expect(directStartForPeer).toHaveBeenCalledTimes(2);
+});
+
+test('a failed direct screen peer never takes down the relay share', async () => {
+  devices.directScreenSharing = true;
+  directPolicy = 'all';
   const video = new Track();
   video.kind = 'video';
   const audio = new Track();
@@ -534,13 +540,13 @@ test('an established screen failure never relays when direct replacement also fa
   Object.assign(navigator.mediaDevices, { getDisplayMedia: picker });
   await initializeSession(1);
   await voice.toggleScreenShare();
-  directStart.mockImplementation(async () => 'failed');
-  await directStart.mock.calls[0]![1].onFailure(false);
+  directStartForPeer.mockImplementation(async () => 'failed');
+  await voice.onScreenViewerStarted(2);
   await flush();
-  expect(send.current!.produce).not.toHaveBeenCalled();
+  expect(send.current!.produce).toHaveBeenCalledTimes(3);
   expect(picker).toHaveBeenCalledTimes(1);
-  expect(video.readyState).toBe('ended');
-  expect(audio.readyState).toBe('ended');
+  expect(video.readyState).toBe('live');
+  expect(audio.readyState).toBe('live');
 });
 
 test('joining preserves a screen watch choice made while its consumer transport is preparing', async () => {
@@ -887,7 +893,7 @@ test('genuine current initialization failure still leaves voice and reports fail
 
 // Exercise the real provider/caller through both outgoing media boundaries.
 // Browser/transport doubles cannot prove actual Windows capture or encoder FPS.
-for (const route of ['SFU', 'direct', 'peer without P2P'] as const) {
+for (const route of ['SFU', 'P2P'] as const) {
   for (const hint of ['motion', 'text', 'detail', '']) {
     test(`screen share forces the motion capture hint over '${hint}' via ${route}`, async () => {
       const video = new Track();
@@ -897,8 +903,8 @@ for (const route of ['SFU', 'direct', 'peer without P2P'] as const) {
       Object.assign(navigator.mediaDevices, {
         getDisplayMedia: mock(async () => stream)
       });
-      devices.directScreenSharing = route !== 'SFU';
-      directPolicy = route === 'SFU' ? 'relay' : 'all';
+      devices.directScreenSharing = route === 'P2P';
+      directPolicy = route === 'P2P' ? 'all' : 'relay';
       render();
       send.current = transport();
       const seenHints: string[] = [];
@@ -908,26 +914,23 @@ for (const route of ['SFU', 'direct', 'peer without P2P'] as const) {
         seenHints.push(options.track.contentHint);
         return producer();
       });
-      directStart.mockImplementation(async (captured) => {
+      directStartForPeer.mockImplementation(async (_peerId, captured) => {
         expect(captured).toBe(stream);
         seenHints.push(captured.getVideoTracks()[0]!.contentHint);
-        return route === 'direct' ? 'direct' : 'relay';
+        return 'direct';
       });
 
       await voice.toggleScreenShare();
+      if (route === 'P2P') await voice.onScreenViewerStarted(2);
 
       const expectedHint = 'motion';
       expect(errorToast).not.toHaveBeenCalled();
       expect(seenHints).toEqual(
-        route === 'peer without P2P'
-          ? [expectedHint, expectedHint]
-          : [expectedHint]
+        route === 'P2P' ? [expectedHint, expectedHint] : [expectedHint]
       );
       expect(video.contentHint).toBe(expectedHint);
       expect(video.readyState).toBe('live');
-      expect(send.current.produce).toHaveBeenCalledTimes(
-        route === 'direct' ? 0 : 1
-      );
+      expect(send.current.produce).toHaveBeenCalledTimes(1);
     });
   }
 }
@@ -945,7 +948,7 @@ test('native P2P setup failure falls back to the SFU producer', async () => {
   send.current = transport();
   const direct = new DirectMedia({
     kind: StreamKind.SCREEN,
-    prepare: async () => ({
+    prepare: async (_peerId, _signal) => ({
       kind: StreamKind.SCREEN,
       sessionId: 'strict-direct',
       peerId: 2,
@@ -965,11 +968,12 @@ test('native P2P setup failure falls back to the SFU producer', async () => {
     configurable: true,
     value: undefined
   });
-  directStart.mockImplementation((captured, options) =>
-    direct.start(captured as unknown as MediaStream, options)
+  directStartForPeer.mockImplementation((peerId, captured, options) =>
+    direct.startForPeer(peerId, captured as unknown as MediaStream, options)
   );
   try {
     await voice.toggleScreenShare();
+    await voice.onScreenViewerStarted(2);
     expect(send.current.produce).toHaveBeenCalledTimes(1);
     expect(errorToast).not.toHaveBeenCalled();
     expect(video.readyState).toBe('live');
@@ -982,7 +986,7 @@ test('native P2P setup failure falls back to the SFU producer', async () => {
   }
 });
 
-test('established P2P failure republishes the share through the SFU producer', async () => {
+test('established P2P failure keeps the already published relay share', async () => {
   const video = new Track();
   video.kind = 'video';
   const stream = new Stream([video]);
@@ -994,13 +998,14 @@ test('established P2P failure republishes the share through the SFU producer', a
   render();
   effects.forEach((effect) => effect());
   send.current = transport();
-  let fail!: (relayAllowed: boolean) => Promise<void>;
-  directStart.mockImplementation(async (_stream, options) => {
+  let fail!: (relayAllowed: boolean, peerId?: number) => Promise<void>;
+  directStartForPeer.mockImplementation(async (_peerId, _stream, options) => {
     fail = options.onFailure;
     return 'direct';
   });
   await voice.toggleScreenShare();
-  await fail(true);
+  await voice.onScreenViewerStarted(2);
+  await fail(true, 2);
   expect(send.current.produce).toHaveBeenCalledTimes(1);
   expect(video.readyState).toBe('live');
   expect(errorToast).not.toHaveBeenCalled();

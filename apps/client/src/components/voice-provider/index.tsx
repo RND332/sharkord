@@ -155,7 +155,8 @@ export type TVoiceProvider = {
     | ((
         remoteId: number,
         kind: StreamKind,
-        rtps: RtpCapabilities
+        rtps: RtpCapabilities,
+        requestDirect?: boolean
       ) => Promise<void>)
     | null
   >;
@@ -172,6 +173,7 @@ export type TVoiceProvider = {
   canConsumeScreen: (userId: number) => boolean;
   startReceivingDemo: (userId: number) => boolean;
   stopReceivingDemo: (userId: number) => Promise<void>;
+  onScreenViewerStarted: (peerId: number) => void;
   getStreamQuality: (remoteId: number, kind: StreamKind) => TStreamQuality;
   getStreamQualityLayers: (
     remoteId: number,
@@ -231,6 +233,7 @@ const VoiceProviderContext = createContext<TVoiceProvider>({
   canConsumeScreen: () => false,
   startReceivingDemo: () => false,
   stopReceivingDemo: () => Promise.resolve(),
+  onScreenViewerStarted: () => {},
   getStreamQuality: () => ({ mode: 'auto' }),
   getStreamQualityLayers: () => [],
   setStreamQuality: () => Promise.resolve(),
@@ -288,12 +291,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   directMediaPolicyRef.current = directMediaPolicy;
   const microphoneRouteRef = useRef<'direct' | 'relay' | undefined>(undefined);
   const webcamRouteRef = useRef<'direct' | 'relay' | undefined>(undefined);
-  const [screenRoute, setScreenRoute] = useState<
-    'direct' | 'relay' | undefined
-  >();
-  const screenRoutingRef = useRef<symbol | undefined>(undefined);
   const screenPublicationRef = useRef<symbol | undefined>(undefined);
-  const republishScreenRef = useRef<() => Promise<void>>(async () => {});
   const ownVoiceState = useOwnVoiceState();
   const { devices, saveDevices } = useDevices();
   const voiceOnlyMode =
@@ -581,6 +579,48 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     [closeConsumers, removeExternalStream]
   );
 
+  // direct screen streams replace the relay consumers for that presenter; if
+  // the direct peer goes away, the relay producer is still there to fall back to.
+  const addRemoteUserStreamWithScreenRelay = useCallback(
+    (
+      userId: number,
+      stream: MediaStream,
+      kind: Parameters<typeof addRemoteUserStream>[2]
+    ) => {
+      addRemoteUserStream(userId, stream, kind);
+      if (kind !== StreamKind.SCREEN) return;
+      closeConsumer(userId, StreamKind.SCREEN);
+      closeConsumer(userId, StreamKind.SCREEN_AUDIO);
+    },
+    [addRemoteUserStream, closeConsumer]
+  );
+
+  const removeRemoteUserStreamWithScreenRelay = useCallback(
+    (
+      userId: number,
+      kind: Parameters<typeof removeRemoteUserStream>[1],
+      stream?: MediaStream
+    ) => {
+      removeRemoteUserStream(userId, kind, stream);
+      if (kind !== StreamKind.SCREEN) return;
+      if (!isViewingDemoRef.current(userId)) return;
+      const rtps = deviceRtpCapabilities.current;
+      if (!rtps) return;
+      for (const screenKind of [
+        StreamKind.SCREEN,
+        StreamKind.SCREEN_AUDIO
+      ] as const) {
+        consumeRef.current?.(userId, screenKind, rtps, false).catch((error) =>
+          logVoiceError('screen: direct fallback to relay failed', error, {
+            userId,
+            kind: screenKind
+          })
+        );
+      }
+    },
+    [removeRemoteUserStream, consumeRef]
+  );
+
   const { directMedia } = useDirectMedia({
     channelId: currentVoiceChannelId,
     enabled: !!devices.directScreenSharing,
@@ -590,8 +630,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       connectionStatus === ConnectionStatus.CONNECTED,
     canConsumeScreen,
     onRemoteDemoStoppedRef,
-    addRemoteUserStream,
-    removeRemoteUserStream
+    addRemoteUserStream: addRemoteUserStreamWithScreenRelay,
+    removeRemoteUserStream: removeRemoteUserStreamWithScreenRelay
   });
 
   const directScreenShare = directMedia[StreamKind.SCREEN];
@@ -639,6 +679,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   const republishMicrophoneRef = useRef<() => Promise<void>>(async () => {});
   const micMutedRef = useRef(ownVoiceState.micMuted);
   const p2pFallbackKindsRef = useRef(new Set<TDirectMediaKind>());
+  const screenFallbackPeersRef = useRef(new Set<number>());
   const currentVoicePeers = useCurrentVoicePeers();
   const currentVoicePeerIds = useMemo(
     () => currentVoicePeers.map((peer) => peer.id).join(','),
@@ -656,6 +697,12 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     [devices.directScreenSharing]
   );
 
+  const shouldAttemptScreenDirect = useCallback(
+    () =>
+      !!devices.directScreenSharing && directMediaPolicyRef.current === 'all',
+    [devices.directScreenSharing]
+  );
+
   const markP2pFallback = useCallback((kind: TDirectMediaKind) => {
     p2pFallbackKindsRef.current.add(kind);
   }, []);
@@ -667,6 +714,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
   if (previousVoiceIdentityRef.current !== voiceIdentity) {
     previousVoiceIdentityRef.current = voiceIdentity;
     p2pFallbackKindsRef.current.clear();
+    screenFallbackPeersRef.current.clear();
   }
 
   const syncTransmitMicrophoneTrackState = useCallback(() => {
@@ -1515,8 +1563,6 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
   const stopScreenShareStream = useCallback(() => {
     logVoice('screen: stopping');
-    setScreenRoute(undefined);
-    screenRoutingRef.current = undefined;
 
     screenShareGenerationRef.current++;
     const stream = capturedScreenStreamRef.current;
@@ -1797,137 +1843,52 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       const publication = Symbol();
       screenPublicationRef.current = publication;
       const videoTrack = stream.getVideoTracks()[0];
-      const attemptDirect = shouldAttemptDirect(StreamKind.SCREEN);
-      const path = attemptDirect
-        ? await directScreenShare.start(stream, {
-            maxBitrate: (devices.screenBitrate ?? DEFAULT_BITRATE) * 1000,
-            maxFramerate: devices.screenFramerate,
-            codec: devices.screenCodec,
-            onFailure: async (relayAllowed) => {
-              if (
-                capturedScreenStreamRef.current !== stream ||
-                screenPublicationRef.current !== publication
-              )
-                return;
-              if (relayAllowed) {
-                markP2pFallback(StreamKind.SCREEN);
-                await republishScreenRef.current();
-                return;
-              }
-              stopScreenShareStream();
-              const generation = screenShareGenerationRef.current;
-              updateOwnVoiceState({ sharingScreen: false });
-              try {
-                const trpc = getTRPCClient();
-                await trpc.voice.updateState.mutate({ sharingScreen: false });
-              } catch (error) {
-                logVoiceError('screen: updating stopped share failed', error);
-              }
-              if (generation === screenShareGenerationRef.current)
-                toast.error(t('directMediaFailed'));
-            }
-          })
-        : 'relay';
+      // relay is always produced: direct screen sessions are a per-viewer
+      // optimisation and must not take the share away from other viewers.
+      await produceScreenShareStream(stream);
       if (
-        voiceOnlyModeRef.current ||
         capturedScreenStreamRef.current !== stream ||
+        screenPublicationRef.current !== publication ||
+        voiceOnlyModeRef.current ||
         videoTrack?.readyState !== 'live'
       )
         throw new Error('Screen share ended');
-      if (attemptDirect && path !== 'direct') {
-        markP2pFallback(StreamKind.SCREEN);
-        logVoiceWarn('screen: P2P failed, falling back to relay');
-        toast.info(t('p2pFallbackToRelay'));
-      }
-      if (path !== 'direct') await produceScreenShareStream(stream);
-      if (
-        capturedScreenStreamRef.current !== stream ||
-        voiceOnlyModeRef.current
-      )
-        throw new Error('Screen share ended');
-      setScreenRoute(path === 'direct' ? 'direct' : 'relay');
       return videoTrack;
     },
+    [produceScreenShareStream]
+  );
+
+  const startScreenDirectForPeer = useCallback(
+    async (peerId: number) => {
+      const stream = capturedScreenStreamRef.current;
+      if (!stream || voiceOnlyModeRef.current || !shouldAttemptScreenDirect())
+        return;
+      // a fresh watch is allowed to retry direct after an earlier failed pair.
+      screenFallbackPeersRef.current.delete(peerId);
+      const result = await directScreenShare.startForPeer(peerId, stream, {
+        maxBitrate: (devices.screenBitrate ?? DEFAULT_BITRATE) * 1000,
+        maxFramerate: devices.screenFramerate,
+        codec: devices.screenCodec,
+        onFailure: async (relayAllowed, failedPeerId) => {
+          if (capturedScreenStreamRef.current !== stream) return;
+          const failedId = failedPeerId ?? peerId;
+          screenFallbackPeersRef.current.add(failedId);
+          logVoiceWarn('screen: direct peer ended, keeping relay', {
+            peerId: failedId,
+            relayAllowed
+          });
+        }
+      });
+      if (result !== 'direct') screenFallbackPeersRef.current.add(peerId);
+    },
     [
+      directScreenShare,
       devices.screenBitrate,
       devices.screenCodec,
       devices.screenFramerate,
-      directScreenShare,
-      produceScreenShareStream,
-      stopScreenShareStream,
-      shouldAttemptDirect,
-      markP2pFallback,
-      t
+      shouldAttemptScreenDirect
     ]
   );
-
-  useEffect(() => {
-    republishScreenRef.current = async () => {
-      const stream = capturedScreenStreamRef.current;
-      if (!stream || voiceOnlyModeRef.current || screenRoutingRef.current)
-        return;
-      const token = Symbol();
-      screenRoutingRef.current = token;
-      setScreenRoute(undefined);
-      localScreenShareProducer.current?.close();
-      localScreenShareAudioProducer.current?.close();
-      localScreenShareProducer.current = undefined;
-      localScreenShareAudioProducer.current = undefined;
-      setScreenShareProducer(undefined);
-      directScreenShare.stop();
-      try {
-        await publishScreenShare(stream);
-      } catch (error) {
-        if (
-          capturedScreenStreamRef.current !== stream ||
-          screenRoutingRef.current !== token
-        )
-          return;
-        stopScreenShareStream();
-        updateOwnVoiceState({ sharingScreen: false });
-        try {
-          const trpc = getTRPCClient();
-          await trpc.voice.updateState.mutate({ sharingScreen: false });
-        } catch (stateError) {
-          logVoiceError('screen: updating stopped share failed', stateError);
-        }
-        toast.error(t('directMediaFailed'));
-        logVoiceError('screen: republishing failed', error);
-      } finally {
-        if (screenRoutingRef.current === token)
-          screenRoutingRef.current = undefined;
-      }
-    };
-  }, [
-    publishScreenShare,
-    stopScreenShareStream,
-    directScreenShare,
-    localScreenShareProducer,
-    localScreenShareAudioProducer,
-    setScreenShareProducer,
-    t
-  ]);
-
-  useEffect(() => {
-    if (
-      !screenRoute ||
-      voiceOnlyMode ||
-      (connectionStatus !== ConnectionStatus.CONNECTING &&
-        connectionStatus !== ConnectionStatus.CONNECTED)
-    )
-      return;
-    const path = shouldAttemptDirect(StreamKind.SCREEN) ? 'direct' : 'relay';
-    if (screenRoute === path) return;
-    republishScreenRef
-      .current()
-      .catch((error) => logVoiceError('screen: rerouting failed', error));
-  }, [
-    screenRoute,
-    voiceOnlyMode,
-    connectionStatus,
-    directMediaPolicy,
-    shouldAttemptDirect
-  ]);
 
   const startScreenShareStream = useCallback(async () => {
     if (voiceOnlyModeRef.current) {
@@ -2095,6 +2056,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     cleanupMicProcessingResources();
     micRecoveryHistoryRef.current = [];
     p2pFallbackKindsRef.current.clear();
+    screenFallbackPeersRef.current.clear();
     stopWebcamStream();
     stopScreenShareStream();
     const directCoordinators = Object.values(directMedia);
@@ -2504,6 +2466,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       canConsumeScreen,
       startReceivingDemo,
       stopReceivingDemo,
+      onScreenViewerStarted: startScreenDirectForPeer,
       rtpCapabilities:
         deviceRtpCapabilities.current ??
         routerRtpCapabilities.current ??
@@ -2546,6 +2509,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       closeRemoteUserProducer,
       startReceivingDemo,
       stopReceivingDemo,
+      startScreenDirectForPeer,
       consumeRef,
       getStreamQuality,
       getStreamQualityLayers,

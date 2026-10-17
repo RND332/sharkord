@@ -112,6 +112,11 @@ type Events = {
     kind: StreamKind;
     producerId: string;
   };
+  [ServerEvents.VOICE_SCREEN_CONSUMER_STARTED]: {
+    channelId: number;
+    producerId: string;
+    peerId: number;
+  };
 
   [ServerEvents.PLUGIN_LOG]: TLogEntry;
   [ServerEvents.PLUGIN_COMMANDS_CHANGE]: TCommandsMapByPlugin;

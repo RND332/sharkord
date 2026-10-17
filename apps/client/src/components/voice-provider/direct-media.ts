@@ -23,7 +23,10 @@ type TTimerHandle = number | NodeJS.Timeout;
 
 type TDirectMediaCallbacks = {
   kind: TDirectMediaKind;
-  prepare: (signal: AbortSignal) => Promise<TDirectMediaSession | null>;
+  prepare: (
+    peerId: number | undefined,
+    signal: AbortSignal
+  ) => Promise<TDirectMediaSession | null>;
   canReceive?: (userId: number) => boolean;
   canDefer?: () => boolean;
   onStopped?: (userId: number) => void;
@@ -42,7 +45,10 @@ type TDirectMediaOptions = {
   maxBitrate: number;
   maxFramerate?: number;
   codec?: string;
-  onFailure: (relayAllowed: boolean) => Promise<void>;
+  onFailure: (
+    relayAllowed: boolean,
+    peerId: number | undefined
+  ) => Promise<void>;
 };
 
 type TOutgoingAttempt = {
@@ -51,7 +57,11 @@ type TOutgoingAttempt = {
   resolve: (result: TDirectMediaResult) => void;
   settled: boolean;
   established: boolean;
-  onFailure: (relayAllowed: boolean) => Promise<void>;
+  onFailure: (
+    relayAllowed: boolean,
+    peerId: number | undefined
+  ) => Promise<void>;
+  peerId?: number;
   sessionId?: string;
   peer?: TDirectPeer;
 };
@@ -77,7 +87,7 @@ export class DirectMedia {
   private peers = new Map<string, TDirectPeer>();
   private pendingOffers = new Map<string, TDirectMediaEvent>();
   private retiredSessions = new Map<string, boolean>();
-  private outgoing?: TOutgoingAttempt;
+  private outgoing = new Map<string, TOutgoingAttempt>();
   private preparation?: Promise<void>;
 
   constructor(callbacks: TDirectMediaCallbacks) {
@@ -88,6 +98,8 @@ export class DirectMedia {
     this.callbacks.kind === StreamKind.AUDIO
       ? DIRECT_MEDIA_AUDIO_CONNECT_TIMEOUT_MS
       : DIRECT_MEDIA_CONNECT_TIMEOUT_MS;
+
+  private getAttemptKey = (peerId?: number): string => String(peerId ?? 0);
 
   getConnections = (): TDirectMediaConnection[] => {
     const peers = Array.from(this.peers.values());
@@ -107,7 +119,23 @@ export class DirectMedia {
     options: TDirectMediaOptions
   ): Promise<TDirectMediaResult> => {
     this.stop();
+    return this.startAttempt(undefined, stream, options);
+  };
 
+  startForPeer = (
+    peerId: number,
+    stream: MediaStream,
+    options: TDirectMediaOptions
+  ): Promise<TDirectMediaResult> => {
+    this.stopAttempt(peerId);
+    return this.startAttempt(peerId, stream, options);
+  };
+
+  private startAttempt = (
+    peerId: number | undefined,
+    stream: MediaStream,
+    options: TDirectMediaOptions
+  ): Promise<TDirectMediaResult> => {
     return new Promise<TDirectMediaResult>((resolve) => {
       const attempt: TOutgoingAttempt = {
         controller: new AbortController(),
@@ -117,9 +145,10 @@ export class DirectMedia {
         resolve,
         settled: false,
         established: false,
-        onFailure: options.onFailure
+        onFailure: options.onFailure,
+        peerId
       };
-      this.outgoing = attempt;
+      this.outgoing.set(this.getAttemptKey(peerId), attempt);
       this.callbacks.onStatus('connecting');
       this.prepareOutgoing(attempt, stream, options).catch((error: unknown) => {
         if (this.isCurrentAttempt(attempt)) this.failOutgoing(attempt, error);
@@ -215,9 +244,16 @@ export class DirectMedia {
   };
 
   stop = (): void => {
-    const attempt = this.outgoing;
+    for (const attempt of [...this.outgoing.values()]) {
+      this.stopAttempt(attempt.peerId);
+    }
+  };
+
+  stopAttempt = (peerId: number | undefined): void => {
+    const key = this.getAttemptKey(peerId);
+    const attempt = this.outgoing.get(key);
     if (!attempt) return;
-    this.outgoing = undefined;
+    this.outgoing.delete(key);
     clearTimeout(attempt.timer);
     attempt.controller.abort();
     this.resolveAttempt(attempt, 'failed');
@@ -226,7 +262,7 @@ export class DirectMedia {
       this.retiredSessions.set(attempt.sessionId, false);
       this.sendBestEffort(attempt.sessionId, { type: 'stop' }, true);
     }
-    this.callbacks.onStatus('idle');
+    if (!this.outgoing.size) this.callbacks.onStatus('idle');
   };
 
   stopReceiving = (userId: number): void => {
@@ -270,7 +306,10 @@ export class DirectMedia {
     const request = (async () => {
       if (previous) await previous;
       if (!this.isCurrentAttempt(attempt)) return null;
-      const session = await this.callbacks.prepare(attempt.controller.signal);
+      const session = await this.callbacks.prepare(
+        attempt.peerId,
+        attempt.controller.signal
+      );
       if (!this.isCurrentAttempt(attempt)) {
         if (session) {
           try {
@@ -297,7 +336,7 @@ export class DirectMedia {
       return;
     }
     if (!session) {
-      this.outgoing = undefined;
+      this.outgoing.delete(this.getAttemptKey(attempt.peerId));
       clearTimeout(attempt.timer);
       attempt.controller.abort();
       this.resolveAttempt(attempt, 'relay');
@@ -629,7 +668,10 @@ export class DirectMedia {
   };
 
   private isCurrentAttempt = (attempt: TOutgoingAttempt): boolean => {
-    return this.outgoing === attempt && !attempt.controller.signal.aborted;
+    return (
+      this.outgoing.get(this.getAttemptKey(attempt.peerId)) === attempt &&
+      !attempt.controller.signal.aborted
+    );
   };
 
   private isActivePeer = (peer: TDirectPeer): boolean => {
@@ -681,7 +723,7 @@ export class DirectMedia {
     relayAllowed = false
   ): void => {
     if (!this.isCurrentAttempt(attempt)) return;
-    this.outgoing = undefined;
+    this.outgoing.delete(this.getAttemptKey(attempt.peerId));
     clearTimeout(attempt.timer);
     attempt.controller.abort();
     if (attempt.peer) this.retirePeer(attempt.peer);
@@ -694,8 +736,9 @@ export class DirectMedia {
     this.callbacks.onStatus(relayAllowed ? 'relayed' : 'failed');
     if (error !== undefined) this.callbacks.onError(error);
     if (attempt.established) {
+      const peerId = attempt.peerId ?? attempt.peer?.peerId;
       Promise.resolve()
-        .then(() => attempt.onFailure(relayAllowed))
+        .then(() => attempt.onFailure(relayAllowed, peerId))
         .catch((fallbackError: unknown) => {
           this.callbacks.onError(fallbackError);
         });

@@ -236,7 +236,8 @@ test.each([
     expect(request).toHaveBeenCalledWith({
       remoteId: 2,
       kind,
-      rtpCapabilities: { codecs: [] }
+      rtpCapabilities: { codecs: [] },
+      requestDirect: true
     });
   }
 );
