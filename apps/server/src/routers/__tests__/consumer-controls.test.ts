@@ -1,4 +1,4 @@
-import { Permission, StreamKind } from '@sharkord/shared';
+import { Permission, ServerEvents, StreamKind } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import type { RtpParameters } from 'mediasoup/types';
@@ -7,6 +7,7 @@ import { getMockedToken, initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import { rolePermissions } from '../../db/schema';
 import { VoiceRuntime } from '../../runtimes/voice';
+import { pubsub } from '../../utils/pubsub';
 import type { Context } from '../../utils/trpc';
 
 const audioParameters: RtpParameters = {
@@ -93,6 +94,45 @@ const controls: Array<'pauseConsumer' | 'resumeConsumer'> = [
 
 // native transports exercise pause state; real websocket delivery is covered by browser smoke.
 describe('screen consumer controls', () => {
+  test('asks the presenter for a direct screen session when a viewer consumes', async () => {
+    const runtime = new VoiceRuntime(2);
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    await runtime.init();
+    const { caller } = await initTest(1, undefined, {
+      currentVoiceChannelId: 2
+    });
+    await runtime.createProducerTransport(2);
+    const transport = runtime.getProducerTransport(2)!;
+    await runtime.createConsumerTransport(1);
+    const screen = await transport.produce({
+      kind: 'video',
+      rtpParameters: screenParameters
+    });
+    runtime.addProducer(2, StreamKind.SCREEN, screen);
+    const events: unknown[] = [];
+    const observation = pubsub
+      .subscribeFor(2, ServerEvents.VOICE_SCREEN_CONSUMER_STARTED)
+      .subscribe({ next: (event) => events.push(event) });
+    try {
+      await caller.voice.consume({
+        remoteId: 2,
+        kind: StreamKind.SCREEN,
+        rtpCapabilities: runtime.getRouter().rtpCapabilities
+      });
+      expect(events).toEqual([
+        {
+          channelId: 2,
+          producerId: screen.id,
+          peerId: 1
+        }
+      ]);
+    } finally {
+      observation.unsubscribe();
+      await runtime.destroy();
+    }
+  });
+
   test('holds the first video keyframe until the receiving consumer is ready', async () => {
     const { runtime, caller } = await join(undefined, false);
     try {

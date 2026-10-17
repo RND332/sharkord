@@ -20,6 +20,12 @@ type TVoiceProducerClosedEvent = TVoiceProducerEvent & {
   producerId: string;
 };
 
+type TScreenConsumerStartedEvent = {
+  channelId: number;
+  producerId: string;
+  peerId: number;
+};
+
 // these events are broadcast to ALL users (for UI population in the sidebar)
 const onUserJoinVoiceRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
@@ -146,8 +152,32 @@ const onDirectMediaSignalRoute = rateLimitedProcedure(protectedProcedure, {
     });
   });
 
+const onScreenConsumerStartedRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.voiceStream.maxRequests,
+  windowMs: config.rateLimiters.voiceStream.windowMs,
+  logLabel: 'onScreenConsumerStarted'
+}).subscription(async ({ ctx }) => {
+  const channelId = ctx.currentVoiceChannelId;
+  const runtime = channelId ? VoiceRuntime.findById(channelId) : undefined;
+  const member = runtime?.getUser(ctx.user.id);
+  return observable<TScreenConsumerStartedEvent>((observer) => {
+    if (!channelId || !runtime || !member) return () => {};
+    const subscription = ctx.pubsub
+      .subscribeFor(ctx.user.id, ServerEvents.VOICE_SCREEN_CONSUMER_STARTED)
+      .subscribe({
+        next: (event) => {
+          if (event.channelId !== channelId) return;
+          if (VoiceRuntime.findById(channelId) !== runtime) return;
+          observer.next(event);
+        }
+      });
+    return () => subscription.unsubscribe();
+  });
+});
+
 export {
   onDirectMediaSignalRoute,
+  onScreenConsumerStartedRoute,
   onUserJoinVoiceRoute,
   onUserLeaveVoiceRoute,
   onUserUpdateVoiceStateRoute,

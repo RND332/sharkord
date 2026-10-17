@@ -15,9 +15,7 @@ import { applyEnvOverrides } from '../../helpers/apply-env-overrides';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { pubsub } from '../../utils/pubsub';
 
-// removing the two-person gate would expose direct signalling to group calls
-// and leave the sender uploading a separate stream for each listener.
-test('ends a direct screen session when a third participant joins', async () => {
+test('keeps established screen direct sessions when a third participant joins', async () => {
   const runtime = new VoiceRuntime(2);
   runtime.addUser(1, { micMuted: false, soundMuted: false });
   runtime.addUser(2, { micMuted: false, soundMuted: false });
@@ -47,13 +45,14 @@ test('ends a direct screen session when a third participant joins', async () => 
     });
     expect(session?.peerId).toBe(2);
     runtime.addUser(3, { micMuted: false, soundMuted: false });
-    expect(signals).toEqual(['fallback']);
+    expect(signals).toEqual([]);
+    expect(runtime.getDirectMediaSession(session!.sessionId, 1)).toBeDefined();
     await expect(
       sender.voice.signalDirectMedia({
         sessionId: session!.sessionId,
         signal: { type: 'offer', sdp: 'v=0\r\n' }
       })
-    ).rejects.toThrow('Direct screen session not found');
+    ).resolves.toBeUndefined();
   } finally {
     senderSubscription?.unsubscribe();
     receiverSubscription?.unsubscribe();
@@ -153,23 +152,17 @@ const prepared = async () => {
   return { ...result, sending, receiving, session: session! };
 };
 
-test.each([false, true])(
-  'termination always reports relay as available (third participant: %s)',
-  async (third) => {
-    const { runtime, sender, receiving, session } = await prepared();
-    if (third) runtime.addUser(3, { micMuted: false, soundMuted: false });
-    else
-      await sender.voice.signalDirectMedia({
-        sessionId: session.sessionId,
-        signal: { type: 'fallback' }
-      });
-    expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', true);
-  }
-);
+test('termination always reports relay as available', async () => {
+  const { sender, receiving, session } = await prepared();
+  await sender.voice.signalDirectMedia({
+    sessionId: session.sessionId,
+    signal: { type: 'fallback' }
+  });
+  expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', true);
+});
 
-test('a receiver fallback ends the direct attempt and lets the presenter relay', async () => {
-  const { runtime, sender, receiver, sending, receiving, session } =
-    await prepared();
+test('a viewer fallback keeps the presenter sharing through relay', async () => {
+  const { runtime, sender, receiver, sending, session } = await prepared();
   await sender.voice.signalDirectMedia({
     sessionId: session.sessionId,
     signal: offer
@@ -182,35 +175,23 @@ test('a receiver fallback ends the direct attempt and lets the presenter relay',
     sessionId: session.sessionId,
     signal: { type: 'ready' }
   });
-  expect(runtime.getDirectMediaSession(session.sessionId, 2)?.phase).toBe(
-    'ready'
-  );
-
   await receiver.voice.signalDirectMedia({
     sessionId: session.sessionId,
     signal: { type: 'fallback' }
   });
-
   expect(sending.events.at(-1)).toMatchObject({
     relayAllowed: true,
     senderId: 1,
     fromUserId: 2,
     signal: { type: 'fallback' }
   });
-  expect(receiving.events.at(-1)).toHaveProperty('relayAllowed', true);
   expect(runtime.getDirectMediaSession(session.sessionId, 1)).toBeUndefined();
-  for (const userId of [1, 2]) {
-    expect(runtime.isDirectMediaRequired(userId, StreamKind.SCREEN)).toBe(
-      false
-    );
-    expect(runtime.hasDirectMediaCapability(userId, StreamKind.SCREEN)).toBe(
-      false
-    );
-  }
+  expect(runtime.getUserState(1).directMediaEnabled).toBe(true);
+  expect(runtime.getUserState(2).directMediaEnabled).toBe(true);
 
   await runtime.init();
   const transport = await runtime.createProducerTransport(1);
-  const producerId = await sender.voice.produce({
+  await sender.voice.produce({
     transportId: transport.id,
     kind: StreamKind.SCREEN,
     rtpParameters: {
@@ -218,7 +199,6 @@ test('a receiver fallback ends the direct attempt and lets the presenter relay',
       encodings: [{ ssrc: 7788 }]
     }
   });
-  expect(runtime.getProducer(StreamKind.SCREEN, 1)?.id).toBe(producerId);
   expect(runtime.getRemoteIds(2).remoteScreenIds).toEqual([1]);
 });
 
@@ -630,7 +610,7 @@ describe('startDirectMedia', () => {
     ).toBe(2);
   });
 
-  test('declines legacy, disabled and group peers', async () => {
+  test('declines legacy and disabled peers', async () => {
     const { runtime, sender, receiver } = await pair();
     await listen(sender);
     await listen(receiver, false);
@@ -638,15 +618,101 @@ describe('startDirectMedia', () => {
       await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
     ).toBeNull();
     await listen(receiver);
-    runtime.addUser(3, { micMuted: false, soundMuted: false });
-    expect(
-      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
-    ).toBeNull();
     runtime.removeUser(2);
-    runtime.removeUser(3);
     expect(
       await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
     ).toBeNull();
+  });
+
+  test('starts one screen session per targeted group viewer', async () => {
+    const { runtime, sender, receiver } = await pair();
+    runtime.addUser(3, { micMuted: false, soundMuted: false });
+    const { caller: third } = await initTest(3, undefined, {
+      currentVoiceChannelId: 2
+    });
+    await listen(sender);
+    await listen(receiver);
+    await listen(third);
+    const first = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN,
+      peerId: 2
+    });
+    const second = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN,
+      peerId: 3
+    });
+    expect(first).toMatchObject({ kind: StreamKind.SCREEN, peerId: 2 });
+    expect(second).toMatchObject({ kind: StreamKind.SCREEN, peerId: 3 });
+    expect(first?.sessionId).not.toBe(second?.sessionId);
+    expect(runtime.getDirectMediaSession(first!.sessionId, 1)).toBeDefined();
+    expect(runtime.getDirectMediaSession(second!.sessionId, 1)).toBeDefined();
+  });
+
+  test('a viewer fallback leaves the other direct screen sessions running', async () => {
+    const { runtime, sender, receiver } = await pair();
+    runtime.addUser(3, { micMuted: false, soundMuted: false });
+    const { caller: third } = await initTest(3, undefined, {
+      currentVoiceChannelId: 2
+    });
+    await listen(sender);
+    await listen(receiver);
+    await listen(third);
+    const first = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN,
+      peerId: 2
+    });
+    const second = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN,
+      peerId: 3
+    });
+    await receiver.voice.signalDirectMedia({
+      sessionId: first!.sessionId,
+      signal: { type: 'fallback' }
+    });
+    expect(runtime.getDirectMediaSession(first!.sessionId, 1)).toBeUndefined();
+    expect(runtime.getDirectMediaSession(second!.sessionId, 1)).toBeDefined();
+    expect(runtime.getUserState(1).directMediaEnabled).toBe(true);
+    expect(runtime.getUserState(2).directMediaEnabled).toBe(true);
+  });
+
+  test('hides the relay screen producer only from a ready direct viewer', async () => {
+    const { runtime, sender, receiver } = await pair();
+    runtime.addUser(3, { micMuted: false, soundMuted: false });
+    const { caller: third } = await initTest(3, undefined, {
+      currentVoiceChannelId: 2
+    });
+    await listen(sender);
+    await listen(receiver);
+    await listen(third);
+    await runtime.init();
+    const transport = await runtime.createProducerTransport(1);
+    const producerId = await sender.voice.produce({
+      transportId: transport.id,
+      kind: StreamKind.SCREEN,
+      rtpParameters: {
+        codecs: [{ mimeType: 'video/VP8', payloadType: 96, clockRate: 90000 }],
+        encodings: [{ ssrc: 9911 }]
+      }
+    });
+    const session = await sender.voice.startDirectMedia({
+      kind: StreamKind.SCREEN,
+      peerId: 2
+    });
+    await sender.voice.signalDirectMedia({
+      sessionId: session!.sessionId,
+      signal: offer
+    });
+    await receiver.voice.signalDirectMedia({
+      sessionId: session!.sessionId,
+      signal: answer
+    });
+    await receiver.voice.signalDirectMedia({
+      sessionId: session!.sessionId,
+      signal: { type: 'ready' }
+    });
+    expect(runtime.getRemoteIds(2).remoteScreenIds).toEqual([]);
+    expect(runtime.getRemoteIds(3).remoteScreenIds).toEqual([1]);
+    expect(runtime.getProducer(StreamKind.SCREEN, 1)?.id).toBe(producerId);
   });
 
   test('derives peer and session identifiers and returns configured ICE servers', async () => {
@@ -730,8 +796,12 @@ describe('startDirectMedia', () => {
         await listen(receiver);
         const session = await sender.voice.startDirectMedia({ kind });
         expect(session).toMatchObject({ kind, peerId: 2 });
-        expect(producer.closed).toBe(true);
-        expect(runtime.getProducer(kind, 1)).toBeUndefined();
+        // screen shares keep the relay producer for mesh viewers and fallbacks.
+        const keepsRelay = kind === StreamKind.SCREEN;
+        expect(producer.closed).toBe(!keepsRelay);
+        expect(runtime.getProducer(kind, 1)).toBe(
+          keepsRelay ? producer : undefined
+        );
         expect(other.closed).toBe(false);
       } finally {
         transport.close();
@@ -1289,7 +1359,7 @@ describe('direct screen lifecycle', () => {
     ).rejects.toThrow('Direct screen session not found');
   });
 
-  test('expires a pending session and blocks retries until a new subscription', async () => {
+  test('expires a pending screen session but keeps relay and retries available', async () => {
     const time = clock();
     const { runtime, sender, sending, session } = await prepared();
     time.advance(8200);
@@ -1302,13 +1372,8 @@ describe('direct screen lifecycle', () => {
         signal: offer
       })
     ).rejects.toThrow('Direct screen session not found');
-    expect(runtime.getUserState(1).directMediaEnabled).toBe(false);
-    expect(runtime.getUserState(2).directMediaEnabled).toBe(false);
-    expect(
-      await sender.voice.startDirectMedia({ kind: StreamKind.SCREEN })
-    ).toBeNull();
-    runtime.registerDirectMediaSubscriber(1, true);
-    runtime.registerDirectMediaSubscriber(2, true);
+    expect(runtime.getUserState(1).directMediaEnabled).toBe(true);
+    expect(runtime.getUserState(2).directMediaEnabled).toBe(true);
     const replacement = await sender.voice.startDirectMedia({
       kind: StreamKind.SCREEN
     });

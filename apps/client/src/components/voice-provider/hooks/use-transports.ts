@@ -494,7 +494,8 @@ const useTransports = ({
     async (
       remoteId: number,
       kind: StreamKind,
-      rtpCapabilities: RtpCapabilities
+      rtpCapabilities: RtpCapabilities,
+      requestDirect = true
     ): Promise<void> => {
       if (kind !== StreamKind.AUDIO && voiceOnlyModeRef.current) return;
       const isScreen =
@@ -534,7 +535,12 @@ const useTransports = ({
           !voiceOnlyModeRef.current &&
           canConsumeScreen(remoteId)
         ) {
-          return consumeRef.current(remoteId, kind, rtpCapabilities);
+          return consumeRef.current(
+            remoteId,
+            kind,
+            rtpCapabilities,
+            requestDirect
+          );
         }
         return;
       }
@@ -575,7 +581,8 @@ const useTransports = ({
             await trpc.voice.resumeConsumer.mutate({
               remoteId,
               kind,
-              consumerId: existing.id
+              consumerId: existing.id,
+              requestDirect
             });
             pendingConsumerResumes.current.delete(existing.id);
             if (
@@ -606,7 +613,8 @@ const useTransports = ({
           } = await trpc.voice.consume.mutate({
             kind,
             remoteId,
-            rtpCapabilities
+            rtpCapabilities,
+            requestDirect
           });
           token.producerId = producerId;
           if (token.closedProducerIds.has(producerId)) {

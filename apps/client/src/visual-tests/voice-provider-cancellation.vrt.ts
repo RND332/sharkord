@@ -20,6 +20,7 @@ type TTestTrpcClient = {
     updateState: { mutate: TUpdateState };
     onNewProducer: TSubscription;
     onProducerClosed: TSubscription;
+    onScreenConsumerStarted: TSubscription;
     onLeave: TSubscription;
     onRemoveExternalStream: TSubscription;
     onDirectMediaSignal: TSubscription;
@@ -103,6 +104,7 @@ const makeClient = (mutate: TUpdateState) => {
       updateState: { mutate: updateState },
       onNewProducer: noOpSubscription(),
       onProducerClosed: noOpSubscription(),
+      onScreenConsumerStarted: noOpSubscription(),
       onLeave: noOpSubscription(),
       onRemoveExternalStream: noOpSubscription(),
       onDirectMediaSignal: noOpSubscription()

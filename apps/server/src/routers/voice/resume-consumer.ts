@@ -1,4 +1,4 @@
-import { StreamKind } from '@sharkord/shared';
+import { ServerEvents, StreamKind } from '@sharkord/shared';
 import { z } from 'zod';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { invariant } from '../../utils/invariant';
@@ -14,11 +14,13 @@ const resumeConsumerRoute = protectedProcedure
         StreamKind.SCREEN,
         StreamKind.SCREEN_AUDIO,
         StreamKind.EXTERNAL_VIDEO
-      ])
+      ]),
+      requestDirect: z.boolean().optional()
     })
   )
   .mutation(async ({ input, ctx }) => {
-    const { runtime, mediaGeneration } = await getCurrentVoiceRuntime(ctx);
+    const { runtime, channelId, mediaGeneration } =
+      await getCurrentVoiceRuntime(ctx);
     runtime.assertMediaAllowed(ctx.user.id, input.kind, mediaGeneration);
 
     const consumer = runtime.getConsumer(
@@ -35,6 +37,23 @@ const resumeConsumerRoute = protectedProcedure
     if (!consumer.paused) return;
 
     await consumer.resume();
+
+    if (
+      input.kind === StreamKind.SCREEN &&
+      channelId &&
+      input.requestDirect !== false
+    ) {
+      // re-watching a demo after an idle pause is a fresh direct attempt.
+      ctx.pubsub.publishFor(
+        [input.remoteId],
+        ServerEvents.VOICE_SCREEN_CONSUMER_STARTED,
+        {
+          channelId,
+          producerId: consumer.producerId,
+          peerId: ctx.user.id
+        }
+      );
+    }
   });
 
 export { resumeConsumerRoute };

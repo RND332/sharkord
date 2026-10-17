@@ -67,7 +67,7 @@ const useDirectMedia = ({
           if (kind === StreamKind.SCREEN)
             onRemoteDemoStoppedRef.current(userId);
         },
-        prepare: async (signal) => {
+        prepare: async (peerId, signal) => {
           if (!enabledRef.current) return null;
           if (!subscribed.current) {
             await new Promise<void>((resolve, reject) => {
@@ -93,7 +93,7 @@ const useDirectMedia = ({
             throw new Error('Direct media session is no longer active');
           }
           const trpc = getTRPCClient();
-          return trpc.voice.startDirectMedia.mutate({ kind });
+          return trpc.voice.startDirectMedia.mutate({ kind, peerId });
         },
         send: async (sessionId, signal) => {
           const trpc = getTRPCClient();

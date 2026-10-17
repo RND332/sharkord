@@ -1,6 +1,7 @@
 import {
   ChannelPermission,
   DIRECT_MEDIA_KINDS,
+  StreamKind,
   type TDirectMediaSession
 } from '@sharkord/shared';
 import { z } from 'zod';
@@ -15,15 +16,22 @@ const startDirectMediaRoute = rateLimitedProcedure(protectedProcedure, {
   windowMs: config.rateLimiters.voiceStream.windowMs,
   logLabel: 'startDirectMedia'
 })
-  .input(z.strictObject({ kind: z.enum(DIRECT_MEDIA_KINDS) }))
+  .input(
+    z.strictObject({
+      kind: z.enum(DIRECT_MEDIA_KINDS),
+      peerId: z.number().int().positive().optional()
+    })
+  )
   .mutation(async ({ ctx, input }): Promise<TDirectMediaSession | null> => {
     const { runtime, channelId } = await getDirectMediaRuntime(ctx, input.kind);
     const member = runtime.getUser(ctx.user.id);
-    const peer = runtime
-      .getState()
-      .users.find((user) => user.userId !== ctx.user.id);
+    const peer =
+      input.kind === StreamKind.SCREEN && input.peerId
+        ? runtime.getState().users.find((user) => user.userId === input.peerId)
+        : runtime.getState().users.find((user) => user.userId !== ctx.user.id);
     if (
       !peer ||
+      peer.userId === ctx.user.id ||
       !(await channelUserCan(
         channelId,
         peer.userId,
@@ -37,11 +45,17 @@ const startDirectMediaRoute = rateLimitedProcedure(protectedProcedure, {
       ctx.currentVoiceChannelId !== channelId ||
       VoiceRuntime.findById(channelId) !== runtime ||
       runtime.getUser(ctx.user.id) !== member ||
-      runtime.getState().users.length !== 2 ||
+      (input.kind !== StreamKind.SCREEN &&
+        runtime.getState().users.length !== 2) ||
+      runtime.getState().users.length < 2 ||
       runtime.getUser(peer.userId) !== peer
     )
       return null;
-    const session = runtime.startDirectMedia(ctx.user.id, input.kind);
+    const session = runtime.startDirectMedia(
+      ctx.user.id,
+      input.kind,
+      peer.userId
+    );
     // direct media is optional: a null session tells the client to use relay.
     return session;
   });

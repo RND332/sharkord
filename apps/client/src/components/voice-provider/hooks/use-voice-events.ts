@@ -18,7 +18,8 @@ type TEvents = {
     | ((
         remoteId: number,
         kind: StreamKind,
-        rtpCapabilities: RtpCapabilities
+        rtpCapabilities: RtpCapabilities,
+        requestDirect?: boolean
       ) => Promise<void>)
     | null
   >;
@@ -39,6 +40,7 @@ type TEvents = {
   removeExternalStream: (streamId: number) => void;
   clearRemoteUserStreamsForUser: (userId: number) => void;
   clearViewedDemo: (userId: number) => void;
+  onScreenViewerStarted?: (peerId: number) => void;
   rtpCapabilitiesRef: RefObject<RtpCapabilities | null | undefined>;
   isVoiceSessionActive: boolean;
 };
@@ -52,6 +54,7 @@ const useVoiceEvents = ({
   removeExternalStream,
   clearRemoteUserStreamsForUser,
   clearViewedDemo,
+  onScreenViewerStarted,
   rtpCapabilitiesRef,
   isVoiceSessionActive
 }: TEvents) => {
@@ -163,6 +166,21 @@ const useVoiceEvents = ({
       }
     );
 
+    const onScreenConsumerStartedSub =
+      trpc.voice.onScreenConsumerStarted.subscribe(undefined, {
+        onData: ({ channelId, peerId }) => {
+          if (currentVoiceChannelId !== channelId || isCleaningUp) return;
+          logVoice('events: viewer started watching screen', {
+            peerId,
+            channelId
+          });
+          onScreenViewerStarted?.(peerId);
+        },
+        onError: (error) => {
+          logVoiceError('events: screen consumer subscription error', error);
+        }
+      });
+
     const onVoiceUserLeaveSub = trpc.voice.onLeave.subscribe(undefined, {
       onData: ({ channelId, userId }) => {
         if (currentVoiceChannelId !== channelId || isCleaningUp) return;
@@ -214,6 +232,7 @@ const useVoiceEvents = ({
 
       onVoiceNewProducerSub.unsubscribe();
       onVoiceProducerClosedSub.unsubscribe();
+      onScreenConsumerStartedSub.unsubscribe();
       onVoiceUserLeaveSub.unsubscribe();
       onVoiceRemoveExternalStreamSub.unsubscribe();
     };
@@ -228,6 +247,7 @@ const useVoiceEvents = ({
     removeExternalStream,
     clearRemoteUserStreamsForUser,
     clearViewedDemo,
+    onScreenViewerStarted,
     rtpCapabilitiesRef,
     isVoiceSessionActive
   ]);

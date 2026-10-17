@@ -75,6 +75,7 @@ mock.module('@/lib/trpc', () => ({
       createConsumerTransport: { mutate: createRecvRpc },
       onNewProducer: subscription('new'),
       onProducerClosed: subscription('closed'),
+      onScreenConsumerStarted: subscription('screen-consumer'),
       onLeave: subscription('leave'),
       onRemoveExternalStream: subscription('external')
     }
@@ -559,6 +560,7 @@ test('queued screen pause preserves running work and releases its token after th
 
 test('voice subscriptions release remote and external resources through context callbacks', async () => {
   const clearViewedDemo = mock(() => {});
+  const onScreenViewerStarted = mock(() => {});
   useVoiceEvents({
     consumeRef: hook.consumeRef,
     isViewingDemo: () => true,
@@ -579,11 +581,16 @@ test('voice subscriptions release remote and external resources through context 
         StreamKind.EXTERNAL_VIDEO
       ]),
     clearViewedDemo,
+    onScreenViewerStarted,
     rtpCapabilitiesRef: { current: {} },
     isVoiceSessionActive: true
   });
   const cleanup = effects.at(-1)!();
   try {
+    subscriptions.get('screen-consumer')!({ channelId: 99, peerId: 42 });
+    expect(onScreenViewerStarted).not.toHaveBeenCalled();
+    subscriptions.get('screen-consumer')!({ channelId: 7, peerId: 42 });
+    expect(onScreenViewerStarted).toHaveBeenCalledWith(42);
     await hook.consume(42, StreamKind.SCREEN_AUDIO, {});
     const screen = hook.getConsumer(42, StreamKind.SCREEN_AUDIO)!;
     subscriptions.get('closed')!({
