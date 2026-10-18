@@ -49,22 +49,15 @@ const createRnnoiseChain = async (
     throw new Error('AudioWorklet is not supported in this browser');
   }
 
-  const nativeSampleRate =
-    inputStream.getAudioTracks()[0]?.getSettings().sampleRate ?? 48000;
-
-  if (nativeSampleRate !== RNNOISE_SAMPLE_RATE) {
-    throw new Error(
-      `RNNoise requires a 48kHz audio context (got ${nativeSampleRate}Hz)`
-    );
-  }
-
-  const ctx = new AudioContext({ sampleRate: nativeSampleRate });
+  // the media stream source resamples device audio to the processing rate.
+  const ctx = new AudioContext({ sampleRate: RNNOISE_SAMPLE_RATE });
   registerContext?.(ctx);
   await ensureWorkletLoaded(ctx);
 
-  // outputChannelCount: [2] allocates a second output channel buffer so the
-  // processor can copy ch0 → ch1 and produce centred stereo
+  // some interfaces ignore mono capture constraints; RNNoise reads channel 0.
   const workletNode = new AudioWorkletNode(ctx, RNNOISE_WORKLET_NAME, {
+    channelCount: 1,
+    channelCountMode: 'explicit',
     outputChannelCount: [2]
   });
 
