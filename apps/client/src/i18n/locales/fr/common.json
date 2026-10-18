@@ -1,4 +1,6 @@
 {
+  "watchStream": "Regarder le stream",
+  "live": "EN DIRECT",
   "directMediaFailed": "Impossible d’établir la connexion média. Réessayez.",
   "p2pFallbackToRelay": "La connexion directe a échoué, bascule vers le relais du serveur.",
   "cancel": "Annuler",

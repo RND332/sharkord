@@ -6,7 +6,6 @@ import { useContext, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useIsOwnUser } from '../users/hooks';
 import {
-  alwaysShowVoiceControlsSelector,
   hideNonVideoParticipantsSelector,
   hideOwnScreenShareSelector,
   ownVoiceStateSelector,
@@ -58,9 +57,6 @@ export const useShowUserBannersInVoice = () =>
 
 export const useHideOwnScreenShare = () =>
   useSelector(hideOwnScreenShareSelector);
-
-export const useAlwaysShowVoiceControls = () =>
-  useSelector(alwaysShowVoiceControlsSelector);
 
 export const useSpeakingState = (userId: number) => {
   const { remoteUserStreams, localAudioStream } = useVoice();

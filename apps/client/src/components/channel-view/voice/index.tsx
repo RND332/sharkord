@@ -48,33 +48,6 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     // Only apply the filter if there are some video streams
     const shouldFilterNonVideo = hideNonVideoParticipants && hasAnyVideoStreams;
 
-    // Shared content is the primary focus and appears before participant tiles.
-    voiceUsers.forEach((voiceUser) => {
-      const shouldHideOwnScreenShare =
-        hideOwnScreenShare && voiceUser.id === ownUserId;
-      if (
-        devices.voiceOnlyMode ||
-        !voiceUser.state.sharingScreen ||
-        shouldHideOwnScreenShare
-      ) {
-        return;
-      }
-
-      const screenShareCardId = `screen-share-${voiceUser.id}`;
-      cards.push(
-        <ScreenShareCard
-          key={screenShareCardId}
-          userId={voiceUser.id}
-          isPinned={isPinned(screenShareCardId)}
-          isAnyCardPinned={isAnyCardPinned}
-          cardId={screenShareCardId}
-          onPin={pinCard}
-          onUnpin={unpinCard}
-          showPinControls
-        />
-      );
-    });
-
     voiceUsers.forEach((voiceUser) => {
       const userCardId = `user-${voiceUser.id}`;
       const hasVideo = voiceUser.state.webcamEnabled;
@@ -96,6 +69,28 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             onPin={pinCard}
             onUnpin={unpinCard}
             voiceUser={voiceUser}
+          />
+        );
+      }
+
+      const shouldHideOwnScreenShare =
+        hideOwnScreenShare && voiceUser.id === ownUserId;
+      if (
+        !devices.voiceOnlyMode &&
+        voiceUser.state.sharingScreen &&
+        !shouldHideOwnScreenShare
+      ) {
+        const screenShareCardId = `screen-share-${voiceUser.id}`;
+        cards.push(
+          <ScreenShareCard
+            key={screenShareCardId}
+            userId={voiceUser.id}
+            isPinned={isPinned(screenShareCardId)}
+            isAnyCardPinned={isAnyCardPinned}
+            cardId={screenShareCardId}
+            onPin={pinCard}
+            onUnpin={unpinCard}
+            showPinControls
           />
         );
       }
@@ -172,7 +167,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
       >
         <VoiceChatButton channelId={channelId} />
       </div>
-      <ControlsBar channelId={channelId} />
+      <ControlsBar channelId={channelId} isActive={isChatButtonVisible} />
     </div>
   );
 });

@@ -1,4 +1,6 @@
 {
+  "watchStream": "Sledovat přenos",
+  "live": "ŽIVĚ",
   "directMediaFailed": "Mediální spojení se nepodařilo navázat. Zkuste to znovu.",
   "p2pFallbackToRelay": "Přímé spojení selhalo, přepínám na serverový relay.",
   "cancel": "Zrušit",

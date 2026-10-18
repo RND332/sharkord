@@ -15,7 +15,7 @@ import {
 import { getFileUrl } from '@/helpers/get-file-url';
 import { cn } from '@/lib/utils';
 import { PluginSlot, StreamKind } from '@sharkord/shared';
-import { HeadphoneOff, MicOff, Monitor, Video } from 'lucide-react';
+import { HeadphoneOff, MicOff } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -94,6 +94,11 @@ const VoiceUserCard = memo(
       !devices.voiceOnlyMode && hasVideoStream && !webcamHidden;
     const showQualityControl =
       !isOwnUser && webRtcSimulcastEnabled && showWebcamVideo;
+    let avatarClass = 'size-20 [&_[data-slot=avatar-fallback]]:text-[32px]';
+    if (isPinned)
+      avatarClass = 'size-32 [&_[data-slot=avatar-fallback]]:text-4xl';
+    else if (isCompact)
+      avatarClass = 'size-16 [&_[data-slot=avatar-fallback]]:text-xl';
 
     const handlePinToggle = useCallback(() => {
       if (isPinned) {
@@ -184,11 +189,7 @@ const VoiceUserCard = memo(
               userId={userId}
               className={cn(
                 'pointer-events-none [&_[data-slot=avatar-fallback]]:font-semibold',
-                isPinned
-                  ? 'size-32 [&_[data-slot=avatar-fallback]]:text-4xl'
-                  : isCompact
-                    ? 'size-16 [&_[data-slot=avatar-fallback]]:text-xl'
-                    : 'size-30 [&_[data-slot=avatar-fallback]]:text-4xl'
+                avatarClass
               )}
               showStatusBadge={false}
             />
@@ -208,37 +209,35 @@ const VoiceUserCard = memo(
             />
           </div>
 
-          {!isOwnUser &&
-            !devices.voiceOnlyMode &&
-            (hasVideoStream || voiceUser.state.sharingScreen) && (
-              <div
-                className={cn(
-                  'absolute top-0 right-0 z-10 justify-end',
-                  density.inset,
-                  'flex opacity-0 pointer-events-none group-hover/voice-user-card:opacity-100 group-hover/voice-user-card:pointer-events-auto group-focus-within/voice-user-card:opacity-100 group-focus-within/voice-user-card:pointer-events-auto',
-                  'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
+          {!isOwnUser && !devices.voiceOnlyMode && hasVideoStream && (
+            <div
+              className={cn(
+                'absolute top-0 right-0 z-10 justify-end',
+                density.inset,
+                'flex opacity-0 pointer-events-none group-hover/voice-user-card:opacity-100 group-hover/voice-user-card:pointer-events-auto group-focus-within/voice-user-card:opacity-100 group-focus-within/voice-user-card:pointer-events-auto',
+                'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
+              )}
+            >
+              <div className={cardControlsClass(isCompact)}>
+                {showQualityControl && (
+                  <QualityButton
+                    streamId={userId}
+                    kind={StreamKind.VIDEO}
+                    disabled={!isSimulcastConsumer(userId, StreamKind.VIDEO)}
+                    size={density.icon}
+                    className={cardControlClass()}
+                  />
                 )}
-              >
-                <div className={cardControlsClass(isCompact)}>
-                  {showQualityControl && (
-                    <QualityButton
-                      streamId={userId}
-                      kind={StreamKind.VIDEO}
-                      disabled={!isSimulcastConsumer(userId, StreamKind.VIDEO)}
-                      size={density.icon}
-                      className={cardControlClass()}
-                    />
-                  )}
-                  {!isOwnUser && !devices.voiceOnlyMode && hasVideoStream && (
-                    <HideWebcamButton
-                      userId={userId}
-                      size={density.icon}
-                      className={cardControlClass(webcamHidden)}
-                    />
-                  )}
-                </div>
+                {!isOwnUser && !devices.voiceOnlyMode && hasVideoStream && (
+                  <HideWebcamButton
+                    userId={userId}
+                    size={density.icon}
+                    className={cardControlClass(webcamHidden)}
+                  />
+                )}
               </div>
-            )}
+            </div>
+          )}
 
           <div
             className={cn(
@@ -258,12 +257,6 @@ const VoiceUserCard = memo(
                   className="text-red-400/80 size-3"
                   fill="currentColor"
                 />
-              )}
-              {voiceUser.state.webcamEnabled && (
-                <Video className="text-white/80 size-3" fill="currentColor" />
-              )}
-              {voiceUser.state.sharingScreen && (
-                <Monitor className="text-white/80 size-3" />
               )}
               <p className={cn('truncate', density.label)}>{voiceUser.name}</p>
             </div>

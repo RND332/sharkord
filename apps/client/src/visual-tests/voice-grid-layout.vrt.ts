@@ -70,6 +70,16 @@ test('grid continues measuring after pinning, resizing and unpinning', async () 
   await expect.poll(columns).toBe(2);
 });
 
+test('pinned participants use the Paper 4:3 thumbnail size', async () => {
+  await render('share');
+  const thumbnail = host!.querySelector('[data-card="one"]')!;
+  const rect = thumbnail.getBoundingClientRect();
+  expect(rect.width).toBe(152);
+  expect(rect.height).toBe(114);
+  expect(getComputedStyle(host!.firstElementChild!).paddingTop).toBe('36px');
+  expect(getComputedStyle(host!.firstElementChild!).paddingBottom).toBe('36px');
+});
+
 test('removing an initially pinned card restores measurement for the remaining users', async () => {
   await render('share');
   root!.render(

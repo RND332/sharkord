@@ -14,7 +14,7 @@ const TopBar = memo(() => {
   const serverInitial = trimmedServerName?.[0]?.toUpperCase() || 'S';
 
   return (
-    <header className="hidden h-10 w-full shrink-0 grid-cols-[minmax(0,1fr)_minmax(180px,550px)_minmax(0,1fr)] items-center gap-5 border-b border-line bg-rail px-5 lg:grid">
+    <header className="hidden h-10 w-full shrink-0 grid-cols-[minmax(0,1fr)_minmax(180px,550px)_minmax(0,1fr)] items-center gap-5 bg-rail px-5 lg:grid">
       <div className="flex min-w-0 items-center gap-2.5">
         <Avatar className="size-6 rounded-lg" aria-hidden="true">
           <AvatarImage
@@ -39,7 +39,7 @@ const TopBar = memo(() => {
         <PluginSlotRenderer slotId={PluginSlot.TOPBAR_RIGHT} />
         <LanguageSwitcher
           variant="full"
-          className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
+          className="h-7 w-auto border-0 bg-transparent p-0 text-[13px] font-medium leading-[18px] text-muted-foreground [&>svg]:size-3.5"
         />
       </div>
     </header>

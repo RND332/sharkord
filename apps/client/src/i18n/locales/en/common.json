@@ -1,4 +1,6 @@
 {
+  "watchStream": "Watch stream",
+  "live": "LIVE",
   "directMediaFailed": "Could not establish the media connection. Please retry.",
   "p2pFallbackToRelay": "Direct connection failed, switching to the server relay.",
   "cancel": "Cancel",

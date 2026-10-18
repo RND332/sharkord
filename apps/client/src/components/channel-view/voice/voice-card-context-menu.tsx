@@ -114,7 +114,7 @@ const VoiceCardContextMenu = memo(
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-        <ContextMenuContent className="w-60 gap-0.5 rounded-lg p-1.5">
+        <ContextMenuContent className="w-66 rounded-[10px] border-line bg-panel p-1.5 text-foreground [&_[data-slot=context-menu-item]]:min-h-9 [&_[data-slot=context-menu-item]]:p-2">
           {demo?.isViewing && (
             <ContextMenuItem onSelect={demo.onToggle}>
               <MonitorOff />
@@ -136,7 +136,7 @@ const VoiceCardContextMenu = memo(
           {volumeKey !== undefined && (
             <ContextMenuItem
               onSelect={handleVolumeSelect}
-              className="flex-col items-stretch gap-3 px-2.5 py-3 focus:bg-transparent"
+              className="flex-col items-stretch gap-2 focus:bg-transparent"
             >
               <div className="flex items-center justify-between leading-5">
                 <span>{t('volume')}</span>
@@ -154,7 +154,7 @@ const VoiceCardContextMenu = memo(
                 onValueChange={handleVolumeChange}
                 onKeyDown={handleSliderKeyDown}
                 onClick={handleSliderClick}
-                className="h-4 [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-thumb]]:size-3.5"
+                className="h-5 [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-thumb]]:size-4"
               />
             </ContextMenuItem>
           )}

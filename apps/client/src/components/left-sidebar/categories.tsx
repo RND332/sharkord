@@ -75,15 +75,16 @@ const Category = memo(({ categoryId }: TCategoryProps) => {
         transition,
         opacity: isDragging ? 0.5 : 1
       }}
-      className="mb-4"
+      className="mb-3"
       data-testid={TestId.CATEGORY_ITEM}
       data-category-id={category.id}
     >
-      <div className="mb-1 flex w-full items-center px-2 py-1 text-xs font-semibold text-muted-foreground">
-        <div className="flex w-full items-stretch gap-1">
+      <div className="mb-0.5 flex h-7 w-full items-center px-2.5 text-[13px] font-semibold leading-[18px] tracking-[0.06em] text-muted-foreground uppercase">
+        <div className="flex w-full items-center gap-1.5">
           <IconButton
             variant="ghost"
-            size="sm"
+            size="xs"
+            className="-ml-1.5"
             icon={ChevronIcon}
             onClick={toggleExpanded}
             title={expanded ? t('collapseCategory') : t('expandCategory')}
@@ -111,6 +112,7 @@ const Category = memo(({ categoryId }: TCategoryProps) => {
             data-testid={TestId.CATEGORY_ADD_CHANNEL}
             variant="ghost"
             size="sm"
+            className="-mr-1.5 [&_svg]:size-[18px]"
             icon={Plus}
             onClick={onCreateChannelClick}
             title={t('createChannel')}
@@ -127,7 +129,7 @@ const Categories = memo(() => {
   const categories = useCategories();
 
   return (
-    <div className="flex-1 overflow-y-auto p-2">
+    <div className="flex-1 overflow-y-auto px-2 py-3">
       <SidebarDnd>
         {categories.map((category) => (
           <Category key={category.id} categoryId={category.id} />

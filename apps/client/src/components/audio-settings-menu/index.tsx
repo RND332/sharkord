@@ -1,12 +1,12 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { ServerScreen } from '@/components/server-screens/screens';
 import { openServerScreen } from '@/features/server-screens/actions';
-import { cn } from '@/lib/utils';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -15,22 +15,32 @@ import {
   Separator,
   Slider
 } from '@sharkord/ui';
-import { ChevronUp, Settings } from 'lucide-react';
-import { memo, useCallback, useId, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode
+} from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TAudioSettingsMenuProps = {
   kind: 'microphone' | 'output';
-  compact?: boolean;
+  children: ReactNode;
 };
 
 const AudioSettingsMenu = memo(
-  ({ kind, compact = false }: TAudioSettingsMenuProps) => {
+  ({ kind, children }: TAudioSettingsMenuProps) => {
     const { t } = useTranslation('audio');
     const { t: settingsT } = useTranslation('settings');
     const { devices, inputDevices, playbackDevices, saveDevices } =
       useDevices();
     const [open, setOpen] = useState(false);
+    const anchorRef = useRef<HTMLSpanElement>(null);
+    const restoreFocusRef = useRef(true);
     const volumeLabelId = useId();
     const isMicrophone = kind === 'microphone';
     const deviceKey = isMicrophone ? 'microphoneId' : 'playbackId';
@@ -43,6 +53,33 @@ const AudioSettingsMenu = memo(
     const hasDefault = availableDevices.some(
       (device) => device?.deviceId === 'default'
     );
+
+    const handleContextMenu = useCallback((event: MouseEvent) => {
+      event.preventDefault();
+      restoreFocusRef.current = true;
+      setOpen(true);
+    }, []);
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+      if (
+        event.key === 'ContextMenu' ||
+        (event.shiftKey && event.key === 'F10')
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        restoreFocusRef.current = true;
+        setOpen(true);
+      }
+    }, []);
+    const handleCloseAutoFocus = useCallback((event: Event) => {
+      event.preventDefault();
+      if (restoreFocusRef.current) {
+        const button = anchorRef.current?.querySelector('button');
+        button?.focus();
+      }
+    }, []);
+    const handleInteractOutside = useCallback(() => {
+      restoreFocusRef.current = false;
+    }, []);
 
     const handleDeviceChange = useCallback(
       (value: string) => {
@@ -57,6 +94,7 @@ const AudioSettingsMenu = memo(
       [volumeKey, saveDevices]
     );
     const handleVoiceSettings = useCallback(() => {
+      restoreFocusRef.current = false;
       setOpen(false);
       openServerScreen(ServerScreen.USER_SETTINGS, {
         initialEntryId: 'devices'
@@ -65,26 +103,25 @@ const AudioSettingsMenu = memo(
 
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'shrink-0 rounded-md p-0 text-muted-foreground hover:bg-raised hover:text-foreground',
-              compact ? 'h-7 w-4' : 'h-11 w-5'
-            )}
-            aria-label={t(
-              isMicrophone ? 'microphoneSettings' : 'outputSettings'
-            )}
+        <PopoverAnchor asChild>
+          <span
+            ref={anchorRef}
+            className="inline-flex shrink-0"
+            data-state={open ? 'open' : 'closed'}
+            onContextMenu={handleContextMenu}
+            onKeyDown={handleKeyDown}
           >
-            <ChevronUp className="size-3" />
-          </Button>
-        </PopoverTrigger>
+            {children}
+          </span>
+        </PopoverAnchor>
         <PopoverContent
           side="top"
           align="end"
           sideOffset={8}
-          className="w-[296px] rounded-[12px] border-line bg-panel p-2 text-foreground shadow-lg"
+          onCloseAutoFocus={handleCloseAutoFocus}
+          onInteractOutside={handleInteractOutside}
+          aria-label={t(isMicrophone ? 'microphoneSettings' : 'outputSettings')}
+          className="w-66 rounded-[10px] border-line bg-panel p-1.5 text-foreground shadow-lg"
         >
           <div>
             <Select
@@ -93,7 +130,7 @@ const AudioSettingsMenu = memo(
             >
               <SelectTrigger
                 aria-label={t(isMicrophone ? 'inputDevice' : 'outputDevice')}
-                className="h-auto w-full gap-3 rounded-lg border-0 bg-transparent p-4 text-left shadow-none hover:bg-raised [&>svg]:-rotate-90"
+                className="h-auto w-full gap-2 rounded-md border-0 bg-transparent p-2 text-left shadow-none hover:bg-raised [&>svg]:-rotate-90"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-sm font-medium leading-5">
@@ -121,7 +158,7 @@ const AudioSettingsMenu = memo(
             </Select>
           </div>
           <Separator className="bg-line" />
-          <div className="flex flex-col gap-3.5 px-4 py-5">
+          <div className="flex flex-col gap-2 p-2">
             <div className="flex items-center justify-between gap-3 text-sm leading-5">
               <span id={volumeLabelId}>{volumeLabel}</span>
               <span className="text-[13px] tabular-nums text-muted-foreground">
@@ -143,9 +180,9 @@ const AudioSettingsMenu = memo(
           <Button
             variant="ghost"
             onClick={handleVoiceSettings}
-            className="h-auto w-full justify-start gap-3 rounded-lg p-4 text-sm font-normal"
+            className="h-auto w-full justify-start gap-2 rounded-md p-2 text-sm font-normal"
           >
-            <Settings className="size-4 shrink-0 text-muted-foreground" />
+            <Cog6ToothIcon className="size-4 shrink-0" />
             {t('voiceSettings')}
           </Button>
         </PopoverContent>

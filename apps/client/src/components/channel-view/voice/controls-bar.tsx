@@ -4,11 +4,7 @@ import { Protect } from '@/components/protect';
 import { useIsCurrentVoiceChannelSelected } from '@/features/server/channels/hooks';
 import { useChannelCan } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
-import {
-  useAlwaysShowVoiceControls,
-  useOwnVoiceState,
-  useVoice
-} from '@/features/server/voice/hooks';
+import { useOwnVoiceState, useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
 import {
   ComputerDesktopIcon,
@@ -19,16 +15,17 @@ import {
 } from '@heroicons/react/24/outline';
 import { ChannelPermission, Permission } from '@sharkord/shared';
 import { Button, Tooltip } from '@sharkord/ui';
-import { HeadphoneOff, Headphones, MicOff, ScreenShareOff } from 'lucide-react';
+import { HeadphoneOff, Headphones, MicOff } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { ControlToggleButton } from './control-toggle-button';
 import { ReactionsButton } from './reactions-button';
 
 type TControlsBarProps = {
   channelId: number;
+  isActive: boolean;
 };
 
-const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
+const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
   const {
     toggleMic,
     toggleSound,
@@ -39,7 +36,6 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
   const ownVoiceState = useOwnVoiceState();
   const { devices } = useDevices();
   const channelCan = useChannelCan(channelId);
-  const alwaysShowControls = useAlwaysShowVoiceControls();
   const isConnectedToThisChannel = useIsCurrentVoiceChannelSelected();
 
   const permissions = useMemo(
@@ -51,9 +47,10 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
     [channelCan]
   );
 
-  const barClass = alwaysShowControls
-    ? 'relative'
-    : 'absolute bottom-0 left-0 right-0 transition-[opacity,translate] duration-150 ease-out invisible opacity-0 translate-y-3 group-hover/voice-stage:visible group-hover/voice-stage:opacity-100 group-hover/voice-stage:translate-y-0';
+  const barClass = cn(
+    'relative focus-within:opacity-100 has-[[data-state=open]]:opacity-100',
+    isActive ? 'opacity-100' : 'opacity-0'
+  );
 
   const handleLeaveVoice = useCallback(() => {
     leaveVoice();
@@ -68,9 +65,12 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
     >
       <div
         data-voice-controls
-        className="flex items-center gap-1 rounded-full bg-nav p-1 pointer-events-auto sm:gap-2 sm:p-2"
+        className={cn(
+          'flex items-center gap-1 rounded-full bg-nav p-1 focus-within:pointer-events-auto has-[[data-state=open]]:pointer-events-auto sm:gap-2 sm:p-2',
+          isActive ? 'pointer-events-auto' : 'pointer-events-none'
+        )}
       >
-        <div className="flex items-center">
+        <AudioSettingsMenu kind="microphone">
           <ControlToggleButton
             enabled={ownVoiceState.micMuted}
             enabledLabel="Unmute"
@@ -80,11 +80,10 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
             onClick={toggleMic}
             disabled={!permissions.canSpeak || ownVoiceState.soundMuted}
+            keepFocusableWhenDisabled
           />
-
-          <AudioSettingsMenu kind="microphone" />
-        </div>
-        <div className="flex items-center">
+        </AudioSettingsMenu>
+        <AudioSettingsMenu kind="output">
           <ControlToggleButton
             enabled={ownVoiceState.soundMuted}
             enabledLabel="Undeafen"
@@ -94,9 +93,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
             onClick={toggleSound}
           />
-
-          <AudioSettingsMenu kind="output" />
-        </div>
+        </AudioSettingsMenu>
         <ControlToggleButton
           enabled={ownVoiceState.webcamEnabled}
           enabledLabel="Stop Video"
@@ -113,7 +110,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             enabled={ownVoiceState.sharingScreen}
             enabledLabel="Stop Sharing"
             disabledLabel="Share Screen"
-            enabledIcon={ScreenShareOff}
+            enabledIcon={ComputerDesktopIcon}
             disabledIcon={ComputerDesktopIcon}
             enabledClassName="bg-success-solid text-white hover:bg-success-solid/90 hover:text-white"
             onClick={toggleScreenShare}

@@ -6,16 +6,9 @@ import { useIsOwnUser } from '@/features/server/users/hooks';
 import { useSpeakingState } from '@/features/server/voice/hooks';
 import { Permission, PluginSlot } from '@sharkord/shared';
 import { cn } from '@sharkord/ui';
-import {
-  HeadphoneOff,
-  Headphones,
-  Mic,
-  MicOff,
-  Monitor,
-  Video,
-  VolumeX
-} from 'lucide-react';
+import { HeadphoneOff, MicOff, Video, VolumeX } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
 import { UserPopover } from '../user-popover';
 import { VOICE_USER_DND_MIME } from './helpers';
@@ -30,6 +23,7 @@ type TVoiceUserProps = {
 
 const VoiceUser = memo(
   ({ user, channelId, isOwnChannel = false }: TVoiceUserProps) => {
+    const { t } = useTranslation('common');
     const isOwnUser = useIsOwnUser(user.id);
     const { isMuted } = useStreamVolumeControl({
       type: 'user',
@@ -60,13 +54,16 @@ const VoiceUser = memo(
         draggable={canMove}
         onDragStart={canMove ? handleDragStart : undefined}
         className={cn(
-          'flex items-center gap-2 px-2 py-1 rounded hover:bg-accent/30 text-sm',
+          'flex h-[30px] items-center gap-2 pl-[38px] pr-2.5 rounded hover:bg-accent/30 text-sm',
           canMove && 'cursor-grab active:cursor-grabbing'
         )}
       >
         <UserAvatar
           userId={user.id}
-          className={cn('h-5 w-5', isActivelySpeaking && speakingEffectClass)}
+          className={cn(
+            'size-[18px] shrink-0',
+            isActivelySpeaking && speakingEffectClass
+          )}
           showUserPopover={true}
           showStatusBadge={false}
         />
@@ -80,33 +77,23 @@ const VoiceUser = memo(
           props={pluginSlotProps}
         />
 
-        <div className="flex items-center gap-1 opacity-60">
+        <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
           {shouldShowMuteIndicator && (
             <VolumeX className="h-3 w-3 text-red-500" />
           )}
 
-          <div>
-            {user.state.micMuted ? (
-              <MicOff className="h-3 w-3 text-red-500" />
-            ) : (
-              <Mic className="h-3 w-3 text-green-500" />
-            )}
-          </div>
+          {user.state.micMuted && <MicOff className="h-3 w-3 text-red-500" />}
 
-          <div>
-            {user.state.soundMuted ? (
-              <HeadphoneOff className="h-3 w-3 text-red-500" />
-            ) : (
-              <Headphones className="h-3 w-3 text-green-500" />
-            )}
-          </div>
-
-          {user.state.webcamEnabled && (
-            <Video className="h-3 w-3 text-blue-500" />
+          {user.state.soundMuted && (
+            <HeadphoneOff className="h-3 w-3 text-red-500" />
           )}
 
+          {user.state.webcamEnabled && <Video className="h-3 w-3" />}
+
           {user.state.sharingScreen && (
-            <Monitor className="h-3 w-3 text-purple-500" />
+            <span className="rounded bg-danger-solid px-1.5 py-0.5 text-[10px] font-semibold leading-[14px] text-white">
+              {t('live')}
+            </span>
           )}
         </div>
       </div>

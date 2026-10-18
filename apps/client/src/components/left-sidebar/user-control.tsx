@@ -5,20 +5,15 @@ import { useChannelCan } from '@/features/server/hooks';
 import { useOwnPublicUser } from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
+import { MicrophoneIcon } from '@heroicons/react/24/outline';
 import { ChannelPermission, TestId } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import { HeadphoneOff, Headphones, Mic, MicOff, Settings } from 'lucide-react';
+import { HeadphoneOff, Headphones, MicOff, Settings } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ServerScreen } from '../server-screens/screens';
 import { UserAvatar } from '../user-avatar';
 import { UserPopover } from '../user-popover';
-
-const revealedSettingsClass =
-  'w-4 opacity-0 transition-opacity group-hover/mic:opacity-100 group-focus-within/mic:opacity-100 has-[[data-state=open]]:opacity-100';
-
-const revealedOutputSettingsClass =
-  'w-4 opacity-0 transition-opacity group-hover/output:opacity-100 group-focus-within/output:opacity-100 has-[[data-state=open]]:opacity-100';
 
 const UserControl = memo(() => {
   const { t } = useTranslation('sidebar');
@@ -26,6 +21,8 @@ const UserControl = memo(() => {
   const currentVoiceChannelId = useCurrentVoiceChannelId();
   const { ownVoiceState, toggleMic, toggleSound } = useVoice();
   const channelCan = useChannelCan(currentVoiceChannelId);
+  const microphoneDisabled =
+    !channelCan(ChannelPermission.SPEAK) || ownVoiceState.soundMuted;
   const handleSettingsClick = useCallback(() => {
     openServerScreen(ServerScreen.USER_SETTINGS);
   }, []);
@@ -54,33 +51,29 @@ const UserControl = memo(() => {
       </UserPopover>
 
       <div className="flex shrink-0 items-center gap-0.5">
-        <div className="group/mic flex items-center">
+        <AudioSettingsMenu kind="microphone">
           <Button
             variant="ghost"
             size="icon"
             className={cn(
               'size-8 rounded-[6px]',
+              microphoneDisabled && 'opacity-60',
               ownVoiceState.micMuted
                 ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400'
                 : 'text-muted-foreground hover:bg-raised hover:text-foreground'
             )}
-            onClick={toggleMic}
+            onClick={microphoneDisabled ? undefined : toggleMic}
             title={ownVoiceState.micMuted ? t('unmuteMic') : t('muteMic')}
-            disabled={
-              !channelCan(ChannelPermission.SPEAK) || ownVoiceState.soundMuted
-            }
+            aria-disabled={microphoneDisabled || undefined}
           >
             {ownVoiceState.micMuted ? (
               <MicOff className="size-5" />
             ) : (
-              <Mic className="size-5" />
+              <MicrophoneIcon className="size-5" />
             )}
           </Button>
-          <div className={revealedSettingsClass}>
-            <AudioSettingsMenu kind="microphone" compact />
-          </div>
-        </div>
-        <div className="group/output flex items-center">
+        </AudioSettingsMenu>
+        <AudioSettingsMenu kind="output">
           <Button
             variant="ghost"
             size="icon"
@@ -99,10 +92,7 @@ const UserControl = memo(() => {
               <Headphones className="size-5" />
             )}
           </Button>
-          <div className={revealedOutputSettingsClass}>
-            <AudioSettingsMenu kind="output" compact />
-          </div>
-        </div>
+        </AudioSettingsMenu>
         <Button
           variant="ghost"
           size="icon"

@@ -7,8 +7,9 @@ import { useOwnUserId, useUserById } from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
+import { PlayIcon } from '@heroicons/react/20/solid';
+import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
 import { StreamKind } from '@sharkord/shared';
-import { Monitor } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -222,6 +223,16 @@ const ScreenShareCard = memo(
 
     if (!user || devices.voiceOnlyMode) return null;
 
+    let watchLabel = t('watchStream');
+    let watchAccessibleLabel = t('watchScreen', { name: user.name });
+    if (watchState === 'loading') {
+      watchLabel = t('connectingStream');
+      watchAccessibleLabel = watchLabel;
+    } else if (watchState === 'error') {
+      watchLabel = t('retryWatching', { name: user.name });
+      watchAccessibleLabel = watchLabel;
+    }
+
     if (!isOwnUser && (!isViewingDemo(userId) || !hasScreenShareStream)) {
       return (
         <VoiceCardContextMenu
@@ -236,21 +247,13 @@ const ScreenShareCard = memo(
               onClick={handleWatch}
               disabled={watchState === 'loading'}
               aria-busy={watchState === 'loading'}
-              aria-label={
-                watchState === 'loading'
-                  ? t('connectingStream')
-                  : t(
-                      watchState === 'error' ? 'retryWatching' : 'watchScreen',
-                      { name: user.name }
-                    )
-              }
+              aria-label={watchAccessibleLabel}
               className="absolute inset-0 z-1 flex cursor-pointer items-center justify-center rounded-[inherit] text-[13px] leading-5 text-muted-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring disabled:cursor-wait"
             >
-              {watchState === 'loading'
-                ? t('connectingStream')
-                : watchState === 'error'
-                  ? t('retryWatching')
-                  : t('clickToWatch')}
+              <span className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line bg-raised px-4 text-sm font-medium leading-5 text-foreground">
+                <PlayIcon aria-hidden="true" className="size-4" />
+                <span>{watchLabel}</span>
+              </span>
             </button>
             {watchState === 'error' && (
               <p
@@ -261,7 +264,10 @@ const ScreenShareCard = memo(
               </p>
             )}
             <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'text-foreground')}>
-              <Monitor aria-hidden="true" className="size-[18px] shrink-0" />
+              <ComputerDesktopIcon
+                aria-hidden="true"
+                className="size-[18px] shrink-0"
+              />
               <p className="truncate text-[13px] font-medium leading-[17px]">
                 {user.name}'s screen
               </p>
@@ -326,7 +332,10 @@ const ScreenShareCard = memo(
             autoPlay
             muted
             playsInline
-            className="absolute inset-x-0 top-0 h-[calc(100%-34px)] w-full bg-black object-contain"
+            className={cn(
+              'absolute inset-x-0 top-0 w-full bg-black object-contain',
+              isPinned ? 'h-[calc(100%-34px)]' : 'h-full'
+            )}
             style={{
               transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
               transition: isDragging ? 'none' : 'transform 0.1s ease-out'
@@ -340,16 +349,16 @@ const ScreenShareCard = memo(
             playsInline
           />
 
-          <div
-            className={cn(
-              'absolute top-0 right-0 z-10 justify-end',
-              density.inset,
-              'hidden group-hover/screen-share-card:flex',
-              'has-[[data-state=open]]:flex'
-            )}
-          >
-            <div className={cardControlsClass(isCompact)}>
-              {!isOwnUser && webRtcSimulcastEnabled && (
+          {!isOwnUser && webRtcSimulcastEnabled && (
+            <div
+              className={cn(
+                'absolute top-0 right-0 z-10 justify-end',
+                density.inset,
+                'flex opacity-0 pointer-events-none group-hover/screen-share-card:opacity-100 group-hover/screen-share-card:pointer-events-auto group-focus-within/screen-share-card:opacity-100 group-focus-within/screen-share-card:pointer-events-auto',
+                'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
+              )}
+            >
+              <div className={cardControlsClass(isCompact)}>
                 <QualityButton
                   streamId={userId}
                   kind={StreamKind.SCREEN}
@@ -357,15 +366,21 @@ const ScreenShareCard = memo(
                   size={density.icon}
                   className={cardControlClass()}
                 />
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'bg-[#050505]')}>
-            <Monitor className="size-[18px] shrink-0 text-white" />
-            <p className="truncate text-[13px] font-medium leading-[17px] text-white">
+          <div
+            className={cn(
+              SCREEN_SHARE_CAPTION_CLASS,
+              'pointer-events-none bg-black/55 text-white',
+              isPinned && 'bg-black'
+            )}
+          >
+            <ComputerDesktopIcon className="size-[18px] shrink-0" />
+            <p className="truncate text-[13px] font-medium leading-[17px]">
               {user.name}'s screen
-              {(videoStats || codec) && (
+              {isPinned && (videoStats || codec) && (
                 <span className="ml-2 text-xs leading-4 text-muted-foreground">
                   {codec}
                   {codec && videoStats && ' '}
