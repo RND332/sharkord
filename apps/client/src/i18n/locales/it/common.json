@@ -1,4 +1,6 @@
 {
+  "watchStream": "Guarda la diretta",
+  "live": "IN DIRETTA",
   "directMediaFailed": "Impossibile stabilire la connessione multimediale. Riprova.",
   "p2pFallbackToRelay": "Connessione diretta non riuscita, passaggio al relay del server.",
   "cancel": "Annulla",

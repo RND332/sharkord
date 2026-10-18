@@ -256,8 +256,7 @@ mock.module('@/features/server/voice/actions', () => ({
   setPinnedCard() {},
   setHideNonVideoParticipants() {},
   setShowUserBannersInVoice() {},
-  setHideOwnScreenShare() {},
-  setAlwaysShowVoiceControls() {}
+  setHideOwnScreenShare() {}
 }));
 mock.module('@/features/server/voice/hooks', () => ({
   useVoiceChannelExternalStreamsList: () => [],
@@ -275,7 +274,6 @@ mock.module('@/features/server/voice/hooks', () => ({
   useHideNonVideoParticipants: () => false,
   useShowUserBannersInVoice: () => false,
   useHideOwnScreenShare: () => false,
-  useAlwaysShowVoiceControls: () => false,
   useSpeakingState: () => false
 }));
 mock.module('@/features/store', () => ({ store: { getState: () => ({}) } }));

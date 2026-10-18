@@ -9,9 +9,10 @@ import {
 } from '@/features/server/hooks';
 
 import { cn } from '@/lib/utils';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { TestId } from '@sharkord/shared';
 import { Tooltip } from '@sharkord/ui';
-import { MessageCircleMore, Settings } from 'lucide-react';
+import { MessageCircleMore } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ServerScreen } from '../server-screens/screens';
@@ -89,9 +90,9 @@ const AppRail = memo(() => {
           type="button"
           aria-label={t('userSettings')}
           onClick={openSettings}
-          className="flex size-11 items-center justify-center rounded-xl border border-line bg-nav text-muted-foreground transition-colors hover:bg-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex size-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Settings className="size-5" />
+          <Cog6ToothIcon className="size-6" />
         </button>
       </Tooltip>
     </nav>

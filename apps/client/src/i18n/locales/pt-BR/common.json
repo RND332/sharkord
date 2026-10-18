@@ -1,4 +1,6 @@
 {
+  "watchStream": "Assistir à transmissão",
+  "live": "AO VIVO",
   "directMediaFailed": "Não foi possível estabelecer a conexão de mídia. Tente novamente.",
   "p2pFallbackToRelay": "A conexão direta falhou, alternando para o relay do servidor.",
   "cancel": "Cancelar",

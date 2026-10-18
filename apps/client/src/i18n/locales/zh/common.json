@@ -1,4 +1,6 @@
 {
+  "watchStream": "观看直播",
+  "live": "直播中",
   "directMediaFailed": "无法建立媒体连接，请重试。",
   "p2pFallbackToRelay": "直连失败，正在切换到服务器中继。",
   "cancel": "取消",

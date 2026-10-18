@@ -113,6 +113,15 @@ test('shows configured server branding instead of fixed product branding', async
   expect(host.querySelector('img[src="/logo.webp"]')).toBeNull();
 });
 
+test('header language and shell match the compact Paper chrome', async () => {
+  const header = page.getByRole('banner').element();
+  const language = page.getByRole('combobox').element();
+  expect(header.getBoundingClientRect().height).toBe(40);
+  expect(getComputedStyle(header).borderBottomWidth).toBe('0px');
+  expect(getComputedStyle(language).fontSize).toBe('13px');
+  expect(getComputedStyle(language).lineHeight).toBe('18px');
+});
+
 test('uses the server initial when no logo is configured', async () => {
   store.dispatch(
     serverSliceActions.setPublicSettings({ ...settings, logo: null })

@@ -4,13 +4,13 @@ import type { TIconButtonSize } from '@sharkord/ui';
 // cards shrink to the thumbnail strip when another card is pinned
 const cardDensity = (isCompact: boolean) => ({
   inset: isCompact ? 'p-1' : 'p-3',
-  label: 'text-xs font-semibold leading-[18px]',
+  label: 'text-[13px] font-semibold leading-[18px]',
   icon: (isCompact ? 'xs' : 'sm') as TIconButtonSize
 });
 
 const cardBadgeClass = (isCompact: boolean) =>
   cn(
-    'inline-flex min-w-0 items-center bg-black/70 rounded overflow-hidden truncate',
+    'inline-flex min-w-0 items-center bg-black/55 rounded-[6px] overflow-hidden truncate',
     isCompact ? 'h-6 gap-2 px-2' : 'h-6.5 gap-2 px-2.5'
   );
 

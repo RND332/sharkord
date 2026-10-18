@@ -1,6 +1,7 @@
 import { openDialog, requestConfirmation } from '@/features/dialogs/actions';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { disconnectFromServer } from '@/features/server/actions';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Permission, TestId } from '@sharkord/shared';
 import {
   Button,
@@ -11,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@sharkord/ui';
-import { Menu } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '../dialogs/dialogs';
@@ -52,8 +52,9 @@ const ServerDropdownMenu = memo(() => {
           data-testid={TestId.SERVER_MENU_TRIGGER}
           variant="ghost"
           size="icon"
+          className="size-5 p-0"
         >
-          <Menu className="h-4 w-4 text-muted-foreground" />
+          <ChevronDownIcon className="size-5 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>

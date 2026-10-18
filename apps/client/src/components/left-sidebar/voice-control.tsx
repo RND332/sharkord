@@ -7,6 +7,12 @@ import { useChannelCan, useServerName } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
+import {
+  PhoneXMarkIcon,
+  TvIcon,
+  VideoCameraIcon,
+  VideoCameraSlashIcon
+} from '@heroicons/react/24/outline';
 import { ChannelPermission, getTrpcError, PluginSlot } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import {
@@ -14,11 +20,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Monitor,
-  MonitorOff,
-  PhoneOff,
-  Video,
-  VideoOff,
   Wifi,
   WifiOff
 } from 'lucide-react';
@@ -31,10 +32,10 @@ import { PluginSlotRenderer } from '../plugin-slot-renderer';
 import { StatsPopover } from './stats-popover';
 
 const activeActionClass =
-  'border-primary bg-accent text-success hover:bg-accent hover:text-success';
+  'border-transparent bg-success-solid text-white hover:bg-success-solid/90 hover:text-white';
 
 const inactiveActionClass =
-  'border-transparent bg-panel text-foreground hover:bg-panel/80';
+  'border-transparent bg-raised text-foreground hover:bg-panel';
 
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
@@ -129,7 +130,7 @@ const VoiceControl = memo(() => {
               variant="ghost"
               size="icon"
               className={cn(
-                'size-6 shrink-0 rounded-[6px] border border-primary bg-accent p-0 hover:bg-accent',
+                'size-6 shrink-0 rounded-[6px] p-0 hover:bg-raised',
                 connectionInfo.color
               )}
               title={t('transportStats')}
@@ -158,7 +159,7 @@ const VoiceControl = memo(() => {
             onClick={handleDisconnect}
             title={t('disconnectVoice')}
           >
-            <PhoneOff className="size-[18px]" />
+            <PhoneXMarkIcon className="size-[18px]" />
           </Button>
         </div>
 
@@ -181,9 +182,9 @@ const VoiceControl = memo(() => {
             }
           >
             {isWebcamActive ? (
-              <Video className="size-[18px]" />
+              <VideoCameraIcon className="size-[18px]" />
             ) : (
-              <VideoOff className="size-[18px]" />
+              <VideoCameraSlashIcon className="size-[18px]" />
             )}
           </Button>
 
@@ -206,11 +207,7 @@ const VoiceControl = memo(() => {
                 !channelCan(ChannelPermission.SHARE_SCREEN)
               }
             >
-              {isScreenShareActive ? (
-                <Monitor className="size-5" />
-              ) : (
-                <MonitorOff className="size-5" />
-              )}
+              <TvIcon className="size-5" />
             </Button>
           )}
 

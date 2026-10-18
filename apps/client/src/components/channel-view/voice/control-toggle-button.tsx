@@ -19,6 +19,7 @@ type TControlToggleButtonProps = {
 
   onClick: () => void;
   disabled?: boolean;
+  keepFocusableWhenDisabled?: boolean;
 };
 
 const ControlToggleButton = memo(
@@ -31,7 +32,8 @@ const ControlToggleButton = memo(
     enabledClassName,
     disabledClassName,
     onClick,
-    disabled
+    disabled,
+    keepFocusableWhenDisabled = false
   }: TControlToggleButtonProps) => {
     const label = enabled ? enabledLabel : disabledLabel;
 
@@ -47,8 +49,9 @@ const ControlToggleButton = memo(
               : (disabledClassName ?? 'hover:bg-panel'),
             disabled && 'opacity-60 hover:bg-raised'
           )}
-          onClick={onClick}
-          disabled={disabled}
+          onClick={disabled ? undefined : onClick}
+          disabled={disabled && !keepFocusableWhenDisabled}
+          aria-disabled={disabled || undefined}
           aria-label={label}
         >
           {enabled ? (

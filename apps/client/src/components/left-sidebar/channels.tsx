@@ -9,7 +9,6 @@ import {
 import {
   useCan,
   useChannelCan,
-  useHasSharingScreenUsers,
   useHasUnreadMentions,
   useTypingUsersByChannelId,
   useUnreadMessagesCount,
@@ -26,6 +25,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { HashtagIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import {
   ChannelPermission,
   Permission,
@@ -33,7 +33,6 @@ import {
   TestId,
   getTrpcError
 } from '@sharkord/shared';
-import { Hash, Volume2 } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -48,7 +47,6 @@ import {
 } from './helpers';
 import { useChannelDragPreview } from './use-sidebar-dnd';
 import { VoiceUser } from './voice-user';
-import { Waveform } from './waveform';
 
 type TVoiceProps = Omit<TItemWrapperProps, 'children'> & {
   channel: TChannel;
@@ -66,12 +64,10 @@ const Voice = memo(
     const unreadCount = useUnreadMessagesCount(channel.id);
     const hasUnreadMentions = useHasUnreadMentions(channel.id);
     const currentVoiceChannelId = useCurrentVoiceChannelId();
-    const someoneIsSharingScreen = useHasSharingScreenUsers(channel.id);
     const isMuted = useIsChannelMuted(channel.id);
 
     const [isDragOver, setIsDragOver] = useState(false);
 
-    const isVoiceActive = users.length > 0 || externalStreams.length > 0;
     const isOwnChannel = currentVoiceChannelId === channel.id;
 
     const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -119,36 +115,26 @@ const Voice = memo(
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(props.className, {
-            'text-blue-500':
-              someoneIsSharingScreen && (isOwnChannel || isSelected),
-            'text-green-500':
-              (isOwnChannel && !someoneIsSharingScreen) ||
-              (isSelected &&
-                !someoneIsSharingScreen &&
-                !isOwnChannel &&
-                isVoiceActive),
             'ring-1 ring-primary bg-accent/40': isDragOver
           })}
         >
-          {isVoiceActive ? (
-            <Waveform isScreenSharing={someoneIsSharingScreen} />
-          ) : (
-            <Volume2 className="h-4 w-4" />
-          )}
+          <SpeakerWaveIcon className="size-5 shrink-0" />
 
           <span className={cn('flex-1 truncate', { 'opacity-50': isMuted })}>
             {channel.name}
           </span>
 
+          {users.length > 0 && (
+            <span className="text-xs leading-4 text-muted-foreground">
+              {users.length}
+            </span>
+          )}
           {unreadCount > 0 && (
             <UnreadCount count={unreadCount} hasMention={hasUnreadMentions} />
           )}
         </ItemWrapper>
         {channel.type === 'VOICE' && (
-          <div
-            className="ml-6 space-y-1 mt-1"
-            onContextMenu={(e) => e.stopPropagation()}
-          >
+          <div className="mt-0.5" onContextMenu={(e) => e.stopPropagation()}>
             {users.map((user) => (
               <VoiceUser
                 key={user.id}
@@ -189,7 +175,7 @@ const Text = memo(({ channel, ...props }: TTextProps) => {
 
   return (
     <ItemWrapper {...props}>
-      <Hash className="h-4 w-4" />
+      <HashtagIcon className="size-5 shrink-0" />
       <span className={cn('flex-1', { 'opacity-50': isMuted })}>
         {channel.name}
       </span>
@@ -241,7 +227,7 @@ const ItemWrapper = memo(
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={cn(
-          'flex w-full items-center gap-2 rounded-[6px] border border-transparent px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground select-none cursor-pointer',
+          'flex h-[34px] w-full items-center gap-2 rounded-[6px] border border-transparent px-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground select-none cursor-pointer',
           {
             'bg-accent text-accent-foreground': isSelected,
             'cursor-default opacity-50 hover:bg-transparent hover:text-muted-foreground':

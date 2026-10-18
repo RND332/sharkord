@@ -6,31 +6,30 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import '../index.css';
 
-const { toggleMic, toggleSound, saveDevices, openServerScreen } = vi.hoisted(
-  () => ({
+const { state, toggleMic, toggleSound, saveDevices, openServerScreen } =
+  vi.hoisted(() => ({
+    state: { canSpeak: true, soundMuted: false },
     toggleMic: vi.fn(),
     toggleSound: vi.fn(),
     saveDevices: vi.fn(),
     openServerScreen: vi.fn()
-  })
-);
+  }));
 vi.mock('@/features/server-screens/actions', () => ({ openServerScreen }));
 vi.mock('@/features/server/channels/hooks', () => ({
   useCurrentVoiceChannelId: () => 1,
   useIsCurrentVoiceChannelSelected: () => true
 }));
 vi.mock('@/features/server/hooks', () => ({
-  useChannelCan: () => () => true,
+  useChannelCan: () => () => state.canSpeak,
   useCurrentVoicePeers: () => []
 }));
 vi.mock('@/features/server/users/hooks', () => ({
   useOwnPublicUser: () => ({ id: 1, name: 'Test', status: 'online' })
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
-  useOwnVoiceState: () => ({ micMuted: false, soundMuted: false }),
-  useAlwaysShowVoiceControls: () => true,
+  useOwnVoiceState: () => ({ micMuted: false, soundMuted: state.soundMuted }),
   useVoice: () => ({
-    ownVoiceState: { micMuted: false, soundMuted: false },
+    ownVoiceState: { micMuted: false, soundMuted: state.soundMuted },
     toggleMic,
     toggleSound
   })
@@ -72,24 +71,26 @@ afterEach(() => {
   root?.unmount();
   host?.remove();
   vi.clearAllMocks();
+  state.canSpeak = true;
+  state.soundMuted = false;
 });
 
-test('separate audio arrows expose current devices, keyboard volume, and direct Devices navigation', async () => {
+test('audio controls open compact device settings on right click without toggling audio', async () => {
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
   root.render(createElement(UserControl));
   await page
-    .getByRole('button', { name: 'microphoneSettings', exact: true })
-    .click();
+    .getByRole('button', { name: 'muteMic', exact: true })
+    .click({ button: 'right' });
   expect(toggleMic).not.toHaveBeenCalled();
   await expect
     .element(page.getByRole('combobox'))
     .toHaveTextContent('inputDeviceStudio microphone');
   const panel = page.getByRole('dialog').element();
-  expect(panel.getBoundingClientRect().width).toBe(296);
-  expect(getComputedStyle(panel).padding).toBe('8px');
-  expect(getComputedStyle(panel).borderRadius).toBe('12px');
+  expect(panel.getBoundingClientRect().width).toBe(264);
+  expect(getComputedStyle(panel).padding).toBe('6px');
+  expect(getComputedStyle(panel).borderRadius).toBe('10px');
   await page.getByRole('combobox').click();
   await page.getByRole('option', { name: 'USB microphone' }).click();
   const selectDevice = saveDevices.mock.lastCall![0];
@@ -115,8 +116,8 @@ test('separate audio arrows expose current devices, keyboard volume, and direct 
     initialEntryId: 'devices'
   });
   await page
-    .getByRole('button', { name: 'outputSettings', exact: true })
-    .click();
+    .getByRole('button', { name: 'deafen', exact: true })
+    .click({ button: 'right' });
   expect(toggleSound).not.toHaveBeenCalled();
   await expect
     .element(page.getByRole('combobox'))
@@ -133,7 +134,7 @@ test('separate audio arrows expose current devices, keyboard volume, and direct 
   });
   await userEvent.keyboard('{Escape}');
   await expect
-    .element(page.getByRole('button', { name: 'outputSettings', exact: true }))
+    .element(page.getByRole('button', { name: 'deafen', exact: true }))
     .toHaveFocus();
   await page.getByRole('button', { name: 'muteMic', exact: true }).click();
   expect(toggleMic).toHaveBeenCalledTimes(1);
@@ -141,23 +142,84 @@ test('separate audio arrows expose current devices, keyboard volume, and direct 
   expect(toggleSound).toHaveBeenCalledTimes(1);
 });
 
-test('main toolbar keeps mute and deafen independent from adjacent settings arrows', async () => {
+test('main toolbar has no settings arrows and supports keyboard device settings', async () => {
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
-  root.render(createElement(ControlsBar, { channelId: 1 }));
+  root.render(createElement(ControlsBar, { channelId: 1, isActive: true }));
   await page
-    .getByRole('button', { name: 'microphoneSettings', exact: true })
-    .click();
+    .getByRole('button', { name: 'Mute', exact: true })
+    .click({ button: 'right' });
   expect(toggleMic).not.toHaveBeenCalled();
   await userEvent.keyboard('{Escape}');
   await page.getByRole('button', { name: 'Mute', exact: true }).click();
   expect(toggleMic).toHaveBeenCalledTimes(1);
-  await page
-    .getByRole('button', { name: 'outputSettings', exact: true })
-    .click();
+  const deafen = page.getByRole('button', { name: 'Deafen', exact: true });
+  deafen.element().focus();
+  await userEvent.keyboard('{Shift>}{F10}{/Shift}');
+  await expect.element(page.getByRole('dialog')).toBeVisible();
   expect(toggleSound).not.toHaveBeenCalled();
   await userEvent.keyboard('{Escape}');
   await page.getByRole('button', { name: 'Deafen', exact: true }).click();
   expect(toggleSound).toHaveBeenCalledTimes(1);
+  await expect
+    .element(
+      page.getByRole('button', { name: 'microphoneSettings', exact: true })
+    )
+    .not.toBeInTheDocument();
+  await expect
+    .element(page.getByRole('button', { name: 'outputSettings', exact: true }))
+    .not.toBeInTheDocument();
 });
+
+test('dismissing audio settings by clicking elsewhere preserves the clicked focus target', async () => {
+  host = document.createElement('div');
+  document.body.append(host);
+  root = createRoot(host);
+  root.render(
+    createElement(
+      'div',
+      null,
+      createElement(UserControl),
+      createElement('input', { 'aria-label': 'Message' })
+    )
+  );
+  await page
+    .getByRole('button', { name: 'muteMic', exact: true })
+    .click({ button: 'right' });
+  await expect.element(page.getByRole('dialog')).toBeVisible();
+  const input = page.getByRole('textbox', { name: 'Message' });
+  await input.click();
+  await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
+  await expect.element(input).toHaveFocus();
+});
+
+test.each(['toolbar', 'sidebar'] as const)(
+  '%s microphone settings stay keyboard reachable without SPEAK permission',
+  async (location) => {
+    state.canSpeak = false;
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    root.render(
+      location === 'toolbar'
+        ? createElement(ControlsBar, { channelId: 1, isActive: true })
+        : createElement(UserControl)
+    );
+    const mic = page.getByRole('button', {
+      name: location === 'toolbar' ? 'Mute' : 'muteMic',
+      exact: true
+    });
+    await expect.element(mic).toBeVisible();
+    await userEvent.keyboard('{Tab}');
+    await expect.element(mic).toHaveFocus();
+    await userEvent.keyboard('{Enter}{Space}');
+    expect(toggleMic).not.toHaveBeenCalled();
+    await userEvent.keyboard('{Shift>}{F10}{/Shift}');
+    await expect
+      .element(page.getByRole('slider', { name: 'microphoneVolume' }))
+      .toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await expect.element(mic).toHaveFocus();
+  }
+);

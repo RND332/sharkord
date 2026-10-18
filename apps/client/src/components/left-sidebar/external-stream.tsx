@@ -36,7 +36,7 @@ const ExternalStream = memo(
     const shouldShowMuteIndicator = isOwnChannel && isMuted;
 
     const row = (
-      <div className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent/30 text-sm">
+      <div className="flex h-[30px] items-center gap-2 pl-[38px] pr-2.5 rounded hover:bg-accent/30 text-sm">
         <Tooltip
           content={
             pluginId
@@ -48,10 +48,10 @@ const ExternalStream = memo(
             <img
               src={avatarUrl}
               alt={title}
-              className="h-5 w-5 rounded object-cover"
+              className="size-[18px] shrink-0 rounded object-cover"
             />
           ) : (
-            <Router className="h-5 w-5 text-muted-foreground opacity-60" />
+            <Router className="size-[18px] shrink-0 text-muted-foreground opacity-60" />
           )}
         </Tooltip>
 

@@ -183,11 +183,16 @@ test('left clicking anywhere on a watched screen toggles its pin', async () => {
     .toHaveAttribute('aria-pressed', 'false');
 });
 
-test('left clicking an invitation starts viewing and pins the screen without a Watch stream button', async () => {
+test('left clicking an invitation starts viewing and pins the screen once media arrives', async () => {
   state.viewDemo.mockImplementation(async () => {
     state.viewing = true;
   });
   await render();
+  const watch = page.getByText('Watch stream', { exact: true });
+  await expect.element(watch).toBeVisible();
+  const action = watch.element().parentElement!;
+  expect(action.getBoundingClientRect().height).toBe(36);
+  expect(getComputedStyle(action).backgroundColor).toBe('rgb(64, 66, 73)');
   await page
     .elementLocator(document.querySelector('[data-screen-share-card]')!)
     .click();
@@ -290,6 +295,18 @@ test('watching and stopping a stream keep the same card shell and caption geomet
   expect(document.querySelector('video')).toBeNull();
 });
 
+test('watched captions keep a contrast surface in light themes', async () => {
+  state.viewing = true;
+  state.hasStream = true;
+  await render();
+  document.documentElement.classList.remove('dark');
+  const label = page.getByText("aria's screen", { exact: true }).element();
+  expect(getComputedStyle(label.parentElement!).backgroundColor).not.toBe(
+    'rgba(0, 0, 0, 0)'
+  );
+  expect(getComputedStyle(label).color).toBe('rgb(255, 255, 255)');
+});
+
 test('starting and stopping viewing does not resize the channel tiles', async () => {
   await render(true);
   const tile = document.querySelector('[data-screen-share-card]')!;
@@ -322,6 +339,12 @@ test('starting and stopping viewing does not resize the channel tiles', async ()
 test('channel includes both the normal participant and a separate invitation before watching', async () => {
   await render(true);
   expect(document.querySelectorAll('[data-participant]')).toHaveLength(1);
+  const participant = document.querySelector('[data-participant]')!;
+  const share = document.querySelector('[data-screen-share-card]')!;
+  expect(
+    participant.compareDocumentPosition(share) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+  ).not.toBe(0);
   await expect
     .element(
       page.getByRole('button', { name: "View aria's screen", exact: true })

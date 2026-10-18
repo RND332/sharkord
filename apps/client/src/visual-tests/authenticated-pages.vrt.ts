@@ -27,7 +27,6 @@ import {
   joinVoice,
   leaveVoice,
   removeUserFromVoiceChannel,
-  setAlwaysShowVoiceControls,
   setPinnedCard,
   updateOwnVoiceState
 } from '@/features/server/voice/actions';
@@ -61,6 +60,12 @@ const waitForRender = () => {
   const { promise, resolve } = Promise.withResolvers<void>();
   requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   return promise;
+};
+
+const revealVoiceControls = async () => {
+  const stage = document.querySelector('.group\\/voice-stage');
+  stage?.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
+  await waitForRender();
 };
 
 const createScreenShareStream = () => {
@@ -864,13 +869,52 @@ test('direct messages match the Paper design', async () => {
   expect(document.querySelector('[data-channel-welcome]')).toBeNull();
 });
 
+test('voice toolbar hides with the chat button after inactivity without leaving the stage', async () => {
+  setSelectedChannelId(2);
+  addVoiceParticipants();
+  await waitForRender();
+  try {
+    const stage = document.querySelector<HTMLElement>('.group\\/voice-stage')!;
+    const controls = document.querySelector<HTMLElement>(
+      '[data-voice-controls]'
+    )!;
+    await page.elementLocator(stage).hover();
+    await expect
+      .poll(() => getComputedStyle(controls.parentElement!).opacity)
+      .toBe('1');
+    await expect
+      .poll(() => getComputedStyle(controls.parentElement!).opacity, {
+        timeout: 4000
+      })
+      .toBe('0');
+    expect(stage.matches(':hover')).toBe(true);
+    expect(getComputedStyle(controls).pointerEvents).toBe('none');
+    stage.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
+    await expect
+      .poll(() => getComputedStyle(controls.parentElement!).opacity)
+      .toBe('1');
+    const mute = page.getByRole('button', { name: 'Mute', exact: true });
+    mute.element().focus();
+    await new Promise((resolve) => setTimeout(resolve, 2700));
+    expect(getComputedStyle(controls.parentElement!).opacity).toBe('1');
+    mute.element().blur();
+    await expect
+      .poll(() => getComputedStyle(controls.parentElement!).opacity)
+      .toBe('0');
+  } finally {
+    removeVoiceParticipants();
+    setSelectedChannelId(1);
+  }
+});
+
 test('voice channel matches the Paper design', async () => {
   await markChannelAsRead(3, true);
   setSelectedChannelId(2);
-  setAlwaysShowVoiceControls(true);
   await joinVoice(2);
 
   addVoiceParticipants();
+  await waitForRender();
+  await revealVoiceControls();
 
   await expect
     .element(page.getByRole('button', { name: 'Mute' }))
@@ -883,7 +927,7 @@ test('voice channel matches the Paper design', async () => {
     );
     expect(controls).not.toBeNull();
     expect(controls!.getBoundingClientRect().height).toBe(64);
-    expect(controls!.getBoundingClientRect().width).toBe(408);
+    expect(controls!.getBoundingClientRect().width).toBe(368);
     expect(getComputedStyle(controls!).padding).toBe('8px');
     expect(getComputedStyle(controls!).gap).toBe('8px');
     expect(getComputedStyle(controls!).backgroundColor).toBe('rgb(43, 45, 49)');
@@ -898,17 +942,13 @@ test('voice channel matches the Paper design', async () => {
     expect(disconnect.getBoundingClientRect().height).toBe(48);
     expect(disconnect.querySelector('svg')!.getAttribute('fill')).toBe('none');
     const callControls = Array.from(controls!.querySelectorAll('button'));
-    expect(callControls).toHaveLength(8);
+    expect(callControls).toHaveLength(6);
     const settingsButtons = callControls.filter((button) =>
       ['Microphone settings', 'Headphone settings'].includes(
         button.ariaLabel ?? ''
       )
     );
-    expect(settingsButtons).toHaveLength(2);
-    for (const button of settingsButtons) {
-      expect(button.getBoundingClientRect().width).toBe(20);
-      expect(button.getBoundingClientRect().height).toBe(44);
-    }
+    expect(settingsButtons).toHaveLength(0);
     for (const button of callControls.filter(
       (button) => button !== disconnect && !settingsButtons.includes(button)
     )) {
@@ -931,12 +971,15 @@ test('voice channel matches the Paper design', async () => {
       document.querySelector('.group\\/voice-user-card p')!
     );
     await expect.element(caption).toBeVisible();
-    expect(getComputedStyle(caption.element()).fontSize).toBe('12px');
+    expect(getComputedStyle(caption.element()).fontSize).toBe('13px');
     expect(getComputedStyle(caption.element()).lineHeight).toBe('18px');
     const stage = document.querySelector<HTMLElement>('.group\\/voice-stage')!;
     expect(stage.parentElement).not.toBeNull();
     expect(getComputedStyle(stage).backgroundColor).toBe('rgb(30, 31, 34)');
     const tile = caption.element().closest('.group\\/voice-user-card')!;
+    const avatar = tile.querySelector('[data-slot="avatar"]')!;
+    expect(avatar.getBoundingClientRect().width).toBe(80);
+    expect(avatar.getBoundingClientRect().height).toBe(80);
     expect(tile.querySelector('div.absolute.top-0.right-0')).toBeNull();
     expect(getComputedStyle(tile.firstElementChild!).backgroundImage).toBe(
       'none'
@@ -1055,10 +1098,10 @@ test('screen sharing states match the Paper design', async () => {
 
   setSelectedChannelId(2);
   setCurrentVoiceChannelId(2);
-  setAlwaysShowVoiceControls(true);
   updateOwnVoiceState({ sharingScreen: false });
   addVoiceParticipants(1);
   await waitForRender();
+  await revealVoiceControls();
   await expect
     .element(page.getByRole('button', { name: 'Mute' }))
     .toBeVisible();
@@ -1080,6 +1123,7 @@ test('screen sharing states match the Paper design', async () => {
       userId: 1
     });
     await waitForRender();
+    await revealVoiceControls();
     await snapshot('screen-sharing-focus');
   } finally {
     await page

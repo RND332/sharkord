@@ -251,13 +251,14 @@ test('eye toggles the existing mode after the server accepts and preserves devic
       'title',
       'Send and receive microphone audio only; cameras, screen sharing, and external media are disabled.'
     );
-  expect(modeButton.element().className).toContain('text-success');
-  const activeColor = getComputedStyle(
-    page.getByRole('button', { name: 'Transport stats' }).element()
-  ).color;
+  const activeColor = 'rgb(255, 255, 255)';
   await vi.waitFor(() =>
     expect(getComputedStyle(modeButton.element()).color).toBe(activeColor)
   );
+  await userEvent.unhover(page.elementLocator(document.body));
+  await expect
+    .poll(() => getComputedStyle(modeButton.element()).backgroundColor)
+    .toBe('rgb(36, 128, 70)');
   await expect
     .element(page.getByRole('button', { name: 'Turn on camera' }))
     .toBeDisabled();
