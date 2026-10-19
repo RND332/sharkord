@@ -8,6 +8,7 @@ import {
   type TPluginStoreState
 } from '@sharkord/shared';
 import { createCachedSelector } from 're-reselect';
+import { selectedDmChannelIdSelector } from '../app/selectors';
 import type { IRootState } from '../store';
 import { categoriesSelector } from './categories/selectors';
 import {
@@ -95,6 +96,11 @@ export const activeFullscreenPluginIdSelector = (state: IRootState) =>
   state.server.activeFullscreenPluginId;
 
 export const dmsOpenSelector = (state: IRootState) => state.server.dmsOpen;
+
+export const activeDmChannelIdSelector = createSelector(
+  [dmsOpenSelector, selectedDmChannelIdSelector],
+  (dmsOpen, selectedChannelId) => (dmsOpen ? selectedChannelId : undefined)
+);
 
 export const ownUserRolesSelector = createSelector(
   [ownUserSelector, rolesSelector],

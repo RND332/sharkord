@@ -53,6 +53,7 @@
   "failedReorderCategories": "Échec du réordonnancement des catégories",
   "failedMoveUser": "Échec du déplacement de l'utilisateur",
   "directMessages": "Messages privés",
+  "directChannels": "Canaux privés",
   "failedLoadDMs": "Échec du chargement des messages privés",
   "couldNotOpenDM": "Impossible d'ouvrir le message privé",
   "noDMsYet": "Aucun message privé pour l'instant",

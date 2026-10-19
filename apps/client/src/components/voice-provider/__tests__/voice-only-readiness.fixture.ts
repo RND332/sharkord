@@ -276,7 +276,9 @@ mock.module('@/features/server/voice/hooks', () => ({
   useHideOwnScreenShare: () => false,
   useSpeakingState: () => false
 }));
-mock.module('@/features/store', () => ({ store: { getState: () => ({}) } }));
+mock.module('@/features/store', () => ({
+  store: { getState: () => ({}), dispatch() {} }
+}));
 mock.module('@/helpers/audio-gate', () => ({
   clampMicrophoneDecibels: (value: number) => value,
   MICROPHONE_GATE_CLOSE_HOLD_MS: 200,

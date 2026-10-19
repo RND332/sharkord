@@ -55,6 +55,7 @@
   "failedReorderCategories": "Falha ao reordenar categorias",
   "failedMoveUser": "Falha ao mover usuário",
   "directMessages": "Mensagens Diretas",
+  "directChannels": "Canais Diretos",
   "failedLoadDMs": "Falha ao carregar mensagens diretas",
   "couldNotOpenDM": "Não foi possível abrir a mensagem direta",
   "noDMsYet": "Nenhuma mensagem direta ainda",

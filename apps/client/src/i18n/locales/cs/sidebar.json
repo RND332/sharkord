@@ -53,6 +53,7 @@
   "failedReorderCategories": "Nepodařilo se změnit pořadí kategorií",
   "failedMoveUser": "Nepodařilo se přesunout uživatele",
   "directMessages": "Přímé zprávy",
+  "directChannels": "Přímé kanály",
   "failedLoadDMs": "Nepodařilo se načíst přímé zprávy",
   "couldNotOpenDM": "Nepodařilo se otevřít přímou zprávu",
   "noDMsYet": "Zatím žádné přímé zprávy",

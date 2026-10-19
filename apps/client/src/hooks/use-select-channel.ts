@@ -1,4 +1,5 @@
 import { VoiceSessionCancelledError } from '@/components/voice-provider/session-cancelled';
+import { setDmsOpen } from '@/features/server/actions';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { channelByIdSelector } from '@/features/server/channels/selectors';
@@ -21,10 +22,12 @@ const useSelectChannel = () => {
 
   return useCallback(
     async (channelId: number) => {
-      const channel = channelByIdSelector(store.getState(), channelId);
+      const state = store.getState();
+      const channel = channelByIdSelector(state, channelId);
 
       if (!channel) return;
 
+      setDmsOpen(false);
       setSelectedChannelId(channel.id);
 
       if (channel.type !== ChannelType.VOICE) {
