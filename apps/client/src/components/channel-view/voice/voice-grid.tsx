@@ -120,7 +120,7 @@ const VoiceGrid = memo(
       return (
         <div
           className={cn(
-            'flex h-full flex-col gap-3 bg-rail px-7 py-9',
+            'flex h-full flex-col gap-3 bg-rail px-7 pt-6 pb-3',
             className
           )}
         >

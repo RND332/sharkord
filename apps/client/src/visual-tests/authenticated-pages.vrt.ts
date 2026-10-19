@@ -921,25 +921,35 @@ test('voice channel matches the Paper design', async () => {
     .toBeVisible();
 
   try {
+    const reaction = page.getByRole('button', {
+      name: 'Send a reaction',
+      exact: true
+    });
+    await reaction.click();
+    await expect.element(page.getByRole('dialog')).toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
+    const reactionButton = reaction.element();
+    reactionButton.blur();
     await page.getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME).hover();
     const controls = document.querySelector<HTMLElement>(
       '[data-voice-controls]'
     );
     expect(controls).not.toBeNull();
-    expect(controls!.getBoundingClientRect().height).toBe(64);
-    expect(controls!.getBoundingClientRect().width).toBe(368);
-    expect(getComputedStyle(controls!).padding).toBe('8px');
-    expect(getComputedStyle(controls!).gap).toBe('8px');
+    expect(controls!.getBoundingClientRect().height).toBe(50);
+    expect(controls!.getBoundingClientRect().width).toBe(300);
+    expect(getComputedStyle(controls!).padding).toBe('5px');
+    expect(getComputedStyle(controls!).gap).toBe('6px');
     expect(getComputedStyle(controls!).backgroundColor).toBe('rgb(43, 45, 49)');
     const mute = page
       .getByRole('button', { name: 'Mute', exact: true })
       .element();
-    expect(mute.getBoundingClientRect().width).toBe(48);
+    expect(mute.getBoundingClientRect().width).toBe(40);
     const disconnect = controls!.querySelector<HTMLButtonElement>(
       'button[aria-label="Disconnect"]'
     )!;
-    expect(disconnect.getBoundingClientRect().width).toBe(72);
-    expect(disconnect.getBoundingClientRect().height).toBe(48);
+    expect(disconnect.getBoundingClientRect().width).toBe(60);
+    expect(disconnect.getBoundingClientRect().height).toBe(40);
     expect(disconnect.querySelector('svg')!.getAttribute('fill')).toBe('none');
     const callControls = Array.from(controls!.querySelectorAll('button'));
     expect(callControls).toHaveLength(6);
@@ -952,8 +962,8 @@ test('voice channel matches the Paper design', async () => {
     for (const button of callControls.filter(
       (button) => button !== disconnect && !settingsButtons.includes(button)
     )) {
-      expect(button.getBoundingClientRect().width).toBe(48);
-      expect(button.getBoundingClientRect().height).toBe(48);
+      expect(button.getBoundingClientRect().width).toBe(40);
+      expect(button.getBoundingClientRect().height).toBe(40);
       expect(getComputedStyle(button).borderWidth).toBe('0px');
       expect(getComputedStyle(button).backgroundColor).toBe('rgb(64, 66, 73)');
       expect(button.querySelector('svg')!.getBoundingClientRect().width).toBe(
@@ -966,7 +976,7 @@ test('voice channel matches the Paper design', async () => {
     );
     expect(
       parseFloat(getComputedStyle(mute).borderRadius)
-    ).toBeGreaterThanOrEqual(24);
+    ).toBeGreaterThanOrEqual(20);
     const caption = page.elementLocator(
       document.querySelector('.group\\/voice-user-card p')!
     );
@@ -2168,5 +2178,36 @@ test('warm A-B-A switching shows cached messages before delayed revalidation', a
     setChannelMessages(bChannelId, [], false);
     await client.channels.delete.mutate({ channelId: bChannelId });
     await waitForRender();
+  }
+});
+
+test('compact call toolbar disconnects the real voice session', async () => {
+  const { store } = await import('@/features/store');
+  const { currentVoiceChannelIdSelector } =
+    await import('@/features/server/channels/selectors');
+  setSelectedChannelId(2);
+  await joinVoice(2);
+  await waitForRender();
+  try {
+    await expect
+      .element(page.getByRole('button', { name: 'Mute', exact: true }))
+      .toBeInTheDocument();
+    await revealVoiceControls();
+    const controls = document.querySelector<HTMLElement>(
+      '[data-voice-controls]'
+    )!;
+    const disconnect = controls.querySelector<HTMLButtonElement>(
+      'button[aria-label="Disconnect"]'
+    )!;
+    await page.elementLocator(disconnect).click();
+    await expect
+      .poll(() => {
+        const state = store.getState();
+        return currentVoiceChannelIdSelector(state);
+      })
+      .toBeUndefined();
+  } finally {
+    await leaveVoice({ reason: 'user_disconnect_button' });
+    setSelectedChannelId(1);
   }
 });

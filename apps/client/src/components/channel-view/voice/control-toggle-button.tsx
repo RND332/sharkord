@@ -43,7 +43,7 @@ const ControlToggleButton = memo(
           variant="ghost"
           size="icon"
           className={cn(
-            'size-11 rounded-full bg-raised text-foreground transition-colors duration-150 sm:size-12',
+            'rounded-full bg-raised text-foreground transition-colors duration-150',
             enabled
               ? enabledClassName
               : (disabledClassName ?? 'hover:bg-panel'),
@@ -55,9 +55,9 @@ const ControlToggleButton = memo(
           aria-label={label}
         >
           {enabled ? (
-            <EnabledIcon className="size-4.5 sm:size-5" />
+            <EnabledIcon className="size-5" />
           ) : (
-            <DisabledIcon className="size-4.5 sm:size-5" />
+            <DisabledIcon className="size-5" />
           )}
         </Button>
       </Tooltip>
