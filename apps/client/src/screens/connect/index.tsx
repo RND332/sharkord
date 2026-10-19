@@ -30,7 +30,16 @@ import {
   Spinner,
   Switch
 } from '@sharkord/ui';
-import { memo, useCallback, useMemo, useState, type FormEvent } from 'react';
+import {
+  memo,
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOidcLogin } from './hooks/use-oidc-login';
@@ -48,7 +57,47 @@ const Connect = memo(() => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const passwordSelectionRef = useRef<
+    | {
+        start: number;
+        end: number;
+        direction: 'forward' | 'backward' | 'none';
+      }
+    | undefined
+  >(undefined);
+  const passwordId = useId();
   const info = useInfo();
+
+  const onPasswordVisibilityToggle = useCallback(() => {
+    const input = passwordRef.current;
+
+    if (input && input.selectionStart !== null && input.selectionEnd !== null) {
+      passwordSelectionRef.current = {
+        start: input.selectionStart,
+        end: input.selectionEnd,
+        direction: input.selectionDirection ?? 'none'
+      };
+    }
+
+    setPasswordVisible((visible) => !visible);
+  }, []);
+
+  useLayoutEffect(() => {
+    const input = passwordRef.current;
+    const selection = passwordSelectionRef.current;
+
+    if (!input || !selection) return;
+
+    input.focus();
+    input.setSelectionRange(
+      selection.start,
+      selection.end,
+      selection.direction
+    );
+    passwordSelectionRef.current = undefined;
+  }, [passwordVisible]);
 
   const inviteCode = useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -75,6 +124,7 @@ const Connect = memo(() => {
   const oidc = useOidcLogin({ onToken: startSession });
 
   const onConnectClick = useCallback(async () => {
+    setPasswordVisible(false);
     setLoading(true);
 
     try {
@@ -208,14 +258,35 @@ const Connect = memo(() => {
                 />
               </Group>
               <Group label={t('passwordLabel')}>
-                <Input
-                  {...r('password')}
-                  type="password"
-                  autoComplete="current-password"
-                  aria-label={t('passwordLabel')}
-                  onEnter={onConnectClick}
-                  data-testid={TestId.CONNECT_PASSWORD_INPUT}
-                />
+                <div className="relative">
+                  <Input
+                    {...r('password')}
+                    ref={passwordRef}
+                    id={passwordId}
+                    type={passwordVisible ? 'text' : 'password'}
+                    className="pr-28"
+                    autoComplete="current-password"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    aria-label={t('passwordLabel')}
+                    onEnter={onConnectClick}
+                    data-testid={TestId.CONNECT_PASSWORD_INPUT}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="absolute right-1 top-1 h-9 px-[9px] py-0 text-xs font-medium leading-[17px] text-foreground"
+                    aria-controls={passwordId}
+                    aria-label={t(
+                      passwordVisible
+                        ? 'hidePasswordLabel'
+                        : 'showPasswordLabel'
+                    )}
+                    onClick={onPasswordVisibilityToggle}
+                  >
+                    {t(passwordVisible ? 'hidePassword' : 'showPassword')}
+                  </Button>
+                </div>
               </Group>
             </form>
           )}

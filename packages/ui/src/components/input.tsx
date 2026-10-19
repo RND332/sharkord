@@ -45,6 +45,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           type={type}
+          name={name}
           data-slot="input"
           aria-invalid={!!error}
           className={cn(
