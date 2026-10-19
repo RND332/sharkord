@@ -424,14 +424,14 @@ test.each(['channel', 'category'] as const)(
   }
 );
 
-test('shared shell uses compact Discord headers', async () => {
+test('the shared shell uses compact headers without a global strip', async () => {
   await expect.element(page.getByTestId(TestId.SERVER_VIEW)).toBeVisible();
-  const header = document.querySelector('header')!;
-  expect(header.getBoundingClientRect().height).toBe(40);
-  const search = page.getByRole('button', {
-    name: /Search messages, channels, and people Ctrl K/
-  });
-  expect(search.element().getBoundingClientRect().height).toBe(28);
+  expect(document.querySelector('header')).toBeNull();
+  expect(
+    page.getByRole('button', {
+      name: /Search messages, channels, and people Ctrl K/
+    }).elements()
+  ).toHaveLength(0);
   const sidebarHeader = page
     .getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME)
     .element().parentElement!;
@@ -453,9 +453,6 @@ test('shared shell uses compact Discord headers', async () => {
   await expect
     .element(page.getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY).first())
     .toBeVisible();
-  expect(document.querySelector('header')!.getBoundingClientRect().height).toBe(
-    40
-  );
 });
 
 test('short text history uses Paper gutters and rests above the composer', async () => {
@@ -645,35 +642,6 @@ test('composer has no resize handle or hint and grows naturally with multiline i
     .poll(() => page.getByRole('button', { name: 'Send message' }).query())
     .toBeNull();
   await page.getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME).hover();
-});
-
-test('global search stays centered across desktop widths', async () => {
-  try {
-    for (const width of [1024, 1440, 2560]) {
-      await page.viewport(width, 900);
-      await waitForRender();
-      const search = page
-        .getByRole('button', {
-          name: /Search messages, channels, and people Ctrl K/
-        })
-        .element();
-      const rect = search.getBoundingClientRect();
-      expect(
-        Math.abs(rect.left + rect.width / 2 - window.innerWidth / 2)
-      ).toBeLessThanOrEqual(1);
-      expect(rect.width).toBeLessThanOrEqual(550);
-      const header = search.closest('header')!;
-      const logo = header
-        .querySelector('[data-slot="avatar"]')!
-        .getBoundingClientRect();
-      const actions = header.lastElementChild!.getBoundingClientRect();
-      expect(rect.left).toBeGreaterThan(logo.right);
-      expect(rect.right).toBeLessThanOrEqual(actions.left);
-    }
-  } finally {
-    await page.viewport(1440, 900);
-    await waitForRender();
-  }
 });
 
 test('composer icon buttons have padded hit targets without clipping their icons', async () => {
@@ -1668,9 +1636,6 @@ test('plugin detail loads through the existing installed fixture and real server
       .toBeVisible();
     await page.getByRole('tab', { name: 'Logs', exact: true }).click();
     await expect.element(page.getByRole('tabpanel')).toBeVisible();
-    const header = document.querySelector('header')!;
-    expect(header.getBoundingClientRect().height).toBe(40);
-    expect(getComputedStyle(header).backgroundColor).toBe('rgb(30, 31, 34)');
   } finally {
     closeServerScreens();
     await client.plugins.toggle.mutate({
