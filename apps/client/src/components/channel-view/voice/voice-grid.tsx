@@ -127,16 +127,28 @@ const VoiceGrid = memo(
           <div className="relative min-h-0 flex-1">
             {pinnedCard}
             <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 pointer-events-none">
-              <Tooltip content={t('toggleParticipants')}>
+              <Tooltip
+                content={
+                  hideParticipants
+                    ? t('showParticipants')
+                    : t('hideParticipants')
+                }
+              >
                 <button
                   className={cn(
                     'inline-flex items-center justify-center rounded px-3 py-2 gap-1',
                     'pointer-events-auto shadow-xl transition-all',
                     'bg-black/70 hover:bg-black/80',
-                    'hidden group-hover/voice-stage:inline-flex'
+                    hideParticipants
+                      ? 'inline-flex'
+                      : 'hidden group-hover/voice-stage:inline-flex'
                   )}
                   onClick={handleToggleParticipants}
-                  aria-label={t('toggleParticipants')}
+                  aria-label={
+                    hideParticipants
+                      ? t('showParticipants')
+                      : t('hideParticipants')
+                  }
                 >
                   <Users className="size-3" />
                   <ChevronDown
@@ -151,6 +163,8 @@ const VoiceGrid = memo(
           </div>
           {regularCards.length > 0 && (
             <div
+              inert={hideParticipants}
+              aria-hidden={hideParticipants}
               className={cn(
                 'flex h-[114px] shrink-0 justify-center-safe gap-3 overflow-x-auto',
                 'transition-[max-height,opacity] duration-300 ease-in-out',

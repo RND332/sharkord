@@ -8,8 +8,9 @@ import {
   DELETED_USER_IDENTITY_AND_NAME,
   type TJoinedMessage
 } from '@sharkord/shared';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { areGroupsEqual } from './helpers';
 import { useMessageAuthorName } from './hooks/use-message-author-name';
 import { Message } from './message';
@@ -26,6 +27,7 @@ type TMessagesGroupProps = {
   activeThreadMessageId?: number;
   editingMessageId?: number;
   onEditComplete?: () => void;
+  compact?: boolean;
 };
 
 const MessagesGroup = memo(
@@ -39,12 +41,15 @@ const MessagesGroup = memo(
     replyTargetMessageId,
     activeThreadMessageId,
     editingMessageId,
-    onEditComplete
+    onEditComplete,
+    compact = false
   }: TMessagesGroupProps) => {
+    const { t } = useTranslation('common');
     const firstMessage = group[0];
     const pluginMetadata = usePluginMetadata(firstMessage.pluginId);
     const user = useUserById(firstMessage.userId);
     const date = new Date(firstMessage.createdAt);
+    const hasValidDate = isValid(date);
     const authorName = useMessageAuthorName(firstMessage);
     const isDeletedUser = user?.name === DELETED_USER_IDENTITY_AND_NAME;
     const isPluginMessage = !!firstMessage.pluginId;
@@ -53,17 +58,24 @@ const MessagesGroup = memo(
       group.length === 1 && !!firstMessage.replyToMessageId;
 
     const groupContent = (
-      <div className="flex min-w-0 max-w-dvw gap-4 py-2">
+      <div
+        data-message-group
+        className={cn(
+          'flex min-w-0 max-w-dvw gap-4 py-2',
+          compact &&
+            'gap-3 py-1.5 [&_.msg-content]:text-[14px]! [&_.msg-content]:leading-[22px]! [&_[data-slot=avatar]]:size-7!'
+        )}
+      >
         {isPluginMessage ? (
           <PluginAvatar
             name={pluginMetadata?.name}
             avatarUrl={pluginMetadata?.avatarUrl}
-            className="h-[38px] w-[38px]"
+            className={compact ? 'size-7' : 'h-[38px] w-[38px]'}
           />
         ) : (
           <UserAvatar
             userId={user!.id}
-            className="h-[38px] w-[38px]"
+            className={compact ? 'size-7' : 'h-[38px] w-[38px]'}
             showUserPopover
           />
         )}
@@ -83,7 +95,7 @@ const MessagesGroup = memo(
                 bot
               </span>
             )}
-            {showClockTime ? (
+            {showClockTime && hasValidDate && (
               <time
                 className="text-subtle-foreground text-xs leading-4"
                 dateTime={date.toISOString()}
@@ -91,7 +103,13 @@ const MessagesGroup = memo(
               >
                 {format(date, 'h:mm a')}
               </time>
-            ) : (
+            )}
+            {showClockTime && !hasValidDate && (
+              <span className="text-subtle-foreground text-xs leading-4">
+                {t('unknownTime')}
+              </span>
+            )}
+            {!showClockTime && hasValidDate && (
               <RelativeTime date={date}>
                 {(relativeTime) => (
                   <span
@@ -102,6 +120,11 @@ const MessagesGroup = memo(
                   </span>
                 )}
               </RelativeTime>
+            )}
+            {!showClockTime && !hasValidDate && (
+              <span className="text-subtle-foreground text-xs">
+                {t('unknownTime')}
+              </span>
             )}
           </div>
           <div className="flex min-w-0 flex-col">

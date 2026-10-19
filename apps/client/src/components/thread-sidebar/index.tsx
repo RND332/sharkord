@@ -7,7 +7,7 @@ import { ThreadContent } from './thread-content';
 
 const MIN_WIDTH = 360;
 const MAX_WIDTH = 600;
-const DEFAULT_WIDTH = 384;
+const DEFAULT_WIDTH = 392;
 
 const ThreadContentWrapper = memo(() => {
   const { t } = useTranslation('common');

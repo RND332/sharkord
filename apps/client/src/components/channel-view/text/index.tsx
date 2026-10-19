@@ -1,4 +1,5 @@
 import { MessageCompose } from '@/components/message-compose';
+import { UserAvatar } from '@/components/user-avatar';
 import { useThreadSidebar } from '@/features/app/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
 import {
@@ -7,6 +8,7 @@ import {
 } from '@/features/server/hooks';
 import { useMessages } from '@/features/server/messages/hooks';
 import { SoundType } from '@/features/server/types';
+import { useUserById } from '@/features/server/users/hooks';
 import { playSound } from '@/helpers/sounds';
 
 import { useTypingSignal } from '@/hooks/use-typing-signal';
@@ -27,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { useArrowUpEdit } from './hooks/use-arrow-up-edit';
+import { useDmPartner } from './hooks/use-dm-partner';
 import { useScrollController } from './hooks/use-scroll-controller';
 import { useScrollToJumpTarget } from './hooks/use-scroll-to-jump-target';
 import { MessagesGroup } from './messages-group';
@@ -51,6 +54,8 @@ const TextChannel = memo((props: TChannelProps) => {
     props;
   const { t } = useTranslation();
   const channel = useChannelById(channelId);
+  const dmPartnerId = useDmPartner(channelId, !!channel?.isDm);
+  const dmPartner = useUserById(dmPartnerId ?? null);
   const {
     messages,
     hasMore,
@@ -198,6 +203,7 @@ const TextChannel = memo((props: TChannelProps) => {
       <TextTopbar
         onScrollToMessage={scrollToMessage}
         channelId={channelId}
+        dmPartnerId={dmPartnerId}
         onClose={onClose}
         onToggleRightSidebar={onToggleRightSidebar}
         isRightSidebarOpen={isRightSidebarOpen}
@@ -225,6 +231,22 @@ const TextChannel = memo((props: TChannelProps) => {
               <p className="text-[15px] leading-[23px]">
                 {t('channelWelcomeDesc')}
               </p>
+            </div>
+          )}
+          {!hasMore && !detachedFromPresent && channel?.isDm && dmPartner && (
+            <div
+              data-dm-welcome
+              className="flex flex-col items-center gap-3 pb-8 pt-6 text-center"
+            >
+              <UserAvatar userId={dmPartner.id} className="size-20" />
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl font-semibold tracking-[-0.01em]">
+                  {t('dmWelcomeTitle', { name: dmPartner.name })}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {t('dmWelcomeDescription', { name: dmPartner.name })}
+                </p>
+              </div>
             </div>
           )}
           {groupedMessages.map((group, index) => (
@@ -282,6 +304,7 @@ const TextChannel = memo((props: TChannelProps) => {
         onSend={onSend}
         onTyping={sendTypingSignal}
         typingUsers={typingUsers}
+        dmPartnerName={channel?.isDm ? dmPartner?.name : undefined}
         showPluginSlot
         onCancelReply={handleCancelReply}
         replyTarget={replyTarget}

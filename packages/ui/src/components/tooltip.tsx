@@ -69,7 +69,7 @@ const Tooltip = ({
   sideOffset = 4,
   asChild = true
 }: TTooltipProps) => (
-  <TooltipRoot delayDuration={200}>
+  <TooltipRoot delayDuration={1000}>
     <TooltipTrigger asChild={asChild}>{children}</TooltipTrigger>
     <TooltipContent sideOffset={sideOffset}>{content}</TooltipContent>
   </TooltipRoot>

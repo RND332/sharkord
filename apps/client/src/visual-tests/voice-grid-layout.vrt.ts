@@ -107,3 +107,29 @@ test('unpinning a stream after mount restores a two-column participant grid', as
     host!.getBoundingClientRect().bottom
   );
 });
+
+test('hiding participants expands the demo and keeps an unobstructed restore control', async () => {
+  await render('share');
+  const grid = host!.firstElementChild!;
+  const pinned = grid.firstElementChild!;
+  const before = pinned.getBoundingClientRect().height;
+  const hide = host!.querySelector<HTMLButtonElement>(
+    'button[aria-label="hideParticipants"]'
+  )!;
+
+  hide.click();
+  await expect
+    .poll(() => pinned.getBoundingClientRect().height)
+    .toBeGreaterThan(before);
+  const strip = host!.querySelector<HTMLElement>('[inert]')!;
+  expect(strip).not.toBeNull();
+  expect(strip.getBoundingClientRect().height).toBe(0);
+  const restore = host!.querySelector<HTMLButtonElement>(
+    'button[aria-label="showParticipants"]'
+  )!;
+  expect(restore).toBeVisible();
+  expect(getComputedStyle(restore).display).not.toBe('none');
+
+  restore.focus();
+  expect(document.activeElement).toBe(restore);
+});

@@ -5,6 +5,7 @@ import { useOwnUserId } from '@/features/server/users/hooks';
 import {
   useHideNonVideoParticipants,
   useHideOwnScreenShare,
+  useScreenViewers,
   useVoiceChannelExternalStreamsList
 } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ type TChannelProps = {
 const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const voiceUsers = useVoiceUsersByChannelId(channelId);
   const externalStreams = useVoiceChannelExternalStreamsList(channelId);
+  const screenViewers = useScreenViewers(channelId);
   const { pinnedCard, pinCard, unpinCard, isPinned } = usePinCardController();
   const hideNonVideoParticipants = useHideNonVideoParticipants();
   const hideOwnScreenShare = useHideOwnScreenShare();
@@ -91,6 +93,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             onPin={pinCard}
             onUnpin={unpinCard}
             showPinControls
+            viewerIds={screenViewers[voiceUser.id]?.viewerIds ?? []}
           />
         );
       }
@@ -133,6 +136,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     hideOwnScreenShare,
     ownUserId,
     viewedRemoteDemos,
+    screenViewers,
     isAnyCardPinned
   ]);
 

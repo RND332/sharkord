@@ -1,8 +1,10 @@
 import type { IRootState } from '@/features/store';
+import type { TScreenViewersSnapshot } from '@sharkord/shared';
 import { createCachedSelector } from 're-reselect';
 import type { TVoiceReaction } from '../types';
 
 const DEFAULT_OBJECT = {};
+const DEFAULT_SCREEN_VIEWERS: TScreenViewersSnapshot['demos'] = {};
 const DEFAULT_ARRAY: TVoiceReaction[] = [];
 
 export const ownVoiceStateSelector = (state: IRootState) => {
@@ -19,6 +21,12 @@ export const voiceChannelStateSelector = (
   state: IRootState,
   channelId: number
 ) => state.server.voiceMap[channelId];
+
+export const screenViewersByChannelIdSelector = (
+  state: IRootState,
+  channelId: number
+): TScreenViewersSnapshot['demos'] =>
+  state.server.screenViewersMap[channelId] || DEFAULT_SCREEN_VIEWERS;
 
 export const voiceChannelExternalStreamsSelector = (
   state: IRootState,

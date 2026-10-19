@@ -38,6 +38,10 @@ const resumeConsumerRoute = protectedProcedure
 
     await consumer.resume();
 
+    if (input.kind === StreamKind.SCREEN) {
+      runtime.publishScreenViewers();
+    }
+
     if (
       input.kind === StreamKind.SCREEN &&
       channelId &&

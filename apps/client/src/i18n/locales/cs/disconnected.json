@@ -5,6 +5,9 @@
   "noReasonProvided": "Nebyl udán důvod.",
   "lostConnectionMessage": "Spojení bylo nečekaně ztraceno.",
   "goToConnectScreen": "Přejít k úvodní obrazovce",
+  "tryAgain": "Zkusit znovu",
+  "lastAttempt": "Poslední pokus · {{time}}",
+  "serverAddress": "Adresa serveru · {{host}}",
   "details": "Detaily",
   "code": "Kód: {{code}}",
   "time": "Čas: {{time}}"

@@ -4,7 +4,9 @@ import { useParentMessage } from '@/features/server/messages/hooks';
 import { usePluginMetadata } from '@/features/server/plugins/hooks';
 import type { TJoinedMessage } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
+import { format, isValid } from 'date-fns';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMessageAuthorName } from '../channel-view/text/hooks/use-message-author-name';
 import { MessageRenderer } from '../channel-view/text/renderer';
 import { UserAvatar } from '../user-avatar';
@@ -15,29 +17,48 @@ type TParentMessageContentProps = {
 
 const ParentMessageContent = memo(
   ({ parentMessage }: TParentMessageContentProps) => {
+    const { t } = useTranslation('common');
     const pluginMetadata = usePluginMetadata(parentMessage.pluginId);
     const isPluginMessage = !!parentMessage.pluginId;
     const authorName = useMessageAuthorName(parentMessage);
+    const date = new Date(parentMessage.createdAt);
+    const hasValidDate = isValid(date);
 
     return (
-      <div className="px-4 py-3 border-b border-border bg-secondary/30 max-h-64 overflow-auto">
-        <div className="flex items-center gap-2 mb-1">
+      <div
+        data-thread-parent
+        className="max-h-64 shrink-0 overflow-auto border-b border-border px-6 pb-4 pt-[22px]"
+      >
+        <div className="flex items-center gap-2">
           {isPluginMessage ? (
             <PluginAvatar
               name={pluginMetadata?.name}
               avatarUrl={pluginMetadata?.avatarUrl}
-              className="h-8 w-8"
+              className="size-7"
             />
           ) : (
             <UserAvatar
               userId={parentMessage.userId}
-              className="h-8 w-8"
+              className="size-7"
               showUserPopover
             />
           )}
-          <span className="text-sm font-medium">{authorName}</span>
+          <span className="text-sm font-semibold">{authorName}</span>
+          {hasValidDate ? (
+            <time
+              className="text-xs leading-4 text-subtle-foreground"
+              dateTime={date.toISOString()}
+              title={format(date, 'PPpp')}
+            >
+              {format(date, 'h:mm a')}
+            </time>
+          ) : (
+            <span className="text-xs leading-4 text-subtle-foreground">
+              {t('unknownTime')}
+            </span>
+          )}
         </div>
-        <div className="text-sm line-clamp-3 opacity-80">
+        <div className="mt-2 text-[14px] leading-[22px] opacity-90 [&_.msg-content]:text-[14px]! [&_.msg-content]:leading-[22px]!">
           <MessageRenderer message={parentMessage} />
         </div>
       </div>
@@ -51,15 +72,16 @@ type TParentMessagePreviewProps = {
 
 const ParentMessagePreview = memo(
   ({ messageId }: TParentMessagePreviewProps) => {
+    const { t } = useTranslation('common');
     const { channelId } = useThreadSidebar();
     const parentMessage = useParentMessage(messageId, channelId);
 
     if (!parentMessage) {
       return (
-        <div className="px-4 py-3 border-b border-border bg-secondary/30 flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border px-6 py-3">
           <Spinner size="xs" />
           <span className="text-sm text-muted-foreground">
-            Loading message...
+            {t('loadingMessage')}
           </span>
         </div>
       );

@@ -1,6 +1,9 @@
 import { useThreadSidebar } from '@/features/app/hooks';
 import { useTypingUsersByThreadId } from '@/features/server/hooks';
-import { useThreadMessages } from '@/features/server/messages/hooks';
+import {
+  useParentMessage,
+  useThreadMessages
+} from '@/features/server/messages/hooks';
 
 import type { TJoinedMessage } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
@@ -29,6 +32,8 @@ const ThreadContent = memo(
       TJoinedMessage | undefined
     >();
     const { activeThreadMessageId } = useThreadSidebar();
+    const parentMessage = useParentMessage(parentMessageId, channelId);
+    const replyCount = parentMessage?.replyCount ?? 0;
     const {
       composeRef,
       editingMessageId,
@@ -70,8 +75,18 @@ const ThreadContent = memo(
 
     return (
       <div className="flex flex-col h-full w-full">
-        <ThreadHeader />
+        <ThreadHeader channelId={channelId} />
         <ParentMessagePreview messageId={parentMessageId} />
+
+        {replyCount > 0 && (
+          <div
+            data-thread-reply-count
+            className="flex shrink-0 items-center gap-3 px-6 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle-foreground"
+          >
+            <span>{t('reply', { count: replyCount })}</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        )}
 
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {loading ? (
@@ -90,7 +105,8 @@ const ThreadContent = memo(
                 ref={bindContainer}
                 onScroll={onScroll}
                 onLoadCapture={onAsyncContentLoaded}
-                className="flex-1 overflow-y-auto overflow-x-hidden p-2 animate-in fade-in duration-500"
+                data-thread-messages
+                className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-3 animate-in fade-in duration-500"
               >
                 {messages.length === 0 && !fetching ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
@@ -104,6 +120,8 @@ const ThreadContent = memo(
                       <MessagesGroup
                         key={group.key}
                         group={group.messages}
+                        compact
+                        showClockTime
                         onReplyMessageSelect={onReplyMessageSelect}
                         replyTargetMessageId={replyingToMessage?.id}
                         activeThreadMessageId={activeThreadMessageId}

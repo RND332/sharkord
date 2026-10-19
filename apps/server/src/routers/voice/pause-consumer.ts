@@ -29,6 +29,10 @@ const pauseConsumerRoute = protectedProcedure
     if (consumer.paused) return;
 
     await consumer.pause();
+
+    if (input.kind === StreamKind.SCREEN) {
+      runtime.publishScreenViewers();
+    }
   });
 
 export { pauseConsumerRoute };

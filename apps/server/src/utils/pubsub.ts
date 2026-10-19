@@ -117,6 +117,9 @@ type Events = {
     producerId: string;
     peerId: number;
   };
+  [ServerEvents.VOICE_SCREEN_VIEWERS_CHANGED]: {
+    channelId: number;
+  };
 
   [ServerEvents.PLUGIN_LOG]: TLogEntry;
   [ServerEvents.PLUGIN_COMMANDS_CHANGE]: TCommandsMapByPlugin;

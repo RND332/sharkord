@@ -5,6 +5,9 @@
   "noReasonProvided": "Aucune justification n'a été fournie.",
   "lostConnectionMessage": "Connexion avec le serveur perdue.",
   "goToConnectScreen": "Accéder à l'écran de connexion",
+  "tryAgain": "Réessayer",
+  "lastAttempt": "Dernière tentative · {{time}}",
+  "serverAddress": "Adresse du serveur · {{host}}",
   "details": "Détails",
   "code": "Code : {{code}}",
   "time": "Date : {{time}}"

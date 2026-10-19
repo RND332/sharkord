@@ -721,9 +721,10 @@ test('composer icon buttons have padded hit targets without clipping their icons
   expect(page.getByRole('button', { name: 'Send message' }).query()).toBeNull();
 });
 
-test('application rail omits the redundant user avatar', async () => {
-  const rail = page.getByRole('navigation', { name: 'Application' }).element();
-  expect(rail.querySelector('[data-slot="avatar"]')).toBeNull();
+test('the shared sidebar keeps the profile avatar without an application rail', async () => {
+  expect(
+    page.getByRole('navigation', { name: 'Application' }).elements()
+  ).toHaveLength(0);
   expect(
     page
       .getByTestId(TestId.LEFT_SIDEBAR)
@@ -732,31 +733,16 @@ test('application rail omits the redundant user avatar', async () => {
   ).not.toBeNull();
 });
 
-test('application rail omits the decorative orange S but keeps navigation', async () => {
-  const rail = page.getByRole('navigation', { name: 'Application' }).element();
+test('the shared sidebar replaces the single-server application rail', async () => {
   expect(
-    Array.from(rail.children).some(
-      (node) =>
-        node.getAttribute('aria-hidden') === 'true' &&
-        node.textContent?.trim() === 'S'
-    )
-  ).toBe(false);
-  const server = rail.querySelector<HTMLButtonElement>(
-    'button[aria-label="Rnd Community"]'
-  )!;
-  expect(server).not.toBeNull();
-  expect(
-    rail.querySelector(`[data-testid="${TestId.DM_TOGGLE}"]`)
-  ).not.toBeNull();
-  expect(
-    rail.querySelector(`[data-testid="${TestId.USER_SETTINGS_TRIGGER}"]`)
-  ).not.toBeNull();
-  await page.elementLocator(server).click();
-  await waitForRender();
-  expect(server.getAttribute('aria-current')).toBe('page');
-  expect(getComputedStyle(server).backgroundColor).toBe('rgb(88, 101, 242)');
-  expect(getComputedStyle(server).color).toBe('rgb(255, 255, 255)');
-  expect(getComputedStyle(server, '::before').height).toBe('32px');
+    page.getByRole('navigation', { name: 'Application' }).elements()
+  ).toHaveLength(0);
+  await expect
+    .element(page.getByRole('button', { name: 'Direct Channels' }))
+    .toBeVisible();
+  await expect
+    .element(page.getByTestId(TestId.USER_SETTINGS_TRIGGER))
+    .toBeVisible();
 });
 
 test('right docks open and close without layout animation', async () => {
@@ -799,9 +785,11 @@ test('right docks open and close without layout animation', async () => {
 
   const firstMessage = page.getByTestId(TestId.MESSAGE_ITEM).first();
   openThreadSidebar(Number(firstMessage.element().dataset.messageId), 1);
-  await expect.element(page.getByText('Thread', { exact: true })).toBeVisible();
+  await expect
+    .element(page.getByRole('heading', { name: /^Thread in #/ }))
+    .toBeVisible();
   const thread = page
-    .getByText('Thread', { exact: true })
+    .getByRole('heading', { name: /^Thread in #/ })
     .element()
     .closest<HTMLElement>('.border-l')!;
   await assertInstantDock(thread);
@@ -839,8 +827,8 @@ test('text channel matches the Paper design', async () => {
     .click();
 
   await expect
-    .element(page.getByTestId(TestId.DM_TOGGLE))
-    .toHaveTextContent('1');
+    .element(page.getByRole('button', { name: 'Direct Channels' }))
+    .toBeVisible();
   await snapshot('text-channel');
 });
 
@@ -849,7 +837,9 @@ test('thread sidebar matches the Paper design', async () => {
   await expect.element(firstMessage).toBeVisible();
   const messageId = Number(firstMessage.element().dataset.messageId);
   openThreadSidebar(messageId, 1);
-  await expect.element(page.getByText('Thread', { exact: true })).toBeVisible();
+  await expect
+    .element(page.getByRole('heading', { name: /^Thread in #/ }))
+    .toBeVisible();
 
   await snapshot('thread-sidebar');
   closeThreadSidebar();
@@ -860,15 +850,29 @@ test('members sidebar matches the Paper design', async () => {
   await expect
     .element(page.getByTestId(TestId.MEMBER_ITEM).first())
     .toBeVisible();
+  await expect.element(page.getByText(/^Online · \d+$/)).toBeVisible();
+  await expect.element(page.getByText(/^Offline · \d+$/)).toBeVisible();
+  await expect
+    .element(page.getByRole('button', { name: 'Close Members Sidebar' }))
+    .toBeVisible();
 
   await snapshot('members-sidebar');
 });
 
 test('direct messages match the Paper design', async () => {
-  await page.getByTestId(TestId.DM_TOGGLE).click();
+  await page.getByRole('button', { name: 'Direct Channels' }).click();
   await page.getByTestId(TestId.DM_ITEM).filter({ hasText: 'aria' }).click();
   await expect
-    .element(page.getByText('Direct Message', { exact: true }))
+    .poll(() => document.querySelector('[data-dm-partner]')?.textContent)
+    .toBe('aria');
+  expect(document.querySelector('[data-dm-presence]')?.textContent).toMatch(
+    /Online|Idle|Offline/
+  );
+  await expect
+    .element(page.elementLocator(document.querySelector('[data-dm-welcome]')!))
+    .toBeVisible();
+  await expect
+    .element(page.getByText('Message aria', { exact: true }))
     .toBeVisible();
 
   await snapshot('direct-messages');
@@ -917,6 +921,24 @@ test('voice channel matches the Paper design', async () => {
   await markChannelAsRead(3, true);
   setSelectedChannelId(2);
   await joinVoice(2);
+
+  setSelectedChannelId(1);
+  await waitForRender();
+  const lounge = page
+    .getByTestId(TestId.CHANNEL_ITEM)
+    .filter({ hasText: 'Lounge' })
+    .first();
+  const studio = page
+    .getByTestId(TestId.CHANNEL_ITEM)
+    .filter({ hasText: 'Studio' })
+    .first();
+  const loungeIcon = lounge.element().querySelector('svg')!;
+  const studioIcon = studio.element().querySelector('svg')!;
+  expect(getComputedStyle(loungeIcon).color).not.toBe(
+    getComputedStyle(studioIcon).color
+  );
+  setSelectedChannelId(2);
+  await waitForRender();
 
   addVoiceParticipants();
   await waitForRender();
@@ -1328,25 +1350,17 @@ test('Miku uses its pink rail accent and light mode reaches settings and dialogs
     .click();
   await page.getByRole('button', { name: 'Apply theme', exact: true }).click();
   closeServerScreens();
-  const server = page
-    .getByRole('navigation', { name: 'Application', exact: true })
-    .getByRole('button', { name: 'Rnd Community', exact: true });
+  const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
   try {
-    await expect.element(server).toBeVisible();
-    expect(getComputedStyle(server.element()).backgroundColor).toBe(
-      'rgb(232, 72, 141)'
+    await expect.element(sidebar).toBeVisible();
+    expect(getComputedStyle(sidebar.element()).backgroundColor).toBe(
+      'rgb(21, 28, 34)'
     );
-    expect(getComputedStyle(server.element()).color).toBe('rgb(0, 0, 0)');
     expect(
       getComputedStyle(document.documentElement)
         .getPropertyValue('--primary')
         .trim()
     ).toBe('#39c5cf');
-    const rail = page.getByRole('navigation', {
-      name: 'Application',
-      exact: true
-    });
-    expect(getComputedStyle(rail.element(), '::after').content).toBe('"01"');
     expect(
       getComputedStyle(document.documentElement)
         .getPropertyValue('--accent')
@@ -1997,6 +2011,13 @@ test('redesigned channel header preserves upstream mute and unmute control', asy
   const button = page.elementLocator(icon.closest('button')!);
   try {
     await button.hover();
+    await expect
+      .poll(
+        () =>
+          document.querySelector('[data-slot="tooltip-content"]')?.textContent,
+        { timeout: 3_000 }
+      )
+      .toContain('Channel muted');
     await expect
       .element(
         page.getByRole('tooltip', { name: 'Channel muted, click to unmute' })
