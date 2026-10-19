@@ -428,9 +428,11 @@ test('the shared shell uses compact headers without a global strip', async () =>
   await expect.element(page.getByTestId(TestId.SERVER_VIEW)).toBeVisible();
   expect(document.querySelector('header')).toBeNull();
   expect(
-    page.getByRole('button', {
-      name: /Search messages, channels, and people Ctrl K/
-    }).elements()
+    page
+      .getByRole('button', {
+        name: /Search messages, channels, and people Ctrl K/
+      })
+      .elements()
   ).toHaveLength(0);
   const sidebarHeader = page
     .getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME)
