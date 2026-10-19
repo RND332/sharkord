@@ -47,8 +47,9 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
     [channelCan]
   );
 
+  // tooltip composition can override the reaction popover's data-state.
   const barClass = cn(
-    'relative focus-within:opacity-100 has-[[data-state=open]]:opacity-100',
+    'relative focus-within:opacity-100 has-[[data-state=open]]:opacity-100 has-[[aria-expanded=true]]:opacity-100',
     isActive ? 'opacity-100' : 'opacity-0'
   );
 
@@ -59,14 +60,14 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
   return (
     <div
       className={cn(
-        'flex h-[88px] shrink-0 items-center justify-center px-2 pointer-events-none sm:px-4',
+        'flex h-[62px] shrink-0 items-start justify-center px-2 pb-3 pointer-events-none sm:px-4',
         barClass
       )}
     >
       <div
         data-voice-controls
         className={cn(
-          'flex items-center gap-1 rounded-full bg-nav p-1 focus-within:pointer-events-auto has-[[data-state=open]]:pointer-events-auto sm:gap-2 sm:p-2',
+          'flex items-center gap-1.5 rounded-full bg-nav p-[5px] focus-within:pointer-events-auto has-[[data-state=open]]:pointer-events-auto has-[[aria-expanded=true]]:pointer-events-auto',
           isActive ? 'pointer-events-auto' : 'pointer-events-none'
         )}
       >
@@ -126,11 +127,11 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
         <Tooltip content="Disconnect">
           <Button
             variant="destructive"
-            className="size-11 rounded-full p-0 sm:h-12 sm:w-18"
+            className="h-10 w-15 rounded-full p-0"
             onClick={handleLeaveVoice}
             aria-label="Disconnect"
           >
-            <PhoneXMarkIcon className="size-4.5" />
+            <PhoneXMarkIcon className="size-5" />
           </Button>
         </Tooltip>
       </div>

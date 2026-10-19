@@ -76,8 +76,8 @@ test('pinned participants use the Paper 4:3 thumbnail size', async () => {
   const rect = thumbnail.getBoundingClientRect();
   expect(rect.width).toBe(152);
   expect(rect.height).toBe(114);
-  expect(getComputedStyle(host!.firstElementChild!).paddingTop).toBe('36px');
-  expect(getComputedStyle(host!.firstElementChild!).paddingBottom).toBe('36px');
+  expect(getComputedStyle(host!.firstElementChild!).paddingTop).toBe('24px');
+  expect(getComputedStyle(host!.firstElementChild!).paddingBottom).toBe('12px');
 });
 
 test('removing an initially pinned card restores measurement for the remaining users', async () => {
