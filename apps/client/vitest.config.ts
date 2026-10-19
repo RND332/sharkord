@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 import pkg from './package.json';
+import { fsAllow } from './vite-fs-allow';
 
 const systemChromium =
   process.platform === 'linux' && existsSync('/usr/bin/chromium')
@@ -34,6 +35,7 @@ export default defineConfig({
     VITE_SENTRY_DSN: JSON.stringify(''),
     VITE_SERVER_PORT: JSON.stringify(process.env.SHARKORD_TEST_PORT || '4991')
   },
+  server: { fs: { allow: fsAllow } },
   test: {
     include: ['src/visual-tests/**/*.vrt.ts'],
     globalSetup: ['./src/visual-tests/global-setup.ts'],

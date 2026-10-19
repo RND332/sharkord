@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import pkg from './package.json';
+import { fsAllow } from './vite-fs-allow';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -38,6 +39,7 @@ export default defineConfig(({ mode }) => {
       VITE_SENTRY_DSN: JSON.stringify(env.SENTRY_DSN || '')
     },
     server: {
+      fs: { allow: fsAllow },
       proxy: {
         '/manifest.json': `http://localhost:${env.SERVER_PORT || 4991}`,
         // sanitizing rewrites message image urls to same-origin paths, which in dev is
