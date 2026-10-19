@@ -182,7 +182,7 @@ describe('VoiceRuntime external streams', () => {
 });
 
 describe('VoiceRuntime screen viewers', () => {
-  test('counts active screen video consumers once and excludes the presenter', () => {
+  test('counts active screen video consumers once and excludes the presenter', async () => {
     const runtime = createRuntime();
     runtime.addUser(1, { micMuted: false, soundMuted: false });
     runtime.addUser(2, { micMuted: false, soundMuted: false });
@@ -218,9 +218,11 @@ describe('VoiceRuntime screen viewers', () => {
     viewer.producerPaused = false;
     viewer.close();
     expect(runtime.getScreenViewers().demos[2]!.viewerIds).toEqual([]);
+
+    await runtime.destroy();
   });
 
-  test('keeps independent presenters independent', () => {
+  test('keeps independent presenters independent', async () => {
     const runtime = createRuntime();
     runtime.addUser(1, { micMuted: false, soundMuted: false });
     runtime.addUser(2, { micMuted: false, soundMuted: false });
@@ -247,9 +249,11 @@ describe('VoiceRuntime screen viewers', () => {
       1: { producerId: first.id, viewerIds: [2] },
       2: { producerId: second.id, viewerIds: [3] }
     });
+
+    await runtime.destroy();
   });
 
-  test('a ready direct session counts once and cannot outlive its producer', () => {
+  test('a ready direct session counts once and cannot outlive its producer', async () => {
     const previous = config.webRtc.directScreenSharing;
     config.webRtc.directScreenSharing = true;
     const runtime = createRuntime();
@@ -301,10 +305,11 @@ describe('VoiceRuntime screen viewers', () => {
       config.webRtc.directScreenSharing = previous;
       runtime.removeUser(1);
       runtime.removeUser(2);
+      await runtime.destroy();
     }
   });
 
-  test('publishes a change when screen consumption and production change', () => {
+  test('publishes a change when screen consumption and production change', async () => {
     const runtime = createRuntime();
     runtime.addUser(1, { micMuted: false, soundMuted: false });
     runtime.addUser(2, { micMuted: false, soundMuted: false });
@@ -328,6 +333,7 @@ describe('VoiceRuntime screen viewers', () => {
       expect(events).toEqual([runtime.id, runtime.id, runtime.id]);
     } finally {
       subscription.unsubscribe();
+      await runtime.destroy();
     }
   });
 });
