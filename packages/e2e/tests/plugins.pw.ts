@@ -14,11 +14,12 @@ const topbarSlot = (page: Page) => page.getByTestId('e2e-plugin-topbar');
 const chatActionSlot = (page: Page) =>
   page.getByTestId('e2e-plugin-chat-action');
 
-const openUserSettings = (page: Page) =>
-  page
-    .getByTestId(TestId.USER_SETTINGS_TRIGGER)
-    .filter({ visible: true })
-    .click();
+const openUserSettings = (page: Page) => {
+  const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
+  const settings = sidebar.getByTestId(TestId.USER_SETTINGS_TRIGGER);
+
+  return settings.click();
+};
 
 const openPluginUserSettings = async (page: Page) => {
   await openUserSettings(page);

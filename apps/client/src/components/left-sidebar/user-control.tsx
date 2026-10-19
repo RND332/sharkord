@@ -30,7 +30,7 @@ const UserControl = memo(() => {
   if (!ownPublicUser) return null;
 
   return (
-    <div className="flex h-[52px] w-full shrink-0 items-center gap-2 bg-rail px-2.5">
+    <div className="flex h-[52px] w-full shrink-0 items-center gap-1.5 bg-rail px-2.5">
       <UserPopover userId={ownPublicUser.id}>
         <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5">
           <UserAvatar
@@ -50,13 +50,13 @@ const UserControl = memo(() => {
         </div>
       </UserPopover>
 
-      <div className="flex shrink-0 items-center gap-0.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         <AudioSettingsMenu kind="microphone">
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              'size-8 rounded-[6px]',
+              'h-8 w-7 rounded-[6px] p-0',
               microphoneDisabled && 'opacity-60',
               ownVoiceState.micMuted
                 ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400'
@@ -78,7 +78,7 @@ const UserControl = memo(() => {
             variant="ghost"
             size="icon"
             className={cn(
-              'size-8 rounded-[6px]',
+              'h-8 w-7 rounded-[6px] p-0',
               ownVoiceState.soundMuted
                 ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400'
                 : 'text-muted-foreground hover:bg-raised hover:text-foreground'
@@ -96,12 +96,13 @@ const UserControl = memo(() => {
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 rounded-[6px] text-muted-foreground hover:bg-raised hover:text-foreground md:hidden"
+          className="h-8 w-7 rounded-[6px] p-0 text-muted-foreground hover:bg-raised hover:text-foreground"
           data-testid={TestId.USER_SETTINGS_TRIGGER}
           onClick={handleSettingsClick}
           title={t('userSettings')}
+          aria-label={t('userSettings')}
         >
-          <Settings className="size-4" />
+          <Settings className="size-5" />
         </Button>
       </div>
     </div>
