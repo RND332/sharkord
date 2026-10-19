@@ -27,7 +27,9 @@
     /* Shadcn */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"]
     }
   },
   /* TODO: this doesn't look right but fuck it for now, it's working*/

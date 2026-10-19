@@ -4,6 +4,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { fsAllow } from './vite-fs-allow';
 
 const systemChromium =
   process.platform === 'linux' && existsSync('/usr/bin/chromium')
@@ -16,6 +17,7 @@ export default defineConfig({
     alias: { '@': path.resolve(import.meta.dirname, './src') },
     dedupe: ['react', 'react-dom']
   },
+  server: { fs: { allow: fsAllow } },
   test: {
     include: ['src/visual-tests/voice-control-dock.vrt.ts'],
     fileParallelism: false,

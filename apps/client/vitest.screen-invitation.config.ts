@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import { playwright } from '@vitest/browser-playwright';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { fsAllow } from './vite-fs-allow';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -10,7 +11,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom']
   },
   define: { VITE_APP_VERSION: JSON.stringify('test') },
-  server: { port: 6347, strictPort: true },
+  server: { port: 6347, strictPort: true, fs: { allow: fsAllow } },
   test: {
     api: { port: 6347, strictPort: true },
     include: ['src/visual-tests/screen-share-invitation*.vrt.ts'],
@@ -21,7 +22,7 @@ export default defineConfig({
         launchOptions: { executablePath: '/usr/bin/chromium' }
       }),
       instances: [
-        { browser: 'chromium', viewport: { width: 800, height: 600 } }
+        { browser: 'chromium', viewport: { width: 1440, height: 900 } }
       ]
     }
   }
