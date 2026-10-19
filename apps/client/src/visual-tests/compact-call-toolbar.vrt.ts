@@ -84,6 +84,7 @@ let host: HTMLDivElement | undefined;
 
 const render = async (width = 1188, theme = 'dark') => {
   await page.viewport(width === 375 ? 375 : 1440, 900);
+  localStorage.removeItem('vite-ui-theme');
   host = document.createElement('div');
   host.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:900px;background:var(--rail)`;
   document.body.append(host);

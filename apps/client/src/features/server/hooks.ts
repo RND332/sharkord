@@ -5,6 +5,7 @@ import type { IRootState } from '../store';
 import { useChannelById, useChannelPermissionsById } from './channels/hooks';
 import { channelReadStateByIdSelector } from './channels/selectors';
 import {
+  activeDmChannelIdSelector,
   activeFullscreenPluginIdSelector,
   categoryHasUnreadMentionsSelector,
   categoryUnreadMessagesCountSelector,
@@ -189,6 +190,9 @@ export const useActiveFullscreenPluginId = () =>
   useSelector(activeFullscreenPluginIdSelector);
 
 export const useDmsOpen = () => useSelector(dmsOpenSelector);
+
+export const useActiveDmChannelId = () =>
+  useSelector(activeDmChannelIdSelector);
 
 export const useUserSettingsPlugins = () =>
   useSelector(userSettingsPluginsSelector);

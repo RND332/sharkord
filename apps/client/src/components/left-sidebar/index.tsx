@@ -1,7 +1,6 @@
 import { ResizableSidebar } from '@/components/resizable-sidebar';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import {
-  useDmsOpen,
   usePublicServerSettings,
   useServerName
 } from '@/features/server/hooks';
@@ -28,7 +27,6 @@ type TLeftSidebarProps = {
 
 const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
   const serverName = useServerName();
-  const dmsOpen = useDmsOpen();
   const publicSettings = usePublicServerSettings();
 
   useRestoreLastSelectedChannel();
@@ -59,7 +57,8 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       {publicSettings?.directMessagesEnabled && <DmButton />}
       <PluginButtons />
       <div className="flex-1 overflow-y-auto">
-        {dmsOpen ? <DirectMessages /> : <Categories />}
+        {publicSettings?.directMessagesEnabled && <DirectMessages />}
+        <Categories />
       </div>
       <div
         data-voice-dock

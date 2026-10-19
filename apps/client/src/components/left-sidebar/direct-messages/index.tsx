@@ -1,9 +1,12 @@
 import { UnreadCount } from '@/components/unread-count';
 import { UserAvatar } from '@/components/user-avatar';
 import { setSelectedDmChannelId } from '@/features/app/actions';
-import { useSelectedDmChannelId } from '@/features/app/hooks';
+import { setDmsOpen } from '@/features/server/actions';
 import { useChannels } from '@/features/server/channels/hooks';
-import { useUnreadMessagesCount } from '@/features/server/hooks';
+import {
+  useActiveDmChannelId,
+  useUnreadMessagesCount
+} from '@/features/server/hooks';
 import {
   useOwnUserId,
   useUserById,
@@ -17,7 +20,16 @@ import {
   type TDirectMessageConversation
 } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { SearchUserDropdown } from './search-user-dropdown';
@@ -25,15 +37,22 @@ import { SearchUserDropdown } from './search-user-dropdown';
 type TDirectMessageItemProps = {
   dm: TDirectMessageConversation;
   selected: boolean;
-  onSelect: () => void;
+  expanded: boolean;
+  onSelect: (channelId: number) => void;
 };
 
 const DirectMessageItem = memo(
-  ({ dm, selected, onSelect }: TDirectMessageItemProps) => {
+  ({ dm, selected, expanded, onSelect }: TDirectMessageItemProps) => {
     const user = useUserById(dm.userId);
     const unreadCount = useUnreadMessagesCount(dm.channelId);
+    const handleSelect = useCallback(() => {
+      onSelect(dm.channelId);
+    }, [dm.channelId, onSelect]);
+    const handleAvatarClick = useCallback((event: MouseEvent) => {
+      event.stopPropagation();
+    }, []);
 
-    if (!user) {
+    if (!user || (!expanded && unreadCount === 0)) {
       return null;
     }
 
@@ -41,15 +60,22 @@ const DirectMessageItem = memo(
       <button
         data-testid={TestId.DM_ITEM}
         type="button"
+        aria-current={selected ? 'page' : undefined}
         className={cn(
-          'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-          selected && 'bg-accent text-accent-foreground'
+          'mt-0.5 flex h-11 w-full items-center gap-3 rounded-[6px] px-2 text-sm leading-5 text-muted-foreground hover:bg-selected hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          unreadCount > 0 && 'font-semibold text-foreground',
+          selected && 'bg-selected text-foreground'
         )}
-        onClick={onSelect}
+        onClick={handleSelect}
       >
-        <UserAvatar userId={user.id} className="h-6 w-6" showUserPopover />
+        <span className="shrink-0" onClick={handleAvatarClick}>
+          <UserAvatar userId={user.id} className="size-8" showUserPopover />
+        </span>
         <span className="truncate flex-1 text-left">{user.name}</span>
-        <UnreadCount count={unreadCount} />
+        <UnreadCount
+          count={unreadCount}
+          className="h-[18px] shrink-0 font-bold leading-4"
+        />
       </button>
     );
   }
@@ -62,17 +88,29 @@ const DirectMessages = memo(() => {
     TDirectMessageConversation[]
   >([]);
   const [query, setQuery] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const disclosureRef = useRef<HTMLButtonElement>(null);
   const users = useUsers();
   const channels = useChannels();
   const ownUserId = useOwnUserId();
-  const selectedDmChannelId = useSelectedDmChannelId();
+  const selectedDmChannelId = useActiveDmChannelId();
+  const toggleExpanded = useCallback(() => {
+    setExpanded((value) => !value);
+  }, []);
+  const selectConversation = useCallback(
+    (channelId: number) => {
+      setDmsOpen(true);
+      setSelectedDmChannelId(channelId);
+      if (!expanded) disclosureRef.current?.focus();
+    },
+    [expanded]
+  );
 
   const fetchConversations = useCallback(async () => {
-    const trpc = getTRPCClient();
-
     setLoading(true);
 
     try {
+      const trpc = getTRPCClient();
       const items = await trpc.dms.get.query();
 
       setConversations(items);
@@ -113,26 +151,35 @@ const DirectMessages = memo(() => {
 
   const onStartDm = useCallback(
     async (userId: number) => {
-      const trpc = getTRPCClient();
-
       try {
+        const trpc = getTRPCClient();
         const result = await trpc.dms.open.mutate({ userId });
 
-        setSelectedDmChannelId(result.channelId);
+        selectConversation(result.channelId);
         await fetchConversations();
       } catch {
         toast.error(t('couldNotOpenDM'));
       }
     },
-    [fetchConversations, t]
+    [fetchConversations, selectConversation, t]
   );
 
+  const ChevronIcon = expanded ? ChevronDown : ChevronRight;
+
   return (
-    <div className="flex-1 overflow-y-auto p-2">
-      <div className="mb-1 flex items-center justify-between px-2 py-1">
-        <span className="text-xs font-semibold text-muted-foreground">
-          {t('directMessages')}
-        </span>
+    <div data-direct-channels className="mx-2 mt-3">
+      <div className="flex h-7 items-center justify-between px-2.5">
+        <button
+          ref={disclosureRef}
+          type="button"
+          aria-label={t('directChannels')}
+          aria-expanded={expanded}
+          onClick={toggleExpanded}
+          className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left text-[13px] font-semibold leading-[18px] tracking-[0.06em] text-muted-foreground uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ChevronIcon aria-hidden="true" className="size-3.5 shrink-0" />
+          <span className="truncate">{t('directChannels')}</span>
+        </button>
         <SearchUserDropdown
           query={query}
           setQuery={setQuery}
@@ -141,27 +188,27 @@ const DirectMessages = memo(() => {
         />
       </div>
 
-      {loading ? (
+      {loading && expanded && conversations.length === 0 && (
         <div className="flex h-24 items-center justify-center">
           <Spinner size="sm" />
         </div>
-      ) : (
-        <div className="space-y-0.5">
-          {conversations.map((dm) => (
-            <DirectMessageItem
-              key={dm.channelId}
-              dm={dm}
-              selected={selectedDmChannelId === dm.channelId}
-              onSelect={() => setSelectedDmChannelId(dm.channelId)}
-            />
-          ))}
-          {conversations.length === 0 && (
-            <div className="px-2 py-4 text-xs text-muted-foreground">
-              {t('noDMsYet')}
-            </div>
-          )}
-        </div>
       )}
+      <div>
+        {conversations.map((dm) => (
+          <DirectMessageItem
+            key={dm.channelId}
+            dm={dm}
+            expanded={expanded}
+            selected={selectedDmChannelId === dm.channelId}
+            onSelect={selectConversation}
+          />
+        ))}
+        {!loading && expanded && conversations.length === 0 && (
+          <div className="px-2 py-4 text-xs text-muted-foreground">
+            {t('noDMsYet')}
+          </div>
+        )}
+      </div>
     </div>
   );
 });

@@ -56,6 +56,12 @@ const addRoot = (id: string) => {
 const snapshot = (name: string) =>
   expect(page).toMatchScreenshot(name, { timeout: 3_000 });
 
+const messageAuthor = (name: string) => {
+  const container = document.querySelector('[data-messages-container]')!;
+  const history = page.elementLocator(container);
+  return history.getByText(name, { exact: true });
+};
+
 const waitForRender = () => {
   const { promise, resolve } = Promise.withResolvers<void>();
   requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -518,7 +524,7 @@ test('reply links use the readable accent text color', async () => {
 });
 
 test('message author typography and timestamps use the Paper hierarchy', async () => {
-  const author = page.getByText('aria', { exact: true });
+  const author = messageAuthor('aria');
   await expect.element(author).toBeVisible();
   const authorStyle = getComputedStyle(author.element());
   expect(authorStyle.fontSize).toBe('14px');
@@ -536,7 +542,7 @@ test('message author typography and timestamps use the Paper hierarchy', async (
 });
 
 test('message groups use Paper avatar and body spacing', async () => {
-  const author = page.getByText('aria', { exact: true });
+  const author = messageAuthor('aria');
   await expect.element(author).toBeVisible();
   const header = author.element().parentElement!;
   const body = header.parentElement!;
@@ -574,9 +580,9 @@ test('complete channel history shows a Paper welcome and date context for clock 
     'uppercase'
   );
   expect(separator.getBoundingClientRect().height).toBe(36);
-  const timestamp = page
-    .getByText('aria', { exact: true })
-    .element().nextElementSibling!;
+  const author = messageAuthor('aria');
+  const authorElement = author.element();
+  const timestamp = authorElement.nextElementSibling!;
   expect(timestamp.textContent).toBe('9:40 AM');
   expect(timestamp.getAttribute('title')).toContain('2026');
   expect(timestamp.getAttribute('datetime')).toBe('2026-10-09T09:40:00.000Z');

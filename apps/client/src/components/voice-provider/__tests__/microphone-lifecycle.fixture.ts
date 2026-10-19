@@ -1,7 +1,9 @@
+import * as ChannelSelectors from '@/features/server/channels/selectors';
 import { NoiseSuppression } from '@/types';
 import { ChannelType, StreamKind } from '@sharkord/shared';
 import { beforeEach, expect, mock, test } from 'bun:test';
 import * as React from 'react';
+import * as ReactI18n from 'react-i18next';
 import { DirectMedia, type TDirectMediaResult } from '../direct-media';
 
 // Run the real provider and channel-selection caller; substitute the scheduler,
@@ -33,18 +35,21 @@ mock.module('react', () => ({
   }
 }));
 mock.module('@/helpers/browser-logger', () => ({
+  logDebug() {},
   logVoice() {},
   logVoiceWarn() {},
   logVoiceError() {}
 }));
 mock.module('@/helpers/sounds', () => ({ playSound() {} }));
 mock.module('@/helpers/voice-debug', () => ({
+  pushVoiceDebugEvent() {},
   registerVoiceDebugSource: () => () => {}
 }));
 mock.module('@/hooks/use-screen-share-support', () => ({
   useScreenShareSupport: () => ({ isScreenShareSupported: false })
 }));
 mock.module('react-i18next', () => ({
+  ...ReactI18n,
   useTranslation: () => ({ t: (key: string) => key })
 }));
 const errorToast = mock(() => {});
@@ -77,12 +82,15 @@ mock.module('@/features/server/channels/actions', () => ({
   setSelectedChannelId() {}
 }));
 mock.module('@/features/server/channels/selectors', () => ({
+  ...ChannelSelectors,
   channelByIdSelector: (_state: unknown, id: number) => ({
     id,
     type: ChannelType.VOICE
   })
 }));
-mock.module('@/features/store', () => ({ store: { getState: () => ({}) } }));
+mock.module('@/features/store', () => ({
+  store: { getState: () => ({}), dispatch() {} }
+}));
 
 let voice: import('../index').TVoiceProvider;
 let micMuted = false;
@@ -163,6 +171,8 @@ const trpcClient = {
   }
 };
 mock.module('@/lib/trpc', () => ({
+  cleanup() {},
+  connectToTRPC: async () => {},
   getTRPCClient: () => trpcClient
 }));
 const generation = { current: 0 };
@@ -329,6 +339,11 @@ mock.module('@/helpers/audio-worklet/noise-gate-worklet', () => ({
   markNoiseGateWorkletUnavailable() {},
   postNoiseGateWorkletConfig() {}
 }));
+Object.assign(globalThis, {
+  MediaStream: Stream,
+  window: { AudioContext: Context },
+  localStorage: { getItem: () => null, setItem() {} }
+});
 const { VoiceProvider } = await import('../index');
 const { useSelectChannel } = await import('@/hooks/use-select-channel');
 const render = () => {
@@ -400,11 +415,6 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'navigator', {
     configurable: true,
     value: { mediaDevices: { getUserMedia: capture } }
-  });
-  Object.assign(globalThis, {
-    MediaStream: Stream,
-    window: { AudioContext: Context },
-    localStorage: { getItem: () => null, setItem() {} }
   });
   render();
 });
