@@ -43,7 +43,8 @@ vi.mock('@/components/voice-provider/demo-visibility-context', async () => {
   };
 });
 vi.mock('@/features/server/users/hooks', () => ({
-  useUserById: () => ({ id: 2, name: 'aria' }),
+  useUserById: (userId: number) => ({ id: userId, name: 'aria' }),
+  useUsers: () => [{ id: 2, name: 'aria' }],
   useOwnUserId: () => state.ownId,
   useIsOwnUser: () => false
 }));
@@ -67,7 +68,8 @@ vi.mock('@/features/server/voice/hooks', () => ({
   useVoice: () => ({ getConsumerCodec: () => undefined }),
   useHideNonVideoParticipants: () => false,
   useHideOwnScreenShare: () => false,
-  useVoiceChannelExternalStreamsList: () => []
+  useVoiceChannelExternalStreamsList: () => [],
+  useScreenViewers: () => ({})
 }));
 vi.mock('@/components/voice-provider/stats-context', () => ({
   useVoiceStats: () => ({})

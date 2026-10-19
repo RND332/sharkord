@@ -3,16 +3,30 @@ import { useDemoVisibility } from '@/components/voice-provider/demo-visibility-c
 import { useVoiceStats } from '@/components/voice-provider/stats-context';
 import { useVolumeControl } from '@/components/voice-provider/volume-control-context';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
-import { useOwnUserId, useUserById } from '@/features/server/users/hooks';
+import {
+  useOwnUserId,
+  useUserById,
+  useUsers
+} from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
-import { PlayIcon } from '@heroicons/react/20/solid';
+import { EyeIcon, PlayIcon } from '@heroicons/react/20/solid';
 import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
 import { StreamKind } from '@sharkord/shared';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@sharkord/ui';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { UserAvatar } from '../../user-avatar';
 import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';
 import { cardControlClass, cardControlsClass, cardDensity } from './helpers';
@@ -36,12 +50,13 @@ type TScreenShareCardProps = {
   className?: string;
   showPinControls: boolean;
   isAnyCardPinned?: boolean;
+  viewerIds?: number[];
 };
 
 const SCREEN_SHARE_SHELL_CLASS =
   'relative flex size-full items-center justify-center overflow-hidden rounded-[12px] border border-line';
 const SCREEN_SHARE_CAPTION_CLASS =
-  'absolute inset-x-0 bottom-0 flex h-[34px] items-center gap-2 px-2.5';
+  'pointer-events-none absolute bottom-2 left-2 flex h-6.5 max-w-[calc(100%-16px)] items-center gap-2 rounded-[6px] px-2';
 
 const ScreenShareCard = memo(
   ({
@@ -52,11 +67,14 @@ const ScreenShareCard = memo(
     onUnpin,
     className,
     showPinControls = true,
-    isAnyCardPinned = false
+    isAnyCardPinned = false,
+    viewerIds = []
   }: TScreenShareCardProps) => {
     const { t } = useTranslation('common');
     const user = useUserById(userId);
+    const users = useUsers();
     const ownUserId = useOwnUserId();
+    const [viewersOpen, setViewersOpen] = useState(false);
     const { devices } = useDevices();
     const { isViewingDemo, viewDemo, stopViewingDemo } = useDemoVisibility();
     const [watchState, setWatchState] = useState<'idle' | 'loading' | 'error'>(
@@ -99,6 +117,25 @@ const ScreenShareCard = memo(
       onPin,
       cardId
     ]);
+    const viewerCount = viewerIds.length;
+    const shownViewerIds = viewerIds.slice(0, 4);
+    const overflowViewerCount = Math.max(
+      0,
+      viewerCount - shownViewerIds.length
+    );
+    const viewerNames = useMemo(
+      () => new Map(users.map((viewer) => [viewer.id, viewer.name])),
+      [users]
+    );
+    const onViewersOpenChange = useCallback(
+      (open: boolean) => setViewersOpen(open),
+      []
+    );
+    const onViewersPointerDown = useCallback(
+      (event: ReactMouseEvent<HTMLButtonElement>) => event.stopPropagation(),
+      []
+    );
+
     const { getUserScreenVolumeKey } = useVolumeControl();
     const isOwnUser = ownUserId === userId;
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
@@ -221,6 +258,62 @@ const ScreenShareCard = memo(
       }
     }, [stopViewingDemo, userId, isPinned, onUnpin, resetZoom, t]);
 
+    const viewerIndicator =
+      viewerCount > 0 ? (
+        <div className="absolute right-2 top-2 z-10">
+          <Popover open={viewersOpen} onOpenChange={onViewersOpenChange}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onMouseDown={onViewersPointerDown}
+                aria-label={t('screenShareViewers', { count: viewerCount })}
+                className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/65 px-1.5 text-[13px] font-medium leading-[17px] text-white transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              >
+                <span className="flex -space-x-1.5">
+                  {shownViewerIds.map((viewerId) => (
+                    <UserAvatar
+                      key={viewerId}
+                      userId={viewerId}
+                      className="size-[22px] ring-2 ring-black/70"
+                      showStatusBadge={false}
+                    />
+                  ))}
+                </span>
+                {overflowViewerCount > 0 && (
+                  <span className="tabular-nums text-white/80">
+                    +{overflowViewerCount}
+                  </span>
+                )}
+                <EyeIcon aria-hidden="true" className="size-3.5" />
+                <span className="tabular-nums">{viewerCount}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              sideOffset={8}
+              className="w-[272px] gap-0 p-0"
+            >
+              <div className="border-b border-line px-3 py-2 text-xs font-semibold text-muted-foreground">
+                {t('watching')} · {viewerCount}
+              </div>
+              <div className="max-h-80 overflow-y-auto p-1">
+                {viewerIds.map((viewerId) => (
+                  <div
+                    key={viewerId}
+                    className="flex h-11 items-center gap-2 rounded-md px-2 text-sm"
+                  >
+                    <UserAvatar userId={viewerId} className="size-8" />
+                    <span className="truncate">
+                      {viewerNames.get(viewerId) ?? t('unknownUser')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      ) : null;
+
     if (!user || devices.voiceOnlyMode) return null;
 
     let watchLabel = t('watchStream');
@@ -237,6 +330,7 @@ const ScreenShareCard = memo(
       return (
         <VoiceCardContextMenu
           demo={{ isViewing: viewing, onToggle: handleStopWatching }}
+          pin={{ isPinned, onToggle: handlePinToggle }}
         >
           <div
             data-screen-share-card
@@ -263,6 +357,7 @@ const ScreenShareCard = memo(
                 {t('unableWatchStream')}
               </p>
             )}
+            {viewerIndicator}
             <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'text-foreground')}>
               <ComputerDesktopIcon
                 aria-hidden="true"
@@ -299,6 +394,7 @@ const ScreenShareCard = memo(
               }
             : undefined
         }
+        pin={{ isPinned, onToggle: handlePinToggle }}
       >
         <div
           ref={containerRef}
@@ -327,15 +423,14 @@ const ScreenShareCard = memo(
           )}
           <CardTheme />
 
+          {viewerIndicator}
+
           <video
             ref={screenShareRef}
             autoPlay
             muted
             playsInline
-            className={cn(
-              'absolute inset-x-0 top-0 w-full bg-black object-contain',
-              isPinned ? 'h-[calc(100%-34px)]' : 'h-full'
-            )}
+            className="absolute inset-0 size-full bg-black object-contain"
             style={{
               transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
               transition: isDragging ? 'none' : 'transform 0.1s ease-out'
@@ -353,6 +448,7 @@ const ScreenShareCard = memo(
             <div
               className={cn(
                 'absolute top-0 right-0 z-10 justify-end',
+                viewerCount > 0 && 'top-9',
                 density.inset,
                 'flex opacity-0 pointer-events-none group-hover/screen-share-card:opacity-100 group-hover/screen-share-card:pointer-events-auto group-focus-within/screen-share-card:opacity-100 group-focus-within/screen-share-card:pointer-events-auto',
                 'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
@@ -371,17 +467,16 @@ const ScreenShareCard = memo(
           )}
 
           <div
-            className={cn(
-              SCREEN_SHARE_CAPTION_CLASS,
-              'pointer-events-none bg-black/55 text-white',
-              isPinned && 'bg-black'
-            )}
+            className={cn(SCREEN_SHARE_CAPTION_CLASS, 'bg-black/65 text-white')}
           >
-            <ComputerDesktopIcon className="size-[18px] shrink-0" />
+            <ComputerDesktopIcon
+              aria-hidden="true"
+              className="size-[18px] shrink-0"
+            />
             <p className="truncate text-[13px] font-medium leading-[17px]">
               {user.name}'s screen
-              {isPinned && (videoStats || codec) && (
-                <span className="ml-2 text-xs leading-4 text-muted-foreground">
+              {(videoStats || codec) && (
+                <span className="ml-2 text-xs leading-4 text-white/80">
                   {codec}
                   {codec && videoStats && ' '}
                   {videoStats && (
@@ -396,7 +491,7 @@ const ScreenShareCard = memo(
                 </span>
               )}
               {isZoomEnabled && zoom > 1 && (
-                <span className="ml-2 text-xs leading-none text-white/70">
+                <span className="ml-2 text-xs leading-none text-white/80">
                   {Math.round(zoom * 100)}%
                 </span>
               )}

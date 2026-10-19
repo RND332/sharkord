@@ -11,6 +11,7 @@ import {
   type TExternalStreamsMap,
   type TIceServer,
   type TRemoteProducerIds,
+  type TScreenViewersSnapshot,
   type TStreamQualityLayer,
   type TTransportParams,
   type TVoiceMap,
@@ -153,6 +154,7 @@ type TDirectMediaRuntimeSession = {
   peerId: number;
   iceServers: TIceServer[];
   phase: 'pending' | 'offered' | 'answered' | 'ready';
+  producerId?: string;
   deadline?: NodeJS.Timeout;
 };
 
@@ -432,6 +434,7 @@ class VoiceRuntime {
     });
 
     voiceRuntimes.delete(this.id);
+    this.publishScreenViewers();
 
     eventBus.emit('voice:runtime_closed', {
       channelId: this.id
@@ -493,6 +496,7 @@ class VoiceRuntime {
     this.directMediaMovedMembers.delete(userId);
 
     this.cleanupUserResources(userId);
+    this.publishScreenViewers();
 
     eventBus.emit('user:left_voice', {
       userId: userId,
@@ -599,6 +603,7 @@ class VoiceRuntime {
         consumers[streamKey]?.close();
         delete consumers[streamKey];
       }
+      this.publishScreenViewers();
     }
     if (newState.sharingScreen === false) {
       for (const session of this.directMediaSessions.values()) {
@@ -740,6 +745,10 @@ class VoiceRuntime {
       id: crypto.randomUUID(),
       senderId,
       peerId: peer.userId,
+      producerId:
+        kind === StreamKind.SCREEN
+          ? this.screenProducers[senderId]?.id
+          : undefined,
       iceServers: getIceServers(senderId),
       phase: 'pending'
     };
@@ -831,6 +840,7 @@ class VoiceRuntime {
       session.phase = 'ready';
       clearTimeout(session.deadline);
       session.deadline = undefined;
+      this.publishScreenViewers();
     }
     this.publishDirectMediaSignal(session, userId, signal, [
       userId === session.senderId ? session.peerId : session.senderId
@@ -887,6 +897,7 @@ class VoiceRuntime {
     this.publishDirectMediaSignal(session, session.senderId, { type }, [
       session.peerId
     ]);
+    this.publishScreenViewers();
   };
 
   private endDirectMediaSessionsForUser = (
@@ -905,6 +916,60 @@ class VoiceRuntime {
     for (const session of this.directMediaSessions.values()) {
       this.endDirectMediaSession(session, type);
     }
+  };
+
+  public getScreenViewers = (): TScreenViewersSnapshot => {
+    const demos: TScreenViewersSnapshot['demos'] = {};
+
+    for (const [presenterId, producer] of Object.entries(
+      this.screenProducers
+    )) {
+      if (producer.closed) continue;
+
+      const presenterUserId = Number(presenterId);
+      const viewerIds = new Set<number>();
+      const consumerKey = this.getConsumerKey(
+        presenterUserId,
+        StreamKind.SCREEN
+      );
+
+      for (const [viewerId, consumers] of Object.entries(this.consumers)) {
+        const viewerUserId = Number(viewerId);
+        const consumer = consumers[consumerKey];
+
+        if (viewerUserId === presenterUserId) continue;
+        if (!consumer || consumer.closed) continue;
+        if (consumer.producerId !== producer.id) continue;
+        if (consumer.paused || consumer.producerPaused) continue;
+
+        viewerIds.add(viewerUserId);
+      }
+
+      for (const session of this.directMediaSessions.values()) {
+        if (session.kind !== StreamKind.SCREEN) continue;
+        if (session.senderId !== presenterUserId) continue;
+        if (session.phase !== 'ready') continue;
+        if (session.producerId !== producer.id) continue;
+        if (!this.getUser(session.peerId)) continue;
+
+        viewerIds.add(session.peerId);
+      }
+
+      viewerIds.delete(presenterUserId);
+
+      demos[presenterUserId] = {
+        producerId: producer.id,
+        viewerIds: [...viewerIds].sort((first, second) => first - second)
+      };
+    }
+
+    return { channelId: this.id, demos };
+  };
+
+  public publishScreenViewers = (): void => {
+    pubsub.publish(ServerEvents.VOICE_SCREEN_VIEWERS_CHANGED, {
+      channelId: this.id
+    });
   };
 
   public getRouter = (): Router<AppData> => {
@@ -1106,6 +1171,10 @@ class VoiceRuntime {
       producerId: producer.id
     });
 
+    if (type === StreamKind.SCREEN) {
+      this.publishScreenViewers();
+    }
+
     producer.observer.on('close', () => {
       eventBus.emit('voice:producer_removed', {
         channelId: this.id,
@@ -1125,6 +1194,10 @@ class VoiceRuntime {
       }
 
       this.setProducerQualityLayers(userId, type, []);
+
+      if (type === StreamKind.SCREEN) {
+        this.publishScreenViewers();
+      }
     });
   };
 
@@ -1197,7 +1270,15 @@ class VoiceRuntime {
       if (this.consumers[userId]?.[streamKey] !== consumer) return;
 
       delete this.consumers[userId]?.[streamKey];
+
+      if (kind === StreamKind.SCREEN) {
+        this.publishScreenViewers();
+      }
     });
+
+    if (kind === StreamKind.SCREEN) {
+      this.publishScreenViewers();
+    }
   };
 
   public createExternalStream = (options: {

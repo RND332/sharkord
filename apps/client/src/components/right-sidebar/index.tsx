@@ -7,8 +7,11 @@ import { cn } from '@/lib/utils';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   PluginSlot,
-  TestId
+  TestId,
+  UserStatus
 } from '@sharkord/shared';
+import { IconButton } from '@sharkord/ui';
+import { X } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserPopover } from '../user-popover';
@@ -55,25 +58,38 @@ const User = memo(({ userId, name, banned }: TUserProps) => {
 type TRightSidebarProps = {
   className?: string;
   isOpen?: boolean;
+  onClose?: () => void;
 };
 
 const RightSidebar = memo(
-  ({ className, isOpen = true }: TRightSidebarProps) => {
+  ({ className, isOpen = true, onClose }: TRightSidebarProps) => {
     const { t } = useTranslation('sidebar');
+    const { t: tTopbar } = useTranslation('topbar');
     const users = useUsers();
 
-    const { usersToShow, usersCount } = useMemo(() => {
+    const { onlineUsers, offlineUsers, usersCount } = useMemo(() => {
       const filtered = users.filter(
         (user) => user.name !== DELETED_USER_IDENTITY_AND_NAME
       );
+      const online = filtered.filter(
+        (user) => user.status !== UserStatus.OFFLINE
+      );
+      const offline = filtered.filter(
+        (user) => user.status === UserStatus.OFFLINE
+      );
 
       return {
-        usersToShow: filtered.slice(0, MAX_USERS_TO_SHOW),
+        onlineUsers: online,
+        offlineUsers: offline.slice(
+          0,
+          Math.max(0, MAX_USERS_TO_SHOW - online.length)
+        ),
         usersCount: filtered.length
       };
     }, [users]);
 
-    const hasHiddenUsers = users.length > MAX_USERS_TO_SHOW;
+    const hasHiddenUsers =
+      onlineUsers.length + offlineUsers.length < usersCount;
 
     return (
       <ResizableSidebar
@@ -85,24 +101,55 @@ const RightSidebar = memo(
         isOpen={isOpen}
         className={cn('h-full bg-nav', className)}
       >
-        <div className="flex h-12 shrink-0 items-center border-b border-line px-4">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-line px-4">
           <h3 className="text-sm font-semibold text-foreground">
             {t('membersHeader', { count: usersCount })}
           </h3>
+          {onClose && (
+            <IconButton
+              icon={X}
+              variant="ghost"
+              size="sm"
+              aria-label={tTopbar('closeMembersPanel')}
+              onClick={onClose}
+            />
+          )}
         </div>
         <div className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-1">
-            {usersToShow.map((user) => (
-              <User
-                key={user.id}
-                userId={user.id}
-                name={user.name}
-                banned={user.banned}
-              />
-            ))}
+          <div className="space-y-4">
+            <section>
+              <h4 className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle-foreground">
+                {t('onlineGroup', { count: onlineUsers.length })}
+              </h4>
+              <div className="space-y-1">
+                {onlineUsers.map((user) => (
+                  <User
+                    key={user.id}
+                    userId={user.id}
+                    name={user.name}
+                    banned={user.banned}
+                  />
+                ))}
+              </div>
+            </section>
+            <section>
+              <h4 className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle-foreground">
+                {t('offlineGroup', { count: offlineUsers.length })}
+              </h4>
+              <div className="space-y-1">
+                {offlineUsers.map((user) => (
+                  <User
+                    key={user.id}
+                    userId={user.id}
+                    name={user.name}
+                    banned={user.banned}
+                  />
+                ))}
+              </div>
+            </section>
             {hasHiddenUsers && (
               <div className="text-sm text-muted-foreground px-2 py-1.5">
-                +{users.length - MAX_USERS_TO_SHOW} more...
+                +{usersCount - onlineUsers.length - offlineUsers.length} more...
               </div>
             )}
           </div>

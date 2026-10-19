@@ -5,6 +5,9 @@
   "noReasonProvided": "Nenhum motivo fornecido.",
   "lostConnectionMessage": "Perda de conexão com o servidor inesperadamente.",
   "goToConnectScreen": "Ir para a Tela de Conexão",
+  "tryAgain": "Tentar novamente",
+  "lastAttempt": "Última tentativa · {{time}}",
+  "serverAddress": "Endereço do servidor · {{host}}",
   "details": "Detalhes",
   "code": "Código: {{code}}",
   "time": "Tempo: {{time}}"

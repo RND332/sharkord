@@ -5,6 +5,9 @@
   "noReasonProvided": "Причина не указана.",
   "lostConnectionMessage": "Неожиданно потеряно соединение с сервером.",
   "goToConnectScreen": "Перейти к экрану подключения",
+  "tryAgain": "Попробовать снова",
+  "lastAttempt": "Последняя попытка · {{time}}",
+  "serverAddress": "Адрес сервера · {{host}}",
   "details": "Подробнее",
   "code": "Код: {{code}}",
   "time": "Время: {{time}}"

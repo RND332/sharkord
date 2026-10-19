@@ -1,9 +1,12 @@
-import { setDisconnectInfo } from '@/features/server/actions';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { connect, setDisconnectInfo } from '@/features/server/actions';
+import { useServerName } from '@/features/server/hooks';
 import type { TDisconnectInfo } from '@/features/server/types';
+import { getHostFromServer } from '@/helpers/get-file-url';
 import { DisconnectCode } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import { AlertCircle, Gavel, RefreshCw, WifiOff } from 'lucide-react';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TDisconnectedProps = {
@@ -11,7 +14,11 @@ type TDisconnectedProps = {
 };
 
 const Disconnected = memo(({ info }: TDisconnectedProps) => {
-  const { t } = useTranslation('disconnected');
+  const { t, i18n } = useTranslation('disconnected');
+  const serverName = useServerName();
+  const host = getHostFromServer();
+  const [lastAttemptAt, setLastAttemptAt] = useState(info.time);
+  const [retrying, setRetrying] = useState(false);
 
   const disconnectType = useMemo(() => {
     const code = info.code;
@@ -42,44 +49,81 @@ const Disconnected = memo(({ info }: TDisconnectedProps) => {
     };
   }, [info, t]);
 
-  const handleReconnect = useCallback(() => {
-    setDisconnectInfo(undefined);
-  }, []);
+  const handleReconnect = useCallback(async () => {
+    if (retrying) return;
+
+    setRetrying(true);
+    setLastAttemptAt(new Date());
+
+    try {
+      await connect();
+    } catch {
+      // credentials or the server may be gone; the connect screen owns that recovery.
+    } finally {
+      setDisconnectInfo(undefined);
+      setRetrying(false);
+    }
+  }, [retrying]);
+
+  const lastAttemptText = lastAttemptAt.toLocaleTimeString(i18n.language, {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="text-center space-y-6 max-w-md px-6">
-        <div className="flex justify-center">{disconnectType.icon}</div>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="flex h-12 shrink-0 items-center justify-between px-6">
+        <span className="text-sm font-semibold text-foreground">
+          {serverName}
+        </span>
+        <LanguageSwitcher
+          variant="full"
+          className="h-7 w-auto border-0 bg-transparent p-0 text-[13px] font-medium leading-[18px] text-muted-foreground [&>svg]:size-3.5"
+        />
+      </header>
 
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">
-            {disconnectType.title}
-          </h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {disconnectType.message}
-          </p>
-        </div>
+      <main className="flex flex-1 items-center justify-center px-6 pb-24">
+        <div className="max-w-md space-y-5 text-center">
+          {disconnectType.icon && (
+            <div className="flex justify-center">{disconnectType.icon}</div>
+          )}
 
-        {disconnectType.canReconnect && (
-          <Button
-            onClick={handleReconnect}
-            className="inline-flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            {t('goToConnectScreen')}
-          </Button>
-        )}
-
-        <details className="text-xs text-muted-foreground">
-          <summary className="cursor-pointer hover:text-foreground">
-            {t('details')}
-          </summary>
-          <div className="mt-2 space-y-1">
-            <div>{t('code', { code: info.code })}</div>
-            <div>{t('time', { time: info.time.toLocaleString() })}</div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold text-foreground">
+              {disconnectType.title}
+            </h1>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {disconnectType.message}
+            </p>
           </div>
-        </details>
-      </div>
+
+          {disconnectType.canReconnect && (
+            <Button
+              onClick={handleReconnect}
+              disabled={retrying}
+              className="inline-flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t('tryAgain')}
+            </Button>
+          )}
+
+          <div className="space-y-1 text-xs text-subtle-foreground">
+            <p>{t('lastAttempt', { time: lastAttemptText })}</p>
+            <p>{t('serverAddress', { host })}</p>
+          </div>
+
+          <details className="text-xs text-muted-foreground">
+            <summary className="cursor-pointer hover:text-foreground">
+              {t('details')}
+            </summary>
+            <div className="mt-2 space-y-1">
+              <div>{t('code', { code: info.code })}</div>
+              <div>{t('time', { time: info.time.toLocaleString() })}</div>
+            </div>
+          </details>
+        </div>
+      </main>
     </div>
   );
 });

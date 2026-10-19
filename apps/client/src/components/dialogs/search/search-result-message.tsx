@@ -6,7 +6,7 @@ import { UserAvatar } from '@/components/user-avatar';
 import { usePluginMetadata } from '@/features/server/plugins/hooks';
 import type { TMessageJumpToTarget } from '@/types';
 import { TestId } from '@sharkord/shared';
-import { IconButton, Tooltip } from '@sharkord/ui';
+import { Button } from '@sharkord/ui';
 import { ArrowRight, Hash } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,22 +77,20 @@ const SearchResultMessageCard = memo(
               </div>
             </div>
           </div>
-          <Tooltip
-            content={
-              message.parentMessageId
-                ? t('jumpToThreadMessage')
-                : t('jumpToMessage')
-            }
-          >
-            <IconButton
-              icon={ArrowRight}
-              variant="ghost"
-              size="sm"
-              onClick={handleJump}
-              data-testid={TestId.SEARCH_RESULT_JUMP}
-            />
-          </Tooltip>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-1 h-7 gap-1 px-0 text-xs text-accent-text hover:bg-transparent hover:text-accent-text"
+          onClick={handleJump}
+          data-testid={TestId.SEARCH_RESULT_JUMP}
+        >
+          {message.parentMessageId
+            ? t('jumpToThreadMessage')
+            : t('jumpToMessage')}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Button>
       </div>
     );
   }

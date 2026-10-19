@@ -15,6 +15,7 @@ import {
 import { useFlatPluginCommands } from '@/features/server/plugins/hooks';
 import { useUploadFiles } from '@/hooks/use-upload-files';
 import { getTRPCClient } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 import type { TReplyTarget } from '@/types';
 import type { TJoinedPublicUser, TTempFile } from '@sharkord/shared';
 import {
@@ -58,6 +59,7 @@ type TMessageComposeProps = {
   onArrowUp?: () => void;
   onResize?: () => void;
   isThread?: boolean;
+  dmPartnerName?: string;
   ref?: Ref<TMessageComposeHandle>;
 };
 
@@ -81,6 +83,7 @@ const MessageCompose = memo(
     onArrowUp,
     onResize,
     isThread = false,
+    dmPartnerName,
     ref
   }: TMessageComposeProps) => {
     const { t } = useTranslation('common');
@@ -118,11 +121,20 @@ const MessageCompose = memo(
     }, [can, channelCan, channel, publicSettings]);
 
     const placeholder = useMemo(() => {
-      if (channel && !isThread && !channel.isDm) {
+      if (isThread) {
+        return t('replyInThreadPlaceholder');
+      }
+
+      if (channel && !channel.isDm) {
         return t('messageChannel', { name: channel.name });
       }
+
+      if (channel?.isDm && dmPartnerName) {
+        return t('messageUser', { name: dmPartnerName });
+      }
+
       return t('typeAMessage');
-    }, [channel, isThread, t]);
+    }, [channel, dmPartnerName, isThread, t]);
 
     const pluginCommands = useMemo(
       () => (can(Permission.USE_PLUGINS) ? allPluginCommands : undefined),
@@ -226,12 +238,23 @@ const MessageCompose = memo(
     return (
       <div
         ref={containerRef}
-        className="compose-container relative flex max-h-[35vh] shrink-0 flex-col gap-2 bg-canvas px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[10px]"
+        className={cn(
+          'compose-container relative flex max-h-[35vh] shrink-0 flex-col gap-2 bg-canvas',
+          isThread
+            ? 'pb-4 pl-[23px] pr-6 pt-2'
+            : 'px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[10px]'
+        )}
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
 
         <div
-          className={`compose-scroll-row flex min-h-[52px] flex-1 cursor-text items-start gap-[14px] px-4 overflow-y-auto rounded-md bg-raised [&_.ProseMirror]:px-0! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.ProseMirror]:py-4! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-4! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-muted-foreground${uploading ? ' bg-muted' : ''}`}
+          className={cn(
+            'compose-scroll-row flex flex-1 cursor-text items-start gap-[14px] overflow-y-auto rounded-md bg-raised',
+            isThread
+              ? 'min-h-[44px] px-3 py-0 [&_.ProseMirror]:px-0! [&_.ProseMirror]:py-2.5! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-2.5! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-muted-foreground'
+              : 'min-h-[52px] px-4 [&_.ProseMirror]:px-0! [&_.ProseMirror]:py-4! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-4! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-muted-foreground',
+            uploading && 'bg-muted'
+          )}
           onClick={focusInputOnBackdropClick}
         >
           <Button

@@ -118,7 +118,9 @@ const Voice = memo(
             'ring-1 ring-primary bg-accent/40': isDragOver
           })}
         >
-          <SpeakerWaveIcon className="size-5 shrink-0" />
+          <SpeakerWaveIcon
+            className={cn('size-5 shrink-0', isOwnChannel && 'text-success')}
+          />
 
           <span className={cn('flex-1 truncate', { 'opacity-50': isMuted })}>
             {channel.name}

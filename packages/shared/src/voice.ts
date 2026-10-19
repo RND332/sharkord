@@ -105,3 +105,15 @@ export type TDirectMediaEvent = {
   iceServers: TIceServer[];
   signal: TDirectMediaSignal;
 };
+
+export type TScreenViewerDemo = {
+  producerId: string;
+  viewerIds: number[];
+};
+
+export type TScreenViewersSnapshot = {
+  channelId: number;
+  demos: {
+    [presenterId: number]: TScreenViewerDemo;
+  };
+};

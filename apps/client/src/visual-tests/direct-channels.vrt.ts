@@ -233,8 +233,8 @@ test('start-conversation search opens the existing DM without hiding channels or
   await page.getByPlaceholder('Search user').fill('alex');
   await page.getByRole('menuitem', { name: /alex$/ }).click();
   await expect
-    .element(page.getByText('Direct Message', { exact: true }))
-    .toBeVisible();
+    .poll(() => document.querySelector('[data-dm-partner]')?.textContent)
+    .toBe('alex');
   await expect
     .element(page.getByTestId(TestId.MESSAGE_COMPOSE_EDITOR))
     .toBeVisible();
@@ -246,7 +246,9 @@ test('start-conversation search opens the existing DM without hiding channels or
       page.getByTestId(TestId.CHANNEL_ITEM).filter({ hasText: 'general' })
     )
     .toBeVisible();
-  await expect.element(page.getByTestId(TestId.DM_TOGGLE)).toBeVisible();
+  await expect
+    .element(page.getByRole('button', { name: 'Direct Channels' }))
+    .toBeVisible();
 });
 
 test('mobile keeps its existing DM entry and the shared disclosure in view', async () => {

@@ -1,24 +1,34 @@
 import { closeThreadSidebar } from '@/features/app/actions';
+import { useChannelById } from '@/features/server/channels/hooks';
 import { IconButton } from '@sharkord/ui';
-import { MessageSquareText, X } from 'lucide-react';
+import { Hash, X } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const ThreadHeader = memo(() => {
+type TThreadHeaderProps = {
+  channelId: number;
+};
+
+const ThreadHeader = memo(({ channelId }: TThreadHeaderProps) => {
   const { t } = useTranslation('common');
+  const channel = useChannelById(channelId);
+  const channelName = channel?.name ?? t('unknownChannel');
 
   return (
-    <div className="flex items-center justify-between px-4 h-12 border-b border-border shrink-0">
-      <div className="flex items-center gap-2">
-        <MessageSquareText className="h-4 w-4 text-muted-foreground" />
-        <span className="font-semibold text-sm">{t('thread')}</span>
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-6">
+      <div className="flex min-w-0 items-center gap-2">
+        <Hash className="size-4 shrink-0 text-muted-foreground" />
+        <h2 className="truncate text-sm font-semibold">
+          {t('threadInChannel', { name: channelName })}
+        </h2>
       </div>
       <IconButton
         onClick={closeThreadSidebar}
         icon={X}
         variant="ghost"
         size="sm"
-        className="rounded-md hover:bg-accent transition-colors"
+        aria-label={t('closeThread')}
+        className="rounded-md transition-colors hover:bg-accent"
       />
     </div>
   );

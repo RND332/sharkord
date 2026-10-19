@@ -12,6 +12,7 @@ import { getTRPCClient } from '@/lib/trpc';
 import {
   getTrpcError,
   type TExternalStream,
+  type TScreenViewersSnapshot,
   type TVoiceUserState
 } from '@sharkord/shared';
 import type { RtpCapabilities } from 'mediasoup-client/types';
@@ -277,6 +278,10 @@ export const setVoiceMoveTargetChannelId = (
 
 export const setPinnedCard = (pinnedCard: TPinnedCard | undefined): void => {
   store.dispatch(serverSliceActions.setPinnedCard(pinnedCard));
+};
+
+export const setScreenViewers = (snapshot: TScreenViewersSnapshot): void => {
+  store.dispatch(serverSliceActions.setScreenViewers(snapshot));
 };
 
 export const setHideNonVideoParticipants = (value: boolean): void => {

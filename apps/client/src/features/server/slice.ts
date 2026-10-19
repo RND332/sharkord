@@ -19,6 +19,7 @@ import type {
   TPluginTabsMap,
   TPublicServerSettings,
   TReadStateMap,
+  TScreenViewersSnapshot,
   TServerInfo,
   TVoiceMap,
   TVoiceUserState
@@ -68,6 +69,9 @@ export interface IServerState {
     [userId: number]: TVoiceReaction[];
   };
   externalStreamsMap: TExternalStreamsMap;
+  screenViewersMap: {
+    [channelId: number]: TScreenViewersSnapshot['demos'];
+  };
   ownVoiceState: TVoiceUserState;
   pinnedCard: TPinnedCard | undefined;
   channelPermissions: TChannelUserPermissionsMap;
@@ -113,6 +117,7 @@ const initialState: IServerState = {
   voiceMap: {},
   voiceReactions: {},
   externalStreamsMap: {},
+  screenViewersMap: {},
   ownVoiceState: {
     micMuted: false,
     soundMuted: false,
@@ -838,6 +843,12 @@ export const serverSlice = createSlice({
     },
     setPinnedCard: (state, action: PayloadAction<TPinnedCard | undefined>) => {
       state.pinnedCard = action.payload;
+    },
+    setScreenViewers: (
+      state,
+      action: PayloadAction<TScreenViewersSnapshot>
+    ) => {
+      state.screenViewersMap[action.payload.channelId] = action.payload.demos;
     },
     setHideNonVideoParticipants: (state, action: PayloadAction<boolean>) => {
       state.hideNonVideoParticipants = action.payload;

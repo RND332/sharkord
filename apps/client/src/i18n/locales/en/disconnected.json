@@ -5,6 +5,9 @@
   "noReasonProvided": "No reason provided.",
   "lostConnectionMessage": "Lost connection to the server unexpectedly.",
   "goToConnectScreen": "Go to Connect Screen",
+  "tryAgain": "Try again",
+  "lastAttempt": "Last attempt · {{time}}",
+  "serverAddress": "Server address · {{host}}",
   "details": "Details",
   "code": "Code: {{code}}",
   "time": "Time: {{time}}"

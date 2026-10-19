@@ -32,7 +32,15 @@ const createProducerStub = () => {
   return stub;
 };
 
-const createConsumerStub = createProducerStub;
+const createConsumerStub = (producerId = 'producer-0') => {
+  const stub = createProducerStub();
+
+  return Object.assign(stub, {
+    producerId,
+    paused: false,
+    producerPaused: false
+  });
+};
 
 let nextChannelId = 9000;
 
@@ -170,6 +178,157 @@ describe('VoiceRuntime external streams', () => {
     });
 
     expect(runtime.getRemoteIds(1).remoteExternalStreamIds).toEqual([streamId]);
+  });
+});
+
+describe('VoiceRuntime screen viewers', () => {
+  test('counts active screen video consumers once and excludes the presenter', () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const screen = createProducerStub();
+    const viewer = createConsumerStub(screen.id);
+    const self = createConsumerStub(screen.id);
+    const audio = createConsumerStub(screen.id);
+
+    runtime.addProducer(2, StreamKind.SCREEN, screen as unknown as Producer);
+    runtime.addConsumer(1, 2, StreamKind.SCREEN, viewer as unknown as Consumer);
+    runtime.addConsumer(2, 2, StreamKind.SCREEN, self as unknown as Consumer);
+    runtime.addConsumer(
+      1,
+      2,
+      StreamKind.SCREEN_AUDIO,
+      audio as unknown as Consumer
+    );
+
+    expect(runtime.getScreenViewers()).toEqual({
+      channelId: runtime.id,
+      demos: {
+        2: { producerId: screen.id, viewerIds: [1] }
+      }
+    });
+
+    viewer.paused = true;
+    expect(runtime.getScreenViewers().demos[2]!.viewerIds).toEqual([]);
+
+    viewer.paused = false;
+    viewer.producerPaused = true;
+    expect(runtime.getScreenViewers().demos[2]!.viewerIds).toEqual([]);
+
+    viewer.producerPaused = false;
+    viewer.close();
+    expect(runtime.getScreenViewers().demos[2]!.viewerIds).toEqual([]);
+  });
+
+  test('keeps independent presenters independent', () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    runtime.addUser(3, { micMuted: false, soundMuted: false });
+    const first = createProducerStub();
+    const second = createProducerStub();
+
+    runtime.addProducer(1, StreamKind.SCREEN, first as unknown as Producer);
+    runtime.addProducer(2, StreamKind.SCREEN, second as unknown as Producer);
+    runtime.addConsumer(
+      2,
+      1,
+      StreamKind.SCREEN,
+      createConsumerStub(first.id) as unknown as Consumer
+    );
+    runtime.addConsumer(
+      3,
+      2,
+      StreamKind.SCREEN,
+      createConsumerStub(second.id) as unknown as Consumer
+    );
+
+    expect(runtime.getScreenViewers().demos).toEqual({
+      1: { producerId: first.id, viewerIds: [2] },
+      2: { producerId: second.id, viewerIds: [3] }
+    });
+  });
+
+  test('a ready direct session counts once and cannot outlive its producer', () => {
+    const previous = config.webRtc.directScreenSharing;
+    config.webRtc.directScreenSharing = true;
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const screen = createProducerStub();
+    runtime.addProducer(2, StreamKind.SCREEN, screen as unknown as Producer);
+    runtime.registerDirectMediaSubscriber(1, true);
+    runtime.registerDirectMediaSubscriber(2, true);
+
+    try {
+      const session = runtime.startDirectMedia(2, StreamKind.SCREEN, 1);
+      expect(session).not.toBeNull();
+      runtime.signalDirectMedia(session!.sessionId, 2, {
+        type: 'offer',
+        sdp: 'v=0\r\n'
+      });
+      runtime.signalDirectMedia(session!.sessionId, 1, {
+        type: 'answer',
+        sdp: 'v=0\r\n'
+      });
+      runtime.signalDirectMedia(session!.sessionId, 1, { type: 'ready' });
+
+      runtime.addConsumer(
+        1,
+        2,
+        StreamKind.SCREEN,
+        createConsumerStub(screen.id) as unknown as Consumer
+      );
+      expect(runtime.getScreenViewers().demos[2]!.viewerIds).toEqual([1]);
+
+      const replacement = createProducerStub();
+      runtime.addProducer(
+        2,
+        StreamKind.SCREEN,
+        replacement as unknown as Producer
+      );
+      runtime.addConsumer(
+        1,
+        2,
+        StreamKind.SCREEN,
+        createConsumerStub(replacement.id) as unknown as Consumer
+      );
+      expect(runtime.getScreenViewers().demos[2]).toEqual({
+        producerId: replacement.id,
+        viewerIds: [1]
+      });
+    } finally {
+      config.webRtc.directScreenSharing = previous;
+      runtime.removeUser(1);
+      runtime.removeUser(2);
+    }
+  });
+
+  test('publishes a change when screen consumption and production change', () => {
+    const runtime = createRuntime();
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+    runtime.addUser(2, { micMuted: false, soundMuted: false });
+    const screen = createProducerStub();
+    const events: number[] = [];
+    const subscription = pubsub
+      .subscribe(ServerEvents.VOICE_SCREEN_VIEWERS_CHANGED)
+      .subscribe({ next: ({ channelId }) => events.push(channelId) });
+
+    try {
+      runtime.addProducer(2, StreamKind.SCREEN, screen as unknown as Producer);
+      const consumer = createConsumerStub(screen.id);
+      runtime.addConsumer(
+        1,
+        2,
+        StreamKind.SCREEN,
+        consumer as unknown as Consumer
+      );
+      consumer.close();
+
+      expect(events).toEqual([runtime.id, runtime.id, runtime.id]);
+    } finally {
+      subscription.unsubscribe();
+    }
   });
 });
 

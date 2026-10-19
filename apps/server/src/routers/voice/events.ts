@@ -1,7 +1,9 @@
 import {
+  ChannelPermission,
   ServerEvents,
   type StreamKind,
-  type TDirectMediaEvent
+  type TDirectMediaEvent,
+  type TScreenViewersSnapshot
 } from '@sharkord/shared';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
@@ -152,6 +154,42 @@ const onDirectMediaSignalRoute = rateLimitedProcedure(protectedProcedure, {
     });
   });
 
+const onScreenViewersRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.voiceStream.maxRequests,
+  windowMs: config.rateLimiters.voiceStream.windowMs,
+  logLabel: 'onScreenViewers'
+})
+  .input(z.strictObject({ channelId: z.number().int().positive() }))
+  .subscription(async ({ ctx, input }) => {
+    await ctx.needsChannelPermission(
+      input.channelId,
+      ChannelPermission.VIEW_CHANNEL
+    );
+
+    return observable<TScreenViewersSnapshot>((observer) => {
+      const emitSnapshot = () => {
+        const runtime = VoiceRuntime.findById(input.channelId);
+        const snapshot = runtime?.getScreenViewers();
+
+        observer.next(snapshot ?? { channelId: input.channelId, demos: {} });
+      };
+
+      const subscription = ctx.pubsub
+        .subscribe(ServerEvents.VOICE_SCREEN_VIEWERS_CHANGED)
+        .subscribe({
+          next: (event) => {
+            if (event.channelId !== input.channelId) return;
+            emitSnapshot();
+          },
+          error: (error) => observer.error(error)
+        });
+
+      emitSnapshot();
+
+      return () => subscription.unsubscribe();
+    });
+  });
+
 const onScreenConsumerStartedRoute = rateLimitedProcedure(protectedProcedure, {
   maxRequests: config.rateLimiters.voiceStream.maxRequests,
   windowMs: config.rateLimiters.voiceStream.windowMs,
@@ -178,6 +216,7 @@ const onScreenConsumerStartedRoute = rateLimitedProcedure(protectedProcedure, {
 export {
   onDirectMediaSignalRoute,
   onScreenConsumerStartedRoute,
+  onScreenViewersRoute,
   onUserJoinVoiceRoute,
   onUserLeaveVoiceRoute,
   onUserUpdateVoiceStateRoute,

@@ -15,6 +15,8 @@ import {
   Minimize,
   MonitorOff,
   PictureInPicture2,
+  Pin,
+  PinOff,
   Video,
   VideoOff,
   ZoomIn,
@@ -54,6 +56,10 @@ type TVoiceCardContextMenuProps = {
     isViewing: boolean;
     onToggle: () => void;
   };
+  pin?: {
+    isPinned: boolean;
+    onToggle: () => void;
+  };
 };
 
 const VoiceCardContextMenu = memo(
@@ -64,7 +70,8 @@ const VoiceCardContextMenu = memo(
     fullscreen,
     zoom,
     webcam,
-    demo
+    demo,
+    pin
   }: TVoiceCardContextMenuProps) => {
     const { t } = useTranslation('common');
     const { getVolume, setVolume } = useVolumeControl();
@@ -105,7 +112,8 @@ const VoiceCardContextMenu = memo(
       !!fullscreen ||
       !!zoom ||
       !!webcam ||
-      !!demo?.isViewing;
+      !!demo?.isViewing ||
+      !!pin;
 
     if (!hasItems) {
       return <>{children}</>;
@@ -119,6 +127,12 @@ const VoiceCardContextMenu = memo(
             <ContextMenuItem onSelect={demo.onToggle}>
               <MonitorOff />
               {t('stopWatching')}
+            </ContextMenuItem>
+          )}
+          {pin && (
+            <ContextMenuItem onSelect={pin.onToggle}>
+              {pin.isPinned ? <PinOff /> : <Pin />}
+              {pin.isPinned ? t('unpinStream') : t('pinStream')}
             </ContextMenuItem>
           )}
           {zoom && (

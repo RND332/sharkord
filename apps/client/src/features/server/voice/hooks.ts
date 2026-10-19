@@ -1,15 +1,19 @@
 import { useAudioLevel } from '@/components/channel-view/voice/hooks/use-audio-level';
 import { VoiceProviderContext } from '@/components/voice-provider';
 import type { IRootState } from '@/features/store';
+import { getTRPCClient } from '@/lib/trpc';
 import { StreamKind } from '@sharkord/shared';
-import { useContext, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { handleSubscriptionError } from '../subscription-error';
 import { useIsOwnUser } from '../users/hooks';
+import { setScreenViewers } from './actions';
 import {
   hideNonVideoParticipantsSelector,
   hideOwnScreenShareSelector,
   ownVoiceStateSelector,
   pinnedCardSelector,
+  screenViewersByChannelIdSelector,
   showUserBannersInVoiceSelector,
   voiceChannelAudioExternalStreamsSelector,
   voiceChannelExternalStreamsListSelector,
@@ -48,6 +52,33 @@ export const useVoiceMoveTargetChannelId = () =>
 
 export const useVoiceReactions = (userId: number) =>
   useSelector((state: IRootState) => voiceReactionsSelector(state, userId));
+
+export const useScreenViewers = (channelId: number) => {
+  const demos = useSelector((state: IRootState) =>
+    screenViewersByChannelIdSelector(state, channelId)
+  );
+
+  useEffect(() => {
+    let subscription: { unsubscribe: () => void } | undefined;
+
+    try {
+      const trpc = getTRPCClient();
+      subscription = trpc.voice.onScreenViewers.subscribe(
+        { channelId },
+        {
+          onData: setScreenViewers,
+          onError: handleSubscriptionError('onScreenViewers')
+        }
+      );
+    } catch {
+      // the viewer indicator is optional; losing it must not take down the call UI.
+    }
+
+    return () => subscription?.unsubscribe();
+  }, [channelId]);
+
+  return demos;
+};
 
 export const useHideNonVideoParticipants = () =>
   useSelector(hideNonVideoParticipantsSelector);
