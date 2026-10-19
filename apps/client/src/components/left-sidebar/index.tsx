@@ -1,3 +1,4 @@
+import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { ResizableSidebar } from '@/components/resizable-sidebar';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import {
@@ -6,7 +7,7 @@ import {
 } from '@/features/server/hooks';
 import { LocalStorageKey } from '@/helpers/storage';
 import { cn } from '@/lib/utils';
-import { TestId } from '@sharkord/shared';
+import { PluginSlot, TestId } from '@sharkord/shared';
 import { memo } from 'react';
 import { Categories } from './categories';
 import { DirectMessages } from './direct-messages';
@@ -50,7 +51,8 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
         >
           {serverName}
         </h2>
-        <div>
+        <div className="flex items-center gap-1">
+          <PluginSlotRenderer slotId={PluginSlot.TOPBAR_RIGHT} />
           <ServerDropdownMenu />
         </div>
       </div>
