@@ -1,0 +1,183 @@
+import { closeServerScreens } from '@/features/server-screens/actions';
+import { setCurrentVoiceChannelId } from '@/features/server/channels/actions';
+import { updateOwnVoiceState } from '@/features/server/voice/actions';
+import { TestId } from '@sharkord/shared';
+import type { CDPSession } from '@vitest/browser-playwright';
+import { createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
+import { cdp, page, userEvent } from 'vitest/browser';
+
+let root: Root;
+
+beforeAll(async () => {
+  localStorage.clear();
+  localStorage.setItem('vite-ui-theme', 'hatsune-miku');
+  document.body.replaceChildren();
+
+  for (const id of ['root', 'portal', 'imagePortal']) {
+    const element = document.createElement('div');
+    element.id = id;
+    document.body.append(element);
+  }
+
+  const { ClientApp } = await import('../main');
+  root = createRoot(document.getElementById('root')!);
+  root.render(createElement(ClientApp));
+  await page.getByTestId(TestId.CONNECT_IDENTITY_INPUT).fill('rnd332');
+  await page.getByTestId(TestId.CONNECT_PASSWORD_INPUT).fill('password123');
+  await page.getByTestId(TestId.CONNECT_BUTTON).click();
+  await page
+    .getByTestId(TestId.CHANNEL_ITEM)
+    .filter({ hasText: 'general' })
+    .click();
+});
+
+afterAll(() => root.unmount());
+
+afterEach(async () => {
+  closeServerScreens();
+  setCurrentVoiceChannelId(undefined);
+  updateOwnVoiceState({ micMuted: false, soundMuted: false });
+  await page.viewport(1440, 900);
+});
+
+test.each([1440, 768])(
+  'desktop profile settings at %ipx stay visible and open the existing settings with the keyboard',
+  async (width) => {
+    await page.viewport(width, 900);
+    const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
+    const settings = sidebar.getByTestId(TestId.USER_SETTINGS_TRIGGER);
+
+    await expect.element(settings).toBeVisible();
+    await expect.element(settings).toHaveAccessibleName('User settings');
+    const deafen = sidebar.getByRole('button', { name: /^Deafen/ });
+    const deafenButton = deafen.element();
+    deafenButton.focus();
+    await userEvent.keyboard('{Tab}');
+    await expect.element(settings).toHaveFocus();
+    const settingsButton = settings.element();
+    expect(getComputedStyle(settingsButton).boxShadow).not.toBe('none');
+    await userEvent.keyboard('{Enter}');
+    const heading = page.getByRole('heading', {
+      name: 'User Settings',
+      exact: true
+    });
+    await expect.element(heading).toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await expect.element(heading).not.toBeInTheDocument();
+    deafenButton.focus();
+    await userEvent.keyboard('{Tab}{Space}');
+    await expect.element(heading).toBeVisible();
+    expect(document.documentElement.dataset.theme).toBe('hatsune-miku');
+    expect(localStorage.getItem('vite-ui-theme')).toBe('hatsune-miku');
+  }
+);
+
+test('profile controls retain the Paper spacing and Miku theme without crowding presence or disconnect', async () => {
+  setCurrentVoiceChannelId(2);
+  const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
+  const settings = sidebar.getByTestId(TestId.USER_SETTINGS_TRIGGER);
+  await expect.element(settings).toBeVisible();
+  await document.fonts.ready;
+  const microphone = sidebar.getByRole('button', { name: /^Mute microphone/ });
+  const deafen = sidebar.getByRole('button', { name: /^Deafen/ });
+  const disconnect = sidebar.getByRole('button', {
+    name: 'Disconnect',
+    exact: true
+  });
+  await expect.element(disconnect).toBeVisible();
+  const gear = settings.element();
+  const controls = gear.parentElement!;
+  const row = controls.parentElement!;
+  const identity = controls.previousElementSibling!;
+  const rowBounds = row.getBoundingClientRect();
+  const identityBounds = identity.getBoundingClientRect();
+  const buttons = [microphone.element(), deafen.element(), gear];
+  const buttonBounds = buttons.map((button) => button.getBoundingClientRect());
+
+  expect(rowBounds.height).toBe(52);
+  expect(getComputedStyle(row).paddingInline).toBe('10px');
+  expect(getComputedStyle(row).backgroundColor).toBe('rgb(16, 20, 24)');
+  expect(identityBounds.left - rowBounds.left).toBe(10);
+  expect(buttonBounds[0].left - identityBounds.right).toBe(6);
+  expect(rowBounds.right - buttonBounds[2].right).toBe(10);
+
+  for (const [index, button] of buttons.entries()) {
+    const bounds = buttonBounds[index];
+    const icon = button.querySelector('svg')!;
+    const iconBounds = icon.getBoundingClientRect();
+    expect(bounds.width).toBe(28);
+    expect(bounds.height).toBe(32);
+    expect(bounds.top - rowBounds.top).toBe(10);
+    expect(iconBounds.width).toBe(20);
+    expect(iconBounds.height).toBe(20);
+    expect(iconBounds.left - bounds.left).toBe(4);
+    expect(iconBounds.top - bounds.top).toBe(6);
+    if (index > 0) {
+      expect(bounds.left - buttonBounds[index - 1].right).toBe(6);
+    }
+  }
+
+  await expect
+    .element(sidebar.getByText('online', { exact: true }))
+    .toBeVisible();
+  const disconnectButton = disconnect.element();
+  const disconnectBounds = disconnectButton.getBoundingClientRect();
+  expect(disconnectBounds.bottom).toBeLessThanOrEqual(rowBounds.top);
+  expect(disconnectBounds.right).toBeLessThanOrEqual(rowBounds.right - 10);
+  expect(document.documentElement.dataset.theme).toBe('hatsune-miku');
+  await page.screenshot({
+    element: row,
+    path: '../../.vitest/profile-settings.png'
+  });
+});
+
+test('mobile profile settings remain in view and keyboard accessible through the existing sidebar', async () => {
+  await page.viewport(390, 844);
+  const session: CDPSession = cdp();
+  const frame = window.frameElement;
+  const frameBounds = frame?.getBoundingClientRect();
+  const x = (frameBounds?.left ?? 0) + 24;
+  const y = (frameBounds?.top ?? 0) + 180;
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x, y }]
+  });
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: x + 160, y }]
+  });
+  await session.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: []
+  });
+
+  const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
+  const settings = sidebar.getByTestId(TestId.USER_SETTINGS_TRIGGER);
+  await expect
+    .poll(() => {
+      const button = settings.element();
+      const bounds = button.getBoundingClientRect();
+      return bounds.left >= 0 && bounds.right <= window.innerWidth;
+    })
+    .toBe(true);
+  await expect.element(settings).toBeVisible();
+  const settingsButton = settings.element();
+  const settingsBounds = settingsButton.getBoundingClientRect();
+  expect(settingsBounds.width).toBe(28);
+  expect(settingsBounds.height).toBe(32);
+  expect(settingsBounds.top).toBeGreaterThanOrEqual(0);
+  expect(settingsBounds.bottom).toBeLessThanOrEqual(window.innerHeight);
+  const deafen = sidebar.getByRole('button', { name: /^Deafen/ });
+  const deafenButton = deafen.element();
+  deafenButton.focus();
+  await userEvent.keyboard('{Tab}');
+  await expect.element(settings).toHaveFocus();
+  await userEvent.keyboard('{Space}');
+  await expect
+    .element(page.getByRole('heading', { name: 'User Settings', exact: true }))
+    .toBeVisible();
+  expect(document.documentElement.dataset.theme).toBe('hatsune-miku');
+  expect(localStorage.getItem('vite-ui-theme')).toBe('hatsune-miku');
+});
