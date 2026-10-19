@@ -1,10 +1,7 @@
-import { Dialog } from '@/components/dialogs/dialogs';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { toggleChannelMuted } from '@/features/app/actions';
 import { useIsChannelMuted } from '@/features/app/hooks';
-import { openDialog } from '@/features/dialogs/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
-import { usePublicServerSettings } from '@/features/server/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { ChannelType, PluginSlot, UserStatus } from '@sharkord/shared';
 import { IconButton, Tooltip } from '@sharkord/ui';
@@ -12,7 +9,6 @@ import {
   BellOff,
   Hash,
   MessageCircleMore,
-  Search,
   Users,
   Volume2,
   X
@@ -47,7 +43,6 @@ const TextTopbar = memo(
   }: TTextTopbarProps) => {
     const { t } = useTranslation('topbar');
     const { t: tCommon } = useTranslation('common');
-    const settings = usePublicServerSettings();
     const channel = useChannelById(channelId);
     const dmPartner = useUserById(dmPartnerId ?? null);
     const isMuted = useIsChannelMuted(channelId);
@@ -57,9 +52,6 @@ const TextTopbar = memo(
     }, [channelId]);
 
     const pluginProps = useMemo(() => ({ channelId }), [channelId]);
-    const openSearchDialog = useCallback(() => {
-      openDialog(Dialog.SEARCH);
-    }, []);
 
     const info = useMemo(() => {
       if (channel?.isDm) {
@@ -136,15 +128,6 @@ const TextTopbar = memo(
             )}
             <PinnedMessagesPopover onScrollToMessage={onScrollToMessage} />
 
-            {settings?.enableSearch && (
-              <IconButton
-                onClick={openSearchDialog}
-                icon={Search}
-                variant="ghost"
-                size="sm"
-                aria-label={t('searchContent')}
-              />
-            )}
             {onToggleRightSidebar && (
               <IconButton
                 onClick={onToggleRightSidebar}

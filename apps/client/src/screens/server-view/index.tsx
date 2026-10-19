@@ -4,7 +4,6 @@ import { ModViewSheet } from '@/components/mod-view-sheet';
 import { Protect } from '@/components/protect';
 import { RightSidebar } from '@/components/right-sidebar';
 import { ThreadSidebar } from '@/components/thread-sidebar';
-import { TopBar } from '@/components/top-bar';
 import { VoiceChatSidebar } from '@/components/voice-chat-sidebar';
 import { VoiceProvider } from '@/components/voice-provider';
 import { useSelectedDmChannelId, useThreadSidebar } from '@/features/app/hooks';
@@ -104,7 +103,6 @@ const ServerView = memo(() => {
         className="flex h-dvh flex-col bg-background text-foreground"
         {...swipeHandlers}
       >
-        <TopBar />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <PreventBrowser />
 
