@@ -1,10 +1,11 @@
-import { SettingsListEditor } from '@/components/server-screens/settings-shell/list-editor';
+import { SettingsSection } from '@/components/server-screens/settings-shell/section';
+import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { useAdminEmojis } from '@/features/server/admin/hooks';
 import { uploadFiles } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
 import { getTRPCClient } from '@/lib/trpc';
-import { Button, LoadingCard, Spinner } from '@sharkord/ui';
-import { Smile, Upload } from 'lucide-react';
+import { Button, LoadingCard, Spinner, Tooltip } from '@sharkord/ui';
+import { Plus, Smile, Upload } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -59,41 +60,66 @@ const Emojis = memo(() => {
     return <LoadingCard className="h-[600px]" />;
   }
 
+  let uploadAction = (
+    <Tooltip content={t('uploadEmojiBtn')}>
+      <button
+        type="button"
+        onClick={uploadEmoji}
+        aria-label={t('uploadEmojiBtn')}
+        className="flex size-[38px] items-center justify-center rounded-[7px] bg-raised text-foreground transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        <Plus className="size-6" strokeWidth={1.5} />
+      </button>
+    </Tooltip>
+  );
+
+  if (isUploading) {
+    uploadAction = <Spinner size="xxs" />;
+  }
+
   return (
-    <SettingsListEditor
-      emptyIcon={Smile}
-      emptyTitle={t('uploadEmojiTitle')}
-      emptyDescription={t('uploadEmojiDesc')}
-      emptyAction={
-        <Button onClick={uploadEmoji} disabled={isUploading}>
-          {isUploading ? (
-            <Spinner size="xxs" />
-          ) : (
-            <Upload className="h-4 w-4" />
-          )}
-          {t('uploadEmojiBtn')}
-        </Button>
-      }
-      list={
-        <EmojiList
-          emojis={emojis}
-          setSelectedEmojiId={setSelectedEmojiId}
-          selectedEmojiId={selectedEmojiId}
-          uploadEmoji={uploadEmoji}
-          isUploading={isUploading}
-        />
-      }
-      editor={
-        selectedEmoji && (
-          <UpdateEmoji
-            key={selectedEmoji.id}
-            selectedEmoji={selectedEmoji}
-            setSelectedEmojiId={setSelectedEmojiId}
-            refetch={refetch}
+    <SettingsSection
+      title={t('emojiTitle')}
+      description={t('emojiDesc')}
+      action={uploadAction}
+    >
+      <div className="flex w-full flex-col gap-6">
+        {selectedEmoji && (
+          <div className="max-w-[600px]">
+            <UpdateEmoji
+              key={selectedEmoji.id}
+              selectedEmoji={selectedEmoji}
+              setSelectedEmojiId={setSelectedEmojiId}
+              refetch={refetch}
+            />
+          </div>
+        )}
+
+        {emojis.length === 0 ? (
+          <StatePanel
+            icon={Smile}
+            title={t('uploadEmojiTitle')}
+            description={t('uploadEmojiDesc')}
+            action={
+              <Button onClick={uploadEmoji} disabled={isUploading}>
+                {isUploading ? (
+                  <Spinner size="xxs" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {t('uploadEmojiBtn')}
+              </Button>
+            }
           />
-        )
-      }
-    />
+        ) : (
+          <EmojiList
+            emojis={emojis}
+            setSelectedEmojiId={setSelectedEmojiId}
+            selectedEmojiId={selectedEmojiId}
+          />
+        )}
+      </div>
+    </SettingsSection>
   );
 });
 

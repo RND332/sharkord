@@ -132,6 +132,7 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
       close={close}
       entries={entries}
       pluginEntries={pluginEntries}
+      groupLabel={t('groupAdministration')}
     />
   );
 });

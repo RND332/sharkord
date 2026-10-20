@@ -1,4 +1,3 @@
-import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getTRPCClient } from '@/lib/trpc';
@@ -141,11 +140,12 @@ const UpdateRole = memo(
     }, [selectedRole.id, refetch, t]);
 
     return (
-      <SettingsSection
-        className="flex-1"
-        title={t('editRoleTitle')}
-        action={
-          <>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-base font-bold leading-5 text-foreground">
+            {selectedRole.name}
+          </h3>
+          <div className="flex shrink-0 items-center gap-1">
             <Tooltip content={t('setAsDefaultRoleTooltip')}>
               <IconButton
                 icon={Star}
@@ -172,9 +172,9 @@ const UpdateRole = memo(
                 onClick={onClose}
               />
             </Tooltip>
-          </>
-        }
-      >
+          </div>
+        </div>
+
         {selectedRole.isDefault && (
           <Alert variant="default">
             <Star />
@@ -189,16 +189,14 @@ const UpdateRole = memo(
           </Alert>
         )}
 
-        <Group label={t('roleNameLabel')}>
-          <Input {...r('name')} />
-        </Group>
-
-        <Group label={t('roleColorLabel')}>
-          <div className="flex gap-2">
-            <Input className="h-10 w-20" {...r('color', 'color')} />
-            <Input className="flex-1" {...r('color')} />
-          </div>
-        </Group>
+        <div className="flex items-center gap-4">
+          <Input className="max-w-[430px]" {...r('name')} />
+          <input
+            aria-label={t('roleColorLabel')}
+            className="size-[38px] shrink-0 cursor-pointer rounded-[8px] border border-control-border bg-input-surface p-0.5"
+            {...r('color', 'color')}
+          />
+        </div>
 
         <PermissionList
           permissions={values.permissions}
@@ -209,6 +207,7 @@ const UpdateRole = memo(
         <Separator />
 
         <Group
+          variant="settings"
           label={t('roleStorageOverrideLabel')}
           description={t('roleStorageOverrideDesc')}
         >
@@ -218,7 +217,7 @@ const UpdateRole = memo(
           />
         </Group>
 
-        <Group label={t('roleStorageQuotaLabel')}>
+        <Group variant="settings" label={t('roleStorageQuotaLabel')}>
           <StorageSizeControl
             value={Number(values.storageSpaceQuota)}
             max={STORAGE_MAX_QUOTA_PER_USER}
@@ -237,7 +236,7 @@ const UpdateRole = memo(
             presets={QUOTA_BY_USER_PRESETS}
           />
         </Group>
-      </SettingsSection>
+      </div>
     );
   }
 );

@@ -9,64 +9,44 @@ interface DiskMetricsProps {
 
 const DiskMetrics = memo(({ diskMetrics }: DiskMetricsProps) => {
   const { t } = useTranslation('settings');
+  const usedPercent = diskMetrics.totalSpace
+    ? Math.min((diskMetrics.usedSpace / diskMetrics.totalSpace) * 100, 100)
+    : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border">
-      <div>
-        <div className="text-sm font-medium text-muted-foreground">
-          {t('diskTotalSpace')}
-        </div>
-        <div className="text-lg font-semibold">
-          {filesize(diskMetrics.totalSpace, { standard: 'jedec' })}
-        </div>
-      </div>
-      <div>
-        <div className="text-sm font-medium text-muted-foreground">
-          {t('diskAvailableSpace')}
-        </div>
-        <div className="text-lg font-semibold">
-          {filesize(diskMetrics.freeSpace, { standard: 'jedec' })}
-        </div>
-      </div>
-      <div>
-        <div className="text-sm font-medium text-muted-foreground">
-          {t('diskSystemUsed')}
-        </div>
-        <div className="text-lg font-semibold">
-          {filesize(diskMetrics.usedSpace, { standard: 'jedec' })}
-        </div>
-      </div>
-      <div>
-        <div className="text-sm font-medium text-muted-foreground">
-          {t('diskSharkordUsed')}
-        </div>
-        <div className="text-lg font-semibold">
-          {filesize(diskMetrics.sharkordUsedSpace, { standard: 'jedec' })}
-        </div>
-      </div>
-      <div className="col-span-2 mt-2">
-        <div className="text-sm font-medium text-muted-foreground mb-2">
+    <div className="flex w-full max-w-[1040px] flex-col gap-2">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-sm leading-[18px] text-foreground">
           {t('diskUsage')}
-        </div>
-        <div className="w-full bg-muted rounded-full h-2">
-          <div
-            className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{
-              width: `${Math.min(
-                (diskMetrics.usedSpace / diskMetrics.totalSpace) * 100,
-                100
-              )}%`
-            }}
-          />
-        </div>
-        <div className="text-xs text-muted-foreground mt-1">
-          {t('diskUsedPercent', {
-            percent: (
-              (diskMetrics.usedSpace / diskMetrics.totalSpace) *
-              100
-            ).toFixed(1)
-          })}
-        </div>
+        </span>
+        <span className="text-sm leading-[18px] text-foreground">
+          {filesize(diskMetrics.usedSpace, { standard: 'jedec' })} of{' '}
+          {filesize(diskMetrics.totalSpace, { standard: 'jedec' })}
+        </span>
+      </div>
+
+      <div
+        className="h-2 w-full overflow-hidden rounded-[4px] bg-raised"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(usedPercent)}
+      >
+        <div
+          className="h-2 rounded-[4px] bg-primary transition-[width] duration-300"
+          style={{ width: `${usedPercent}%` }}
+        />
+      </div>
+
+      <div className="text-xs leading-4 text-muted-foreground">
+        {t('diskAvailableSpace')}{' '}
+        {filesize(diskMetrics.freeSpace, { standard: 'jedec' })}
+        {' · '}
+        {t('diskSharkordUsed')}{' '}
+        {filesize(diskMetrics.sharkordUsedSpace, { standard: 'jedec' })}
+        {' · '}
+        {t('diskSystemUsed')}{' '}
+        {filesize(diskMetrics.usedSpace, { standard: 'jedec' })}
       </div>
     </div>
   );

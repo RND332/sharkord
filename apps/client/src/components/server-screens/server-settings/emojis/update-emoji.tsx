@@ -116,6 +116,7 @@ const UpdateEmoji = memo(
         </div>
 
         <Group
+          variant="settings"
           label={t('emojiNameLabel')}
           description={t('emojiNameHint', { name: selectedEmoji.name })}
         >

@@ -58,6 +58,7 @@ const ArgField = memo(({ arg, value, onChange }: TArgFieldProps) => {
 
   return (
     <Group
+      variant="settings"
       label={arg.name}
       description={`(${arg.type}) ${arg.description ?? ''}`}
       required={arg.required}

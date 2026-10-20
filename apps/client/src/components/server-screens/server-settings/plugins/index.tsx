@@ -1,3 +1,4 @@
+import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { usePluginsEnabled } from '@/features/server/hooks';
 import type { TPluginInfo } from '@sharkord/shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sharkord/ui';
@@ -17,26 +18,39 @@ const Plugins = memo(({ plugins, loading, refetch }: TPluginsProps) => {
   const pluginsEnabled = usePluginsEnabled();
 
   return (
-    <Tabs defaultValue="installed" className="w-full">
-      <TabsList className="mb-4 grid w-full grid-cols-2">
-        <TabsTrigger value="installed" disabled={!pluginsEnabled}>
-          {t('installedTab')}
-        </TabsTrigger>
-        <TabsTrigger value="marketplace" disabled={!pluginsEnabled}>
-          {t('marketplaceTab')}
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="installed">
-        <InstalledPlugins
-          plugins={plugins}
-          loading={loading}
-          refetch={refetch}
-        />
-      </TabsContent>
-      <TabsContent value="marketplace">
-        <Marketplace plugins={plugins} refetchInstalled={refetch} />
-      </TabsContent>
-    </Tabs>
+    <SettingsSection
+      title={t('pluginsTitle')}
+      description={t('pluginsManageDesc')}
+    >
+      <Tabs defaultValue="installed" className="w-full">
+        <TabsList className="flex h-auto w-full items-center justify-start gap-7 rounded-none border-b border-line bg-transparent p-0">
+          <TabsTrigger
+            value="installed"
+            disabled={!pluginsEnabled}
+            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
+          >
+            {t('installedTab')}
+          </TabsTrigger>
+          <TabsTrigger
+            value="marketplace"
+            disabled={!pluginsEnabled}
+            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
+          >
+            {t('marketplaceTab')}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="installed" className="mt-[21px]">
+          <InstalledPlugins
+            plugins={plugins}
+            loading={loading}
+            refetch={refetch}
+          />
+        </TabsContent>
+        <TabsContent value="marketplace" className="mt-[21px]">
+          <Marketplace plugins={plugins} refetchInstalled={refetch} />
+        </TabsContent>
+      </Tabs>
+    </SettingsSection>
   );
 });
 
