@@ -47,9 +47,9 @@ const seedDatabase = async () => {
   const originalToken = IS_DEVELOPMENT ? 'dev' : randomUUIDv7();
 
   const initialSettings: TISettings = {
-    name: 'sharkord Server',
+    name: 'Dodecagon Server',
     description:
-      'This is the default Sharkord server description. Change me in the server settings!',
+      'This is the default Dodecagon server description. Change me in the server settings!',
     password: '',
     onlyAskForPasswordOnFirstJoin: false,
     serverId: Bun.randomUUIDv7(),
@@ -149,11 +149,11 @@ const seedDatabase = async () => {
   const initialUsers: TIUser[] = [
     {
       identity: await sha256(randomUUIDv7()),
-      name: 'Sharkord',
+      name: 'Dodecagon',
       avatarId: null,
-      password: 'sharkord',
+      password: 'dodecagon',
       bannerId: null,
-      bio: 'Hey, I am Sharkord!',
+      bio: 'Hey, I am Dodecagon!',
       createdAt: firstStart
     }
   ];
@@ -161,7 +161,7 @@ const seedDatabase = async () => {
   const initialMessages: TIMessage[] = [
     {
       channelId: 1,
-      content: '<p>Welcome to sharkord!</p>',
+      content: '<p>Welcome to Dodecagon!</p>',
       metadata: null,
       userId: 1,
       createdAt: firstStart

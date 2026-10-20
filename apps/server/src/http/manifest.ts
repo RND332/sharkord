@@ -95,8 +95,8 @@ const manifestRouteHandler = async (
     description: settings.description ?? '',
     start_url: '/',
     display: 'standalone',
-    background_color: '#171717',
-    theme_color: '#171717',
+    background_color: '#15171C',
+    theme_color: '#15171C',
     icons
   };
 
