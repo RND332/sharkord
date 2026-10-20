@@ -18,12 +18,14 @@ const SettingsSection = memo(
   }: TSettingsSectionProps) => {
     return (
       <section className={className}>
-        <div className="border-b border-line pb-4">
+        <div className="border-b border-line pb-[14px]">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+              <h2 className="text-[26px] font-bold leading-8 tracking-[-0.02em]">
+                {title}
+              </h2>
               {description && (
-                <p className="mt-1 text-[13px] text-muted-foreground">
+                <p className="mt-[7px] text-sm leading-[21px] text-muted-foreground">
                   {description}
                 </p>
               )}

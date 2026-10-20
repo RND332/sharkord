@@ -102,7 +102,11 @@ const SettingField = memo(
     }
 
     return (
-      <Group label={definition.name} description={definition.description}>
+      <Group
+        variant="settings"
+        label={definition.name}
+        description={definition.description}
+      >
         {field}
       </Group>
     );

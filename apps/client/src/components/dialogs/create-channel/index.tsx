@@ -39,7 +39,7 @@ const ChannelTypeItem = ({
     role="radio"
     aria-checked={isActive}
     className={cn(
-      'flex h-11 w-full items-center gap-2 rounded-md border px-3 text-left text-sm leading-5 cursor-pointer',
+      'flex w-full items-center gap-2 rounded-[8px] border p-[15px] text-left text-[15px] leading-[18px] cursor-pointer',
       isActive
         ? 'border-accent-text bg-raised text-accent-text'
         : 'border-control-border bg-panel'
@@ -97,12 +97,12 @@ const CreateChannelDialog = memo(
           close={close}
           className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0"
         >
-          <DialogHeader className="shrink-0 border-b border-line p-6 pr-14">
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-5 pr-14">
             <DialogTitle>{t('createChannelTitle')}</DialogTitle>
             <DialogDescription>{t('createChannelDesc')}</DialogDescription>
           </DialogHeader>
 
-          <div className="flex min-h-0 flex-col gap-6 overflow-y-auto p-6">
+          <div className="flex min-h-0 flex-col gap-7 overflow-y-auto p-6">
             <div
               role="radiogroup"
               aria-label={t('channelTypeLabel')}

@@ -26,7 +26,7 @@ const SidebarEntry = memo(
         data-testid={TestId.SETTINGS_SIDEBAR_ENTRY}
         onClick={handleClick}
         className={cn(
-          'flex h-[42px] w-full items-center gap-2.5 rounded-md px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           isSelected && 'bg-raised font-medium text-foreground'
         )}
       >
@@ -34,10 +34,10 @@ const SidebarEntry = memo(
           <img
             src={logo}
             alt=""
-            className="h-4 w-4 shrink-0 rounded-sm object-cover"
+            className="h-[17px] w-[17px] shrink-0 rounded-sm object-cover"
           />
         ) : (
-          <Icon className="h-4 w-4 shrink-0" />
+          <Icon className="h-[17px] w-[17px] shrink-0" />
         )}
         <span className="truncate">{label}</span>
         {error && (
@@ -59,6 +59,7 @@ type TSettingsSidebarProps = {
   pluginEntries: TSettingsEntry[];
   selectedId: string;
   onSelect: (id: string) => void;
+  groupLabel?: string;
   className?: string;
 };
 
@@ -68,15 +69,21 @@ const SettingsSidebar = memo(
     pluginEntries,
     selectedId,
     onSelect,
+    groupLabel,
     className
   }: TSettingsSidebarProps) => {
     return (
       <nav
         className={cn(
-          'w-[252px] shrink-0 space-y-1 overflow-y-auto border-r border-line bg-nav p-3',
+          'w-[252px] shrink-0 space-y-1 overflow-y-auto border-r border-line bg-nav px-3 py-6',
           className
         )}
       >
+        {groupLabel && (
+          <div className="flex h-[30px] items-center px-[11px] text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle-foreground">
+            {groupLabel}
+          </div>
+        )}
         {entries.map((entry) => (
           <SidebarEntry
             key={entry.id}

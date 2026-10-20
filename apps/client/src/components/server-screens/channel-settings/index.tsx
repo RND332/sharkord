@@ -46,6 +46,7 @@ const ChannelSettings = memo(({ close, channelId }: TChannelSettingsProps) => {
       title={t('channelSettingsTitle')}
       close={close}
       entries={entries}
+      groupLabel={t('groupChannel')}
     />
   );
 });

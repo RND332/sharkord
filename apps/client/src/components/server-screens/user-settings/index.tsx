@@ -89,6 +89,7 @@ const UserSettings = memo(({ close, initialEntryId }: TUserSettingsProps) => {
       entries={entries}
       pluginEntries={pluginEntries}
       initialEntryId={initialEntryId}
+      groupLabel={t('groupAccount')}
     />
   );
 });

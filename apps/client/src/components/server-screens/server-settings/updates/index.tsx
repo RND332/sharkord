@@ -1,14 +1,12 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useAdminUpdates } from '@/features/server/admin/hooks';
+import { Button, LoadingCard } from '@sharkord/ui';
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Button,
-  Group,
-  LoadingCard
-} from '@sharkord/ui';
-import { ArrowUpCircle, CheckCircle, Download, X } from 'lucide-react';
+  AlertCircle,
+  ArrowUpCircle,
+  CheckCircle,
+  Download
+} from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,32 +25,21 @@ const Updates = memo(() => {
     return <LoadingCard className="h-[600px]" />;
   }
 
-  let status = (
-    <Alert variant="info">
-      <CheckCircle />
-      <AlertTitle>{t('upToDateTitle')}</AlertTitle>
-      <AlertDescription>{t('upToDateDesc')}</AlertDescription>
-    </Alert>
-  );
+  let statusIcon = <CheckCircle className="size-6 text-success" />;
+  let statusTitle = t('upToDateTitle');
+  let statusDescription = t('upToDateDesc');
+  let statusBackground = 'bg-success-solid/25';
 
   if (!canUpdate) {
-    status = (
-      <Alert variant="destructive">
-        <X />
-        <AlertTitle>{t('updatesNotSupportedTitle')}</AlertTitle>
-        <AlertDescription>{t('updatesNotSupportedDesc')}</AlertDescription>
-      </Alert>
-    );
+    statusIcon = <AlertCircle className="size-6 text-destructive" />;
+    statusTitle = t('updatesNotSupportedTitle');
+    statusDescription = t('updatesNotSupportedDesc');
+    statusBackground = 'bg-destructive/15';
   } else if (hasUpdate) {
-    status = (
-      <Alert>
-        <Download />
-        <AlertTitle>{t('updateAvailableTitle')}</AlertTitle>
-        <AlertDescription>
-          {t('updateAvailableDesc', { version: latestVersion })}
-        </AlertDescription>
-      </Alert>
-    );
+    statusIcon = <Download className="size-6 text-accent-text" />;
+    statusTitle = t('updateAvailableTitle');
+    statusDescription = t('updateAvailableDesc', { version: latestVersion });
+    statusBackground = 'bg-primary/20';
   }
 
   return (
@@ -60,30 +47,46 @@ const Updates = memo(() => {
       title={t('updatesTitle')}
       description={t('updatesDesc')}
       action={
-        <Button onClick={update} disabled={!hasUpdate || !canUpdate}>
-          {t('updateServerBtn')}
-        </Button>
+        hasUpdate && canUpdate ? (
+          <Button onClick={update}>
+            <ArrowUpCircle className="size-5" />
+            {t('updateServerBtn')}
+          </Button>
+        ) : undefined
       }
     >
-      <Group label={t('currentVersionLabel')}>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CheckCircle className="h-4 w-4" />
-          <span className="font-mono">
-            {currentVersion || t('unknownVersion')}
+      <div className="flex w-full max-w-[1040px] flex-col gap-2">
+        <div className="flex items-center gap-[15px] py-4">
+          <div
+            className={`flex size-[42px] shrink-0 items-center justify-center rounded-full ${statusBackground}`}
+          >
+            {statusIcon}
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-base font-bold leading-5 text-foreground">
+              {statusTitle}
+            </span>
+            <span className="text-sm leading-4 text-muted-foreground">
+              {statusDescription}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-[30px] border-t border-line pt-2 text-sm leading-4 text-muted-foreground">
+          <span>
+            {t('currentVersionLabel')}{' '}
+            <span className="font-mono text-foreground">
+              {currentVersion || t('unknownVersion')}
+            </span>
+          </span>
+          <span>
+            {t('latestVersionLabel')}{' '}
+            <span className="font-mono text-foreground">
+              {latestVersion || t('unknownVersion')}
+            </span>
           </span>
         </div>
-      </Group>
-
-      <Group label={t('latestVersionLabel')}>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <ArrowUpCircle className="h-4 w-4" />
-          <span className="font-mono">
-            {latestVersion || t('unknownVersion')}
-          </span>
-        </div>
-      </Group>
-
-      {status}
+      </div>
     </SettingsSection>
   );
 });

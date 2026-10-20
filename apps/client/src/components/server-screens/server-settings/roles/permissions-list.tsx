@@ -1,5 +1,5 @@
 import { Permission as EPermission } from '@sharkord/shared';
-import { Label, Switch } from '@sharkord/ui';
+import { Switch } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,20 +15,32 @@ type TPermissionProps = {
 const Permission = memo(
   ({ permission, enabled, onChange, disabled }: TPermissionProps) => {
     const { t } = useTranslation('permissions');
+    const { t: tSettings } = useTranslation('settings');
 
     return (
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <Label>{t(`server.${permission}`)}</Label>
-          <span className="text-sm text-muted-foreground">
-            {t(`serverDescriptions.${permission}`)}
+      <div className="flex min-h-[30px] items-center justify-between gap-4 border-b border-line py-[9px] last:border-b-0">
+        <span className="min-w-0 truncate text-sm leading-[18px] text-foreground">
+          {t(`server.${permission}`)}
+        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <Switch
+            aria-label={t(`server.${permission}`)}
+            checked={enabled}
+            onCheckedChange={onChange}
+            disabled={disabled}
+          />
+          <span
+            className={
+              enabled
+                ? 'w-[52px] text-xs leading-4 text-accent-text'
+                : 'w-[52px] text-xs leading-4 text-muted-foreground'
+            }
+          >
+            {enabled
+              ? tSettings('permissionAllowed')
+              : tSettings('permissionDenied')}
           </span>
         </div>
-        <Switch
-          checked={enabled}
-          onCheckedChange={onChange}
-          disabled={disabled}
-        />
       </div>
     );
   }
@@ -56,10 +68,12 @@ const PermissionList = memo(
     );
 
     return (
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold">{t('headers.server')}</h3>
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-bold uppercase leading-[18px] tracking-[1px] text-subtle-foreground">
+          {t('headers.server')}
+        </h3>
 
-        <div className="space-y-3">
+        <div className="flex flex-col">
           {availablePermissions.map((permission) => (
             <Permission
               key={permission}

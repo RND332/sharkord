@@ -61,15 +61,15 @@ const HelperValues = memo(() => {
       title={t('helperValuesTitle')}
       description={t('helperValuesDesc')}
     >
-      <Group label={t('ownUserIdLabel')}>
+      <Group variant="settings" label={t('ownUserIdLabel')}>
         <span className="font-mono text-sm">{ownUserId ?? '-'}</span>
       </Group>
-      <Group label={t('currentVoiceChannelIdLabel')}>
+      <Group variant="settings" label={t('currentVoiceChannelIdLabel')}>
         <span className="font-mono text-sm">
           {currentVoiceChannelId ?? '-'}
         </span>
       </Group>
-      <Group label={t('selectedChannelIdLabel')}>
+      <Group variant="settings" label={t('selectedChannelIdLabel')}>
         <span className="font-mono text-sm">{selectedChannelId ?? '-'}</span>
       </Group>
     </SettingsSection>

@@ -19,6 +19,7 @@ type TSettingsShellProps = {
   entries: TSettingsEntry[];
   pluginEntries?: TSettingsEntry[];
   initialEntryId?: string;
+  groupLabel?: string;
 };
 
 const NO_ENTRIES: TSettingsEntry[] = [];
@@ -29,7 +30,8 @@ const SettingsShell = memo(
     close,
     entries,
     pluginEntries = NO_ENTRIES,
-    initialEntryId
+    initialEntryId,
+    groupLabel
   }: TSettingsShellProps) => {
     const { t } = useTranslation('settings');
     const [selectedId, setSelectedId] = useState(
@@ -105,7 +107,7 @@ const SettingsShell = memo(
     return (
       <SettingsFormContext.Provider value={setForm}>
         <div className="flex h-dvh flex-col bg-canvas text-foreground">
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-rail px-5 sm:h-10">
+          <header className="flex h-10 shrink-0 items-center gap-[18px] border-b border-line bg-rail px-5 sm:px-7">
             <Button
               variant="ghost"
               size="icon-sm"
@@ -115,10 +117,10 @@ const SettingsShell = memo(
               <ChevronLeft className="size-5" />
             </Button>
             <div className="h-[22px] w-px bg-line" />
-            <h1 className="flex-1 truncate text-[15px] font-semibold">
+            <h1 className="flex-1 truncate text-base font-semibold leading-[22px]">
               {title}
             </h1>
-            <span className="hidden text-xs text-subtle-foreground sm:inline">
+            <span className="hidden text-xs leading-[18px] text-subtle-foreground sm:inline">
               Esc to close
             </span>
             <LanguageSwitcher
@@ -146,6 +148,7 @@ const SettingsShell = memo(
               pluginEntries={pluginEntries}
               selectedId={selectedEntry?.id ?? ''}
               onSelect={handleSelect}
+              groupLabel={groupLabel}
               className={cn(
                 'absolute inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out md:relative md:z-0 md:translate-x-0',
                 isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
@@ -153,7 +156,7 @@ const SettingsShell = memo(
             />
 
             <main className="flex-1 overflow-y-auto bg-canvas">
-              <div className="mx-auto max-w-[1120px] space-y-8 p-5 md:p-8 lg:px-[60px]">
+              <div className="mx-auto w-full max-w-[1188px] p-5 pt-8 md:p-8 md:pt-8 lg:px-[60px]">
                 {selectedEntry?.content}
               </div>
 

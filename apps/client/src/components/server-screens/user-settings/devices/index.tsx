@@ -1,4 +1,8 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
+import {
+  SettingsGroupLabel,
+  SettingsRow
+} from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { getVoiceControlsBridge } from '@/components/voice-provider/controls-bridge';
@@ -32,7 +36,6 @@ import {
   Alert,
   AlertDescription,
   Button,
-  Group,
   Label,
   LoadingCard,
   Select,
@@ -41,12 +44,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
   Slider,
   Switch
 } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Info } from 'lucide-react';
+import { Info, Volume2 } from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -63,7 +65,6 @@ import { MicrophoneTestLevelBar } from './microphone-test-level-bar';
 import { ResolutionFpsControl } from './resolution-fps-control';
 import { RestrictOwnAudioAlert } from './restrict-own-audio-alert';
 import { SuppressLocalAudioPlaybackAlert } from './suppress-local-audio-playback-alert';
-import { SupressionHelp } from './supression-help';
 
 const DEFAULT_NAME = 'default';
 
@@ -329,82 +330,96 @@ const Devices = memo(() => {
           <AlertDescription>{t('voiceChannelActiveInfo')}</AlertDescription>
         </Alert>
       )}
-      <div className="space-y-6">
-        <Group
+
+      <div className="flex max-w-[1040px] flex-col gap-6">
+        <SettingsRow
           label={t('voiceOnlyModeLabel')}
           description={t('voiceOnlyModeDesc')}
+          className="border-b-0 py-0"
         >
           <Switch
             aria-label={t('voiceOnlyModeLabel')}
             checked={!!values.voiceOnlyMode}
             onCheckedChange={handleVoiceOnlyModeChange}
           />
-        </Group>
+        </SettingsRow>
 
-        <Group label={t('playbackLabel')}>
-          <Select
-            onValueChange={(value) => onChange('playbackId', value)}
-            value={values.playbackId}
-            disabled={playbackDevices.length === 0}
-          >
-            <SelectTrigger className="w-92">
-              <SelectValue placeholder={t('playbackPlaceholder')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {!hasDefaultPlaybackOption && (
-                  <SelectItem value={DEFAULT_NAME}>
-                    {t('defaultOutput')}
-                  </SelectItem>
-                )}
-                {playbackDevices.map((device) => (
-                  <SelectItem
-                    key={device?.deviceId}
-                    value={device?.deviceId || DEFAULT_NAME}
-                  >
-                    {device?.label.trim() || t('defaultOutput')}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </Group>
+        <div className="flex flex-col gap-4 border-t border-line pt-[14px]">
+          <SettingsGroupLabel>{t('audioDevicesLabel')}</SettingsGroupLabel>
 
-        <Group label={t('microphoneLabel')}>
-          <Select
-            onValueChange={(value) => onChange('microphoneId', value)}
-            value={values.microphoneId}
-            disabled={inputDevices.length === 0}
-          >
-            <SelectTrigger className="w-92">
-              <SelectValue placeholder={t('microphonePlaceholder')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {inputDevices.map((device) => (
-                  <SelectItem
-                    key={device?.deviceId}
-                    value={device?.deviceId || DEFAULT_NAME}
-                  >
-                    {device?.label.trim() || t('defaultMicrophone')}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-5">
+            <label className="flex w-full max-w-[510px] flex-col gap-2">
+              <span className="text-sm leading-4 text-foreground">
+                {t('playbackLabel')}
+              </span>
+              <Select
+                onValueChange={(value) => onChange('playbackId', value)}
+                value={values.playbackId}
+                disabled={playbackDevices.length === 0}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('playbackPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {!hasDefaultPlaybackOption && (
+                      <SelectItem value={DEFAULT_NAME}>
+                        {t('defaultOutput')}
+                      </SelectItem>
+                    )}
+                    {playbackDevices.map((device) => (
+                      <SelectItem
+                        key={device?.deviceId}
+                        value={device?.deviceId || DEFAULT_NAME}
+                      >
+                        {device?.label.trim() || t('defaultOutput')}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </label>
 
-          <Group
-            label={t('noiseSuppressionLabel')}
-            className="my-4"
-            help={<SupressionHelp />}
-          >
+            <label className="flex w-full max-w-[510px] flex-col gap-2">
+              <span className="text-sm leading-4 text-foreground">
+                {t('microphoneLabel')}
+              </span>
+              <Select
+                onValueChange={(value) => onChange('microphoneId', value)}
+                value={values.microphoneId}
+                disabled={inputDevices.length === 0}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('microphonePlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {inputDevices.map((device) => (
+                      <SelectItem
+                        key={device?.deviceId}
+                        value={device?.deviceId || DEFAULT_NAME}
+                      >
+                        {device?.label.trim() || t('defaultMicrophone')}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-[17px] border-t border-line pt-[14px]">
+          <SettingsGroupLabel>{t('microphoneLabel')}</SettingsGroupLabel>
+
+          <SettingsRow label={t('noiseSuppressionLabel')}>
             <Select
               value={values.noiseSuppression}
               onValueChange={(value) =>
                 onChange('noiseSuppression', value as NoiseSuppression)
               }
             >
-              <SelectTrigger className="w-92">
+              <SelectTrigger className="w-[240px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -424,112 +439,125 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </Group>
+          </SettingsRow>
 
-          <div className="flex items-center gap-4">
-            <Group label={t('echoCancellationLabel')}>
-              <Switch
-                checked={!!values.echoCancellation}
-                onCheckedChange={(checked) =>
-                  onChange('echoCancellation', checked)
-                }
-              />
-            </Group>
+          <SettingsRow label={t('echoCancellationLabel')}>
+            <Switch
+              aria-label={t('echoCancellationLabel')}
+              checked={!!values.echoCancellation}
+              onCheckedChange={(checked) =>
+                onChange('echoCancellation', checked)
+              }
+            />
+          </SettingsRow>
 
-            <Group label={t('autoGainControlLabel')}>
-              <Switch
-                checked={!!values.autoGainControl}
-                onCheckedChange={(checked) =>
-                  onChange('autoGainControl', checked)
-                }
-              />
-            </Group>
+          <SettingsRow label={t('autoGainControlLabel')}>
+            <Switch
+              aria-label={t('autoGainControlLabel')}
+              checked={!!values.autoGainControl}
+              onCheckedChange={(checked) =>
+                onChange('autoGainControl', checked)
+              }
+            />
+          </SettingsRow>
 
-            <Group label={t('noiseGateLabel')}>
-              <Switch
-                checked={values.noiseGateEnabled}
-                disabled={!isNoiseGateAvailable}
-                onCheckedChange={(checked) =>
-                  onChange('noiseGateEnabled', checked)
-                }
-              />
-            </Group>
-          </div>
-
-          {!isNoiseGateAvailable && (
-            <p className="text-xs text-muted-foreground">
-              {t('noiseGateUnavailable')}
-              {noiseGateWorkletAvailability.reason
-                ? ` ${noiseGateWorkletAvailability.reason}`
-                : ''}
-            </p>
-          )}
-        </Group>
-
-        <Group label={t('microphoneTestLabel')}>
-          <div className="flex items-center gap-2">
-            {permissionState !== 'granted' && (
-              <Button variant="outline" onClick={requestMicrophonePermission}>
-                {t('permitMicAccess')}
-              </Button>
-            )}
-
-            {!isTesting ? (
-              <Button
-                variant="secondary"
-                onClick={() => void startMicrophoneTest()}
-                disabled={permissionState === 'denied' || !hasMicrophones}
-              >
-                {t('startTestBtn')}
-              </Button>
-            ) : (
-              <Button
-                variant="secondary"
-                onClick={() => void stopMicrophoneTest()}
-              >
-                {t('stopTestBtn')}
-              </Button>
-            )}
-          </div>
-
-          {currentVoiceChannelId && isTesting && (
-            <p className="text-sm text-muted-foreground">
-              {t('mutedDuringTest')}
-            </p>
-          )}
-
-          <MicrophoneTestLevelBar
-            isTesting={isTesting}
-            noiseGateEnabled={values.noiseGateEnabled}
-            noiseGateControlsDisabled={!isNoiseGateAvailable}
-            noiseGateThresholdDb={values.noiseGateThresholdDb}
-            onThresholdChange={(value) =>
-              onChange('noiseGateThresholdDb', value)
+          <SettingsRow
+            label={t('noiseGateLabel')}
+            description={
+              isNoiseGateAvailable
+                ? undefined
+                : `${t('noiseGateUnavailable')}${
+                    noiseGateWorkletAvailability.reason
+                      ? ` ${noiseGateWorkletAvailability.reason}`
+                      : ''
+                  }`
             }
-            getAudioLevelSnapshot={getAudioLevelSnapshot}
-          />
+            className="border-b-0"
+          >
+            <Switch
+              aria-label={t('noiseGateLabel')}
+              checked={values.noiseGateEnabled}
+              disabled={!isNoiseGateAvailable}
+              onCheckedChange={(checked) =>
+                onChange('noiseGateEnabled', checked)
+              }
+            />
+          </SettingsRow>
 
-          {microphoneTestError && (
-            <Alert variant="destructive">
-              <Info />
-              <AlertDescription>{microphoneTestError}</AlertDescription>
-            </Alert>
-          )}
+          <div className="flex flex-col gap-3 rounded-md bg-panel p-[15px]">
+            <div className="flex flex-wrap items-center gap-[15px]">
+              <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[7px] bg-raised">
+                <Volume2 className="size-[22px] text-foreground" />
+              </div>
+              <span className="text-sm leading-[18px] text-foreground">
+                {t('microphoneTestLabel')}
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                {permissionState !== 'granted' && (
+                  <Button
+                    variant="outline"
+                    onClick={requestMicrophonePermission}
+                  >
+                    {t('permitMicAccess')}
+                  </Button>
+                )}
 
-          <audio ref={testAudioRef} className="hidden" />
-        </Group>
-      </div>
+                {!isTesting ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => void startMicrophoneTest()}
+                    disabled={permissionState === 'denied' || !hasMicrophones}
+                  >
+                    {t('startTestBtn')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => void stopMicrophoneTest()}
+                  >
+                    {t('stopTestBtn')}
+                  </Button>
+                )}
+              </div>
+            </div>
 
-      <Separator />
+            {currentVoiceChannelId && isTesting && (
+              <p className="text-sm text-muted-foreground">
+                {t('mutedDuringTest')}
+              </p>
+            )}
 
-      <div className="space-y-6">
-        <Group label={t('webcamLabel')}>
-          <div className="space-y-4">
+            <MicrophoneTestLevelBar
+              isTesting={isTesting}
+              noiseGateEnabled={values.noiseGateEnabled}
+              noiseGateControlsDisabled={!isNoiseGateAvailable}
+              noiseGateThresholdDb={values.noiseGateThresholdDb}
+              onThresholdChange={(value) =>
+                onChange('noiseGateThresholdDb', value)
+              }
+              getAudioLevelSnapshot={getAudioLevelSnapshot}
+            />
+
+            {microphoneTestError && (
+              <Alert variant="destructive">
+                <Info />
+                <AlertDescription>{microphoneTestError}</AlertDescription>
+              </Alert>
+            )}
+
+            <audio ref={testAudioRef} className="hidden" />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-[17px] border-t border-line pt-[14px]">
+          <SettingsGroupLabel>{t('cameraLabel')}</SettingsGroupLabel>
+
+          <SettingsRow label={t('webcamLabel')}>
             <Select
               onValueChange={(value) => onChange('webcamId', value)}
               value={values.webcamId}
             >
-              <SelectTrigger className="w-full max-w-96">
+              <SelectTrigger className="w-[280px]">
                 <SelectValue placeholder={t('webcamPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -550,56 +578,66 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
+          </SettingsRow>
 
-            <div className="group relative aspect-video w-full max-w-[28rem] overflow-hidden rounded-md border border-border bg-muted/40">
-              <video
-                ref={testVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className={`h-full w-full object-cover transition-opacity duration-150 ${
-                  values.mirrorOwnVideo ? '-scale-x-100' : ''
-                } ${isVideoTesting ? 'opacity-100' : 'opacity-0'}`}
-              />
+          <SettingsRow label={t('mirrorOwnVideoLabel')}>
+            <Switch
+              aria-label={t('mirrorOwnVideoLabel')}
+              checked={!!values.mirrorOwnVideo}
+              onCheckedChange={(checked) => onChange('mirrorOwnVideo', checked)}
+            />
+          </SettingsRow>
 
-              {!isVideoTesting && !isVideoStarting && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Button
-                    variant="secondary"
-                    onClick={() => void startWebcamTest()}
-                  >
-                    {t('startVideoPreviewBtn')}
-                  </Button>
-                </div>
-              )}
+          <div className="group relative h-[140px] w-full max-w-[520px] overflow-hidden rounded-sm border border-line bg-panel">
+            <video
+              ref={testVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className={`h-full w-full object-cover transition-opacity duration-150 ${
+                values.mirrorOwnVideo ? '-scale-x-100' : ''
+              } ${isVideoTesting ? 'opacity-100' : 'opacity-0'}`}
+            />
 
-              {(isVideoStarting ||
-                (isVideoTesting && !isVideoPreviewReady)) && (
-                <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-                  {t('startingCamera')}
-                </div>
-              )}
-
-              {isVideoTesting && (
-                <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-3 opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                  <Button
-                    variant="secondary"
-                    className="pointer-events-auto"
-                    onClick={stopVideoTest}
-                  >
-                    {t('stopVideoPreviewBtn')}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {webcamTestError && (
-              <Alert variant="destructive">
-                <Info />
-                <AlertDescription>{webcamTestError}</AlertDescription>
-              </Alert>
+            {!isVideoTesting && !isVideoStarting && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Button
+                  variant="secondary"
+                  onClick={() => void startWebcamTest()}
+                >
+                  {t('startVideoPreviewBtn')}
+                </Button>
+              </div>
             )}
 
+            {(isVideoStarting || (isVideoTesting && !isVideoPreviewReady)) && (
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                {t('startingCamera')}
+              </div>
+            )}
+
+            {isVideoTesting && (
+              <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-3 opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                <Button
+                  variant="secondary"
+                  className="pointer-events-auto"
+                  onClick={stopVideoTest}
+                >
+                  {t('stopVideoPreviewBtn')}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {webcamTestError && (
+            <Alert variant="destructive">
+              <Info />
+              <AlertDescription>{webcamTestError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <Label>{t('webcamLabel')}</Label>
             <ResolutionFpsControl
               framerate={values.webcamFramerate}
               resolution={values.webcamResolution}
@@ -608,38 +646,13 @@ const Devices = memo(() => {
                 onChange('webcamResolution', value as Resolution)
               }
             />
-
-            <Group label={t('mirrorOwnVideoLabel')}>
-              <Switch
-                checked={!!values.mirrorOwnVideo}
-                onCheckedChange={(checked) =>
-                  onChange('mirrorOwnVideo', checked)
-                }
-              />
-            </Group>
           </div>
-        </Group>
-      </div>
+        </div>
 
-      <Separator />
+        <div className="flex flex-col gap-[17px] border-t border-line pt-[14px]">
+          <SettingsGroupLabel>{t('screenSharingLabel')}</SettingsGroupLabel>
 
-      <div className="space-y-6">
-        <Group
-          label={t('simulcastUserLabel')}
-          description={
-            settings?.webRtcSimulcastEnabled
-              ? t('simulcastUserDesc')
-              : t('simulcastDisabledByServerDesc')
-          }
-        >
-          <Switch
-            checked={!!values.simulcastEnabled}
-            disabled={!settings?.webRtcSimulcastEnabled}
-            onCheckedChange={(checked) => onChange('simulcastEnabled', checked)}
-          />
-        </Group>
-        <Group label={t('screenSharingLabel')}>
-          <Group
+          <SettingsRow
             label={t('screenSharePresetLabel')}
             description={t('screenSharePresetDesc')}
           >
@@ -647,7 +660,7 @@ const Devices = memo(() => {
               value={screenSharePreset ?? ''}
               onValueChange={handleScreenSharePresetChange}
             >
-              <SelectTrigger className="w-56">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder={t('screenSharePresetCustom')} />
               </SelectTrigger>
               <SelectContent>
@@ -661,18 +674,97 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </Group>
-          <div className="flex">
-            <ResolutionFpsControl
-              framerate={values.screenFramerate}
-              resolution={values.screenResolution}
-              onFramerateChange={(value) => onChange('screenFramerate', value)}
-              onResolutionChange={(value) =>
-                onChange('screenResolution', value as Resolution)
+          </SettingsRow>
+
+          <SettingsRow label={t('screenCursorLabel')}>
+            <Select
+              value={values.screenCursor ?? ScreenCursor.ALWAYS}
+              onValueChange={(value) =>
+                onChange('screenCursor', value as ScreenCursor)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value={ScreenCursor.ALWAYS}>
+                    {t('screenCursorAlways')}
+                  </SelectItem>
+                  <SelectItem value={ScreenCursor.MOTION}>
+                    {t('screenCursorMotion')}
+                  </SelectItem>
+                  <SelectItem value={ScreenCursor.NEVER}>
+                    {t('screenCursorNever')}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
+
+          <SettingsRow
+            label={t('simulcastUserLabel')}
+            description={
+              settings?.webRtcSimulcastEnabled
+                ? t('simulcastUserDesc')
+                : t('simulcastDisabledByServerDesc')
+            }
+          >
+            <Switch
+              aria-label={t('simulcastUserLabel')}
+              checked={!!values.simulcastEnabled}
+              disabled={!settings?.webRtcSimulcastEnabled}
+              onCheckedChange={(checked) =>
+                onChange('simulcastEnabled', checked)
               }
             />
+          </SettingsRow>
 
-            <div className="ml-2">
+          <SettingsRow
+            label={t('directScreenSharingLabel')}
+            description={t('directScreenSharingDesc')}
+          >
+            <Switch
+              aria-label={t('directScreenSharingLabel')}
+              checked={!!values.directScreenSharing}
+              disabled={
+                currentVoiceChannelId !== undefined ||
+                typeof RTCPeerConnection === 'undefined'
+              }
+              onCheckedChange={handleDirectMediaSharingChange}
+            />
+          </SettingsRow>
+
+          <SettingsRow
+            label={t('screenShareSimulcastLabel')}
+            description={
+              settings?.webRtcSimulcastEnabled
+                ? t('screenShareSimulcastDesc')
+                : t('simulcastDisabledByServerDesc')
+            }
+          >
+            <Switch
+              aria-label={t('screenShareSimulcastLabel')}
+              checked={!!values.screenShareSimulcastEnabled}
+              disabled={!settings?.webRtcSimulcastEnabled}
+              onCheckedChange={handleScreenShareSimulcastChange}
+            />
+          </SettingsRow>
+
+          <div className="flex flex-col gap-2">
+            <Label>{t('screenSharingLabel')}</Label>
+            <div className="flex flex-wrap items-center gap-3">
+              <ResolutionFpsControl
+                framerate={values.screenFramerate}
+                resolution={values.screenResolution}
+                onFramerateChange={(value) =>
+                  onChange('screenFramerate', value)
+                }
+                onResolutionChange={(value) =>
+                  onChange('screenResolution', value as Resolution)
+                }
+              />
+
               <Select
                 value={values.screenCodec ?? VideoCodec.AUTO}
                 onValueChange={(value) =>
@@ -695,61 +787,6 @@ const Devices = memo(() => {
             </div>
           </div>
 
-          <Group
-            label={t('directScreenSharingLabel')}
-            description={t('directScreenSharingDesc')}
-          >
-            <Switch
-              aria-label={t('directScreenSharingLabel')}
-              checked={!!values.directScreenSharing}
-              disabled={
-                currentVoiceChannelId !== undefined ||
-                typeof RTCPeerConnection === 'undefined'
-              }
-              onCheckedChange={handleDirectMediaSharingChange}
-            />
-          </Group>
-          <Group
-            label={t('screenShareSimulcastLabel')}
-            description={
-              settings?.webRtcSimulcastEnabled
-                ? t('screenShareSimulcastDesc')
-                : t('simulcastDisabledByServerDesc')
-            }
-          >
-            <Switch
-              checked={!!values.screenShareSimulcastEnabled}
-              disabled={!settings?.webRtcSimulcastEnabled}
-              onCheckedChange={handleScreenShareSimulcastChange}
-            />
-          </Group>
-
-          <Group label={t('screenCursorLabel')}>
-            <Select
-              value={values.screenCursor ?? ScreenCursor.ALWAYS}
-              onValueChange={(value) =>
-                onChange('screenCursor', value as ScreenCursor)
-              }
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value={ScreenCursor.ALWAYS}>
-                    {t('screenCursorAlways')}
-                  </SelectItem>
-                  <SelectItem value={ScreenCursor.MOTION}>
-                    {t('screenCursorMotion')}
-                  </SelectItem>
-                  <SelectItem value={ScreenCursor.NEVER}>
-                    {t('screenCursorNever')}
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Group>
-
           <div className="flex flex-col gap-2">
             <Label>{t('maxBitrateLabel')}</Label>
 
@@ -761,7 +798,7 @@ const Devices = memo(() => {
               value={[values.screenBitrate ?? DEFAULT_BITRATE]}
               onValueChange={([value]) => onChange('screenBitrate', value)}
               rightSlot={
-                <span className="text-sm text-muted-foreground w-20 text-right">
+                <span className="w-20 text-right text-sm text-muted-foreground">
                   {filesize((values.screenBitrate ?? DEFAULT_BITRATE) * 125, {
                     bits: true
                   })}
@@ -771,12 +808,13 @@ const Devices = memo(() => {
             />
           </div>
 
-          <Group
+          <SettingsRow
             label={t('restrictOwnAudioLabel')}
             description={t('restrictOwnAudioDesc')}
           >
             {isRestrictOwnAudioSupported ? (
               <Switch
+                aria-label={t('restrictOwnAudioLabel')}
                 checked={!!values.restrictOwnAudio}
                 disabled={!isRestrictOwnAudioSupported}
                 onCheckedChange={(checked) =>
@@ -788,14 +826,15 @@ const Devices = memo(() => {
                 isSupported={isRestrictOwnAudioSupported}
               />
             )}
-          </Group>
+          </SettingsRow>
 
-          <Group
+          <SettingsRow
             label={t('suppressLocalAudioPlaybackLabel')}
             description={t('suppressLocalAudioPlaybackDesc')}
           >
             {isSuppressLocalAudioPlaybackSupported ? (
               <Switch
+                aria-label={t('suppressLocalAudioPlaybackLabel')}
                 checked={!!values.suppressLocalAudioPlayback}
                 disabled={!isSuppressLocalAudioPlaybackSupported}
                 onCheckedChange={(checked) =>
@@ -807,12 +846,12 @@ const Devices = memo(() => {
                 isSupported={isSuppressLocalAudioPlaybackSupported}
               />
             )}
-          </Group>
+          </SettingsRow>
 
           <span className="text-sm text-muted-foreground">
             {t('screenSharingNote')}
           </span>
-        </Group>
+        </div>
       </div>
     </SettingsSection>
   );

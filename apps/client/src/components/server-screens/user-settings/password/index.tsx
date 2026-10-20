@@ -2,13 +2,7 @@ import { SettingsSection } from '@/components/server-screens/settings-shell/sect
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { useOwnUserPasswordSet } from '@/features/server/users/hooks';
 import { cleanup, getTRPCClient } from '@/lib/trpc';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Group,
-  Input
-} from '@sharkord/ui';
+import { Alert, AlertDescription, AlertTitle, Input } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -49,26 +43,44 @@ const Password = memo(() => {
         </Alert>
       )}
 
-      <Group label={t('currentPasswordLabel')}>
-        <Input
-          {...r('currentPassword', 'password')}
-          disabled={!canChangePassword}
-        />
-      </Group>
+      <div className="flex max-w-[1040px] flex-wrap gap-5">
+        <label className="flex w-full max-w-[510px] flex-col gap-2">
+          <span className="text-sm leading-4 text-foreground">
+            {t('currentPasswordLabel')}
+          </span>
+          <Input
+            {...r('currentPassword', 'password')}
+            placeholder={t('currentPasswordPlaceholder')}
+            disabled={!canChangePassword}
+          />
+        </label>
 
-      <Group label={t('newPasswordLabel')}>
-        <Input
-          {...r('newPassword', 'password')}
-          disabled={!canChangePassword}
-        />
-      </Group>
+        <label className="flex w-full max-w-[510px] flex-col gap-2">
+          <span className="text-sm leading-4 text-foreground">
+            {t('newPasswordLabel')}
+          </span>
+          <Input
+            {...r('newPassword', 'password')}
+            placeholder={t('newPasswordPlaceholder')}
+            disabled={!canChangePassword}
+          />
+        </label>
 
-      <Group label={t('confirmNewPasswordLabel')}>
-        <Input
-          {...r('confirmNewPassword', 'password')}
-          disabled={!canChangePassword}
-        />
-      </Group>
+        <label className="flex w-full max-w-[510px] flex-col gap-2">
+          <span className="text-sm leading-4 text-foreground">
+            {t('confirmNewPasswordLabel')}
+          </span>
+          <Input
+            {...r('confirmNewPassword', 'password')}
+            placeholder={t('confirmPasswordPlaceholder')}
+            disabled={!canChangePassword}
+          />
+        </label>
+      </div>
+
+      <p className="text-sm leading-4 text-subtle-foreground">
+        {t('passwordMatchHint')}
+      </p>
     </SettingsSection>
   );
 });

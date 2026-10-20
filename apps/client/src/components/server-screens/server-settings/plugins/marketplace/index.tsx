@@ -1,4 +1,3 @@
-import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { cn } from '@/lib/utils';
 import type { TPluginInfo } from '@sharkord/shared';
@@ -91,10 +90,8 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
   };
 
   return (
-    <SettingsSection
-      title={t('marketplaceTitle')}
-      description={t('marketplaceDesc')}
-      action={
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex items-center justify-end">
         <Button
           variant="outline"
           size="sm"
@@ -106,10 +103,9 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
           />
           {t('refreshBtn')}
         </Button>
-      }
-    >
+      </div>
       {renderContent()}
-    </SettingsSection>
+    </div>
   );
 });
 
