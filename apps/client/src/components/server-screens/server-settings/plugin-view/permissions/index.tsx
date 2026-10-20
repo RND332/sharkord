@@ -4,6 +4,7 @@ import { useSettingsForm } from '@/components/server-screens/settings-shell/use-
 import { usePluginSlotIds } from '@/features/server/plugins/hooks';
 import { useRoles } from '@/features/server/roles/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { UsersIcon } from '@heroicons/react/24/outline';
 import {
   getTrpcError,
   OWNER_ROLE_ID,
@@ -12,7 +13,6 @@ import {
   type TPluginCapability
 } from '@sharkord/shared';
 import { LoadingCard } from '@sharkord/ui';
-import { Users } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -203,7 +203,7 @@ const PluginPermissions = memo(({ pluginId }: TPluginPermissionsProps) => {
 
   return (
     <SettingsListEditor
-      emptyIcon={Users}
+      emptyIcon={UsersIcon}
       emptyTitle={t('pluginAccessSelectAudience')}
       list={
         <RoleList

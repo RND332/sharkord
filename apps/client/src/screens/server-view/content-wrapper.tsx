@@ -9,9 +9,13 @@ import {
   useActiveFullscreenPluginId,
   useServerName
 } from '@/features/server/hooks';
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
 import { Alert, AlertDescription } from '@sharkord/ui';
-import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -103,19 +107,19 @@ const ContentWrapper = memo(
               </h2>
             </div>
             <Alert variant="destructive" className="max-w-md">
-              <AlertTriangle />
+              <ExclamationTriangleIcon />
               <AlertDescription>{t('mobileNotOptimized')}</AlertDescription>
             </Alert>
             <div className="flex flex-col gap-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <span className="text-lg">
-                  <ArrowRight />
+                  <ArrowRightIcon />
                 </span>
                 <span>{t('swipeRightForChannels')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-lg">
-                  <ArrowLeft />
+                  <ArrowLeftIcon />
                 </span>
                 <span>{t('swipeLeftForUsers')}</span>
               </div>

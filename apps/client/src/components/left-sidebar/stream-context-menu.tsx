@@ -1,13 +1,17 @@
 import { UserAvatar } from '@/components/user-avatar';
 import { useStreamVolumeControl } from '@/components/voice-provider/hooks/use-stream-volume-control';
 import {
+  ServerStackIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon
+} from '@heroicons/react/24/outline';
+import {
   Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
   Slider
 } from '@sharkord/ui';
-import { Router, Volume2, VolumeX } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -67,7 +71,7 @@ const StreamContextMenu = (props: TStreamContextMenuProps) => {
             className="h-6 w-6 rounded object-cover"
           />
         ) : (
-          <Router className="h-6 w-6 text-muted-foreground" />
+          <ServerStackIcon className="h-6 w-6 text-muted-foreground" />
         )}
         <span className="text-sm truncate flex-1">{props.title}</span>
       </>
@@ -88,9 +92,9 @@ const StreamContextMenu = (props: TStreamContextMenuProps) => {
               className="h-6 w-6 p-0"
             >
               {isMuted ? (
-                <VolumeX className="h-4 w-4 text-muted-foreground" />
+                <SpeakerXMarkIcon className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Volume2 className="h-4 w-4" />
+                <SpeakerWaveIcon className="h-4 w-4" />
               )}
             </Button>
           </div>

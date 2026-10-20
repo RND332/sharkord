@@ -1,4 +1,5 @@
 import { SUPPORTED_LANGUAGES } from '@/i18n';
+import { LanguageIcon } from '@heroicons/react/24/outline';
 import {
   cn,
   Select,
@@ -7,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@sharkord/ui';
-import { Languages } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -37,7 +37,7 @@ const LanguageSwitcher = memo(
             className
           )}
         >
-          {variant === 'icon' && <Languages className="h-4 w-4 shrink-0" />}
+          {variant === 'icon' && <LanguageIcon className="h-4 w-4 shrink-0" />}
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

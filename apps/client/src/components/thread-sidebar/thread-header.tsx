@@ -1,7 +1,7 @@
 import { closeThreadSidebar } from '@/features/app/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
+import { HashtagIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { IconButton } from '@sharkord/ui';
-import { Hash, X } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,14 +17,14 @@ const ThreadHeader = memo(({ channelId }: TThreadHeaderProps) => {
   return (
     <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-6">
       <div className="flex min-w-0 items-center gap-2">
-        <Hash className="size-4 shrink-0 text-muted-foreground" />
+        <HashtagIcon className="size-4 shrink-0 text-muted-foreground" />
         <h2 className="truncate text-sm font-semibold">
           {t('threadInChannel', { name: channelName })}
         </h2>
       </div>
       <IconButton
         onClick={closeThreadSidebar}
-        icon={X}
+        icon={XMarkIcon}
         variant="ghost"
         size="sm"
         aria-label={t('closeThread')}

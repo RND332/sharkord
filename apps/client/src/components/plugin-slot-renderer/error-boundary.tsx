@@ -1,11 +1,11 @@
 import { ErrorBoundary as BaseErrorBoundary } from '@/components/error-boundary';
+import { BugAntIcon } from '@heroicons/react/24/outline';
 import {
   IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger
 } from '@sharkord/ui';
-import { Bug } from 'lucide-react';
 import { type ErrorInfo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -44,7 +44,7 @@ const ErrorBoundary = ({
         <Popover>
           <PopoverTrigger asChild>
             <IconButton
-              icon={Bug}
+              icon={BugAntIcon}
               className="text-red-500 border-red-500"
               size="xs"
               title={t('pluginRenderErrorTitle')}

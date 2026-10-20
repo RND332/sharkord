@@ -1,4 +1,5 @@
 import '@/i18n';
+import { TestId } from '@sharkord/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test } from 'vitest';
@@ -108,8 +109,9 @@ test('fullscreen image opens and closes without transition timers', async () => 
   await nextFrame();
   expect(imagePortal.childElementCount).toBeGreaterThan(0);
   expect(getComputedStyle(imagePortal.firstElementChild!).opacity).toBe('1');
-  const close = imagePortal.querySelector('.lucide-x')!
-    .parentElement as HTMLButtonElement;
+  const close = imagePortal.querySelector<HTMLButtonElement>(
+    `[data-testid="${TestId.FULLSCREEN_IMAGE_CLOSE}"]`
+  )!;
   close.click();
   await nextFrame();
   expect(imagePortal.childElementCount).toBe(0);

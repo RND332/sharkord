@@ -6,9 +6,15 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { getInitialsFromName } from '@/helpers/get-initials-from-name';
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { getTRPCClient } from '@/lib/trpc';
+import {
+  CheckIcon,
+  PencilIcon,
+  PhotoIcon,
+  SwatchIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { DEFAULT_PROFILE_COLOR, UserStatus } from '@sharkord/shared';
 import { ColorPicker, Textarea } from '@sharkord/ui';
-import { Check, Image as ImageIcon, Palette, Pencil, X } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -136,7 +142,7 @@ const Profile = memo(() => {
             aria-label={t('changeBannerLabel')}
             className="relative flex size-[34px] items-center justify-center rounded-md bg-[#202328CC] text-[#F2F4F6] transition-colors hover:bg-[#202328]"
           >
-            <ImageIcon className="size-6" strokeWidth={1.5} />
+            <PhotoIcon className="size-6" />
           </button>
           <button
             type="button"
@@ -144,7 +150,7 @@ const Profile = memo(() => {
             aria-label={t('profileColorLabel')}
             className="relative flex size-[34px] items-center justify-center rounded-md bg-[#202328CC] text-[#F2F4F6] transition-colors hover:bg-[#202328]"
           >
-            <Palette className="size-5" strokeWidth={1.5} />
+            <SwatchIcon className="size-5" strokeWidth={1.5} />
           </button>
           <button
             type="button"
@@ -152,7 +158,7 @@ const Profile = memo(() => {
             aria-label={t('changeBannerLabel')}
             className="relative flex size-[34px] items-center justify-center rounded-md bg-[#202328CC] text-[#F2F4F6] transition-colors hover:bg-[#202328]"
           >
-            <Pencil className="size-6" strokeWidth={1.5} />
+            <PencilIcon className="size-6" strokeWidth={1.5} />
           </button>
         </div>
 
@@ -180,7 +186,7 @@ const Profile = memo(() => {
                 aria-label={t('changeAvatarLabel')}
                 className="absolute -right-1 -bottom-[3px] flex size-7 items-center justify-center rounded-full border-[3px] border-[#202328] bg-primary text-primary-foreground"
               >
-                <Pencil className="size-[18px]" strokeWidth={1.5} />
+                <PencilIcon className="size-[18px]" strokeWidth={1.5} />
               </button>
             </div>
           </div>
@@ -195,7 +201,7 @@ const Profile = memo(() => {
               aria-label={t('editNameLabel')}
               className="flex size-7 shrink-0 items-center justify-center rounded-[5px] bg-panel text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Pencil className="size-5" strokeWidth={1.5} />
+              <PencilIcon className="size-5" strokeWidth={1.5} />
             </button>
           </div>
 
@@ -231,9 +237,9 @@ const Profile = memo(() => {
               className="flex size-7 shrink-0 items-center justify-center rounded-[5px] bg-panel text-muted-foreground transition-colors hover:text-foreground"
             >
               {isEditingBio ? (
-                <Check className="size-5" strokeWidth={1.5} />
+                <CheckIcon className="size-5" strokeWidth={1.5} />
               ) : (
-                <Pencil className="size-5" strokeWidth={1.5} />
+                <PencilIcon className="size-5" strokeWidth={1.5} />
               )}
             </button>
           </div>
@@ -252,7 +258,7 @@ const Profile = memo(() => {
               aria-label={t('close')}
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              <X className="size-4" />
+              <XMarkIcon className="size-4" />
             </button>
           </div>
           <ColorPicker

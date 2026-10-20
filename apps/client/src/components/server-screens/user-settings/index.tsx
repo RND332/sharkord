@@ -1,14 +1,14 @@
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { useCan, useUserSettingsPlugins } from '@/features/server/hooks';
-import { Permission, PluginSlot } from '@sharkord/shared';
 import {
-  Bell,
-  Headphones,
-  KeyRound,
-  Package,
-  Paintbrush,
-  User
-} from 'lucide-react';
+  BellIcon,
+  CubeIcon,
+  KeyIcon,
+  PaintBrushIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
+import { Permission, PluginSlot } from '@sharkord/shared';
+import { HeadphonesIcon } from '@sharkord/ui';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
@@ -32,31 +32,31 @@ const UserSettings = memo(({ close, initialEntryId }: TUserSettingsProps) => {
       {
         id: 'profile',
         label: t('profileTab'),
-        icon: User,
+        icon: UserIcon,
         content: <Profile />
       },
       {
         id: 'devices',
         label: t('devicesTab'),
-        icon: Headphones,
+        icon: HeadphonesIcon,
         content: <Devices />
       },
       {
         id: 'password',
         label: t('passwordTab'),
-        icon: KeyRound,
+        icon: KeyIcon,
         content: <Password />
       },
       {
         id: 'notifications',
         label: t('notificationsTab'),
-        icon: Bell,
+        icon: BellIcon,
         content: <Notifications />
       },
       {
         id: 'others',
         label: t('othersTab'),
-        icon: Paintbrush,
+        icon: PaintBrushIcon,
         content: <Others />
       }
     ],
@@ -71,7 +71,7 @@ const UserSettings = memo(({ close, initialEntryId }: TUserSettingsProps) => {
     return userSettingsPlugins.map((plugin) => ({
       id: `plugin-${plugin.pluginId}`,
       label: plugin.name,
-      icon: Package,
+      icon: CubeIcon,
       logo: plugin.logo,
       content: (
         <PluginSlotRenderer

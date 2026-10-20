@@ -1,5 +1,6 @@
 import { useForm } from '@/hooks/use-form';
 import { getTRPCClient } from '@/lib/trpc';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import {
   AutoFocus,
   Button,
@@ -12,7 +13,6 @@ import {
   Group,
   Input
 } from '@sharkord/ui';
-import { Plus } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';
@@ -71,7 +71,7 @@ const CreateCategoryDialog = memo(
 
           <DialogFooter>
             <Button onClick={onSubmit} disabled={loading}>
-              <Plus className="size-5" />
+              <PlusIcon className="size-5" />
               {t('createCategoryBtn')}
             </Button>
           </DialogFooter>

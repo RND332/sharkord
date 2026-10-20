@@ -6,8 +6,8 @@ import {
   useUnreadMessagesCount
 } from '@/features/server/hooks';
 import { cn } from '@/lib/utils';
+import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { Button, Tooltip } from '@sharkord/ui';
-import { MessageSquare } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -41,7 +41,7 @@ const VoiceChatButton = memo(({ channelId }: TVoiceChatButtonProps) => {
           isVoiceChatOpen && 'text-foreground'
         )}
       >
-        <MessageSquare
+        <ChatBubbleLeftIcon
           className={cn('size-[18px]', isVoiceChatOpen && 'fill-current')}
         />
         <UnreadCount

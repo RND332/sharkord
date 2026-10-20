@@ -4,9 +4,14 @@ import {
   useVoice
 } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
+import { ServerStackIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { StreamKind, type TExternalStream } from '@sharkord/shared';
-import { Avatar, AvatarFallback, AvatarImage } from '@sharkord/ui';
-import { Headphones, Router, Video } from 'lucide-react';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  HeadphonesIcon
+} from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';
@@ -195,12 +200,12 @@ const ExternalStreamCard = memo(
                       alt={stream.title || 'External Stream'}
                     />
                     <AvatarFallback className="bg-linear-to-br from-green-500/30 to-emerald-500/30">
-                      <Headphones className="size-10 text-green-400" />
+                      <HeadphonesIcon className="size-10 text-green-400" />
                     </AvatarFallback>
                   </Avatar>
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-linear-to-br from-green-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-green-500/50">
-                    <Headphones className="size-10 text-green-400" />
+                    <HeadphonesIcon className="size-10 text-green-400" />
                   </div>
                 )}
                 {hasAudio && !isMuted && (
@@ -225,11 +230,13 @@ const ExternalStreamCard = memo(
                   className="size-4 shrink-0 rounded-full"
                 />
               ) : (
-                <Router className="size-3 text-purple-400 shrink-0" />
+                <ServerStackIcon className="size-3 text-purple-400 shrink-0" />
               )}
-              {hasVideo && <Video className="size-3 text-blue-400 shrink-0" />}
+              {hasVideo && (
+                <VideoCameraIcon className="size-3 text-blue-400 shrink-0" />
+              )}
               {hasAudio && (
-                <Headphones
+                <HeadphonesIcon
                   className={cn(
                     'size-3 shrink-0',
                     isMuted ? 'text-red-400' : 'text-green-400'

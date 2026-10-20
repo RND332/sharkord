@@ -1,6 +1,6 @@
+import { CircleStackIcon } from '@heroicons/react/24/outline';
 import { Card, CardContent, CardHeader, CardTitle } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Database } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModViewContext } from '../context';
@@ -36,7 +36,7 @@ const Storage = memo(() => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
+          <CircleStackIcon className="h-5 w-5" />
           {t('modViewStorageTitle')}
         </CardTitle>
       </CardHeader>

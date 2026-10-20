@@ -1,6 +1,9 @@
 import { useRemoteWebcamVisibility } from '@/components/voice-provider/remote-webcam-visibility-context';
+import {
+  VideoCameraIcon,
+  VideoCameraSlashIcon
+} from '@heroicons/react/24/outline';
 import { IconButton, type TIconButtonSize } from '@sharkord/ui';
-import { Video, VideoOff } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,7 +24,7 @@ const HideWebcamButton = memo(
 
     return (
       <IconButton
-        icon={hidden ? Video : VideoOff}
+        icon={hidden ? VideoCameraIcon : VideoCameraSlashIcon}
         onClick={handleToggleWebcamHidden}
         title={t(hidden ? 'showWebcam' : 'hideWebcam')}
         variant={hidden ? 'default' : 'ghost'}

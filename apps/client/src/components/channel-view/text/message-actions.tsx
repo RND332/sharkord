@@ -12,18 +12,17 @@ import { useIsShiftHeld } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { useCustomEmojis } from '@/features/server/emojis/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import {
+  ArrowUturnLeftIcon,
+  BookmarkIcon,
+  BookmarkSlashIcon,
+  ChatBubbleLeftRightIcon,
+  FaceSmileIcon,
+  PencilIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 import { Permission, PluginSlot } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import {
-  MessageSquareText,
-  Pencil,
-  Pin,
-  PinOff,
-  Reply,
-  Smile,
-  Trash,
-  Trash2
-} from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -169,7 +168,7 @@ const MessageActions = memo(
           <IconButton
             size="sm"
             variant="ghost"
-            icon={Reply}
+            icon={ArrowUturnLeftIcon}
             onClick={onReply}
             title={t('replyToMessage')}
           />
@@ -178,7 +177,7 @@ const MessageActions = memo(
           <IconButton
             size="sm"
             variant="ghost"
-            icon={MessageSquareText}
+            icon={ChatBubbleLeftRightIcon}
             onClick={onReplyClick}
             title={t('replyInThread')}
           />
@@ -188,7 +187,7 @@ const MessageActions = memo(
             <IconButton
               size="sm"
               variant="ghost"
-              icon={Pencil}
+              icon={PencilIcon}
               onClick={onEdit}
               disabled={!editable}
               title={t('editMessage')}
@@ -197,7 +196,7 @@ const MessageActions = memo(
             <IconButton
               size="sm"
               variant="ghost"
-              icon={isShiftHeld ? Trash2 : Trash}
+              icon={isShiftHeld ? TrashIcon : TrashIcon}
               className={isShiftHeld ? 'text-destructive' : ''}
               onClick={onDeleteClick}
               title={t('deleteMessageTitle')}
@@ -209,7 +208,7 @@ const MessageActions = memo(
             <IconButton
               size="sm"
               variant="ghost"
-              icon={isPinned ? PinOff : Pin}
+              icon={isPinned ? BookmarkSlashIcon : BookmarkIcon}
               onClick={onPinClick}
               title={isPinned ? t('unpinMessage') : t('pinMessage')}
             />
@@ -234,7 +233,7 @@ const MessageActions = memo(
             <EmojiPicker onEmojiSelect={onEmojiSelect}>
               <IconButton
                 variant="ghost"
-                icon={Smile}
+                icon={FaceSmileIcon}
                 title={t('addReaction')}
               />
             </EmojiPicker>

@@ -1,6 +1,9 @@
 import { useCan } from '@/features/server/hooks';
+import {
+  Cog6ToothIcon,
+  ShieldExclamationIcon
+} from '@heroicons/react/24/outline';
 import { Permission } from '@sharkord/shared';
-import { Settings, Shield } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
@@ -23,14 +26,14 @@ const ChannelSettings = memo(({ close, channelId }: TChannelSettingsProps) => {
       {
         id: 'general',
         label: t('generalTab'),
-        icon: Settings,
+        icon: Cog6ToothIcon,
         content: <General channelId={channelId} />,
         permission: Permission.MANAGE_CHANNELS
       },
       {
         id: 'permissions',
         label: t('permissionsTab'),
-        icon: Shield,
+        icon: ShieldExclamationIcon,
         content: <ChannelPermissions channelId={channelId} />,
         permission: Permission.MANAGE_CHANNEL_PERMISSIONS
       }

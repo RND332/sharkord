@@ -1,6 +1,6 @@
 import type { TTheme } from '@/components/theme-provider/themes';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -67,7 +67,9 @@ export const ThemeCard = memo(
         <span className="flex min-w-0 flex-1 flex-col gap-2 px-1 pb-1">
           <span className="flex items-center justify-between gap-2 text-[13px] font-medium">
             {theme.name}
-            {selected && <Check className="size-4 shrink-0 text-accent-text" />}
+            {selected && (
+              <CheckIcon className="size-4 shrink-0 text-accent-text" />
+            )}
           </span>
         </span>
       </button>

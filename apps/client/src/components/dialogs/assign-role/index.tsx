@@ -2,6 +2,7 @@ import { PermissionsList } from '@/components/permissions-list';
 import { useRoles } from '@/features/server/roles/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { getTrpcError, type TJoinedUser } from '@sharkord/shared';
 import {
   Alert,
@@ -21,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@sharkord/ui';
-import { Info } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -82,7 +82,7 @@ const AssignRoleDialog = memo(
             </AlertDialogTitle>
             {isOwnUser && (
               <Alert variant="default">
-                <Info />
+                <InformationCircleIcon />
                 <AlertDescription>
                   {t('selfRoleAssignWarning')}
                 </AlertDescription>
@@ -90,7 +90,7 @@ const AssignRoleDialog = memo(
             )}
             {availableRoles.length === 0 && (
               <Alert variant="default">
-                <Info />
+                <InformationCircleIcon />
                 <AlertDescription>{t('userHasAllRoles')}</AlertDescription>
               </Alert>
             )}

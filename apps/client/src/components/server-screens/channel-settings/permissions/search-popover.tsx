@@ -1,6 +1,7 @@
 import { UserAvatar } from '@/components/user-avatar';
 import { useRoles } from '@/features/server/roles/hooks';
 import { useUsers } from '@/features/server/users/hooks';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Input,
@@ -12,7 +13,6 @@ import {
   TabsList,
   TabsTrigger
 } from '@sharkord/ui';
-import { Plus, Search } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TChannelPermissionType } from './types';
@@ -56,7 +56,7 @@ const SearchPopover = memo(
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button size="icon" variant="ghost">
-            <Plus className="h-4 w-4" />
+            <PlusIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="end">
@@ -66,7 +66,7 @@ const SearchPopover = memo(
           >
             <div className="p-3 pb-0">
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <MagnifyingGlassIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={
                     activeTab === 'role'

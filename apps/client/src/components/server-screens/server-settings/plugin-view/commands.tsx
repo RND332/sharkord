@@ -8,9 +8,9 @@ import { usePluginCommands } from '@/features/server/plugins/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { CommandLineIcon, PlayIcon } from '@heroicons/react/24/outline';
 import { getTrpcError, type TCommandInfo } from '@sharkord/shared';
 import { Button, Group } from '@sharkord/ui';
-import { Play, Terminal } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -160,7 +160,7 @@ const PluginCommands = memo(({ pluginId }: TPluginCommandsProps) => {
   return (
     <>
       <SettingsListEditor
-        emptyIcon={Terminal}
+        emptyIcon={CommandLineIcon}
         emptyTitle={t('selectCommandToExecute')}
         list={
           <SettingsSection title={t('commandsTitle')}>
@@ -187,7 +187,7 @@ const PluginCommands = memo(({ pluginId }: TPluginCommandsProps) => {
                   onClick={handleExecute}
                   disabled={!canExecute || isExecuting}
                 >
-                  <Play className="h-4 w-4" />
+                  <PlayIcon className="h-4 w-4" />
                   {isExecuting ? t('executingBtn') : t('executeCommandBtn')}
                 </Button>
               }

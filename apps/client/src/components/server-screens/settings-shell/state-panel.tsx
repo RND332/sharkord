@@ -1,9 +1,9 @@
-import type { LucideIcon } from 'lucide-react';
+import type { TIconComponent } from '@sharkord/ui';
 import type { ReactNode } from 'react';
 import { memo } from 'react';
 
 type TStatePanelProps = {
-  icon: LucideIcon;
+  icon: TIconComponent;
   title: string;
   description?: string;
   action?: ReactNode;

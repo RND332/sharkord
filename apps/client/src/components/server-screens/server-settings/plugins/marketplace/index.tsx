@@ -1,8 +1,13 @@
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { cn } from '@/lib/utils';
+import {
+  ArrowPathIcon,
+  CubeIcon,
+  ExclamationCircleIcon,
+  MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
 import type { TPluginInfo } from '@sharkord/shared';
 import { Button, Input } from '@sharkord/ui';
-import { AlertCircle, Package, RefreshCw, Search } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListWithSeparators } from '../list-with-separators';
@@ -46,11 +51,11 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
     if (error) {
       return (
         <StatePanel
-          icon={AlertCircle}
+          icon={ExclamationCircleIcon}
           title={error}
           action={
             <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <ArrowPathIcon className="w-4 h-4 mr-2" />
               {t('marketplaceRetry')}
             </Button>
           }
@@ -61,7 +66,7 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
     return (
       <>
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={handleSearchChange}
@@ -70,7 +75,7 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
           />
         </div>
         {filtered.length === 0 ? (
-          <StatePanel icon={Package} title={t('marketplaceNoResults')} />
+          <StatePanel icon={CubeIcon} title={t('marketplaceNoResults')} />
         ) : (
           <ListWithSeparators
             items={filtered}
@@ -98,7 +103,7 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
           onClick={handleRefresh}
           disabled={isRefreshing || loading}
         >
-          <RefreshCw
+          <ArrowPathIcon
             className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
           />
           {t('refreshBtn')}

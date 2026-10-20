@@ -4,6 +4,7 @@ import {
 } from '@/components/voice-provider/helpers';
 import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { StreamKind } from '@sharkord/shared';
 import {
   DropdownMenu,
@@ -14,7 +15,6 @@ import {
   IconButton,
   type TIconButtonSize
 } from '@sharkord/ui';
-import { Gauge } from 'lucide-react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { memo, useCallback, useState } from 'react';
 
@@ -72,7 +72,7 @@ const QualityButton = memo(
         <DropdownMenuTrigger asChild>
           <IconButton
             variant={quality.mode === 'auto' ? 'ghost' : 'primary'}
-            icon={Gauge}
+            icon={AdjustmentsHorizontalIcon}
             title={
               disabled
                 ? 'Quality selection unavailable'

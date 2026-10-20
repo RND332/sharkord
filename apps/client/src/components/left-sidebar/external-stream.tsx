@@ -1,7 +1,11 @@
 import { useStreamVolumeControl } from '@/components/voice-provider/hooks/use-stream-volume-control';
+import {
+  ServerStackIcon,
+  SpeakerXMarkIcon,
+  VideoCameraIcon
+} from '@heroicons/react/24/outline';
 import type { TExternalStreamTracks } from '@sharkord/shared';
-import { Tooltip } from '@sharkord/ui';
-import { Headphones, Router, Video, VolumeX } from 'lucide-react';
+import { HeadphonesIcon, Tooltip } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StreamContextMenu } from './stream-context-menu';
@@ -51,7 +55,7 @@ const ExternalStream = memo(
               className="size-[18px] shrink-0 rounded object-cover"
             />
           ) : (
-            <Router className="size-[18px] shrink-0 text-muted-foreground opacity-60" />
+            <ServerStackIcon className="size-[18px] shrink-0 text-muted-foreground opacity-60" />
           )}
         </Tooltip>
 
@@ -61,10 +65,10 @@ const ExternalStream = memo(
 
         <div className="flex items-center gap-1 opacity-60">
           {shouldShowMuteIndicator && (
-            <VolumeX className="h-3 w-3 text-red-500" />
+            <SpeakerXMarkIcon className="h-3 w-3 text-red-500" />
           )}
-          {hasVideo && <Video className="h-3 w-3 text-blue-500" />}
-          {hasAudio && <Headphones className="h-3 w-3 text-green-500" />}
+          {hasVideo && <VideoCameraIcon className="h-3 w-3 text-blue-500" />}
+          {hasAudio && <HeadphonesIcon className="h-3 w-3 text-green-500" />}
         </div>
       </div>
     );

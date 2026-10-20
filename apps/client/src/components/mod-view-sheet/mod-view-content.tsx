@@ -1,5 +1,5 @@
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Button } from '@sharkord/ui';
-import { ArrowLeft } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModViewScreen, useModViewContext } from './context';
@@ -31,7 +31,7 @@ const Wrapper = memo(({ children }: TWrapperProps) => {
         onClick={onBackClick}
         className="h-auto p-1 text-xs text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-3 w-3 mr-1" />
+        <ArrowLeftIcon className="h-3 w-3 mr-1" />
         {t('goBack')}
       </Button>
       {children}

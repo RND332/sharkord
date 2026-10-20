@@ -1,5 +1,10 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { getTRPCClient } from '@/lib/trpc';
+import {
+  BugAntIcon,
+  ExclamationCircleIcon,
+  InformationCircleIcon
+} from '@heroicons/react/24/outline';
 import type { TLogEntry } from '@sharkord/shared';
 import {
   Select,
@@ -8,15 +13,14 @@ import {
   SelectTrigger,
   SelectValue
 } from '@sharkord/ui';
-import { AlertCircle, Bug, Info } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StatePanel } from '../../settings-shell/state-panel';
 
 const LOG_STYLES = {
-  error: { color: 'text-destructive', icon: AlertCircle },
-  debug: { color: 'text-muted-foreground', icon: Bug },
-  info: { color: 'text-accent-text', icon: Info }
+  error: { color: 'text-destructive', icon: ExclamationCircleIcon },
+  debug: { color: 'text-muted-foreground', icon: BugAntIcon },
+  info: { color: 'text-accent-text', icon: InformationCircleIcon }
 } as const;
 
 type TLogLineProps = {
@@ -115,7 +119,7 @@ const PluginLogs = memo(({ pluginId }: TPluginLogsProps) => {
 
   let content = (
     <StatePanel
-      icon={Info}
+      icon={InformationCircleIcon}
       title={t('noLogsYet')}
       description={t('logsWillAppear')}
     />
@@ -154,16 +158,16 @@ const PluginLogs = memo(({ pluginId }: TPluginLogsProps) => {
     >
       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <Info className="h-4 w-4 text-accent-text" />
+          <InformationCircleIcon className="h-4 w-4 text-accent-text" />
           {t('infoLabel')} <span className="font-semibold">{counts.info}</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <AlertCircle className="h-4 w-4 text-destructive" />
+          <ExclamationCircleIcon className="h-4 w-4 text-destructive" />
           {t('errorsLabel')}{' '}
           <span className="font-semibold">{counts.error}</span>
         </span>
         <span className="flex items-center gap-1.5">
-          <Bug className="h-4 w-4 text-muted-foreground" />
+          <BugAntIcon className="h-4 w-4 text-muted-foreground" />
           {t('debugLabel')}{' '}
           <span className="font-semibold">{counts.debug}</span>
         </span>

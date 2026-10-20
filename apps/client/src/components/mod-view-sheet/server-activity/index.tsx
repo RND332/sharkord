@@ -1,5 +1,10 @@
+import {
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  DocumentIcon,
+  LinkIcon
+} from '@heroicons/react/24/outline';
 import { Card, CardContent, CardHeader, CardTitle } from '@sharkord/ui';
-import { Activity, File, Link, MessageSquareText } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModViewScreen, useModViewContext } from '../context';
@@ -12,7 +17,7 @@ const ServerActivity = memo(() => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
+          <ChartBarIcon className="h-5 w-5" />
           {t('serverActivityTitle')}
         </CardTitle>
       </CardHeader>
@@ -22,7 +27,7 @@ const ServerActivity = memo(() => {
           onClick={() => setView(ModViewScreen.MESSAGES)}
         >
           <div className="flex items-center gap-3">
-            <MessageSquareText className="h-4 w-4 text-muted-foreground" />
+            <ChatBubbleLeftRightIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">{t('serverActivityMessages')}</span>
           </div>
           <span className="text-sm text-muted-foreground">
@@ -35,7 +40,7 @@ const ServerActivity = memo(() => {
           onClick={() => setView(ModViewScreen.LINKS)}
         >
           <div className="flex items-center gap-3">
-            <Link className="h-4 w-4 text-muted-foreground" />
+            <LinkIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">{t('serverActivityLinks')}</span>
           </div>
           <span className="text-sm text-muted-foreground">{links.length}</span>
@@ -46,7 +51,7 @@ const ServerActivity = memo(() => {
           onClick={() => setView(ModViewScreen.FILES)}
         >
           <div className="flex items-center gap-3">
-            <File className="h-4 w-4 text-muted-foreground" />
+            <DocumentIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">{t('serverActivityFiles')}</span>
           </div>
           <span className="text-sm text-muted-foreground">{files.length}</span>

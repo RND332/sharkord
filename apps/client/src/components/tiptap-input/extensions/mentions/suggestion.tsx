@@ -1,8 +1,8 @@
 import { UserAvatar } from '@/components/user-avatar';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
+import { ShieldExclamationIcon } from '@heroicons/react/24/outline';
 import type { TJoinedPublicUser, TJoinedRole } from '@sharkord/shared';
 import type { Editor } from '@tiptap/core';
-import { Shield } from 'lucide-react';
 import type { Ref } from 'react';
 import { createSuggestionRenderer } from '../create-suggestion-renderer';
 import { filterByQuery } from '../filter-by-query';
@@ -35,7 +35,7 @@ const renderItem = (item: TMentionItem) => {
   if (item.type === 'role') {
     return (
       <>
-        <Shield
+        <ShieldExclamationIcon
           className="h-6 w-6 shrink-0 p-1"
           style={{ color: item.role.color }}
         />

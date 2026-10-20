@@ -623,7 +623,8 @@ test('dock content is the 44px summary plus 32px action row', async () => {
   expect(topRow.getBoundingClientRect().height).toBe(44);
   expect(bottomRow.getBoundingClientRect().height).toBe(32);
   expect(topRow.children).toHaveLength(3);
-  expect(dock.querySelector('.lucide-activity')).toBeNull();
+  // one icon per button, so an extra activity glyph in the dock would push it over
+  expect(dock.querySelectorAll('svg')).toHaveLength(5);
   expect(dock.querySelectorAll('button')).toHaveLength(5);
 
   await document.fonts.ready;

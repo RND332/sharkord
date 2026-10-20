@@ -7,6 +7,7 @@ import { useCurrentVoicePeers } from '@/features/server/hooks';
 import { formatBigNumber } from '@/helpers/format-big-number';
 import { cn } from '@/lib/utils';
 import { NoiseSuppression } from '@/types';
+import { WrenchIcon } from '@heroicons/react/24/outline';
 import { TestId } from '@sharkord/shared';
 import {
   IconButton,
@@ -16,7 +17,6 @@ import {
   PopoverTrigger
 } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Stethoscope } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -234,7 +234,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
               className="size-6 p-[3px] [&_svg]:size-[18px]"
               variant="ghost"
               size="sm"
-              icon={Stethoscope}
+              icon={WrenchIcon}
               title={t('voiceDiagnostics')}
               aria-label={t('voiceDiagnostics')}
               onClick={handleOpenDiagnostics}

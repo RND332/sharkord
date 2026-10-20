@@ -1,8 +1,8 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { LucideIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import type { TIconComponent } from './icon';
 
 const iconButtonVariants = cva(
   'inline-flex items-center justify-center transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 outline-none shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -36,7 +36,7 @@ type TIconButtonSize = NonNullable<
 
 type IconButtonProps = React.ComponentProps<'button'> &
   VariantProps<typeof iconButtonVariants> & {
-    icon: LucideIcon;
+    icon: TIconComponent;
   };
 
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(

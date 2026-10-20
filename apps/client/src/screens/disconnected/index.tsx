@@ -3,9 +3,14 @@ import { connect, setDisconnectInfo } from '@/features/server/actions';
 import { useServerName } from '@/features/server/hooks';
 import type { TDisconnectInfo } from '@/features/server/types';
 import { getHostFromServer } from '@/helpers/get-file-url';
+import {
+  ArrowPathIcon,
+  ExclamationCircleIcon,
+  ScaleIcon,
+  SignalSlashIcon
+} from '@heroicons/react/24/outline';
 import { DisconnectCode } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import { AlertCircle, Gavel, RefreshCw, WifiOff } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,7 +30,7 @@ const Disconnected = memo(({ info }: TDisconnectedProps) => {
 
     if (code === DisconnectCode.KICKED) {
       return {
-        icon: <AlertCircle className="h-8 w-8 text-yellow-500" />,
+        icon: <ExclamationCircleIcon className="h-8 w-8 text-yellow-500" />,
         title: t('kicked'),
         message: info.reason || t('noReasonProvided'),
         canReconnect: true
@@ -34,7 +39,7 @@ const Disconnected = memo(({ info }: TDisconnectedProps) => {
 
     if (code === DisconnectCode.BANNED) {
       return {
-        icon: <Gavel className="h-8 w-8 text-red-500" />,
+        icon: <ScaleIcon className="h-8 w-8 text-red-500" />,
         title: t('banned'),
         message: info.reason || t('noReasonProvided'),
         canReconnect: false
@@ -42,7 +47,7 @@ const Disconnected = memo(({ info }: TDisconnectedProps) => {
     }
 
     return {
-      icon: <WifiOff className="h-8 w-8 text-gray-500" />,
+      icon: <SignalSlashIcon className="h-8 w-8 text-gray-500" />,
       title: t('connectionLost'),
       message: t('lostConnectionMessage'),
       canReconnect: true
@@ -103,7 +108,7 @@ const Disconnected = memo(({ info }: TDisconnectedProps) => {
               disabled={retrying}
               className="inline-flex items-center gap-2"
             >
-              <RefreshCw className="h-4 w-4" />
+              <ArrowPathIcon className="h-4 w-4" />
               {t('tryAgain')}
             </Button>
           )}

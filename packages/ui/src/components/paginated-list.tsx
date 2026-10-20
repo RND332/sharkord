@@ -1,4 +1,7 @@
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import {
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon
+} from '@heroicons/react/24/outline';
 import {
   createContext,
   memo,
@@ -311,7 +314,7 @@ const PaginatedListPagination = memo(
           disabled={currentPage === 1}
           title="First page"
         >
-          <ChevronsLeft className="h-4 w-4" />
+          <ChevronDoubleLeftIcon className="h-4 w-4" />
         </Button>
 
         {pageNumbers.map((page) => (
@@ -335,7 +338,7 @@ const PaginatedListPagination = memo(
           disabled={currentPage === totalPages}
           title="Last page"
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronDoubleRightIcon className="h-4 w-4" />
         </Button>
       </div>
     );

@@ -4,9 +4,9 @@ import { UserAvatar } from '@/components/user-avatar';
 import { useRoleById } from '@/features/server/roles/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ChannelPermission, getTrpcError } from '@sharkord/shared';
 import { CardTitle, IconButton, Tooltip } from '@sharkord/ui';
-import { Trash2, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -149,7 +149,7 @@ const Override = memo(
           <>
             <Tooltip content={t('deleteOverrideTooltip')}>
               <IconButton
-                icon={Trash2}
+                icon={TrashIcon}
                 size="sm"
                 variant="destructive"
                 onClick={onDeleteOverride}
@@ -157,7 +157,7 @@ const Override = memo(
             </Tooltip>
             <Tooltip content={t('closeEditorTooltip')}>
               <IconButton
-                icon={X}
+                icon={XMarkIcon}
                 size="sm"
                 variant="ghost"
                 onClick={onClose}

@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from './button';
 import { Calendar } from './calendar';

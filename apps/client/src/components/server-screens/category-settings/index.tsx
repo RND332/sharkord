@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
@@ -19,7 +19,7 @@ const CategorySettings = memo(
         {
           id: 'general',
           label: t('generalTab'),
-          icon: Settings,
+          icon: Cog6ToothIcon,
           content: <General categoryId={categoryId} />
         }
       ],

@@ -6,8 +6,8 @@ import {
   SortableContext,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
+import { HashtagIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { Permission } from '@sharkord/shared';
-import { Hash, Volume2 } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChannelDragPreviewContext, categoryDndId } from './helpers';
@@ -27,7 +27,7 @@ const ChannelDragOverlay = memo(({ channelId }: TChannelDragOverlayProps) => {
     return null;
   }
 
-  const Icon = channel.type === 'TEXT' ? Hash : Volume2;
+  const Icon = channel.type === 'TEXT' ? HashtagIcon : SpeakerWaveIcon;
 
   return (
     <div className={`${OVERLAY_CLASSNAME} py-1.5 text-sm`}>

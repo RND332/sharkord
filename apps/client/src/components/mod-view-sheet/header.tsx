@@ -9,13 +9,18 @@ import { useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import {
+  PlusIcon,
+  ScaleIcon,
+  TrashIcon,
+  UserMinusIcon
+} from '@heroicons/react/24/outline';
+import {
   DELETED_USER_IDENTITY_AND_NAME,
   getTrpcError,
   TestId,
   UserStatus
 } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import { Gavel, Plus, Trash, UserMinus } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -166,7 +171,7 @@ const Header = memo(() => {
           onClick={onKick}
           disabled={status === UserStatus.OFFLINE}
         >
-          <UserMinus className="h-4 w-4" />
+          <UserMinusIcon className="h-4 w-4" />
           {t('kickBtn')}
         </Button>
         <Button
@@ -176,7 +181,7 @@ const Header = memo(() => {
           onClick={() => (user.banned ? onUnban() : onBan())}
           disabled={isOwnUser || isDeletedUser}
         >
-          <Gavel className="h-4 w-4" />
+          <ScaleIcon className="h-4 w-4" />
           {user.banned ? t('unbanBtn') : t('banBtn')}
         </Button>
         <Button
@@ -191,7 +196,7 @@ const Header = memo(() => {
           }
           disabled={isOwnUser || isDeletedUser}
         >
-          <Trash className="h-4 w-4" />
+          <TrashIcon className="h-4 w-4" />
           {t('deleteBtn')}
         </Button>
       </div>
@@ -207,7 +212,7 @@ const Header = memo(() => {
           disabled={isDeletedUser}
           onClick={() => openDialog(Dialog.ASSIGN_ROLE, { user, refetch })}
         >
-          <Plus className="h-3 w-3" />
+          <PlusIcon className="h-3 w-3" />
           {t('modViewAssignRoleBtn')}
         </Button>
       </div>

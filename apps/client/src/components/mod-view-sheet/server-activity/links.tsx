@@ -1,5 +1,8 @@
+import {
+  ArrowTopRightOnSquareIcon,
+  LinkIcon
+} from '@heroicons/react/24/outline';
 import { Button, PaginatedList } from '@sharkord/ui';
-import { ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModViewContext } from '../context';
@@ -48,7 +51,7 @@ const LinkCard = memo(({ url, onOpen }: TLinkCardProps) => {
           onClick={onOpen}
           className="flex-shrink-0 ml-2"
         >
-          <ExternalLink className="h-4 w-4" />
+          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
         </Button>
       </div>
     </div>

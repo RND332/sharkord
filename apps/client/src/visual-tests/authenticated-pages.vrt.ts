@@ -1971,11 +1971,13 @@ test('paginated history suppresses welcome until the oldest page and keeps uniqu
 
 test('redesigned channel header preserves upstream mute and unmute control', async () => {
   const { toggleChannelMuted } = await import('@/features/app/actions');
+  const muteToggle = `[data-testid="${TestId.CHANNEL_MUTE_TOGGLE}"]`;
   toggleChannelMuted(1);
   await waitForRender();
-  const icon = document.querySelector<SVGElement>('.lucide-bell-off')!;
-  expect(icon).not.toBeNull();
-  const button = page.elementLocator(icon.closest('button')!);
+  const button = page.elementLocator(
+    document.querySelector<HTMLButtonElement>(muteToggle)!
+  );
+  expect(button.element()).not.toBeNull();
   try {
     await button.hover();
     await expect
@@ -1994,11 +1996,9 @@ test('redesigned channel header preserves upstream mute and unmute control', asy
     expect(getComputedStyle(tooltip).backgroundColor).toBe('rgb(30, 31, 34)');
     expect(getComputedStyle(tooltip).color).toBe('rgb(242, 243, 245)');
     await button.click();
-    await expect
-      .poll(() => document.querySelector('.lucide-bell-off'))
-      .toBeNull();
+    await expect.poll(() => document.querySelector(muteToggle)).toBeNull();
   } finally {
-    if (document.querySelector('.lucide-bell-off')) toggleChannelMuted(1);
+    if (document.querySelector(muteToggle)) toggleChannelMuted(1);
   }
 });
 

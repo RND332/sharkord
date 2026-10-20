@@ -1,7 +1,7 @@
 import { disconnectFromServer } from '@/features/server/actions';
 import { useReconnectState } from '@/features/server/hooks';
+import { ArrowPathIcon, SignalSlashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@sharkord/ui';
-import { Loader2, WifiOff } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCountdownSeconds } from './use-countdown-seconds';
@@ -27,9 +27,9 @@ const ReconnectingOverlay = memo(() => {
       <div className="flex w-full max-w-sm flex-col items-center gap-5 px-6 text-center">
         <div className="flex size-14 items-center justify-center rounded-full border border-line bg-panel">
           {isAttemptInFlight ? (
-            <Loader2 className="size-6 animate-spin text-accent-text" />
+            <ArrowPathIcon className="size-6 animate-spin text-accent-text" />
           ) : (
-            <WifiOff className="size-6 text-accent-text" />
+            <SignalSlashIcon className="size-6 text-accent-text" />
           )}
         </div>
 

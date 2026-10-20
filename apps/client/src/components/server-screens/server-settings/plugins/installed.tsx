@@ -2,10 +2,15 @@ import { requestConfirmation } from '@/features/dialogs/actions';
 import { usePluginsEnabled } from '@/features/server/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import {
+  ArrowPathIcon,
+  CubeIcon,
+  ExclamationCircleIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 import type { TPluginInfo } from '@sharkord/shared';
 import { getTrpcError, TestId } from '@sharkord/shared';
 import { Button, IconButton, LoadingCard, Switch, Tooltip } from '@sharkord/ui';
-import { AlertCircle, Package, RefreshCw, Trash2 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -66,10 +71,10 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
             src={plugin.logo}
             alt={`${plugin.name} logo`}
             className="size-full object-cover"
-            iconFallback={<Package className="size-6 text-muted-foreground" />}
+            iconFallback={<CubeIcon className="size-6 text-muted-foreground" />}
           />
         ) : (
-          <Package className="size-6 text-muted-foreground" />
+          <CubeIcon className="size-6 text-muted-foreground" />
         )}
       </div>
 
@@ -111,7 +116,7 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
         />
         <Tooltip content={t('removeBtn')}>
           <IconButton
-            icon={Trash2}
+            icon={TrashIcon}
             variant="ghost"
             size="sm"
             onClick={handleRemove}
@@ -185,7 +190,7 @@ const InstalledPlugins = memo(
 
     let content = (
       <StatePanel
-        icon={AlertCircle}
+        icon={ExclamationCircleIcon}
         title={t('pluginsDisabledTitle')}
         description={t('pluginsDisabledDesc')}
       />
@@ -194,7 +199,7 @@ const InstalledPlugins = memo(
     if (enabled && plugins.length === 0) {
       content = (
         <StatePanel
-          icon={Package}
+          icon={CubeIcon}
           title={t('noPluginsTitle')}
           description={t('noPluginsDesc')}
         />
@@ -224,7 +229,7 @@ const InstalledPlugins = memo(
             onClick={handleRefresh}
             disabled={isRefreshing || loading || !enabled}
           >
-            <RefreshCw
+            <ArrowPathIcon
               className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
             />
             {t('refreshBtn')}

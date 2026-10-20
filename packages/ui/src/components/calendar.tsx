@@ -2,7 +2,7 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon
-} from 'lucide-react';
+} from '@heroicons/react/24/outline';
 import * as React from 'react';
 import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
 

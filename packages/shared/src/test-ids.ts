@@ -37,5 +37,8 @@ export enum TestId {
   SETTINGS_SIDEBAR_ENTRY = 'settings-sidebar-entry',
   INSTALLED_PLUGIN_ITEM = 'installed-plugin-item',
   CATEGORY_ADD_CHANNEL = 'category-add-channel',
-  CATEGORY_MENU_DELETE = 'category-menu-delete'
+  CATEGORY_MENU_DELETE = 'category-menu-delete',
+
+  CHANNEL_MUTE_TOGGLE = 'channel-mute-toggle',
+  FULLSCREEN_IMAGE_CLOSE = 'fullscreen-image-close'
 }

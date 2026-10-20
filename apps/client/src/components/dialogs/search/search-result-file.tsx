@@ -1,8 +1,8 @@
 import { RelativeTime } from '@/components/relative-time';
 import { getFileUrl } from '@/helpers/get-file-url';
 import type { TMessageJumpToTarget } from '@/types';
+import { DocumentTextIcon, HashtagIcon } from '@heroicons/react/24/outline';
 import { Button } from '@sharkord/ui';
-import { FileText, Hash } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import type { TSearchResultFile } from './types';
 
@@ -24,7 +24,7 @@ const SearchResultFileCard = memo(
     return (
       <div className="overflow-hidden rounded-lg border border-border bg-card px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground" />
+          <DocumentTextIcon className="h-4 w-4 text-muted-foreground" />
           <a
             href={getFileUrl(result.file)}
             target="_blank"
@@ -40,7 +40,7 @@ const SearchResultFileCard = memo(
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           <span className="inline-flex min-w-0 max-w-full items-center gap-1">
-            <Hash className="h-3 w-3" />
+            <HashtagIcon className="h-3 w-3" />
             <span className="truncate wrap-anywhere">{result.channelName}</span>
           </span>
           <RelativeTime date={new Date(result.messageCreatedAt)}>

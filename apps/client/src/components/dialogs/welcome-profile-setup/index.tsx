@@ -6,6 +6,7 @@ import { uploadImage } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
 import { useForm } from '@/hooks/use-form';
 import { getTRPCClient } from '@/lib/trpc';
+import { ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { AvatarImage } from '@radix-ui/react-avatar';
 import { DEFAULT_PROFILE_COLOR, getTrpcError } from '@sharkord/shared';
 import {
@@ -22,7 +23,6 @@ import {
   Input,
   Textarea
 } from '@sharkord/ui';
-import { Upload, X } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -164,13 +164,13 @@ const WelcomeProfileSetupDialog = memo(
 
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="bg-black/50 rounded-full p-2">
-                    <Upload className="h-5 w-5 text-white" />
+                    <ArrowUpTrayIcon className="h-5 w-5 text-white" />
                   </div>
                 </div>
 
                 {ownPublicUser.banner && (
                   <IconButton
-                    icon={X}
+                    icon={XMarkIcon}
                     size="sm"
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
@@ -199,13 +199,13 @@ const WelcomeProfileSetupDialog = memo(
 
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                     <div className="bg-black/50 rounded-full p-2">
-                      <Upload className="h-5 w-5 text-white" />
+                      <ArrowUpTrayIcon className="h-5 w-5 text-white" />
                     </div>
                   </div>
 
                   {ownPublicUser.avatar && (
                     <IconButton
-                      icon={X}
+                      icon={XMarkIcon}
                       size="sm"
                       className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {

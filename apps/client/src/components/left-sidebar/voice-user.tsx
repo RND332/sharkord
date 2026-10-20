@@ -4,9 +4,9 @@ import { useCan } from '@/features/server/hooks';
 import type { TVoiceUser } from '@/features/server/types';
 import { useIsOwnUser } from '@/features/server/users/hooks';
 import { useSpeakingState } from '@/features/server/voice/hooks';
+import { SpeakerXMarkIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { Permission, PluginSlot } from '@sharkord/shared';
-import { cn } from '@sharkord/ui';
-import { HeadphoneOff, MicOff, Video, VolumeX } from 'lucide-react';
+import { cn, HeadphonesOffIcon, MicOffIcon } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
@@ -29,9 +29,7 @@ const VoiceUser = memo(
       type: 'user',
       userId: user.id
     });
-    const { isActivelySpeaking, speakingEffectClass } = useSpeakingState(
-      user.id
-    );
+    const { isActivelySpeaking } = useSpeakingState(user.id);
     const can = useCan();
     const shouldShowMuteIndicator = isOwnChannel && !isOwnUser && isMuted;
     const canMove = !isOwnUser && can(Permission.MOVE_MEMBERS);
@@ -62,7 +60,7 @@ const VoiceUser = memo(
           userId={user.id}
           className={cn(
             'size-[18px] shrink-0',
-            isActivelySpeaking && speakingEffectClass
+            isActivelySpeaking && 'border-2 border-success'
           )}
           showUserPopover={true}
           showStatusBadge={false}
@@ -79,16 +77,18 @@ const VoiceUser = memo(
 
         <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
           {shouldShowMuteIndicator && (
-            <VolumeX className="h-3 w-3 text-red-500" />
+            <SpeakerXMarkIcon className="h-3 w-3 text-red-500" />
           )}
 
-          {user.state.micMuted && <MicOff className="h-3 w-3 text-red-500" />}
+          {user.state.micMuted && (
+            <MicOffIcon className="h-3 w-3 text-red-500" />
+          )}
 
           {user.state.soundMuted && (
-            <HeadphoneOff className="h-3 w-3 text-red-500" />
+            <HeadphonesOffIcon className="h-3 w-3 text-red-500" />
           )}
 
-          {user.state.webcamEnabled && <Video className="h-3 w-3" />}
+          {user.state.webcamEnabled && <VideoCameraIcon className="h-3 w-3" />}
 
           {user.state.sharingScreen && (
             <span className="rounded bg-danger-solid px-1.5 py-0.5 text-[10px] font-semibold leading-[14px] text-white">

@@ -3,10 +3,10 @@ import { useSettingsForm } from '@/components/server-screens/settings-shell/use-
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { getTRPCClient } from '@/lib/trpc';
+import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { TJoinedEmoji } from '@sharkord/shared';
 import { Group, IconButton, Input, Tooltip } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Trash2, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -83,7 +83,7 @@ const UpdateEmoji = memo(
           <>
             <Tooltip content={t('deleteEmojiBtn')}>
               <IconButton
-                icon={Trash2}
+                icon={TrashIcon}
                 size="sm"
                 variant="destructive"
                 onClick={onDeleteEmoji}
@@ -91,7 +91,7 @@ const UpdateEmoji = memo(
             </Tooltip>
             <Tooltip content={t('closeEditorTooltip')}>
               <IconButton
-                icon={X}
+                icon={XMarkIcon}
                 size="sm"
                 variant="ghost"
                 onClick={onClose}

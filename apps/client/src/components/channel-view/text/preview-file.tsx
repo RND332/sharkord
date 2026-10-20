@@ -1,26 +1,26 @@
 import { FullScreenImage } from '@/components/fullscreen-image/content';
 import type { TDisplayItem } from '@/hooks/use-upload-files';
 import { cn } from '@/lib/utils';
+import {
+  DocumentIcon,
+  DocumentTextIcon,
+  FilmIcon,
+  MusicalNoteIcon,
+  PhotoIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 import { FileCategory, getFileCategory } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import {
-  File,
-  FileImage,
-  FileMusic,
-  FileText,
-  FileVideo,
-  Trash
-} from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { VideoPlayer } from './overrides/video-player';
 
 const categoryIconMap: Record<FileCategory, React.ElementType> = {
-  [FileCategory.AUDIO]: FileMusic,
-  [FileCategory.IMAGE]: FileImage,
-  [FileCategory.VIDEO]: FileVideo,
-  [FileCategory.DOCUMENT]: FileText,
-  [FileCategory.OTHER]: File
+  [FileCategory.AUDIO]: MusicalNoteIcon,
+  [FileCategory.IMAGE]: PhotoIcon,
+  [FileCategory.VIDEO]: FilmIcon,
+  [FileCategory.DOCUMENT]: DocumentTextIcon,
+  [FileCategory.OTHER]: DocumentIcon
 };
 
 type TUploadProgressBarProps = {
@@ -67,7 +67,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
   }, []);
 
   const hasPreview = !!previewUrl && !previewError && (isImage || isVideo);
-  const Icon = categoryIconMap[category] || File;
+  const Icon = categoryIconMap[category] || DocumentIcon;
 
   return (
     <div className="group relative flex w-48 flex-col overflow-hidden rounded-lg border border-border bg-background transition-all duration-200 hover:border-primary/50 hover:shadow-md">
@@ -134,7 +134,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
           className="absolute top-1 right-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
           onClick={onRemoveClick}
         >
-          <Trash className="h-3 w-3" />
+          <TrashIcon className="h-3 w-3" />
         </Button>
       )}
 

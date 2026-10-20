@@ -1,7 +1,7 @@
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { cn } from '@/lib/utils';
+import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { Button, buttonVariants, Group } from '@sharkord/ui';
-import { Upload } from 'lucide-react';
 import { memo, useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -78,7 +78,7 @@ const ImagePicker = memo(
           {preview}
           <div className="absolute inset-0 flex items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100">
             <div className="rounded-full bg-black/50 p-3">
-              <Upload className="h-6 w-6 text-white" />
+              <ArrowUpTrayIcon className="h-6 w-6 text-white" />
             </div>
           </div>
         </div>

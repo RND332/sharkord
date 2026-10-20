@@ -3,16 +3,16 @@ import { toggleChannelMuted } from '@/features/app/actions';
 import { useIsChannelMuted } from '@/features/app/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
 import { useUserById } from '@/features/server/users/hooks';
-import { ChannelType, PluginSlot, UserStatus } from '@sharkord/shared';
-import { IconButton, Tooltip } from '@sharkord/ui';
 import {
-  BellOff,
-  Hash,
-  MessageCircleMore,
-  Users,
-  Volume2,
-  X
-} from 'lucide-react';
+  BellSlashIcon,
+  ChatBubbleLeftEllipsisIcon,
+  HashtagIcon,
+  SpeakerWaveIcon,
+  UsersIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { ChannelType, PluginSlot, TestId, UserStatus } from '@sharkord/shared';
+import { IconButton, Tooltip } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
@@ -73,17 +73,19 @@ const TextTopbar = memo(
     const getIcon = useCallback(() => {
       if (channel?.isDm) {
         return (
-          <MessageCircleMore className="inline-block text-muted-foreground h-4 w-4" />
+          <ChatBubbleLeftEllipsisIcon className="inline-block text-muted-foreground h-4 w-4" />
         );
       }
 
       if (channel?.type === ChannelType.TEXT) {
-        return <Hash className="inline-block text-muted-foreground h-4 w-4" />;
+        return (
+          <HashtagIcon className="inline-block text-muted-foreground h-4 w-4" />
+        );
       }
 
       if (channel?.type === ChannelType.VOICE) {
         return (
-          <Volume2 className="inline-block text-muted-foreground h-4 w-4" />
+          <SpeakerWaveIcon className="inline-block text-muted-foreground h-4 w-4" />
         );
       }
 
@@ -119,10 +121,11 @@ const TextTopbar = memo(
             {isMuted && (
               <Tooltip content={t('common:channelMutedTooltip')}>
                 <IconButton
-                  icon={BellOff}
+                  icon={BellSlashIcon}
                   size="sm"
                   variant="ghost"
                   onClick={onUnmuteClick}
+                  data-testid={TestId.CHANNEL_MUTE_TOGGLE}
                 />
               </Tooltip>
             )}
@@ -131,7 +134,7 @@ const TextTopbar = memo(
             {onToggleRightSidebar && (
               <IconButton
                 onClick={onToggleRightSidebar}
-                icon={Users}
+                icon={UsersIcon}
                 variant="ghost"
                 size="sm"
                 aria-label={
@@ -144,7 +147,7 @@ const TextTopbar = memo(
             {onClose && (
               <IconButton
                 onClick={onClose}
-                icon={X}
+                icon={XMarkIcon}
                 variant="ghost"
                 size="sm"
               />

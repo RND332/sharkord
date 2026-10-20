@@ -5,10 +5,14 @@ import { useChannelCan } from '@/features/server/hooks';
 import { useOwnPublicUser } from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
-import { MicrophoneIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, MicrophoneIcon } from '@heroicons/react/24/outline';
 import { ChannelPermission, TestId } from '@sharkord/shared';
-import { Button } from '@sharkord/ui';
-import { HeadphoneOff, Headphones, MicOff, Settings } from 'lucide-react';
+import {
+  Button,
+  HeadphonesIcon,
+  HeadphonesOffIcon,
+  MicOffIcon
+} from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ServerScreen } from '../server-screens/screens';
@@ -67,7 +71,7 @@ const UserControl = memo(() => {
             aria-disabled={microphoneDisabled || undefined}
           >
             {ownVoiceState.micMuted ? (
-              <MicOff className="size-5" />
+              <MicOffIcon className="size-5" />
             ) : (
               <MicrophoneIcon className="size-5" />
             )}
@@ -87,9 +91,9 @@ const UserControl = memo(() => {
             title={ownVoiceState.soundMuted ? t('undeafen') : t('deafen')}
           >
             {ownVoiceState.soundMuted ? (
-              <HeadphoneOff className="size-5" />
+              <HeadphonesOffIcon className="size-5" />
             ) : (
-              <Headphones className="size-5" />
+              <HeadphonesIcon className="size-5" />
             )}
           </Button>
         </AudioSettingsMenu>
@@ -102,7 +106,7 @@ const UserControl = memo(() => {
           title={t('userSettings')}
           aria-label={t('userSettings')}
         >
-          <Settings className="size-5" />
+          <Cog6ToothIcon className="size-5" />
         </Button>
       </div>
     </div>

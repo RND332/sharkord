@@ -1,8 +1,8 @@
 import { getFileUrl } from '@/helpers/get-file-url';
+import { MagnifyingGlassIcon, PencilIcon } from '@heroicons/react/24/outline';
 import type { TJoinedEmoji } from '@sharkord/shared';
 import { Input } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Pencil, Search } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -52,7 +52,7 @@ const EmojiRow = memo(({ emoji, isSelected, onSelect }: TEmojiRowProps) => {
           aria-label={`Edit ${emoji.name}`}
           className="flex size-8 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-panel hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          <Pencil className="size-4" strokeWidth={1.5} />
+          <PencilIcon className="size-4" strokeWidth={1.5} />
         </button>
       </div>
     </div>
@@ -88,7 +88,7 @@ const EmojiList = memo(
     return (
       <div className="flex w-full flex-col gap-4">
         <div className="relative max-w-[280px]">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t('searchEmojisPlaceholder')}
             value={search}

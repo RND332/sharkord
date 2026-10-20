@@ -7,6 +7,11 @@ import { useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { cn } from '@/lib/utils';
+import {
+  EllipsisVerticalIcon,
+  TrashIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline';
 import { UserStatus } from '@sharkord/shared';
 import {
   Button,
@@ -17,7 +22,6 @@ import {
   DropdownMenuTrigger
 } from '@sharkord/ui';
 import { format, formatDistanceToNow } from 'date-fns';
-import { MoreVertical, Trash2, UserCog } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -117,12 +121,12 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
               >
-                <MoreVertical className="h-4 w-4" />
+                <EllipsisVerticalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onModerateClick}>
-                <UserCog className="h-4 w-4" />
+                <UserCircleIcon className="h-4 w-4" />
                 {t('moderateUserAction')}
               </DropdownMenuItem>
               {ownUserId !== user.id && (
@@ -132,7 +136,7 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
                     onClick={onDeleteClick}
                     className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <TrashIcon className="h-4 w-4" />
                     {t('deleteUserAction', { defaultValue: t('deleteBtn') })}
                   </DropdownMenuItem>
                 </>

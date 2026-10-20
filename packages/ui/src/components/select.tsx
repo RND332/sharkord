@@ -1,5 +1,9 @@
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
+} from '@heroicons/react/24/outline';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
