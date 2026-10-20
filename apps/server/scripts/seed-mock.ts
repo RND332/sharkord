@@ -238,7 +238,7 @@ const chatLine = () => {
 
 const seedSettings = async (db: BunSQLiteDatabase) => {
   const initialSettings: TISettings = {
-    name: 'Sharkord Dev',
+    name: 'Dodecagon Dev',
     description: 'Local development server, full of imaginary people.',
     password: '',
     onlyAskForPasswordOnFirstJoin: false,

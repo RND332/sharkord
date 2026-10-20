@@ -21,7 +21,7 @@ type TGlobalErrorFallbackProps = {
   reset: () => void;
 };
 
-const GITHUB_ISSUES_URL = 'https://github.com/Sharkord/sharkord/issues';
+const GITHUB_ISSUES_URL = 'https://github.com/RND332/sharkord/issues';
 
 const copyErrorDetails = (
   error: Error,
