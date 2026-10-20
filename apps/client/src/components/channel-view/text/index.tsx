@@ -14,6 +14,7 @@ import { playSound } from '@/helpers/sounds';
 import { useTypingSignal } from '@/hooks/use-typing-signal';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
+import { ArrowDownIcon, HashtagIcon } from '@heroicons/react/24/outline';
 import {
   ChannelPermission,
   getTrpcError,
@@ -23,7 +24,6 @@ import {
 } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
 import { format, isSameDay, isToday } from 'date-fns';
-import { ArrowDown, Hash } from 'lucide-react';
 import { Fragment, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -223,7 +223,7 @@ const TextChannel = memo((props: TChannelProps) => {
               className="flex flex-col gap-[7px] pb-[22px]"
             >
               <div className="flex size-12 items-center justify-center rounded-2xl bg-[#3d414b]">
-                <Hash className="size-6" />
+                <HashtagIcon className="size-6" />
               </div>
               <h2 className="text-[27px] leading-[33px] font-bold tracking-[-0.02em]">
                 {t('welcomeToChannel', { name: channel.name })}
@@ -290,7 +290,7 @@ const TextChannel = memo((props: TChannelProps) => {
           data-testid={TestId.RETURN_TO_PRESENT}
           className="mx-2 mb-1 flex items-center justify-center gap-2 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/80 cursor-pointer"
         >
-          <ArrowDown className="size-3.5" />
+          <ArrowDownIcon className="size-3.5" />
           {t('viewingOlderMessages')}
         </button>
       )}

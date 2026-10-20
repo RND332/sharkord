@@ -6,7 +6,7 @@ import {
 import type { TEmojiItem } from '@/components/tiptap-input/helpers';
 import { QUICK_VOICE_REACTION_EMOJIS } from '@/features/server/voice/statics';
 import { getTRPCClient } from '@/lib/trpc';
-import { FaceSmileIcon } from '@heroicons/react/24/outline';
+import { FaceSmileIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { getTrpcError } from '@sharkord/shared';
 import {
   Button,
@@ -15,7 +15,6 @@ import {
   PopoverTrigger,
   Tooltip
 } from '@sharkord/ui';
-import { Plus } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -122,7 +121,7 @@ const ReactionsButton = memo(() => {
                 onClick={handleExpand}
                 aria-label={t('moreVoiceReactions')}
               >
-                <Plus className="size-4" />
+                <PlusIcon className="size-4" />
               </button>
             </Tooltip>
           </div>

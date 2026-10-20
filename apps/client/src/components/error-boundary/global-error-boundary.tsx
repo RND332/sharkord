@@ -1,14 +1,15 @@
 import { ErrorBoundary as BaseErrorBoundary } from '@/components/error-boundary';
 import { captureError } from '@/helpers/sentry';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
+  GithubIcon
 } from '@sharkord/ui';
-import { Github, RefreshCw } from 'lucide-react';
 import { memo, type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -75,7 +76,7 @@ const GlobalErrorFallback = memo(
                   window.location.reload();
                 }}
               >
-                <RefreshCw className="h-4 w-4" />
+                <ArrowPathIcon className="h-4 w-4" />
                 {t('reloadApp')}
               </Button>
 
@@ -85,7 +86,7 @@ const GlobalErrorFallback = memo(
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Github className="h-4 w-4" />
+                  <GithubIcon className="h-4 w-4" />
                   {t('reportIssueOnGithub')}
                 </a>
               </Button>

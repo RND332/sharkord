@@ -1,5 +1,9 @@
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
 import { Button, Input } from '@sharkord/ui';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 
 type TPaginatedTableProps<T> = {
@@ -20,7 +24,7 @@ const PaginatedTableComponent = <T,>({
   headerColumns,
   gridCols,
   itemsPerPage = 10,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = 'MagnifyingGlassIcon...',
   emptyMessage = 'No items found.'
 }: TPaginatedTableProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +83,7 @@ const PaginatedTableComponent = <T,>({
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder={searchPlaceholder}
           value={searchTerm}
@@ -133,7 +137,7 @@ const PaginatedTableComponent = <T,>({
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeftIcon className="h-4 w-4" />
             </Button>
 
             {getPageNumbers().map((pageNum) => (
@@ -154,7 +158,7 @@ const PaginatedTableComponent = <T,>({
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
         )}

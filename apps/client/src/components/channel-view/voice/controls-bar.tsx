@@ -14,8 +14,13 @@ import {
   VideoCameraSlashIcon
 } from '@heroicons/react/24/outline';
 import { ChannelPermission, Permission } from '@sharkord/shared';
-import { Button, Tooltip } from '@sharkord/ui';
-import { HeadphoneOff, Headphones, MicOff } from 'lucide-react';
+import {
+  Button,
+  HeadphonesIcon,
+  HeadphonesOffIcon,
+  MicOffIcon,
+  Tooltip
+} from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { ControlToggleButton } from './control-toggle-button';
 import { ReactionsButton } from './reactions-button';
@@ -76,7 +81,7 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
             enabled={ownVoiceState.micMuted}
             enabledLabel="Unmute"
             disabledLabel="Mute"
-            enabledIcon={MicOff}
+            enabledIcon={MicOffIcon}
             disabledIcon={MicrophoneIcon}
             enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
             onClick={toggleMic}
@@ -89,8 +94,8 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
             enabled={ownVoiceState.soundMuted}
             enabledLabel="Undeafen"
             disabledLabel="Deafen"
-            enabledIcon={HeadphoneOff}
-            disabledIcon={Headphones}
+            enabledIcon={HeadphonesOffIcon}
+            disabledIcon={HeadphonesIcon}
             enabledClassName="bg-destructive/20 text-destructive hover:bg-destructive/30 hover:text-destructive"
             onClick={toggleSound}
           />

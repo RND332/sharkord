@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TCommandResponse } from './types';
@@ -24,9 +24,9 @@ const Response = memo(({ response }: TResponseProps) => {
       >
         <div className="flex items-start gap-2">
           {response.success ? (
-            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+            <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
           ) : (
-            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <XCircleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
           )}
           <div className="flex-1 min-w-0">
             {response.success ? (

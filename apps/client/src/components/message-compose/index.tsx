@@ -17,6 +17,13 @@ import { useUploadFiles } from '@/hooks/use-upload-files';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import type { TReplyTarget } from '@/types';
+import {
+  ArrowUturnLeftIcon,
+  FaceSmileIcon,
+  PaperAirplaneIcon,
+  PlusIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import type { TJoinedPublicUser, TTempFile } from '@sharkord/shared';
 import {
   ChannelPermission,
@@ -27,7 +34,6 @@ import {
 } from '@sharkord/shared';
 import { Button, Spinner } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Plus, Reply, Send, Smile, X } from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -265,13 +271,13 @@ const MessageCompose = memo(
             disabled={uploading || !canUploadFiles}
             onClick={openFileDialog}
           >
-            <Plus className="size-5" />
+            <PlusIcon className="size-5" />
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
             {replyTarget && (
               <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/40 mx-2 mt-3 px-2 py-1 text-xs">
                 <div className="min-w-0 flex items-center gap-1.5 text-muted-foreground">
-                  <Reply className="h-3.5 w-3.5 shrink-0" />
+                  <ArrowUturnLeftIcon className="h-3.5 w-3.5 shrink-0" />
                   <span>{t('replyingTo', { username: replyAuthorName })}</span>
                 </div>
                 <Button
@@ -281,7 +287,7 @@ const MessageCompose = memo(
                   onClick={onCancelReply}
                   title={t('cancelReply')}
                 >
-                  <X className="size-3.5" />
+                  <XMarkIcon className="size-3.5" />
                 </Button>
               </div>
             )}
@@ -340,7 +346,7 @@ const MessageCompose = memo(
                 aria-label={t('addEmoji')}
                 disabled={uploading || !canSendMessages}
               >
-                <Smile className="size-5" />
+                <FaceSmileIcon className="size-5" />
               </Button>
             </EmojiPicker>
             {(!isEmptyMessage(message) || displayItems.length > 0) && (
@@ -352,7 +358,7 @@ const MessageCompose = memo(
                 onClick={handleSend}
                 disabled={uploading || sending || !canSendMessages}
               >
-                <Send className="h-4 w-4" />
+                <PaperAirplaneIcon className="h-4 w-4" />
               </Button>
             )}
           </div>

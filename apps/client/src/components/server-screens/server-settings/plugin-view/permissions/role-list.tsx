@@ -1,7 +1,7 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { cn } from '@/lib/utils';
+import { GlobeAltIcon } from '@heroicons/react/24/outline';
 import type { TJoinedRole } from '@sharkord/shared';
-import { Globe } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EVERYONE_KEY } from './types';
@@ -47,7 +47,7 @@ const Entry = memo(
             style={{ backgroundColor: color }}
           />
         ) : (
-          <Globe className="h-4 w-4 shrink-0" />
+          <GlobeAltIcon className="h-4 w-4 shrink-0" />
         )}
         <span className="min-w-0">
           <span className="block truncate">{label}</span>

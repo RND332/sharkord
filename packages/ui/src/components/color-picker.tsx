@@ -1,4 +1,4 @@
-import { PencilIcon } from 'lucide-react';
+import { PencilIcon } from '@heroicons/react/24/outline';
 import { HexColorPicker } from 'react-colorful';
 import { cn } from '../lib/utils';
 import { Button } from './button';

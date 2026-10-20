@@ -15,7 +15,7 @@ import {
 import { getFileUrl } from '@/helpers/get-file-url';
 import { cn } from '@/lib/utils';
 import { PluginSlot, StreamKind } from '@sharkord/shared';
-import { HeadphoneOff, MicOff } from 'lucide-react';
+import { HeadphonesOffIcon, MicOffIcon } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -71,8 +71,7 @@ const VoiceUserCard = memo(
     const showUserBanners = useShowUserBannersInVoice();
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
     const { isSimulcastConsumer } = useVoice();
-    const { isActivelySpeaking, speakingEffectClass } =
-      useSpeakingState(userId);
+    const { isActivelySpeaking } = useSpeakingState(userId);
     const { isWebcamHidden, toggleWebcamHidden } = useRemoteWebcamVisibility();
     const webcamHidden = isWebcamHidden(userId);
     const { isViewingDemo, stopViewingDemo } = useDemoVisibility();
@@ -148,8 +147,8 @@ const VoiceUserCard = memo(
             'relative overflow-hidden rounded-[12px] bg-panel group/voice-user-card',
             'flex items-center justify-center',
             'size-full',
-            'border border-line',
-            isActivelySpeaking && speakingEffectClass,
+            'border',
+            isActivelySpeaking ? 'border-success' : 'border-line',
             className
           )}
         >
@@ -190,6 +189,7 @@ const VoiceUserCard = memo(
               userId={userId}
               className={cn(
                 'pointer-events-none [&_[data-slot=avatar-fallback]]:font-semibold',
+                isActivelySpeaking && 'border-2 border-success',
                 avatarClass
               )}
               showStatusBadge={false}
@@ -248,13 +248,13 @@ const VoiceUserCard = memo(
           >
             <div className={cardBadgeClass(isCompact)}>
               {voiceUser.state.micMuted && !voiceUser.state.soundMuted && (
-                <MicOff
+                <MicOffIcon
                   className="text-red-400/80 shrink-0 size-3"
                   fill="currentColor"
                 />
               )}
               {voiceUser.state.soundMuted && (
-                <HeadphoneOff
+                <HeadphonesOffIcon
                   className="text-red-400/80 size-3"
                   fill="currentColor"
                 />

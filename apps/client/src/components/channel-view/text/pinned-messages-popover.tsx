@@ -2,6 +2,7 @@ import { RelativeTime } from '@/components/relative-time';
 import { useSelectedChannelId } from '@/features/server/channels/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { ArrowRightIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 import { getTrpcError, type TJoinedMessage } from '@sharkord/shared';
 import {
   IconButton,
@@ -12,7 +13,6 @@ import {
   Tooltip
 } from '@sharkord/ui';
 import { format } from 'date-fns';
-import { ArrowRight, Pin } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -35,7 +35,7 @@ const ScrollToMessageButton = memo(
       [onScrollToMessage, messageId]
     );
 
-    return <IconButton icon={ArrowRight} size="xs" onClick={handleClick} />;
+    return <IconButton icon={ArrowRightIcon} size="xs" onClick={handleClick} />;
   }
 );
 
@@ -50,7 +50,7 @@ const PinnedMessageGroupWrapper = memo(
       <div className="rounded-lg border border-border/70 bg-card/60 p-2">
         <div className="mb-2 flex items-center justify-between rounded-md border border-border/50 bg-secondary/35 px-3 py-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Pin className="h-3.5 w-3.5 text-accent-text" />
+            <BookmarkIcon className="h-3.5 w-3.5 text-accent-text" />
             <span>
               {t('pinnedBy', { name: user ? user.name : t('unknownUser') })}
             </span>
@@ -155,7 +155,7 @@ const PinnedMessagesPopover = memo(
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <IconButton
-            icon={Pin}
+            icon={BookmarkIcon}
             size="sm"
             variant="ghost"
             onClick={togglePinnedMessages}

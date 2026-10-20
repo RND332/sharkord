@@ -1,6 +1,12 @@
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
+  CheckIcon,
+  HashtagIcon,
+  PlusIcon,
+  SpeakerWaveIcon
+} from '@heroicons/react/24/outline';
+import {
   ChannelType,
   parseTrpcErrors,
   type TTrpcErrors
@@ -16,7 +22,6 @@ import {
   DialogTitle,
   Input
 } from '@sharkord/ui';
-import { Check, Hash, Plus, Volume2 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';
@@ -48,7 +53,7 @@ const ChannelTypeItem = ({
   >
     {icon}
     <span>{title}</span>
-    {isActive && <Check className="size-4" />}
+    {isActive && <CheckIcon className="size-4" />}
   </button>
 );
 
@@ -113,14 +118,14 @@ const CreateChannelDialog = memo(
               </span>
               <ChannelTypeItem
                 title={t('textChannelTitle')}
-                icon={<Hash className="size-4" />}
+                icon={<HashtagIcon className="size-4" />}
                 isActive={channelType === ChannelType.TEXT}
                 onClick={() => setChannelType(ChannelType.TEXT)}
               />
 
               <ChannelTypeItem
                 title={t('voiceChannelTitle')}
-                icon={<Volume2 className="size-4" />}
+                icon={<SpeakerWaveIcon className="size-4" />}
                 isActive={channelType === ChannelType.VOICE}
                 onClick={() => setChannelType(ChannelType.VOICE)}
               />
@@ -154,7 +159,7 @@ const CreateChannelDialog = memo(
               onClick={onSubmit}
               disabled={loading || !name || !channelType}
             >
-              <Plus className="size-5" />
+              <PlusIcon className="size-5" />
               {t('createChannelBtn')}
             </Button>
           </DialogFooter>

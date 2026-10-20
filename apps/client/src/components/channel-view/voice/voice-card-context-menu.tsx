@@ -3,6 +3,18 @@ import {
   type TVolumeKey
 } from '@/components/voice-provider/volume-control-context';
 import {
+  ArrowsPointingInIcon,
+  ArrowsPointingOutIcon,
+  BookmarkIcon,
+  BookmarkSlashIcon,
+  EyeSlashIcon,
+  MagnifyingGlassMinusIcon,
+  MagnifyingGlassPlusIcon,
+  Square2StackIcon,
+  VideoCameraIcon,
+  VideoCameraSlashIcon
+} from '@heroicons/react/24/outline';
+import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
@@ -10,18 +22,6 @@ import {
   ContextMenuTrigger,
   Slider
 } from '@sharkord/ui';
-import {
-  Maximize,
-  Minimize,
-  MonitorOff,
-  PictureInPicture2,
-  Pin,
-  PinOff,
-  Video,
-  VideoOff,
-  ZoomIn,
-  ZoomOut
-} from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -125,25 +125,29 @@ const VoiceCardContextMenu = memo(
         <ContextMenuContent className="w-66 rounded-[10px] border-line bg-panel p-1.5 text-foreground [&_[data-slot=context-menu-item]]:min-h-9 [&_[data-slot=context-menu-item]]:p-2">
           {demo?.isViewing && (
             <ContextMenuItem onSelect={demo.onToggle}>
-              <MonitorOff />
+              <EyeSlashIcon />
               {t('stopWatching')}
             </ContextMenuItem>
           )}
           {pin && (
             <ContextMenuItem onSelect={pin.onToggle}>
-              {pin.isPinned ? <PinOff /> : <Pin />}
+              {pin.isPinned ? <BookmarkSlashIcon /> : <BookmarkIcon />}
               {pin.isPinned ? t('unpinStream') : t('pinStream')}
             </ContextMenuItem>
           )}
           {zoom && (
             <ContextMenuItem onSelect={zoom.onToggle}>
-              {zoom.isEnabled ? <ZoomOut /> : <ZoomIn />}
+              {zoom.isEnabled ? (
+                <MagnifyingGlassMinusIcon />
+              ) : (
+                <MagnifyingGlassPlusIcon />
+              )}
               {zoom.isEnabled ? t('disableZoom') : t('enableZoom')}
             </ContextMenuItem>
           )}
           {webcam && (
             <ContextMenuItem onSelect={webcam.onToggle}>
-              {webcam.isHidden ? <Video /> : <VideoOff />}
+              {webcam.isHidden ? <VideoCameraIcon /> : <VideoCameraSlashIcon />}
               {webcam.isHidden ? t('showWebcam') : t('hideWebcam')}
             </ContextMenuItem>
           )}
@@ -174,7 +178,7 @@ const VoiceCardContextMenu = memo(
           )}
           {showPip && (
             <ContextMenuItem onSelect={togglePictureInPicture}>
-              <PictureInPicture2 />
+              <Square2StackIcon />
               {isActive ? t('exitPictureInPicture') : t('pictureInPicture')}
             </ContextMenuItem>
           )}
@@ -182,7 +186,11 @@ const VoiceCardContextMenu = memo(
             <>
               <ContextMenuSeparator />
               <ContextMenuItem onSelect={fullscreen.onToggle}>
-                {fullscreen.isFullscreen ? <Minimize /> : <Maximize />}
+                {fullscreen.isFullscreen ? (
+                  <ArrowsPointingInIcon />
+                ) : (
+                  <ArrowsPointingOutIcon />
+                )}
                 {fullscreen.isFullscreen
                   ? t('exitFullscreen')
                   : t('fullscreen')}

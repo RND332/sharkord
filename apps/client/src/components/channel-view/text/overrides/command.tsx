@@ -1,12 +1,12 @@
-import { type TParsedDomCommand } from '@sharkord/shared';
 import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-  Terminal,
-  XCircle
-} from 'lucide-react';
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CommandLineIcon,
+  XCircleIcon
+} from '@heroicons/react/24/outline';
+import { type TParsedDomCommand } from '@sharkord/shared';
 import { memo, useCallback, useState } from 'react';
 import { OverrideLayout } from './layout';
 
@@ -37,13 +37,13 @@ const CommandOverride = memo(({ command }: TCommandOverrideProps) => {
   const getStatusIcon = useCallback(() => {
     switch (command.status) {
       case 'completed':
-        return <CheckCircle2 className="size-3 text-green-500" />;
+        return <CheckCircleIcon className="size-3 text-green-500" />;
       case 'failed':
-        return <XCircle className="size-3 text-red-500" />;
+        return <XCircleIcon className="size-3 text-red-500" />;
       case 'pending':
       default:
         return (
-          <Loader2 className="size-3 animate-spin text-muted-foreground" />
+          <ArrowPathIcon className="size-3 animate-spin text-muted-foreground" />
         );
     }
   }, [command.status]);
@@ -71,7 +71,7 @@ const CommandOverride = memo(({ command }: TCommandOverrideProps) => {
               className="size-5 rounded object-cover"
             />
           ) : (
-            <Terminal className="size-5" />
+            <CommandLineIcon className="size-5" />
           )}
         </div>
 
@@ -114,9 +114,9 @@ const CommandOverride = memo(({ command }: TCommandOverrideProps) => {
                 className="flex w-full items-center gap-2 px-2 py-1.5 text-left transition-colors hover:bg-muted/50"
               >
                 {isExpanded ? (
-                  <ChevronDown className="size-3 shrink-0 text-muted-foreground" />
+                  <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="size-3 shrink-0 text-muted-foreground" />
+                  <ChevronRightIcon className="size-3 shrink-0 text-muted-foreground" />
                 )}
                 <span className="text-xs font-medium text-muted-foreground">
                   Response

@@ -1,12 +1,11 @@
-import { Card } from '@sharkord/ui';
-import type { LucideIcon } from 'lucide-react';
+import { Card, type TIconComponent } from '@sharkord/ui';
 import { memo, type ReactNode } from 'react';
 import { StatePanel } from './state-panel';
 
 type TSettingsListEditorProps = {
   list: ReactNode;
   editor: ReactNode;
-  emptyIcon: LucideIcon;
+  emptyIcon: TIconComponent;
   emptyTitle: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;

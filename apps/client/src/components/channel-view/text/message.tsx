@@ -6,13 +6,13 @@ import {
   useOwnUserRoleIds
 } from '@/features/server/users/hooks';
 import { cn } from '@/lib/utils';
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import {
   hasMention,
   Permission,
   TestId,
   type TJoinedMessage
 } from '@sharkord/shared';
-import { MessageSquareText } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageActions } from './message-actions';
@@ -106,7 +106,7 @@ const Message = memo(
                 onClick={onThreadClick}
                 className="flex items-center gap-1 text-xs text-accent-text hover:text-accent-text hover:underline mt-1 transition-colors"
               >
-                <MessageSquareText className="h-3 w-3" />
+                <ChatBubbleLeftRightIcon className="h-3 w-3" />
                 <span>{t('reply', { count: replyCount })}</span>
               </button>
             )}

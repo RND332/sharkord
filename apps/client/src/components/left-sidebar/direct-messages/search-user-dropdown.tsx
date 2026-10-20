@@ -1,4 +1,5 @@
 import { UserAvatar } from '@/components/user-avatar';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import {
   AutoFocus,
   DropdownMenu,
@@ -8,7 +9,6 @@ import {
   IconButton,
   Input
 } from '@sharkord/ui';
-import { Plus } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -46,7 +46,7 @@ const SearchUserDropdown = memo(
           <IconButton
             variant="ghost"
             size="sm"
-            icon={Plus}
+            icon={PlusIcon}
             className="[&_svg]:size-[18px]"
             title={t('startNewConversation')}
           />

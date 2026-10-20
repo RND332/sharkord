@@ -5,9 +5,9 @@ import {
   useThreadMessages
 } from '@/features/server/messages/hooks';
 
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import type { TJoinedMessage } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
-import { MessageSquareText } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -110,7 +110,7 @@ const ThreadContent = memo(
               >
                 {messages.length === 0 && !fetching ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
-                    <MessageSquareText className="h-8 w-8 mb-2 opacity-50" />
+                    <ChatBubbleLeftRightIcon className="h-8 w-8 mb-2 opacity-50" />
                     <p>{t('noRepliesYet')}</p>
                     <p className="text-xs">{t('beFirstToReply')}</p>
                   </div>

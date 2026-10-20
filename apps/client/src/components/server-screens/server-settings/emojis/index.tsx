@@ -4,8 +4,12 @@ import { useAdminEmojis } from '@/features/server/admin/hooks';
 import { uploadFiles } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
 import { getTRPCClient } from '@/lib/trpc';
+import {
+  ArrowUpTrayIcon,
+  FaceSmileIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
 import { Button, LoadingCard, Spinner, Tooltip } from '@sharkord/ui';
-import { Plus, Smile, Upload } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -68,7 +72,7 @@ const Emojis = memo(() => {
         aria-label={t('uploadEmojiBtn')}
         className="flex size-[38px] items-center justify-center rounded-[7px] bg-raised text-foreground transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        <Plus className="size-6" strokeWidth={1.5} />
+        <PlusIcon className="size-6" strokeWidth={1.5} />
       </button>
     </Tooltip>
   );
@@ -97,7 +101,7 @@ const Emojis = memo(() => {
 
         {emojis.length === 0 ? (
           <StatePanel
-            icon={Smile}
+            icon={FaceSmileIcon}
             title={t('uploadEmojiTitle')}
             description={t('uploadEmojiDesc')}
             action={
@@ -105,7 +109,7 @@ const Emojis = memo(() => {
                 {isUploading ? (
                   <Spinner size="xxs" />
                 ) : (
-                  <Upload className="h-4 w-4" />
+                  <ArrowUpTrayIcon className="h-4 w-4" />
                 )}
                 {t('uploadEmojiBtn')}
               </Button>

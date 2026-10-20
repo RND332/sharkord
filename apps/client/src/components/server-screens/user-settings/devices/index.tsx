@@ -31,6 +31,10 @@ import {
   VideoCodec,
   type TDeviceSettings
 } from '@/types';
+import {
+  InformationCircleIcon,
+  SpeakerWaveIcon
+} from '@heroicons/react/24/outline';
 import { DEFAULT_BITRATE } from '@sharkord/shared';
 import {
   Alert,
@@ -48,7 +52,6 @@ import {
   Switch
 } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Info, Volume2 } from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -326,7 +329,7 @@ const Devices = memo(() => {
     <SettingsSection title={t('devicesTitle')} description={t('devicesDesc')}>
       {currentVoiceChannelId && (
         <Alert variant="default">
-          <Info />
+          <InformationCircleIcon />
           <AlertDescription>{t('voiceChannelActiveInfo')}</AlertDescription>
         </Alert>
       )}
@@ -487,7 +490,7 @@ const Devices = memo(() => {
           <div className="flex flex-col gap-3 rounded-md bg-panel p-[15px]">
             <div className="flex flex-wrap items-center gap-[15px]">
               <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[7px] bg-raised">
-                <Volume2 className="size-[22px] text-foreground" />
+                <SpeakerWaveIcon className="size-[22px] text-foreground" />
               </div>
               <span className="text-sm leading-[18px] text-foreground">
                 {t('microphoneTestLabel')}
@@ -540,7 +543,7 @@ const Devices = memo(() => {
 
             {microphoneTestError && (
               <Alert variant="destructive">
-                <Info />
+                <InformationCircleIcon />
                 <AlertDescription>{microphoneTestError}</AlertDescription>
               </Alert>
             )}
@@ -631,7 +634,7 @@ const Devices = memo(() => {
 
           {webcamTestError && (
             <Alert variant="destructive">
-              <Info />
+              <InformationCircleIcon />
               <AlertDescription>{webcamTestError}</AlertDescription>
             </Alert>
           )}

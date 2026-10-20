@@ -2,8 +2,8 @@ import { Dialog } from '@/components/dialogs/dialogs';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { openDialog } from '@/features/dialogs/actions';
 import { useAdminInvites } from '@/features/server/admin/hooks';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Button, LoadingCard } from '@sharkord/ui';
-import { Plus } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InvitesTable } from './invites-table';
@@ -27,7 +27,7 @@ const Invites = memo(() => {
       description={t('invitesDesc')}
       action={
         <Button onClick={onCreateInvite}>
-          <Plus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
           {t('createInviteBtn')}
         </Button>
       }

@@ -4,13 +4,19 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
+  ArrowDownTrayIcon,
+  CalendarIcon,
+  CheckBadgeIcon,
+  CubeIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
+import {
   getTrpcError,
   PLUGIN_SDK_VERSION,
   type TMarketplaceEntry
 } from '@sharkord/shared';
 import { Badge, Button, Tooltip } from '@sharkord/ui';
 import { format } from 'date-fns';
-import { BadgeCheck, Calendar, Download, Package, User } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import semver from 'semver';
@@ -158,7 +164,7 @@ const MarketplaceItem = memo(
               alt={`${plugin.name} logo`}
               className="w-12 h-12 rounded-md object-cover"
               iconFallback={
-                <Package className="w-6 h-6 text-muted-foreground" />
+                <CubeIcon className="w-6 h-6 text-muted-foreground" />
               }
             />
           ) : null}
@@ -168,7 +174,7 @@ const MarketplaceItem = memo(
               plugin.logo && 'hidden'
             )}
           >
-            <Package className="w-6 h-6 text-muted-foreground" />
+            <CubeIcon className="w-6 h-6 text-muted-foreground" />
           </div>
         </div>
 
@@ -182,7 +188,7 @@ const MarketplaceItem = memo(
                 {plugin.verified && (
                   <Tooltip content={t('marketplaceVerifiedTooltip')}>
                     <Badge variant="default" className="gap-1 text-xs shrink-0">
-                      <BadgeCheck className="w-3 h-3" />
+                      <CheckBadgeIcon className="w-3 h-3" />
                       {t('marketplaceVerified')}
                     </Badge>
                   </Tooltip>
@@ -215,7 +221,7 @@ const MarketplaceItem = memo(
                   onClick={onUpdateClick}
                   disabled={updatingId === plugin.id || !sdkCompatible}
                 >
-                  <Download className="w-4 h-4 mr-1.5" />
+                  <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" />
                   {t('marketplaceUpdateBtn')}
                 </Button>
               ) : !isInstalled ? (
@@ -225,7 +231,7 @@ const MarketplaceItem = memo(
                   onClick={onInstallClick}
                   disabled={installingId === plugin.id || !sdkCompatible}
                 >
-                  <Download className="w-4 h-4 mr-1.5" />
+                  <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" />
                   {t('marketplaceInstallBtn')}
                 </Button>
               ) : null}
@@ -242,13 +248,13 @@ const MarketplaceItem = memo(
               className="flex items-center gap-1"
               title={t('marketplaceReleasedOn', { date: releaseDate.full })}
             >
-              <Calendar className="w-3.5 h-3.5" />
+              <CalendarIcon className="w-3.5 h-3.5" />
               <span>
                 {t('marketplaceReleasedOn', { date: releaseDate.short })}
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <User className="w-3.5 h-3.5" />
+              <UserIcon className="w-3.5 h-3.5" />
               <span>{plugin.author}</span>
             </div>
             {plugin.homepage && (

@@ -20,16 +20,20 @@ const iconVariants = cva(
   }
 );
 
+// any component that renders an svg, the approved Heroicons set and the local
+// artwork for the symbols Heroicons does not ship both satisfy it
+type TIconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
 export interface IconProps
   extends
     React.ButtonHTMLAttributes<HTMLDivElement>,
     VariantProps<typeof iconVariants> {
-  icon: React.ElementType;
+  icon: TIconComponent;
 }
 
-const Icon = React.forwardRef<HTMLButtonElement, IconProps>(
-  ({ size, icon, ...props }, ref) => {
-    const element = React.createElement(icon, {
+const Icon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ size, icon: IconComponent, ...props }, ref) => {
+    const element = React.createElement(IconComponent, {
       className: cn(iconVariants({ size }), props.className),
       ref
     });
@@ -40,3 +44,4 @@ const Icon = React.forwardRef<HTMLButtonElement, IconProps>(
 Icon.displayName = 'Icon';
 
 export { Icon };
+export type { TIconComponent };

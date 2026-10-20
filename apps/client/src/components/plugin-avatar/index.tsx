@@ -1,8 +1,8 @@
 import { getInitialsFromName } from '@/helpers/get-initials-from-name';
 import { cn } from '@/lib/utils';
+import { CpuChipIcon } from '@heroicons/react/24/outline';
 import { AvatarImage } from '@radix-ui/react-avatar';
 import { Avatar, AvatarFallback } from '@sharkord/ui';
-import { Bot } from 'lucide-react';
 import { memo } from 'react';
 
 type TPluginAvatarProps = {
@@ -18,7 +18,11 @@ const PluginAvatar = memo(
         <Avatar className={cn('h-8 w-8', className)}>
           {avatarUrl && <AvatarImage src={avatarUrl} />}
           <AvatarFallback className="bg-primary/10 text-xs">
-            {name ? getInitialsFromName(name) : <Bot className="h-4 w-4" />}
+            {name ? (
+              getInitialsFromName(name)
+            ) : (
+              <CpuChipIcon className="h-4 w-4" />
+            )}
           </AvatarFallback>
         </Avatar>
       </div>

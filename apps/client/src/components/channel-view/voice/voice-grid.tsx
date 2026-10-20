@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
+import { ChevronDownIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { Tooltip } from '@sharkord/ui';
-import { ChevronDown, Users } from 'lucide-react';
 import {
   isValidElement,
   memo,
@@ -126,7 +126,7 @@ const VoiceGrid = memo(
         >
           <div className="relative min-h-0 flex-1">
             {pinnedCard}
-            <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 pointer-events-none">
+            <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 z-2 pointer-events-none">
               <Tooltip
                 content={
                   hideParticipants
@@ -136,9 +136,9 @@ const VoiceGrid = memo(
               >
                 <button
                   className={cn(
-                    'inline-flex items-center justify-center rounded px-3 py-2 gap-1',
-                    'pointer-events-auto shadow-xl transition-all',
-                    'bg-black/70 hover:bg-black/80',
+                    'inline-flex h-8 w-16 items-center justify-center gap-1.5 rounded-full',
+                    'pointer-events-auto border border-white/12 bg-black/80 shadow-xl transition-colors',
+                    'hover:bg-black/90',
                     hideParticipants
                       ? 'inline-flex'
                       : 'hidden group-hover/voice-stage:inline-flex'
@@ -150,13 +150,13 @@ const VoiceGrid = memo(
                       : t('hideParticipants')
                   }
                 >
-                  <Users className="size-3" />
-                  <ChevronDown
+                  <ChevronDownIcon
                     className={cn(
-                      'size-3 transition-transform duration-300 ease-in-out -mr-0.5',
+                      'size-3.5 transition-transform duration-300 ease-in-out',
                       hideParticipants && 'rotate-180'
                     )}
                   />
+                  <UsersIcon className="size-5" />
                 </button>
               </Tooltip>
             </div>

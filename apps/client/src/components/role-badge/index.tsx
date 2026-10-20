@@ -1,6 +1,6 @@
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { TRole } from '@sharkord/shared';
 import { Badge, IconButton } from '@sharkord/ui';
-import { X } from 'lucide-react';
 import { memo } from 'react';
 
 type TRoleBadgeProps = {
@@ -19,7 +19,7 @@ const RoleBadge = memo(({ role, onRemoveRole }: TRoleBadgeProps) => {
       <span style={{ color: role.color }}>{role.name}</span>
       {onRemoveRole && (
         <IconButton
-          icon={X}
+          icon={XMarkIcon}
           size="xs"
           aria-label={`Remove ${role.name} role`}
           style={{ color: role.color }}

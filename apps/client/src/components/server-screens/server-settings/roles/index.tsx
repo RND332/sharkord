@@ -2,8 +2,8 @@ import { SettingsSection } from '@/components/server-screens/settings-shell/sect
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { useAdminRoles } from '@/features/server/admin/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { PlusIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
 import { Card, LoadingCard } from '@sharkord/ui';
-import { Plus, Shield } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -52,7 +52,7 @@ const Roles = memo(() => {
           title={t('addRoleTooltip')}
           className="flex size-[38px] items-center justify-center rounded-[7px] bg-raised text-foreground transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          <Plus className="size-6" strokeWidth={1.5} />
+          <PlusIcon className="size-6" strokeWidth={1.5} />
         </button>
       }
     >
@@ -75,7 +75,10 @@ const Roles = memo(() => {
             />
           ) : (
             <Card className="flex min-h-40 items-center justify-center">
-              <StatePanel icon={Shield} title={t('selectRoleToEdit')} />
+              <StatePanel
+                icon={ShieldExclamationIcon}
+                title={t('selectRoleToEdit')}
+              />
             </Card>
           )}
         </div>

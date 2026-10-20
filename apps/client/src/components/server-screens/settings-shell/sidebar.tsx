@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { TestId } from '@sharkord/shared';
 import { Separator, Tooltip } from '@sharkord/ui';
-import { AlertCircle } from 'lucide-react';
 
 import { memo, useCallback } from 'react';
 import type { TSettingsEntry } from './types';
@@ -42,7 +42,7 @@ const SidebarEntry = memo(
         <span className="truncate">{label}</span>
         {error && (
           <Tooltip content={error}>
-            <AlertCircle
+            <ExclamationCircleIcon
               role="img"
               aria-label={error}
               className="ml-auto h-4 w-4 shrink-0 text-destructive"

@@ -1,53 +1,70 @@
 import { useOwnVoiceUser } from '@/features/server/hooks';
 import { useEffect, useRef, useState } from 'react';
 
-// speaking intensity level (0 = silent, 1 = quiet, 2 = normal, 3 = loud)
-// this might need to be optimized
-
-enum SpeakingIntensity {
-  Silent = 0,
-  Quiet = 1,
-  Normal = 2,
-  Loud = 3
-}
-
 const ANALYZER_FFT_SIZE = 512;
 const ANALYZER_MIN_DECIBELS = -90;
 const ANALYZER_MAX_DECIBELS = -10;
 const ANALYZER_SMOOTHING_TIME_CONSTANT = 0.85;
 const SPEAKING_THRESHOLD = 8;
 
-const SPEAKING_EFFECT_CLASSES: Record<SpeakingIntensity, string> = {
-  [SpeakingIntensity.Silent]: '',
-  [SpeakingIntensity.Quiet]: 'speaking-effect-low',
-  [SpeakingIntensity.Normal]: 'speaking-effect-medium',
-  [SpeakingIntensity.Loud]: 'speaking-effect-high'
+// Chrome caps the number of live AudioContexts per page, so every participant
+// would starve the others once the call grows. One shared context analyses all
+// streams, and each stream keeps its own analyser.
+let sharedAudioContext: AudioContext | null = null;
+let sharedAudioContextRefCount = 0;
+
+const getSharedAudioContext = (): AudioContext | null => {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+
+    if (!AudioContextClass) return null;
+
+    sharedAudioContext = new AudioContextClass();
+    sharedAudioContextRefCount = 0;
+  }
+
+  sharedAudioContextRefCount += 1;
+
+  return sharedAudioContext;
+};
+
+const releaseSharedAudioContext = () => {
+  sharedAudioContextRefCount -= 1;
+
+  if (sharedAudioContextRefCount > 0) return;
+
+  sharedAudioContext?.close();
+  sharedAudioContext = null;
+  sharedAudioContextRefCount = 0;
 };
 
 const useAudioLevel = (audioStream: MediaStream | undefined) => {
-  const [audioLevel, setAudioLevel] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const ownVoiceUser = useOwnVoiceUser();
 
   useEffect(() => {
     if (!audioStream || ownVoiceUser?.state.soundMuted) {
-      setAudioLevel(0);
       setIsSpeaking(false);
       return;
     }
 
-    try {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
+    const audioContext = getSharedAudioContext();
 
-      const audioContext = new AudioContextClass();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(audioStream);
+    if (!audioContext) {
+      console.warn('Audio level detection not supported:');
+      return;
+    }
+
+    let analyser: AnalyserNode;
+    let source: MediaStreamAudioSourceNode;
+
+    try {
+      analyser = audioContext.createAnalyser();
+      source = audioContext.createMediaStreamSource(audioStream);
 
       analyser.fftSize = ANALYZER_FFT_SIZE;
       analyser.minDecibels = ANALYZER_MIN_DECIBELS;
@@ -55,68 +72,48 @@ const useAudioLevel = (audioStream: MediaStream | undefined) => {
       analyser.smoothingTimeConstant = ANALYZER_SMOOTHING_TIME_CONSTANT;
 
       source.connect(analyser);
-
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-      const checkAudioLevel = () => {
-        if (!analyserRef.current) return;
-
-        analyserRef.current.getByteFrequencyData(dataArray);
-
-        // calculate rms (root mean square) of the frequency data
-        let sum = 0;
-
-        for (let i = 0; i < dataArray.length; i++) {
-          sum += dataArray[i] * dataArray[i];
-        }
-
-        const rms = Math.sqrt(sum / dataArray.length);
-        const normalizedLevel = Math.min(100, (rms / 255) * 100);
-
-        setAudioLevel(normalizedLevel);
-        setIsSpeaking(normalizedLevel > SPEAKING_THRESHOLD);
-
-        animationFrameRef.current = requestAnimationFrame(checkAudioLevel);
-      };
-
-      checkAudioLevel();
     } catch (error) {
       console.warn('Audio level detection not supported:', error);
+      releaseSharedAudioContext();
+      return;
     }
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    const checkAudioLevel = () => {
+      analyser.getByteFrequencyData(dataArray);
+
+      // calculate rms (root mean square) of the frequency data
+      let sum = 0;
+
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i] * dataArray[i];
+      }
+
+      const rms = Math.sqrt(sum / dataArray.length);
+      const normalizedLevel = Math.min(100, (rms / 255) * 100);
+
+      setIsSpeaking(normalizedLevel > SPEAKING_THRESHOLD);
+
+      animationFrameRef.current = requestAnimationFrame(checkAudioLevel);
+    };
+
+    checkAudioLevel();
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
 
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
+      source.disconnect();
+      analyser.disconnect();
+      releaseSharedAudioContext();
 
-      setAudioLevel(0);
       setIsSpeaking(false);
     };
   }, [audioStream, ownVoiceUser?.state.soundMuted]);
 
-  const speakingIntensity = isSpeaking
-    ? audioLevel < 15
-      ? SpeakingIntensity.Quiet
-      : audioLevel < 30
-        ? SpeakingIntensity.Normal
-        : SpeakingIntensity.Loud
-    : SpeakingIntensity.Silent;
-
-  const speakingEffectClass = SPEAKING_EFFECT_CLASSES[speakingIntensity] ?? '';
-
-  return {
-    audioLevel,
-    isSpeaking,
-    speakingIntensity,
-    speakingEffectClass
-  };
+  return { isSpeaking };
 };
 
 export { useAudioLevel };

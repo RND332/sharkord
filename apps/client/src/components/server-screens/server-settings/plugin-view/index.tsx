@@ -6,6 +6,7 @@ import {
   usePluginTabs
 } from '@/features/server/plugins/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { CubeIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import {
   getTrpcError,
   Permission,
@@ -22,7 +23,6 @@ import {
   TabsList,
   TabsTrigger
 } from '@sharkord/ui';
-import { AlertCircle, Package } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -102,7 +102,7 @@ const PluginView = memo(({ plugin }: TPluginViewProps) => {
           src={plugin.logo}
           alt=""
           className="h-12 w-12 rounded-md object-cover"
-          iconFallback={<Package className="h-6 w-6 text-muted-foreground" />}
+          iconFallback={<CubeIcon className="h-6 w-6 text-muted-foreground" />}
         />
       }
     >
@@ -123,7 +123,7 @@ const PluginView = memo(({ plugin }: TPluginViewProps) => {
 
       {plugin.loadError && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <ExclamationCircleIcon className="h-4 w-4" />
           <AlertTitle>{t('pluginLoadErrorTitle')}</AlertTitle>
           <AlertDescription>{plugin.loadError}</AlertDescription>
         </Alert>

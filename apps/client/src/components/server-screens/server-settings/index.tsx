@@ -1,16 +1,16 @@
 import { useAdminPlugins } from '@/features/server/admin/hooks';
 import { useCan, usePluginsEnabled } from '@/features/server/hooks';
-import { Permission } from '@sharkord/shared';
 import {
-  Blocks,
-  Mail,
-  Package,
-  RefreshCw,
-  Settings,
-  Shield,
-  Smile,
-  Users
-} from 'lucide-react';
+  ArrowPathIcon,
+  Cog6ToothIcon,
+  CubeIcon,
+  EnvelopeIcon,
+  FaceSmileIcon,
+  PuzzlePieceIcon,
+  ShieldExclamationIcon,
+  UsersIcon
+} from '@heroicons/react/24/outline';
+import { Permission } from '@sharkord/shared';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
@@ -44,56 +44,56 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
       {
         id: 'general',
         label: t('generalTab'),
-        icon: Settings,
+        icon: Cog6ToothIcon,
         content: <General />,
         permission: Permission.MANAGE_SETTINGS
       },
       {
         id: 'roles',
         label: t('rolesTab'),
-        icon: Shield,
+        icon: ShieldExclamationIcon,
         content: <Roles />,
         permission: Permission.MANAGE_ROLES
       },
       {
         id: 'emojis',
         label: t('emojisTab'),
-        icon: Smile,
+        icon: FaceSmileIcon,
         content: <Emojis />,
         permission: Permission.MANAGE_EMOJIS
       },
       {
         id: 'storage',
         label: t('storageTab'),
-        icon: Package,
+        icon: CubeIcon,
         content: <Storage />,
         permission: Permission.MANAGE_STORAGE
       },
       {
         id: 'users',
         label: t('usersTab'),
-        icon: Users,
+        icon: UsersIcon,
         content: <UsersSection />,
         permission: Permission.MANAGE_USERS
       },
       {
         id: 'invites',
         label: t('invitesTab'),
-        icon: Mail,
+        icon: EnvelopeIcon,
         content: <Invites />,
         permission: Permission.MANAGE_INVITES
       },
       {
         id: 'updates',
         label: t('updatesTab'),
-        icon: RefreshCw,
+        icon: ArrowPathIcon,
         content: <Updates />,
         permission: Permission.MANAGE_UPDATES
       },
       {
         id: 'plugins',
         label: t('pluginsTab'),
-        icon: Blocks,
+        icon: PuzzlePieceIcon,
         content: (
           <Plugins
             plugins={plugins}
@@ -119,7 +119,7 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
       .map((plugin) => ({
         id: `plugin-${plugin.id}`,
         label: plugin.name,
-        icon: Package,
+        icon: CubeIcon,
         logo: plugin.logo,
         error: plugin.loadError,
         content: <PluginView plugin={plugin} />

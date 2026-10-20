@@ -10,9 +10,13 @@ import {
 } from '@/features/server/hooks';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
 import { Permission, TestId } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CategoryContextMenu } from '../context-menus/category';
@@ -65,7 +69,7 @@ const Category = memo(({ categoryId }: TCategoryProps) => {
     return null;
   }
 
-  const ChevronIcon = expanded ? ChevronDown : ChevronRight;
+  const ChevronIcon = expanded ? ChevronDownIcon : ChevronRightIcon;
 
   return (
     <div
@@ -113,7 +117,7 @@ const Category = memo(({ categoryId }: TCategoryProps) => {
             variant="ghost"
             size="sm"
             className="-mr-1.5 [&_svg]:size-[18px]"
-            icon={Plus}
+            icon={PlusIcon}
             onClick={onCreateChannelClick}
             title={t('createChannel')}
           />

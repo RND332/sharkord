@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { HelpCircle } from 'lucide-react';
+import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { memo } from 'react';
 import { Label } from './label';
 import { Tooltip } from './tooltip';
@@ -31,7 +31,7 @@ const Group = memo(
     if (help) {
       helpComponent = (
         <Tooltip content={help}>
-          <HelpCircle className="ml-1 inline-block h-3 w-3 text-muted-foreground" />
+          <QuestionMarkCircleIcon className="ml-1 inline-block h-3 w-3 text-muted-foreground" />
         </Tooltip>
       );
     }

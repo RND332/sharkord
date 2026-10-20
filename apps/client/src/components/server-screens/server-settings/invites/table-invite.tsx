@@ -5,6 +5,11 @@ import { getUrlFromServer } from '@/helpers/get-file-url';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import {
+  ClipboardIcon,
+  EllipsisVerticalIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 import type { TJoinedInvite } from '@sharkord/shared';
 import { getTrpcError } from '@sharkord/shared';
 import {
@@ -16,7 +21,6 @@ import {
   DropdownMenuTrigger
 } from '@sharkord/ui';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Copy, MoreVertical, Trash2 } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -117,7 +121,7 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
             className="h-6 w-6 shrink-0"
             onClick={handleCopyCode}
           >
-            <Copy className="h-3 w-3" />
+            <ClipboardIcon className="h-3 w-3" />
           </Button>
         </div>
       </div>
@@ -177,19 +181,19 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <MoreVertical className="h-4 w-4" />
+              <EllipsisVerticalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleCopyCode}>
-              <Copy className="h-4 w-4" />
+              <ClipboardIcon className="h-4 w-4" />
               {t('copyInviteLink')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleDelete}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="h-4 w-4" />
+              <TrashIcon className="h-4 w-4" />
               {t('deleteBtn')}
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -8,6 +8,12 @@ import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import {
+  ChatBubbleLeftIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline';
+import {
   DELETED_USER_IDENTITY_AND_NAME,
   Permission,
   PluginSlot,
@@ -22,7 +28,6 @@ import {
   PopoverTrigger
 } from '@sharkord/ui';
 import { format } from 'date-fns';
-import { MessageSquare, ShieldCheck, Trash, UserCog } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -72,13 +77,13 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
         <div className="relative">
           {user.banned && (
             <div className="absolute right-2 top-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" />
+              <ShieldCheckIcon className="h-3 w-3" />
               {t('bannedBadge')}
             </div>
           )}
           {isDeleted && (
             <div className="absolute right-2 top-2 bg-gray-600 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
-              <Trash className="h-3 w-3" />
+              <TrashIcon className="h-3 w-3" />
               {t('deletedBadge')}
             </div>
           )}
@@ -157,7 +162,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
               {showDmButton && (
                 <IconButton
                   data-testid={TestId.USER_POPOVER_DM}
-                  icon={MessageSquare}
+                  icon={ChatBubbleLeftIcon}
                   variant="ghost"
                   size="sm"
                   title={t('directMessage')}
@@ -169,7 +174,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
                 <Protect permission={Permission.MANAGE_USERS}>
                   <IconButton
                     data-testid={TestId.USER_POPOVER_MODERATE}
-                    icon={UserCog}
+                    icon={UserCircleIcon}
                     variant="ghost"
                     size="sm"
                     title={t('moderationView')}

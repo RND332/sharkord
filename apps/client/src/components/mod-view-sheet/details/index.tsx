@@ -1,5 +1,17 @@
 import { Protect } from '@/components/protect';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import {
+  CalendarIcon,
+  ClipboardDocumentListIcon,
+  ClockIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  GlobeAltIcon,
+  IdentificationIcon,
+  KeyIcon,
+  ScaleIcon,
+  ShareIcon
+} from '@heroicons/react/24/outline';
 import { Permission } from '@sharkord/shared/src/statics/permissions';
 import {
   Card,
@@ -10,18 +22,6 @@ import {
   Tooltip
 } from '@sharkord/ui';
 import { format, formatDistanceToNow } from 'date-fns';
-import {
-  Calendar,
-  ClipboardList,
-  Clock,
-  Eye,
-  EyeClosed,
-  Gavel,
-  Globe,
-  IdCard,
-  KeyRound,
-  Network
-} from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModViewContext } from '../context';
@@ -60,7 +60,7 @@ const Row = memo(
             role="button"
             onClick={() => setVisible(!visible)}
             className="text-muted-foreground inline-flex h-6 w-6 items-center justify-center rounded bg-transparent hover:bg-accent hover:text-foreground cursor-pointer transition-colors focus:outline-none"
-            icon={visible ? EyeClosed : Eye}
+            icon={visible ? EyeSlashIcon : EyeIcon}
           />
         )}
       </div>
@@ -78,35 +78,39 @@ const Details = memo(() => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5" />
+          <ClipboardDocumentListIcon className="h-5 w-5" />
           {t('detailsTitle')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="space-y-2">
           <Row
-            icon={<IdCard className="h-4 w-4 text-muted-foreground" />}
+            icon={
+              <IdentificationIcon className="h-4 w-4 text-muted-foreground" />
+            }
             label={t('userIdLabel')}
             value={user.id}
           />
 
           <Protect permission={Permission.VIEW_USER_SENSITIVE_DATA}>
             <Row
-              icon={<IdCard className="h-4 w-4 text-muted-foreground" />}
+              icon={
+                <IdentificationIcon className="h-4 w-4 text-muted-foreground" />
+              }
               label={t('identityDetailLabel')}
               value={user.identity ?? ''}
               hidden
             />
 
             <Row
-              icon={<Network className="h-4 w-4 text-muted-foreground" />}
+              icon={<ShareIcon className="h-4 w-4 text-muted-foreground" />}
               label={t('ipAddressLabel')}
               value={lastLogin?.ip || t('unknownValue')}
               hidden
             />
 
             <Row
-              icon={<Globe className="h-4 w-4 text-muted-foreground" />}
+              icon={<GlobeAltIcon className="h-4 w-4 text-muted-foreground" />}
               label={t('locationLabel')}
               value={`${lastLogin?.country || t('naValue')} - ${lastLogin?.city || t('naValue')}`}
               hidden
@@ -114,7 +118,7 @@ const Details = memo(() => {
           </Protect>
 
           <Row
-            icon={<KeyRound className="h-4 w-4 text-muted-foreground" />}
+            icon={<KeyIcon className="h-4 w-4 text-muted-foreground" />}
             label={t('accountSourceLabel')}
             value={
               user.isOidcUser
@@ -124,7 +128,7 @@ const Details = memo(() => {
           />
 
           <Row
-            icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+            icon={<CalendarIcon className="h-4 w-4 text-muted-foreground" />}
             label={t('joinedServerLabel')}
             value={formatDistanceToNow(user.createdAt, {
               addSuffix: true,
@@ -133,7 +137,7 @@ const Details = memo(() => {
           />
 
           <Row
-            icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            icon={<ClockIcon className="h-4 w-4 text-muted-foreground" />}
             label={t('lastActiveLabel')}
             value={formatDistanceToNow(user.lastLoginAt, {
               addSuffix: true,
@@ -144,19 +148,19 @@ const Details = memo(() => {
           {user.banned && (
             <>
               <Row
-                icon={<Gavel className="h-4 w-4 text-muted-foreground" />}
+                icon={<ScaleIcon className="h-4 w-4 text-muted-foreground" />}
                 label={t('bannedDetailLabel')}
                 value={t('bannedDetailValue')}
               />
 
               <Row
-                icon={<Gavel className="h-4 w-4 text-muted-foreground" />}
+                icon={<ScaleIcon className="h-4 w-4 text-muted-foreground" />}
                 label={t('banReasonLabel')}
                 value={user.banReason || t('noReasonProvidedDetail')}
               />
 
               <Row
-                icon={<Gavel className="h-4 w-4 text-muted-foreground" />}
+                icon={<ScaleIcon className="h-4 w-4 text-muted-foreground" />}
                 label={t('bannedAtLabel')}
                 value={format(user.bannedAt ?? 0, 'PPP', {
                   locale: dateLocale

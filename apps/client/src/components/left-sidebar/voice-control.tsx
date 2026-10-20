@@ -8,21 +8,19 @@ import { leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
 import {
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+  EyeIcon,
+  EyeSlashIcon,
   PhoneXMarkIcon,
+  SignalSlashIcon,
   TvIcon,
   VideoCameraIcon,
-  VideoCameraSlashIcon
+  VideoCameraSlashIcon,
+  WifiIcon
 } from '@heroicons/react/24/outline';
 import { ChannelPermission, getTrpcError, PluginSlot } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import {
-  AlertTriangle,
-  Eye,
-  EyeOff,
-  Loader2,
-  Wifi,
-  WifiOff
-} from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -57,26 +55,26 @@ const VoiceControl = memo(() => {
     switch (connectionStatus) {
       case 'connecting':
         return {
-          icon: <Loader2 className="size-4 animate-spin" />,
+          icon: <ArrowPathIcon className="size-4 animate-spin" />,
           text: t('voiceConnecting'),
           color: 'text-yellow-500'
         };
       case 'connected':
         return {
-          icon: <Wifi className="size-4" />,
+          icon: <WifiIcon className="size-4" />,
           text: t('voiceConnected'),
           color: 'text-success'
         };
       case 'failed':
         return {
-          icon: <AlertTriangle className="size-4" />,
+          icon: <ExclamationTriangleIcon className="size-4" />,
           text: t('voiceFailed'),
           color: 'text-red-400'
         };
       case 'disconnected':
       default:
         return {
-          icon: <WifiOff className="size-4" />,
+          icon: <SignalSlashIcon className="size-4" />,
           text: t('voiceDisconnected'),
           color: 'text-red-400'
         };
@@ -225,9 +223,9 @@ const VoiceControl = memo(() => {
             disabled={isVoiceOnlyModePending}
           >
             {isVoiceOnlyModeActive ? (
-              <EyeOff className="size-5" />
+              <EyeSlashIcon className="size-5" />
             ) : (
-              <Eye className="size-5" />
+              <EyeIcon className="size-5" />
             )}
           </Button>
         </div>

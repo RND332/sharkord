@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ExternalLink } from 'lucide-react';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { memo } from 'react';
 
 type TLinkOverrideProps = {
@@ -19,7 +19,7 @@ const LinkOverride = memo(({ link, label, className }: TLinkOverrideProps) => {
       >
         {label || link}
       </a>
-      <ExternalLink size="0.8rem" />
+      <ArrowTopRightOnSquareIcon className="size-[0.8rem]" />
     </div>
   );
 });

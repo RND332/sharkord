@@ -1,5 +1,6 @@
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getTRPCClient } from '@/lib/trpc';
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { getTrpcError, type TJoinedUser } from '@sharkord/shared';
 import {
   Alert,
@@ -16,7 +17,6 @@ import {
   Group,
   Switch
 } from '@sharkord/ui';
-import { AlertCircleIcon } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -87,14 +87,14 @@ const DeleteUserDialog = memo(
 
             {wipe ? (
               <Alert variant="destructive" className="py-2">
-                <AlertCircleIcon className="h-4 w-4" />
+                <ExclamationCircleIcon className="h-4 w-4" />
                 <AlertDescription className="text-xs">
                   {t('wipeDestructiveWarning')}
                 </AlertDescription>
               </Alert>
             ) : (
               <Alert variant="info" className="py-2">
-                <AlertCircleIcon className="h-4 w-4" />
+                <ExclamationCircleIcon className="h-4 w-4" />
                 <AlertDescription className="text-xs">
                   {t('wipeInfoWarning')}
                 </AlertDescription>

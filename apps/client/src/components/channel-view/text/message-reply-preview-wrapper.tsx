@@ -5,8 +5,8 @@ import { useChannelById } from '@/features/server/channels/hooks';
 import { usePluginMetadata } from '@/features/server/plugins/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 import { type TJoinedMessage } from '@sharkord/shared';
-import { CornerUpLeft } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getReplyTargetSnippet } from './reply-preview-helpers';
@@ -104,7 +104,7 @@ const MessageReplyPreviewWrapper = memo(
               />
             ) : (
               <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <CornerUpLeft className="h-3 w-3" />
+                <ArrowUturnLeftIcon className="h-3 w-3" />
               </span>
             )}
 

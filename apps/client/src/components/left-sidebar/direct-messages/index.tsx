@@ -14,13 +14,13 @@ import {
 } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   TestId,
   type TDirectMessageConversation
 } from '@sharkord/shared';
 import { Spinner } from '@sharkord/ui';
-import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -164,7 +164,7 @@ const DirectMessages = memo(() => {
     [fetchConversations, selectConversation, t]
   );
 
-  const ChevronIcon = expanded ? ChevronDown : ChevronRight;
+  const ChevronIcon = expanded ? ChevronDownIcon : ChevronRightIcon;
 
   return (
     <div data-direct-channels className="mx-2 mt-3">

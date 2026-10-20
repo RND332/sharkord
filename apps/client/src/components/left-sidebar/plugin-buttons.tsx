@@ -4,8 +4,8 @@ import {
   useFullscreenPluginIds,
   usePluginMetadata
 } from '@/features/server/plugins/hooks';
+import { CubeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { cn, Tooltip } from '@sharkord/ui';
-import { Package, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { ImageWithFallback } from '../server-screens/server-settings/plugins/marketplace/image-with-fallback';
 
@@ -37,10 +37,10 @@ const PluginButton = memo(({ pluginId }: TPluginButtonsProps) => {
           src={pluginMetadata?.avatarUrl}
           alt={`${pluginId} icon`}
           className="h-4 w-4 rounded-sm"
-          iconFallback={<Package className="h-4 w-4 text-muted-foreground" />}
+          iconFallback={<CubeIcon className="h-4 w-4 text-muted-foreground" />}
         />
         <span className="flex-1 text-left truncate">{pluginId}</span>
-        {isActive && <X className="h-4 w-4" />}
+        {isActive && <XMarkIcon className="h-4 w-4" />}
       </button>
     </Tooltip>
   );

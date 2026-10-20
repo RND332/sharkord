@@ -1,6 +1,6 @@
+import { HashtagIcon } from '@heroicons/react/24/outline';
 import type { TChannel } from '@sharkord/shared';
 import type { Editor } from '@tiptap/core';
-import { Hash } from 'lucide-react';
 import type { Ref } from 'react';
 import { createSuggestionRenderer } from '../create-suggestion-renderer';
 import { filterByQuery } from '../filter-by-query';
@@ -20,7 +20,7 @@ const getName = (item: TChannel) => item.name;
 
 const renderItem = (item: TChannel) => (
   <>
-    <Hash className="h-4 w-4 shrink-0 text-muted-foreground" />
+    <HashtagIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
     <span className="font-medium truncate">{item.name}</span>
   </>
 );

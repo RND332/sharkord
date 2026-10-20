@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils';
-import { ExternalLink, Globe } from 'lucide-react';
+import {
+  ArrowTopRightOnSquareIcon,
+  GlobeAltIcon
+} from '@heroicons/react/24/outline';
 import type { SyntheticEvent } from 'react';
 import { memo, useCallback } from 'react';
 import { OverrideLayout } from '../overrides/layout';
@@ -50,14 +53,14 @@ const OpenGraph = memo(({ previews }: TOpenGraphProps) => {
                 onError={hideBrokenFavicon}
               />
             ) : (
-              <Globe className="h-3.5 w-3.5 shrink-0 rounded-full" />
+              <GlobeAltIcon className="h-3.5 w-3.5 shrink-0 rounded-full" />
             )}
 
             <span className="min-w-0 truncate">
               {preview.siteName || preview.hostname}
             </span>
 
-            <ExternalLink className="ml-auto h-3 w-3 shrink-0" />
+            <ArrowTopRightOnSquareIcon className="ml-auto h-3 w-3 shrink-0" />
           </div>
 
           <div

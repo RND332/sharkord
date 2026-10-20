@@ -1,15 +1,15 @@
 import { cn } from '@/lib/utils';
+import {
+  DocumentIcon,
+  DocumentTextIcon,
+  FilmIcon,
+  MusicalNoteIcon,
+  PhotoIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 import { FileCategory, getFileCategory } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import {
-  File,
-  FileImage,
-  FileMusic,
-  FileText,
-  FileVideo,
-  Trash
-} from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 
 type TFileIconProps = {
@@ -17,18 +17,18 @@ type TFileIconProps = {
 };
 
 const categoryMap: Record<FileCategory, React.ElementType> = {
-  [FileCategory.AUDIO]: FileMusic,
-  [FileCategory.IMAGE]: FileImage,
-  [FileCategory.VIDEO]: FileVideo,
-  [FileCategory.DOCUMENT]: FileText,
-  [FileCategory.OTHER]: File
+  [FileCategory.AUDIO]: MusicalNoteIcon,
+  [FileCategory.IMAGE]: PhotoIcon,
+  [FileCategory.VIDEO]: FilmIcon,
+  [FileCategory.DOCUMENT]: DocumentTextIcon,
+  [FileCategory.OTHER]: DocumentIcon
 };
 
 const FileIcon = memo(({ extension }: TFileIconProps) => {
   const category = useMemo(() => getFileCategory(extension), [extension]);
   const className = 'h-5 w-5 text-muted-foreground';
 
-  const Icon = categoryMap[category] || File;
+  const Icon = categoryMap[category] || DocumentIcon;
 
   return <Icon className={className} />;
 });
@@ -84,7 +84,7 @@ const FileCard = ({
           className="h-8 w-8 shrink-0 transition-opacity duration-200"
           onClick={onRemoveClick}
         >
-          <Trash className="h-4 w-4" />
+          <TrashIcon className="h-4 w-4" />
         </Button>
       )}
     </a>

@@ -5,9 +5,9 @@ import { RelativeTime } from '@/components/relative-time';
 import { UserAvatar } from '@/components/user-avatar';
 import { usePluginMetadata } from '@/features/server/plugins/hooks';
 import type { TMessageJumpToTarget } from '@/types';
+import { ArrowRightIcon, HashtagIcon } from '@heroicons/react/24/outline';
 import { TestId } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import { ArrowRight, Hash } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TSearchResultMessage } from './types';
@@ -55,7 +55,7 @@ const SearchResultMessageCard = memo(
               </RelativeTime>
               <span>•</span>
               <span className="inline-flex min-w-0 max-w-full items-center gap-1">
-                <Hash className="h-3 w-3" />
+                <HashtagIcon className="h-3 w-3" />
                 <span className="truncate wrap-anywhere">
                   {message.channelName}
                 </span>
@@ -89,7 +89,7 @@ const SearchResultMessageCard = memo(
           {message.parentMessageId
             ? t('jumpToThreadMessage')
             : t('jumpToMessage')}
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRightIcon className="h-3.5 w-3.5" />
         </Button>
       </div>
     );

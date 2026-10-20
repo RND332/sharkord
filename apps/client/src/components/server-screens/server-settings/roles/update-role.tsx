@@ -2,6 +2,12 @@ import { useSettingsForm } from '@/components/server-screens/settings-shell/use-
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getTRPCClient } from '@/lib/trpc';
 import {
+  InformationCircleIcon,
+  StarIcon,
+  TrashIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import {
   getTrpcError,
   OWNER_ROLE_ID,
   type Permission,
@@ -20,7 +26,6 @@ import {
   Tooltip
 } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Info, Star, Trash2, X } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -148,7 +153,7 @@ const UpdateRole = memo(
           <div className="flex shrink-0 items-center gap-1">
             <Tooltip content={t('setAsDefaultRoleTooltip')}>
               <IconButton
-                icon={Star}
+                icon={StarIcon}
                 size="sm"
                 variant="ghost"
                 disabled={selectedRole.isDefault}
@@ -157,7 +162,7 @@ const UpdateRole = memo(
             </Tooltip>
             <Tooltip content={t('deleteRoleTooltip')}>
               <IconButton
-                icon={Trash2}
+                icon={TrashIcon}
                 size="sm"
                 variant="destructive"
                 disabled={selectedRole.isPersistent || selectedRole.isDefault}
@@ -166,7 +171,7 @@ const UpdateRole = memo(
             </Tooltip>
             <Tooltip content={t('closeEditorTooltip')}>
               <IconButton
-                icon={X}
+                icon={XMarkIcon}
                 size="sm"
                 variant="ghost"
                 onClick={onClose}
@@ -177,14 +182,14 @@ const UpdateRole = memo(
 
         {selectedRole.isDefault && (
           <Alert variant="default">
-            <Star />
+            <StarIcon />
             <AlertDescription>{t('defaultRoleInfo')}</AlertDescription>
           </Alert>
         )}
 
         {isOwnerRole && (
           <Alert variant="default">
-            <Info />
+            <InformationCircleIcon />
             <AlertDescription>{t('ownerRoleInfo')}</AlertDescription>
           </Alert>
         )}

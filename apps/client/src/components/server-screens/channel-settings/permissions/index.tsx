@@ -1,9 +1,12 @@
 import { SettingsListEditor } from '@/components/server-screens/settings-shell/list-editor';
 import { useAdminChannelPermissions } from '@/features/server/admin/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
+import {
+  ExclamationTriangleIcon,
+  UsersIcon
+} from '@heroicons/react/24/outline';
 import { ChannelPermission } from '@sharkord/shared';
 import { Alert, AlertDescription, AlertTitle, LoadingCard } from '@sharkord/ui';
-import { MessageCircleWarning, Users } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Override } from './override';
@@ -47,14 +50,14 @@ const ChannelPermissions = memo(({ channelId }: TChannelPermissionsProps) => {
     <>
       {!channel?.private && (
         <Alert variant="destructive">
-          <MessageCircleWarning />
+          <ExclamationTriangleIcon />
           <AlertTitle>{t('publicChannelTitle')}</AlertTitle>
           <AlertDescription>{t('publicChannelDesc')}</AlertDescription>
         </Alert>
       )}
 
       <SettingsListEditor
-        emptyIcon={Users}
+        emptyIcon={UsersIcon}
         emptyTitle={t('selectRoleOrUser')}
         list={
           <OverridesList

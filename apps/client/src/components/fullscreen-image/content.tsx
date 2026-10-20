@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
+import { LinkIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { TestId } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { Link, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -163,8 +164,17 @@ const FullScreenImage = memo(
                 }
               />
               <div className="flex gap-2 absolute top-2 right-2 z-50">
-                <IconButton icon={Link} variant="ghost" onClick={onCopyLink} />
-                <IconButton onClick={onCloseClick} icon={X} variant="ghost" />
+                <IconButton
+                  icon={LinkIcon}
+                  variant="ghost"
+                  onClick={onCopyLink}
+                />
+                <IconButton
+                  onClick={onCloseClick}
+                  icon={XMarkIcon}
+                  variant="ghost"
+                  data-testid={TestId.FULLSCREEN_IMAGE_CLOSE}
+                />
               </div>
             </div>
           </>,

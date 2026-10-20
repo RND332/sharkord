@@ -15,6 +15,7 @@
     "magic": "bun --bun run lint:fix && bun --bun run format && bun --bun run check-types"
   },
   "dependencies": {
+    "@heroicons/react": "2.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-context-menu": "^2.2.16",
@@ -32,7 +33,6 @@
     "@sharkord/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.544.0",
     "next-themes": "^0.4.6",
     "react-colorful": "^5.6.1",
     "react-day-picker": "^9.11.1",

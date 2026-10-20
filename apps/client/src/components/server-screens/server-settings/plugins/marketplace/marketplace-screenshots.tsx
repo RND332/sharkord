@@ -1,7 +1,7 @@
 import { FullScreenImage } from '@/components/fullscreen-image/content';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Button } from '@sharkord/ui';
 import useEmblaCarousel from 'embla-carousel-react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { ImageWithFallback } from './image-with-fallback';
 
@@ -78,7 +78,7 @@ const MarketplaceScreenshots = memo(
             onClick={handlePrev}
             disabled={!canScrollPrev}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeftIcon className="h-4 w-4" />
           </Button>
         </div>
         <div className="absolute inset-y-0 right-0 flex items-center">
@@ -89,7 +89,7 @@ const MarketplaceScreenshots = memo(
             onClick={handleNext}
             disabled={!canScrollNext}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRightIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>

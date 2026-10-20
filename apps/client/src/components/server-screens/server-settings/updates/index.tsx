@@ -1,12 +1,12 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useAdminUpdates } from '@/features/server/admin/hooks';
-import { Button, LoadingCard } from '@sharkord/ui';
 import {
-  AlertCircle,
-  ArrowUpCircle,
-  CheckCircle,
-  Download
-} from 'lucide-react';
+  ArrowDownTrayIcon,
+  ArrowUpCircleIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon
+} from '@heroicons/react/24/outline';
+import { Button, LoadingCard } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,18 +25,18 @@ const Updates = memo(() => {
     return <LoadingCard className="h-[600px]" />;
   }
 
-  let statusIcon = <CheckCircle className="size-6 text-success" />;
+  let statusIcon = <CheckCircleIcon className="size-6 text-success" />;
   let statusTitle = t('upToDateTitle');
   let statusDescription = t('upToDateDesc');
   let statusBackground = 'bg-success-solid/25';
 
   if (!canUpdate) {
-    statusIcon = <AlertCircle className="size-6 text-destructive" />;
+    statusIcon = <ExclamationCircleIcon className="size-6 text-destructive" />;
     statusTitle = t('updatesNotSupportedTitle');
     statusDescription = t('updatesNotSupportedDesc');
     statusBackground = 'bg-destructive/15';
   } else if (hasUpdate) {
-    statusIcon = <Download className="size-6 text-accent-text" />;
+    statusIcon = <ArrowDownTrayIcon className="size-6 text-accent-text" />;
     statusTitle = t('updateAvailableTitle');
     statusDescription = t('updateAvailableDesc', { version: latestVersion });
     statusBackground = 'bg-primary/20';
@@ -49,7 +49,7 @@ const Updates = memo(() => {
       action={
         hasUpdate && canUpdate ? (
           <Button onClick={update}>
-            <ArrowUpCircle className="size-5" />
+            <ArrowUpCircleIcon className="size-5" />
             {t('updateServerBtn')}
           </Button>
         ) : undefined

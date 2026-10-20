@@ -1,4 +1,5 @@
 import { highlightMessageElement } from '@/features/server/messages/helpers';
+import { WifiIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   IconButton,
@@ -6,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@sharkord/ui';
-import { Wifi } from 'lucide-react';
 import { createElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test } from 'vitest';
@@ -46,7 +46,7 @@ test.each([
         'div',
         {},
         createElement(Button, { size }, 'Plain'),
-        createElement(Button, { size }, createElement(Wifi), 'With icon')
+        createElement(Button, { size }, createElement(WifiIcon), 'With icon')
       )
     );
     for (const name of ['Plain', 'With icon']) {
@@ -72,7 +72,7 @@ test.each([
   async (size, dimension, padding, iconSize) => {
     await render(
       createElement(IconButton, {
-        icon: Wifi,
+        icon: WifiIcon,
         size,
         'aria-label': 'Connection'
       })
@@ -100,7 +100,11 @@ test.each([
   'shared buttons have icon padding at size %s',
   async (size, dimension, padding) => {
     await render(
-      createElement(Button, { size, 'aria-label': 'Icon' }, createElement(Wifi))
+      createElement(
+        Button,
+        { size, 'aria-label': 'Icon' },
+        createElement(WifiIcon)
+      )
     );
     const button = page.getByRole('button', { name: 'Icon' }).element();
     expect(getComputedStyle(button).padding).toBe(`${padding}px`);

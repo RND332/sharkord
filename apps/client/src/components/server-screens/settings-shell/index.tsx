@@ -4,8 +4,8 @@ import { requestConfirmation } from '@/features/dialogs/actions';
 import { useDialogInfo } from '@/features/dialogs/hooks';
 import { usePreventExit } from '@/hooks/use-prevent-exit';
 import { cn } from '@/lib/utils';
+import { Bars3Icon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { Button, IconButton } from '@sharkord/ui';
-import { ChevronLeft, Menu } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsFormContext, type TSettingsFormHandle } from './context';
@@ -114,7 +114,7 @@ const SettingsShell = memo(
               onClick={handleClose}
               aria-label="Close"
             >
-              <ChevronLeft className="size-5" />
+              <ChevronLeftIcon className="size-5" />
             </Button>
             <div className="h-[22px] w-px bg-line" />
             <h1 className="flex-1 truncate text-base font-semibold leading-[22px]">
@@ -128,7 +128,7 @@ const SettingsShell = memo(
               className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
             />
             <IconButton
-              icon={Menu}
+              icon={Bars3Icon}
               variant="ghost"
               className="md:hidden"
               onClick={toggleDrawer}

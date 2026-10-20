@@ -1,11 +1,11 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import {
   PluginCapabilityMode,
   PluginCapabilityType,
   type TPluginCapability
 } from '@sharkord/shared';
 import { Button, Label, Switch } from '@sharkord/ui';
-import { RotateCcw } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -80,7 +80,7 @@ const CapabilityRow = memo(
               title={t('settings:pluginAccessResetToDefault')}
               onClick={handleReset}
             >
-              <RotateCcw className="h-4 w-4" />
+              <ArrowPathIcon className="h-4 w-4" />
             </Button>
           )}
           <Switch

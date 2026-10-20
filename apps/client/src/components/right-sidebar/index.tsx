@@ -4,6 +4,7 @@ import { UserAvatar } from '@/components/user-avatar';
 import { useUsers } from '@/features/server/users/hooks';
 import { LocalStorageKey } from '@/helpers/storage';
 import { cn } from '@/lib/utils';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   PluginSlot,
@@ -11,7 +12,6 @@ import {
   UserStatus
 } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { X } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserPopover } from '../user-popover';
@@ -107,7 +107,7 @@ const RightSidebar = memo(
           </h3>
           {onClose && (
             <IconButton
-              icon={X}
+              icon={XMarkIcon}
               variant="ghost"
               size="sm"
               aria-label={tTopbar('closeMembersPanel')}
