@@ -547,6 +547,7 @@
   "groupAdministration": "Amministrazione",
   "groupChannel": "Canale",
   "groupCategory": "Categoria",
+  "settingsNavigationLabel": "Navigazione delle impostazioni",
   "currentPasswordPlaceholder": "Inserisci la password attuale",
   "newPasswordPlaceholder": "Inserisci una nuova password",
   "confirmPasswordPlaceholder": "Reinserisci la nuova password",

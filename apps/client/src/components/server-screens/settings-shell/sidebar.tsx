@@ -25,6 +25,7 @@ const SidebarEntry = memo(
       <button
         data-testid={TestId.SETTINGS_SIDEBAR_ENTRY}
         onClick={handleClick}
+        aria-current={isSelected ? 'page' : undefined}
         className={cn(
           'flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           isSelected && 'bg-raised font-medium text-foreground'
@@ -60,6 +61,7 @@ type TSettingsSidebarProps = {
   selectedId: string;
   onSelect: (id: string) => void;
   groupLabel?: string;
+  navigationLabel: string;
   className?: string;
 };
 
@@ -70,10 +72,13 @@ const SettingsSidebar = memo(
     selectedId,
     onSelect,
     groupLabel,
+    navigationLabel,
     className
   }: TSettingsSidebarProps) => {
     return (
       <nav
+        id="settings-sidebar"
+        aria-label={navigationLabel}
         className={cn(
           'w-[252px] shrink-0 space-y-1 overflow-y-auto border-r border-line bg-nav px-3 py-6',
           className

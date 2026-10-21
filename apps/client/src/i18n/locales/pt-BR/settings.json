@@ -549,6 +549,7 @@
   "groupAdministration": "Administração",
   "groupChannel": "Canal",
   "groupCategory": "Categoria",
+  "settingsNavigationLabel": "Navegação das configurações",
   "currentPasswordPlaceholder": "Digite a senha atual",
   "newPasswordPlaceholder": "Digite uma nova senha",
   "confirmPasswordPlaceholder": "Digite novamente a nova senha",
