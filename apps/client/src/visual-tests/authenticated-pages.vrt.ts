@@ -32,7 +32,7 @@ import {
 } from '@/features/server/voice/actions';
 import { clearVoiceDebugEvents } from '@/helpers/voice-debug';
 import * as trpc from '@/lib/trpc';
-import { MARKETPLACE_REGISTRY_URL, TestId } from '@sharkord/shared';
+import { MARKETPLACE_REGISTRY_URL, TestId, type TFile } from '@sharkord/shared';
 import { toast } from 'sonner';
 import {
   afterAll,
@@ -1180,6 +1180,370 @@ test('user settings match the Paper design', async () => {
 
   await userEvent.unhover(document.body);
   await snapshot('user-settings');
+});
+
+test('profile settings edit a live preview that matches the user popover', async () => {
+  const [{ store }, { ownUserSelector }, { updateUser }] = await Promise.all([
+    import('@/features/store'),
+    import('@/features/server/users/selectors'),
+    import('@/features/server/users/actions')
+  ]);
+  const ownUser = ownUserSelector(store.getState());
+  if (!ownUser) throw new Error('Own user is missing');
+
+  const originalBanner = ownUser.banner;
+  const previewBanner: TFile = {
+    id: -1,
+    name: 'profile-preview-banner.png',
+    originalName: 'profile-preview-banner.png',
+    md5: '',
+    userId: ownUser.id,
+    pluginId: null,
+    size: 0,
+    mimeType: 'image/png',
+    extension: 'png',
+    createdAt: Date.UTC(2026, 9, 9),
+    updatedAt: null
+  };
+  updateUser(ownUser.id, { banner: null });
+
+  try {
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    const preview = page.getByRole('group', {
+      name: 'Profile',
+      exact: true
+    });
+    await expect.element(preview).toBeVisible();
+
+    const previewElement = preview.element();
+    const banner = previewElement.querySelector('[data-profile-banner]')!;
+    const avatar = previewElement.querySelector('[data-profile-avatar]')!;
+    const previewBounds = previewElement.getBoundingClientRect();
+    const bannerBounds = banner.getBoundingClientRect();
+    const avatarBounds = avatar.getBoundingClientRect();
+    expect(previewBounds.width).toBe(320);
+    expect(bannerBounds.height).toBe(128);
+    const previewAvatarOffset = avatarBounds.top - bannerBounds.top;
+    expect(avatarBounds.height).toBe(120);
+    await expect.element(preview.getByText(/^Member since/)).toBeVisible();
+    await expect
+      .element(
+        page.getByText('How you appear in this server.', { exact: true })
+      )
+      .not.toBeInTheDocument();
+
+    const avatarButton = preview.getByRole('button', {
+      name: 'Change avatar',
+      exact: true
+    });
+    await userEvent.hover(avatarButton);
+    await snapshot('profile-preview-avatar-hover');
+    await userEvent.unhover(avatarButton);
+
+    const bannerButton = preview.getByRole('button', {
+      name: 'Change banner',
+      exact: true
+    });
+    const bannerAffordances = banner.querySelectorAll(
+      ':scope > span[aria-hidden="true"]'
+    );
+    const bannerOverlay = bannerAffordances[0]!;
+    const bannerPaintBrush = bannerAffordances[1]!;
+
+    await userEvent.hover(bannerButton);
+    const menu = page.getByRole('menu');
+    await expect.element(menu).toBeVisible();
+    const changeColorMenuItem = menu.getByRole('menuitem', {
+      name: 'Change profile color',
+      exact: true
+    });
+    await userEvent.hover(changeColorMenuItem);
+    const overlayStyle = getComputedStyle(bannerOverlay);
+    const paintBrushStyle = getComputedStyle(bannerPaintBrush);
+    expect(overlayStyle.backgroundColor).toBe('oklab(0 0 0 / 0.25)');
+    expect(paintBrushStyle.opacity).toBe('1');
+    await snapshot('profile-preview-banner-hover');
+    updateUser(ownUser.id, { banner: previewBanner });
+    await expect
+      .element(
+        menu.getByRole('menuitem', { name: 'Change banner', exact: true })
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        menu.getByRole('menuitem', {
+          name: 'Change profile color',
+          exact: true
+        })
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        menu.getByRole('menuitem', { name: 'Remove banner', exact: true })
+      )
+      .toBeVisible();
+
+    await changeColorMenuItem.click();
+    await expect
+      .element(page.getByText('Profile color', { exact: true }))
+      .toBeVisible();
+    const profileColorButton = page.getByRole('button', {
+      name: 'Profile color',
+      exact: true
+    });
+    await profileColorButton.click();
+    const profileColorInput = page.getByRole('textbox', {
+      name: 'Profile color',
+      exact: true
+    });
+    await profileColorInput.fill('#abcdef');
+    const bannerStyle = getComputedStyle(banner);
+    expect(bannerStyle.backgroundColor).toBe('rgb(171, 205, 239)');
+
+    const bannerButtonElement = bannerButton.element();
+    bannerButtonElement.focus();
+    await userEvent.keyboard('{Enter}');
+    const removeBannerMenuItem = page.getByRole('menuitem', {
+      name: 'Remove banner',
+      exact: true
+    });
+    await removeBannerMenuItem.click();
+    const previewBannerImage = banner.querySelector('img');
+    expect(previewBannerImage).toBeNull();
+
+    const nameButton = preview.getByRole('button', { name: /Edit name/ });
+    await nameButton.click();
+    const nameDialog = page.getByRole('alertdialog');
+    const nameInput = nameDialog.getByRole('textbox');
+    await nameInput.fill('Preview name');
+    const saveNameButton = nameDialog.getByRole('button', {
+      name: 'Save Changes',
+      exact: true
+    });
+    await saveNameButton.click();
+    await expect
+      .element(nameButton)
+      .toHaveAccessibleName('Preview name Edit name');
+
+    const bioButton = preview.getByRole('button', { name: /Edit bio/ });
+    await bioButton.click();
+    const bioInput = preview.getByRole('textbox', { name: 'Bio' });
+    await bioInput.fill('A live preview');
+    const saveBioButton = preview.getByRole('button', {
+      name: 'Save Changes',
+      exact: true
+    });
+    await saveBioButton.click();
+    await expect
+      .element(bioButton)
+      .toHaveAccessibleName('A live preview Edit bio');
+
+    closeServerScreens();
+    updateUser(ownUser.id, { banner: originalBanner });
+    await waitForRender();
+    const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
+    const ownUserName = sidebar.getByText('rnd332', { exact: true });
+    await ownUserName.click();
+    const popover = page.getByRole('dialog');
+    await expect.element(popover).toBeVisible();
+    const popoverElement = popover.element();
+    const popoverBanner = popoverElement.querySelector(
+      '[data-profile-banner]'
+    )!;
+    const popoverAvatar = popoverElement.querySelector(
+      '[data-profile-avatar]'
+    )!;
+    const popoverBounds = popoverElement.getBoundingClientRect();
+    const popoverBannerBounds = popoverBanner.getBoundingClientRect();
+    const popoverAvatarBounds = popoverAvatar.getBoundingClientRect();
+    expect(popoverBounds.width).toBe(320);
+    expect(popoverBannerBounds.height).toBe(128);
+    expect(popoverAvatarBounds.width).toBe(120);
+    expect(popoverAvatarBounds.height).toBe(120);
+    const popoverAvatarOffset =
+      popoverAvatarBounds.top - popoverBannerBounds.top;
+    expect(
+      Math.abs(previewAvatarOffset - popoverAvatarOffset)
+    ).toBeLessThanOrEqual(1);
+    const initials = popover.getByText('R', { exact: true });
+    const initialsElement = initials.element();
+    const initialsStyle = getComputedStyle(initialsElement);
+    expect(initialsStyle.fontSize).toBe('36px');
+    expect(initialsStyle.fontWeight).toBe('700');
+    await expect(popover).toMatchScreenshot('user-popover-profile-preview', {
+      timeout: 3_000
+    });
+    await userEvent.keyboard('{Escape}');
+  } finally {
+    closeServerScreens();
+    resetDialogs();
+    updateUser(ownUser.id, { banner: originalBanner });
+  }
+});
+
+test('clicking the banner body opens the banner menu', async () => {
+  try {
+    await userEvent.unhover(document.body);
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    const preview = page.getByRole('group', {
+      name: 'Profile',
+      exact: true
+    });
+    await expect.element(preview).toBeVisible();
+    const previewElement = preview.element();
+    const banner = previewElement.querySelector('[data-profile-banner]')!;
+    await userEvent.click(banner);
+    await expect.element(page.getByRole('menu')).toBeVisible();
+  } finally {
+    closeServerScreens();
+    resetDialogs();
+  }
+});
+
+test('Escape closes the banner menu without closing User settings', async () => {
+  try {
+    await userEvent.unhover(document.body);
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    const preview = page.getByRole('group', {
+      name: 'Profile',
+      exact: true
+    });
+    await expect.element(preview).toBeVisible();
+    const bannerButton = preview.getByRole('button', {
+      name: 'Change banner',
+      exact: true
+    });
+    const bannerButtonElement = bannerButton.element();
+    bannerButtonElement.focus();
+    await userEvent.keyboard('{Enter}');
+
+    const menu = page.getByRole('menu');
+    await expect.element(menu).toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await expect.element(menu).not.toBeInTheDocument();
+    await expect.element(preview).toBeVisible();
+  } finally {
+    closeServerScreens();
+    resetDialogs();
+  }
+});
+test('saved profile edits stay synchronized with the user popover', async () => {
+  const [{ store }, { ownUserSelector }, { updateUser }] = await Promise.all([
+    import('@/features/store'),
+    import('@/features/server/users/selectors'),
+    import('@/features/server/users/actions')
+  ]);
+  const ownUser = ownUserSelector(store.getState());
+  if (!ownUser) throw new Error('Own user is missing');
+
+  const client = trpc.getTRPCClient();
+  let shouldRestoreProfile = false;
+
+  try {
+    openServerScreen(ServerScreen.USER_SETTINGS);
+    const preview = page.getByRole('group', {
+      name: 'Profile',
+      exact: true
+    });
+    await expect.element(preview).toBeVisible();
+
+    const nameButton = preview.getByRole('button', { name: /Edit name/ });
+    await nameButton.click();
+    const nameDialog = page.getByRole('alertdialog');
+    const nameInput = nameDialog.getByRole('textbox');
+    await nameInput.fill('Profile sync test');
+    const saveNameButton = nameDialog.getByRole('button', {
+      name: 'Save Changes',
+      exact: true
+    });
+    await saveNameButton.click();
+
+    const bioButton = preview.getByRole('button', { name: /Edit bio/ });
+    await bioButton.click();
+    const bioInput = preview.getByRole('textbox', { name: 'Bio' });
+    await bioInput.fill('Profile sync bio');
+    const saveBioButton = preview.getByRole('button', {
+      name: 'Save Changes',
+      exact: true
+    });
+    await saveBioButton.click();
+
+    const bannerButton = preview.getByRole('button', {
+      name: 'Change banner',
+      exact: true
+    });
+    await bannerButton.click();
+    const changeColorMenuItem = page.getByRole('menuitem', {
+      name: 'Change profile color',
+      exact: true
+    });
+    await changeColorMenuItem.click();
+    const profileColorButton = page.getByRole('button', {
+      name: 'Profile color',
+      exact: true
+    });
+    await profileColorButton.click();
+    const profileColorInput = page.getByRole('textbox', {
+      name: 'Profile color',
+      exact: true
+    });
+    await profileColorInput.fill('#123abc');
+
+    shouldRestoreProfile = true;
+    const saveProfileButton = page.getByRole('button', {
+      name: 'Save Changes',
+      exact: true
+    });
+    await saveProfileButton.click();
+    await expect
+      .poll(() => ownUserSelector(store.getState())?.name)
+      .toBe('Profile sync test');
+    await expect
+      .poll(() => ownUserSelector(store.getState())?.bio)
+      .toBe('Profile sync bio');
+    await expect
+      .poll(() => ownUserSelector(store.getState())?.profileColor)
+      .toBe('#123abc');
+
+    closeServerScreens();
+    await waitForRender();
+    const sidebar = page.getByTestId(TestId.LEFT_SIDEBAR);
+    const ownUserName = sidebar.getByText('Profile sync test', {
+      exact: true
+    });
+    await ownUserName.click();
+    const popover = page.getByRole('dialog');
+    await expect.element(popover).toBeVisible();
+    await expect
+      .element(popover.getByText('Profile sync test', { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(popover.getByText('Profile sync bio', { exact: true }))
+      .toBeVisible();
+    const popoverElement = popover.element();
+    const popoverBanner = popoverElement.querySelector(
+      '[data-profile-banner]'
+    )!;
+    const popoverBannerStyle = getComputedStyle(popoverBanner);
+    expect(popoverBannerStyle.backgroundColor).toBe('rgb(18, 58, 188)');
+    await userEvent.keyboard('{Escape}');
+  } finally {
+    closeServerScreens();
+    resetDialogs();
+    if (shouldRestoreProfile) {
+      await client.users.update.mutate({
+        name: ownUser.name,
+        profileColor: ownUser.profileColor,
+        bio: ownUser.bio ?? undefined
+      });
+    }
+
+    updateUser(ownUser.id, {
+      name: ownUser.name,
+      profileColor: ownUser.profileColor,
+      bio: ownUser.bio
+    });
+  }
 });
 
 test('personal theme preview applies to settings, chat and body portals', async () => {

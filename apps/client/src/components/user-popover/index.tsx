@@ -34,7 +34,6 @@ import { toast } from 'sonner';
 import { Protect } from '../protect';
 import { RoleBadge } from '../role-badge';
 import { UserAvatar } from '../user-avatar';
-import { UserStatusBadge } from '../user-status';
 
 type TUserPopoverProps = {
   userId: number;
@@ -50,6 +49,17 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   const isOwnUser = useIsOwnUser(userId);
 
   const pluginProps = useMemo(() => ({ userId }), [userId]);
+  const statusLabel = useMemo(() => {
+    if (user?.status === UserStatus.IDLE) {
+      return t('profileStatusIdle', { ns: 'settings' });
+    }
+
+    if (user?.status === UserStatus.ONLINE) {
+      return t('profileStatusOnline', { ns: 'settings' });
+    }
+
+    return t('profileStatusOffline', { ns: 'settings' });
+  }, [user?.status, t]);
 
   const onDirectMessageClick = useCallback(async () => {
     const trpc = getTRPCClient();
@@ -89,43 +99,38 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
           )}
           {user.banner ? (
             <div
-              className="h-24 w-full rounded-t-md bg-cover bg-center bg-no-repeat"
+              data-profile-banner
+              className="h-32 w-full rounded-t-md bg-cover bg-center bg-no-repeat"
               style={{
+                backgroundColor: user.profileColor || '#5865f2',
                 backgroundImage: `url("${getFileUrl(user.banner)}")`
               }}
             />
           ) : (
             <div
-              className="h-24 w-full rounded-t-md"
+              data-profile-banner
+              className="h-32 w-full rounded-t-md"
               style={{
                 background: user.profileColor || '#5865f2'
               }}
             />
           )}
-          <div className="absolute left-4 top-16">
+          <div data-profile-avatar className="absolute left-4 top-[68px]">
             <UserAvatar
               userId={user.id}
-              className="h-16 w-16 border-4 border-card"
-              showStatusBadge={false}
+              className="size-[120px] border-4 border-card [&_[data-slot=avatar-fallback]]:text-4xl [&_[data-slot=avatar-fallback]]:font-bold [&_[data-slot=avatar-fallback]]:text-foreground"
+              statusBadgeClassName="size-5 border-4 border-card"
             />
           </div>
         </div>
 
-        <div className="px-4 pt-12 pb-4">
+        <div className="px-4 pt-16 pb-4">
           <div className="mb-3">
             <span className="text-lg font-semibold text-foreground truncate mb-1">
               {getRenderedUsername(user)}
             </span>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <UserStatusBadge
-                  status={user.status || UserStatus.OFFLINE}
-                  className="h-3 w-3"
-                />
-                <span className="text-xs text-muted-foreground capitalize">
-                  {user.status || UserStatus.OFFLINE}
-                </span>
-              </div>
+            <div className="text-xs text-muted-foreground capitalize">
+              {statusLabel}
             </div>
           </div>
 
