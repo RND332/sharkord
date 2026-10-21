@@ -1,21 +1,31 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
+import { UserStatusBadge } from '@/components/user-status';
 import { requestTextInput } from '@/features/dialogs/actions';
 import { useOwnPublicUser } from '@/features/server/users/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { getInitialsFromName } from '@/helpers/get-initials-from-name';
+import { useDateLocale } from '@/hooks/use-date-locale';
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { getTRPCClient } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 import {
   CheckIcon,
-  PencilIcon,
-  PhotoIcon,
-  SwatchIcon,
+  PaintBrushIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { DEFAULT_PROFILE_COLOR, UserStatus } from '@sharkord/shared';
-import { ColorPicker, Textarea } from '@sharkord/ui';
-import { memo, useCallback, useMemo, useState } from 'react';
+import {
+  ColorPicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  IconButton,
+  Textarea
+} from '@sharkord/ui';
+import { format } from 'date-fns';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TProfileValues = {
@@ -30,9 +40,13 @@ type TProfileValues = {
 const Profile = memo(() => {
   const { t } = useTranslation('settings');
   const ownPublicUser = useOwnPublicUser();
+  const dateLocale = useDateLocale();
   const pickImage = usePickImage();
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isBannerMenuOpen, setIsBannerMenuOpen] = useState(false);
+  const isBannerHoverSuppressed = useRef(false);
+  const isBannerMenuOpenedByPointer = useRef(false);
 
   const onSave = useCallback(async (values: TProfileValues) => {
     const trpc = getTRPCClient();
@@ -74,6 +88,35 @@ const Profile = memo(() => {
 
     if (picked) onChange('banner', picked);
   }, [onChange, pickImage]);
+  const handleBannerPointerEnter = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.pointerType !== 'mouse' || isBannerHoverSuppressed.current) {
+        return;
+      }
+
+      isBannerMenuOpenedByPointer.current = true;
+      setIsBannerMenuOpen(true);
+    },
+    []
+  );
+  const handleBannerPointerLeave = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.pointerType !== 'mouse') return;
+      if (isBannerMenuOpen) return;
+
+      isBannerMenuOpenedByPointer.current = false;
+      isBannerHoverSuppressed.current = false;
+    },
+    [isBannerMenuOpen]
+  );
+  const handleBannerMenuEscape = useCallback((event: Event) => {
+    if (isBannerMenuOpenedByPointer.current) {
+      isBannerHoverSuppressed.current = true;
+    }
+    isBannerMenuOpenedByPointer.current = false;
+    setIsBannerMenuOpen(false);
+    event.stopPropagation();
+  }, []);
 
   const handleEditName = useCallback(async () => {
     const nextName = await requestTextInput({
@@ -101,71 +144,114 @@ const Profile = memo(() => {
   const handleToggleColorPicker = useCallback(() => {
     setIsColorPickerOpen((open) => !open);
   }, []);
+  const handleOpenColorPicker = useCallback(() => {
+    setIsColorPickerOpen(true);
+  }, []);
+
+  const handleRemoveBanner = useCallback(() => {
+    onChange('banner', null);
+  }, [onChange]);
 
   const handleColorChange = useCallback(
     (color: string) => onChange('profileColor', color),
     [onChange]
   );
 
+  const userStatus = ownPublicUser?.status ?? UserStatus.OFFLINE;
   const statusLabel = useMemo(() => {
-    if (ownPublicUser?.status === UserStatus.IDLE)
-      return t('profileStatusIdle');
-    if (ownPublicUser?.status === UserStatus.OFFLINE) {
-      return t('profileStatusOffline');
-    }
+    if (userStatus === UserStatus.IDLE) return t('profileStatusIdle');
+    if (userStatus === UserStatus.ONLINE) return t('profileStatusOnline');
 
-    return t('profileStatusOnline');
-  }, [ownPublicUser?.status, t]);
+    return t('profileStatusOffline');
+  }, [userStatus, t]);
 
   if (!ownPublicUser) return null;
 
   const avatarUrl =
-    values.avatar?.previewUrl ?? getFileUrl(ownPublicUser.avatar);
+    values.avatar === undefined
+      ? getFileUrl(ownPublicUser.avatar)
+      : values.avatar?.previewUrl;
   const bannerUrl =
-    values.banner?.previewUrl ?? getFileUrl(ownPublicUser.banner);
+    values.banner === undefined
+      ? getFileUrl(ownPublicUser.banner)
+      : values.banner?.previewUrl;
 
   return (
-    <SettingsSection title={t('profileTitle')} description={t('profileDesc')}>
-      <div className="w-full max-w-[600px] overflow-hidden rounded-[10px] border border-line bg-nav">
-        <div className="relative flex h-[148px] items-start justify-end gap-2 bg-[#3B495C] p-[14px]">
-          {bannerUrl && (
-            <img
-              src={bannerUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
+    <SettingsSection title={t('profileTitle')}>
+      <div
+        role="group"
+        aria-label={t('profileTitle')}
+        className="w-full max-w-[320px] overflow-hidden rounded-[10px] border border-line bg-nav"
+      >
+        <DropdownMenu
+          open={isBannerMenuOpen}
+          onOpenChange={setIsBannerMenuOpen}
+        >
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              data-profile-banner
+              onPointerEnter={handleBannerPointerEnter}
+              onPointerLeave={handleBannerPointerLeave}
+              aria-label={t('changeBannerLabel')}
+              className="group/banner relative block h-32 w-full overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{ backgroundColor: values.profileColor }}
+            >
+              {bannerUrl && (
+                <img
+                  src={bannerUrl}
+                  alt=""
+                  className="absolute inset-0 size-full object-cover"
+                />
+              )}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover/banner:bg-black/25 group-focus-visible/banner:bg-black/25',
+                  isBannerMenuOpen && 'bg-black/25'
+                )}
+              />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'pointer-events-none absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover/banner:opacity-100 group-focus-visible/banner:opacity-100',
+                  isBannerMenuOpen && 'opacity-100'
+                )}
+              >
+                <PaintBrushIcon className="size-5" />
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            onEscapeKeyDown={handleBannerMenuEscape}
+          >
+            <DropdownMenuItem onClick={handleBannerPick}>
+              {t('changeBannerLabel')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleOpenColorPicker}>
+              {t('changeProfileColorLabel')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleRemoveBanner}
+              disabled={!bannerUrl}
+              variant="destructive"
+            >
+              {t('removeBannerLabel')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-          <button
-            type="button"
-            onClick={handleBannerPick}
-            aria-label={t('changeBannerLabel')}
-            className="relative flex size-[34px] items-center justify-center rounded-md bg-[#202328CC] text-[#F2F4F6] transition-colors hover:bg-[#202328]"
+        <div className="px-4 pb-4">
+          <div
+            data-profile-avatar
+            className="relative z-10 -mt-[60px] mb-1 size-[120px]"
           >
-            <PhotoIcon className="size-6" />
-          </button>
-          <button
-            type="button"
-            onClick={handleToggleColorPicker}
-            aria-label={t('profileColorLabel')}
-            className="relative flex size-[34px] items-center justify-center rounded-md bg-[#202328CC] text-[#F2F4F6] transition-colors hover:bg-[#202328]"
-          >
-            <SwatchIcon className="size-5" strokeWidth={1.5} />
-          </button>
-          <button
-            type="button"
-            onClick={handleBannerPick}
-            aria-label={t('changeBannerLabel')}
-            className="relative flex size-[34px] items-center justify-center rounded-md bg-[#202328CC] text-[#F2F4F6] transition-colors hover:bg-[#202328]"
-          >
-            <PencilIcon className="size-6" strokeWidth={1.5} />
-          </button>
-        </div>
-
-        <div className="flex flex-col px-6 pb-[26px]">
-          <div className="flex h-12 items-start">
-            <div
-              className="relative -top-10 flex size-[82px] shrink-0 items-center justify-center overflow-visible rounded-full border-[5px] border-[#202328]"
+            <button
+              type="button"
+              onClick={handleAvatarPick}
+              aria-label={t('changeAvatarLabel')}
+              className="group/avatar relative flex size-full items-center justify-center overflow-hidden rounded-full border-4 border-nav bg-nav focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               style={{ backgroundColor: values.profileColor }}
             >
               {avatarUrl ? (
@@ -175,79 +261,85 @@ const Profile = memo(() => {
                   className="size-full rounded-full object-cover"
                 />
               ) : (
-                <span className="text-2xl font-bold leading-[30px] text-foreground">
+                <span className="text-4xl font-bold text-foreground">
                   {getInitialsFromName(values.name)}
                 </span>
               )}
-
-              <button
-                type="button"
-                onClick={handleAvatarPick}
-                aria-label={t('changeAvatarLabel')}
-                className="absolute -right-1 -bottom-[3px] flex size-7 items-center justify-center rounded-full border-[3px] border-[#202328] bg-primary text-primary-foreground"
-              >
-                <PencilIcon className="size-[18px]" strokeWidth={1.5} />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex min-h-[35px] items-center gap-2.5">
-            <span className="text-2xl font-bold leading-[30px] tracking-[-0.4px]">
-              {values.name}
-            </span>
-            <button
-              type="button"
-              onClick={handleEditName}
-              aria-label={t('editNameLabel')}
-              className="flex size-7 shrink-0 items-center justify-center rounded-[5px] bg-panel text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <PencilIcon className="size-5" strokeWidth={1.5} />
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 rounded-full bg-black/0 transition-colors group-hover/avatar:bg-black/55 group-focus-visible/avatar:bg-black/55"
+              />
+              <PaintBrushIcon
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity group-hover/avatar:opacity-100 group-focus-visible/avatar:opacity-100"
+              />
             </button>
+            <UserStatusBadge
+              status={userStatus}
+              className="absolute right-0 bottom-0 size-5 border-4 border-nav"
+            />
           </div>
 
-          <div className="mt-0.5 text-sm leading-4 text-success">
-            ● {statusLabel}
+          <button
+            type="button"
+            onClick={handleEditName}
+            className="block max-w-full truncate text-lg font-semibold leading-6 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {values.name}
+            <span className="sr-only">{t('editNameLabel')}</span>
+          </button>
+
+          <div className="mt-0.5 text-xs leading-[18px] text-muted-foreground">
+            {statusLabel}
           </div>
 
-          <div className="mt-5 mb-[18px] h-px shrink-0 bg-raised" />
-
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 flex-col gap-[7px]">
-              <span className="text-sm font-bold uppercase leading-[18px] tracking-[1px] text-muted-foreground">
-                {t('aboutMeLabel')}
-              </span>
-              {isEditingBio ? (
+          <div className="mt-3">
+            {isEditingBio ? (
+              <div className="flex items-start gap-2">
                 <Textarea
+                  aria-label={t('bioLabel')}
                   value={values.bio}
                   onChange={handleBioChange}
                   placeholder={t('bioPlaceholder')}
                   className="min-h-[80px] w-full"
                   autoFocus
                 />
-              ) : (
-                <span className="text-sm leading-[21px] text-foreground">
-                  {values.bio || t('bioPlaceholder')}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleToggleBio}
-              aria-label={isEditingBio ? t('saveChanges') : t('editBioLabel')}
-              className="flex size-7 shrink-0 items-center justify-center rounded-[5px] bg-panel text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {isEditingBio ? (
-                <CheckIcon className="size-5" strokeWidth={1.5} />
-              ) : (
-                <PencilIcon className="size-5" strokeWidth={1.5} />
-              )}
-            </button>
+                <IconButton
+                  icon={CheckIcon}
+                  variant="ghost"
+                  aria-label={t('saveChanges')}
+                  onClick={handleToggleBio}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleToggleBio}
+                className="w-full cursor-text text-left text-sm leading-[21px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {values.bio || (
+                  <span className="text-muted-foreground">
+                    {t('bioPlaceholder')}
+                  </span>
+                )}
+                <span className="sr-only">{t('editBioLabel')}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="mt-4 border-t border-line pt-3 text-xs text-muted-foreground">
+            {t('memberSince', {
+              date: format(new Date(ownPublicUser.createdAt), 'PP', {
+                locale: dateLocale
+              }),
+              ns: 'common'
+            })}
           </div>
         </div>
       </div>
 
       {isColorPickerOpen && (
-        <div className="w-full max-w-[260px] rounded-md border border-line bg-nav p-3">
+        <div className="mt-4 w-full max-w-[320px] rounded-md border border-line bg-nav p-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-foreground">
               {t('profileColorLabel')}
@@ -265,6 +357,7 @@ const Profile = memo(() => {
             value={values.profileColor}
             onChange={handleColorChange}
             defaultValue={DEFAULT_PROFILE_COLOR}
+            ariaLabel={t('profileColorLabel')}
           />
         </div>
       )}

@@ -10,36 +10,46 @@ type TColorPickerProps = {
   onChange?: (value: string) => void;
   error?: string;
   defaultValue?: string;
+  ariaLabel: string;
 };
 
 const ColorPicker = ({
   value,
   onChange,
   defaultValue = '#FFFFFF',
-  error
+  error,
+  ariaLabel
 }: TColorPickerProps) => {
   return (
     <div className="flex flex-col">
       <Popover>
         <PopoverTrigger asChild>
-          <div className="relative group cursor-pointer w-full h-32">
+          <button
+            type="button"
+            aria-label={ariaLabel}
+            className="group relative h-32 w-full cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <div
               style={{ backgroundColor: value }}
               className={cn(
-                'w-full h-32 rounded-md border transition-opacity group-hover:opacity-70',
+                'h-32 w-full rounded-md border transition-opacity group-hover:opacity-70',
                 error ? 'border-red-500' : 'border-border'
               )}
             />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-              <div className="bg-black/50 rounded-full p-3">
-                <PencilIcon className="h-6 w-6 text-white" />
+            <div className="absolute inset-0 flex items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="rounded-full bg-black/50 p-3">
+                <PencilIcon aria-hidden="true" className="h-6 w-6 text-white" />
               </div>
             </div>
-          </div>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="flex flex-col gap-2 w-fit h-fit p-2 rounded-2xl">
           <HexColorPicker color={value} onChange={onChange} />
-          <Input value={value} onChange={(e) => onChange?.(e.target.value)} />
+          <Input
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+          />
           <Button
             size="sm"
             variant="ghost"

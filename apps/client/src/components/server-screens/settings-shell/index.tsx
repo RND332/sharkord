@@ -90,11 +90,17 @@ const SettingsShell = memo(
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key !== 'Escape') return;
+        if (e.key !== 'Escape' || e.defaultPrevented) return;
 
-        // the topmost surface owns escape: a dialog or the mod view closes itself first
+        // the topmost surface owns escape: dialogs, menus, and the mod view close themselves first
         if (isModViewOpen || isDialogOpen) return;
+        const eventPath = e.composedPath();
+        const isMenuEscape = eventPath.some(
+          (target) =>
+            target instanceof Element && target.getAttribute('role') === 'menu'
+        );
 
+        if (isMenuEscape) return;
         handleClose();
       };
 
