@@ -233,8 +233,13 @@ beforeEach(async () => {
     ?.click();
 });
 
-afterEach(() => {
+afterEach(async () => {
   closeServerScreens();
+  toast.dismiss();
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await waitForRender();
+    if (!document.querySelector('[data-sonner-toast]')) break;
+  }
 });
 
 test('delete user keeps both confirmation steps visibly destructive', async () => {

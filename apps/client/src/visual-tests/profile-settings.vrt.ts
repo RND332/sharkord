@@ -189,6 +189,7 @@ test('mobile profile settings keep the settings navigation reachable and keyboar
   await userEvent.keyboard('{Tab}');
   await expect.element(settings).toHaveFocus();
   await userEvent.keyboard('{Space}');
+  await userEvent.unhover(document.body);
   const heading = page.getByRole('heading', {
     name: 'Profile',
     exact: true,
@@ -325,8 +326,7 @@ test('Escape confirms before discarding unsaved profile changes', async () => {
   try {
     await expect.element(heading).toBeVisible();
     const editBioButton = page.getByRole('button', {
-      name: 'Edit bio',
-      exact: true
+      name: /Edit bio/
     });
     await editBioButton.click();
     const bioTextbox = page.getByRole('textbox');
