@@ -1,4 +1,9 @@
-import { closeServerScreens } from '@/features/server-screens/actions';
+import { ServerScreen } from '@/components/server-screens/screens';
+import { resetDialogs } from '@/features/dialogs/actions';
+import {
+  closeServerScreens,
+  openServerScreen
+} from '@/features/server-screens/actions';
 import { setCurrentVoiceChannelId } from '@/features/server/channels/actions';
 import { updateOwnVoiceState } from '@/features/server/voice/actions';
 import { TestId } from '@sharkord/shared';
@@ -60,10 +65,19 @@ test.each([1440, 768])(
     expect(getComputedStyle(settingsButton).boxShadow).not.toBe('none');
     await userEvent.keyboard('{Enter}');
     const heading = page.getByRole('heading', {
-      name: 'User Settings',
-      exact: true
+      name: 'Profile',
+      exact: true,
+      level: 2
     });
     await expect.element(heading).toBeVisible();
+    const mainRegion = page.getByRole('main');
+    const settingsMain = mainRegion.filter({ has: heading });
+    const settingsMainElement = settingsMain.element();
+    const settingsMainBounds = settingsMainElement.getBoundingClientRect();
+    expect(settingsMainBounds.top).toBe(0);
+    await expect
+      .element(page.getByText('Esc to close', { exact: true }))
+      .not.toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
     await expect.element(heading).not.toBeInTheDocument();
     deafenButton.focus();
@@ -133,7 +147,7 @@ test('profile controls retain the Paper spacing and Miku theme without crowding 
   });
 });
 
-test('mobile profile settings remain in view and keyboard accessible through the existing sidebar', async () => {
+test('mobile profile settings keep the settings navigation reachable and keyboard accessible', async () => {
   await page.viewport(390, 844);
   const session: CDPSession = cdp();
   const frame = window.frameElement;
@@ -175,9 +189,165 @@ test('mobile profile settings remain in view and keyboard accessible through the
   await userEvent.keyboard('{Tab}');
   await expect.element(settings).toHaveFocus();
   await userEvent.keyboard('{Space}');
+  const heading = page.getByRole('heading', {
+    name: 'Profile',
+    exact: true,
+    level: 2
+  });
+  await expect.element(heading).toBeVisible();
   await expect
-    .element(page.getByRole('heading', { name: 'User Settings', exact: true }))
-    .toBeVisible();
+    .poll(() => {
+      const sidebarElement = sidebar.element();
+      const sidebarBounds = sidebarElement.getBoundingClientRect();
+
+      return sidebarBounds.right;
+    })
+    .toBeLessThanOrEqual(0);
+  const mainRegion = page.getByRole('main');
+  const settingsMain = mainRegion.filter({ has: heading });
+  const settingsMainElement = settingsMain.element();
+  const settingsMainBounds = settingsMainElement.getBoundingClientRect();
+  expect(settingsMainBounds.top).toBe(0);
+  const navigationToggle = page.getByRole('button', {
+    name: 'Settings navigation',
+    exact: true
+  });
+  await expect.element(navigationToggle).toBeVisible();
+  await expect
+    .element(navigationToggle)
+    .toHaveAttribute('aria-expanded', 'false');
+  const navigationSidebarElement = document.getElementById('settings-sidebar')!;
+  await expect
+    .element(page.elementLocator(navigationSidebarElement))
+    .not.toBeVisible();
+  const navigation = page.getByRole('navigation', {
+    name: 'Settings navigation',
+    exact: true
+  });
+  await navigationToggle.click();
+  await expect
+    .element(navigationToggle)
+    .toHaveAttribute('aria-expanded', 'true');
+  await expect.element(navigation).toBeVisible();
+  await expect
+    .poll(() => {
+      const navigationElement = navigation.element();
+      const navigationBounds = navigationElement.getBoundingClientRect();
+
+      return navigationBounds.left;
+    })
+    .toBeGreaterThanOrEqual(0);
+  expect(
+    navigation.element().getBoundingClientRect().right
+  ).toBeLessThanOrEqual(390);
+  const profileItem = navigation.getByRole('button', {
+    name: 'Profile',
+    exact: true
+  });
+  await expect.element(profileItem).toHaveAttribute('aria-current', 'page');
+  await profileItem.click();
+  await expect
+    .element(navigationToggle)
+    .toHaveAttribute('aria-expanded', 'false');
+  await expect
+    .element(page.elementLocator(navigationSidebarElement))
+    .not.toBeVisible();
+  const closeSettings = page.getByRole('button', {
+    name: 'Close',
+    exact: true
+  });
+  await expect.element(closeSettings).toBeVisible();
+  await closeSettings.click();
+  await expect.element(heading).not.toBeInTheDocument();
   expect(document.documentElement.dataset.theme).toBe('hatsune-miku');
   expect(localStorage.getItem('vite-ui-theme')).toBe('hatsune-miku');
+});
+
+test('mobile settings controls stay reachable while server settings scroll', async () => {
+  await page.viewport(390, 400);
+  openServerScreen(ServerScreen.SERVER_SETTINGS);
+
+  const heading = page.getByRole('heading', {
+    name: 'Server overview',
+    exact: true,
+    level: 2
+  });
+  const mainRegion = page.getByRole('main');
+  const settingsMain = mainRegion.filter({ has: heading });
+  await expect.element(heading).toBeVisible();
+  const main = settingsMain.element();
+  expect(main.scrollHeight).toBeGreaterThan(main.clientHeight);
+  main.scrollTop = main.scrollHeight;
+
+  const navigationToggle = page.getByRole('button', {
+    name: 'Settings navigation',
+    exact: true
+  });
+  const closeSettings = page.getByRole('button', {
+    name: 'Close',
+    exact: true
+  });
+  await expect
+    .poll(() => {
+      const navigationToggleElement = navigationToggle.element();
+      const navigationBounds = navigationToggleElement.getBoundingClientRect();
+      const closeSettingsElement = closeSettings.element();
+      const closeBounds = closeSettingsElement.getBoundingClientRect();
+
+      return (
+        navigationBounds.top >= 0 &&
+        navigationBounds.bottom <= window.innerHeight &&
+        closeBounds.top >= 0 &&
+        closeBounds.bottom <= window.innerHeight
+      );
+    })
+    .toBe(true);
+
+  await navigationToggle.click();
+  const navigation = page.getByRole('navigation', {
+    name: 'Settings navigation',
+    exact: true
+  });
+  await expect.element(navigation).toBeVisible();
+  await closeSettings.click();
+  await expect.element(heading).not.toBeInTheDocument();
+});
+
+test('Escape confirms before discarding unsaved profile changes', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+
+  const heading = page.getByRole('heading', {
+    name: 'Profile',
+    exact: true,
+    level: 2
+  });
+
+  try {
+    await expect.element(heading).toBeVisible();
+    const editBioButton = page.getByRole('button', {
+      name: 'Edit bio',
+      exact: true
+    });
+    await editBioButton.click();
+    const bioTextbox = page.getByRole('textbox');
+    await bioTextbox.fill('Unsaved profile bio');
+    await userEvent.keyboard('{Escape}');
+
+    const confirmation = page.getByRole('alertdialog');
+    await expect.element(confirmation).toBeVisible();
+    await expect
+      .element(
+        confirmation.getByText('Discard unsaved changes?', { exact: true })
+      )
+      .toBeVisible();
+    const discardButton = confirmation.getByRole('button', {
+      name: 'Discard',
+      exact: true
+    });
+    await discardButton.click();
+    await expect.element(heading).not.toBeInTheDocument();
+  } finally {
+    resetDialogs();
+    closeServerScreens();
+  }
 });

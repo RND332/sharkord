@@ -547,6 +547,7 @@
   "groupAdministration": "Správa",
   "groupChannel": "Kanál",
   "groupCategory": "Kategorie",
+  "settingsNavigationLabel": "Navigace nastavení",
   "currentPasswordPlaceholder": "Zadejte aktuální heslo",
   "newPasswordPlaceholder": "Zadejte nové heslo",
   "confirmPasswordPlaceholder": "Znovu zadejte nové heslo",

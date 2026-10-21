@@ -7,6 +7,7 @@ import { ThreadSidebar } from '@/components/thread-sidebar';
 import { VoiceChatSidebar } from '@/components/voice-chat-sidebar';
 import { VoiceProvider } from '@/components/voice-provider';
 import { useSelectedDmChannelId, useThreadSidebar } from '@/features/app/hooks';
+import { useServerScreenInfo } from '@/features/server-screens/hooks';
 import { setDmsOpen } from '@/features/server/actions';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useDmsOpen, usePublicServerSettings } from '@/features/server/hooks';
@@ -94,6 +95,14 @@ const ServerView = memo(() => {
       }
     }
   }, [publicSettings?.directMessagesEnabled, dmsOpen]);
+  const { isOpen: isServerScreenOpen } = useServerScreenInfo();
+
+  useEffect(() => {
+    if (!isServerScreenOpen) return;
+
+    setIsMobileMenuOpen(false);
+    setIsMobileUsersOpen(false);
+  }, [isServerScreenOpen]);
 
   return (
     <VoiceProvider>

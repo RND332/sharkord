@@ -547,6 +547,7 @@
   "groupAdministration": "管理",
   "groupChannel": "频道",
   "groupCategory": "分类",
+  "settingsNavigationLabel": "设置导航",
   "currentPasswordPlaceholder": "输入当前密码",
   "newPasswordPlaceholder": "输入新密码",
   "confirmPasswordPlaceholder": "再次输入新密码",

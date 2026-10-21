@@ -556,6 +556,7 @@
   "groupAdministration": "Администрирование",
   "groupChannel": "Канал",
   "groupCategory": "Категория",
+  "settingsNavigationLabel": "Навигация настроек",
   "currentPasswordPlaceholder": "Введите текущий пароль",
   "newPasswordPlaceholder": "Введите новый пароль",
   "confirmPasswordPlaceholder": "Повторите новый пароль",

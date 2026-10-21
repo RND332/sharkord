@@ -547,6 +547,7 @@
   "groupAdministration": "Administration",
   "groupChannel": "Canal",
   "groupCategory": "Catégorie",
+  "settingsNavigationLabel": "Navigation des paramètres",
   "currentPasswordPlaceholder": "Saisissez le mot de passe actuel",
   "newPasswordPlaceholder": "Saisissez un nouveau mot de passe",
   "confirmPasswordPlaceholder": "Ressaisissez le nouveau mot de passe",

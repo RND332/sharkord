@@ -549,6 +549,7 @@
   "groupAdministration": "Administration",
   "groupChannel": "Channel",
   "groupCategory": "Category",
+  "settingsNavigationLabel": "Settings navigation",
   "currentPasswordPlaceholder": "Enter current password",
   "newPasswordPlaceholder": "Enter a new password",
   "confirmPasswordPlaceholder": "Re-enter the new password",
