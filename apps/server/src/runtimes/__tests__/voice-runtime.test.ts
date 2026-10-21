@@ -88,29 +88,33 @@ describe('VoiceRuntime producer and consumer maps', () => {
     );
   });
 
-  test('should keep producers of other kinds when one is replaced', () => {
+  test('should keep producers of other kinds when one is replaced', async () => {
     const runtime = createRuntime();
     runtime.addUser(1, { micMuted: false, soundMuted: false });
     const audio = createProducerStub();
     const screenAudio = createProducerStub();
     const replacement = createProducerStub();
 
-    runtime.addProducer(1, StreamKind.AUDIO, audio as unknown as Producer);
-    runtime.addProducer(
-      1,
-      StreamKind.SCREEN_AUDIO,
-      screenAudio as unknown as Producer
-    );
-    runtime.addProducer(
-      1,
-      StreamKind.AUDIO,
-      replacement as unknown as Producer
-    );
+    try {
+      runtime.addProducer(1, StreamKind.AUDIO, audio as unknown as Producer);
+      runtime.addProducer(
+        1,
+        StreamKind.SCREEN_AUDIO,
+        screenAudio as unknown as Producer
+      );
+      runtime.addProducer(
+        1,
+        StreamKind.AUDIO,
+        replacement as unknown as Producer
+      );
 
-    expect(screenAudio.closed).toBe(false);
-    expect(runtime.getProducer(StreamKind.SCREEN_AUDIO, 1)).toBe(
-      screenAudio as unknown as Producer
-    );
+      expect(screenAudio.closed).toBe(false);
+      expect(runtime.getProducer(StreamKind.SCREEN_AUDIO, 1)).toBe(
+        screenAudio as unknown as Producer
+      );
+    } finally {
+      await runtime.destroy();
+    }
   });
 
   test('should close the previous consumer when one replaces it', () => {
