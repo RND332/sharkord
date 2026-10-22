@@ -323,6 +323,7 @@
   "noEmojisFound": "No emojis found",
   "noCustomEmojisYet": "No custom emojis yet",
   "editEmojiTitle": "Edit Emoji",
+  "editEmojiActionLabel": "Edit {{name}}",
   "emojiUploadedBy": "Uploaded by",
   "emojiNameLabel": "Name",
   "emojiNamePlaceholder": "Enter emoji name (no spaces or special characters)",

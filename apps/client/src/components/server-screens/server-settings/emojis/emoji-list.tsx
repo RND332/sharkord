@@ -1,10 +1,16 @@
 import { getFileUrl } from '@/helpers/get-file-url';
+import { cn } from '@/lib/utils';
 import { MagnifyingGlassIcon, PencilIcon } from '@heroicons/react/24/outline';
 import type { TJoinedEmoji } from '@sharkord/shared';
 import { Input } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  EMOJI_COLUMN_LABEL_KEYS,
+  EMOJI_COLUMN_ORDER,
+  EMOJI_COLUMN_WIDTHS
+} from './helpers';
 
 type TEmojiListProps = {
   emojis: TJoinedEmoji[];
@@ -19,6 +25,7 @@ type TEmojiRowProps = {
 };
 
 const EmojiRow = memo(({ emoji, isSelected, onSelect }: TEmojiRowProps) => {
+  const { t } = useTranslation('settings');
   const handleEdit = useCallback(
     () => onSelect(emoji.id),
     [onSelect, emoji.id]
@@ -26,30 +33,40 @@ const EmojiRow = memo(({ emoji, isSelected, onSelect }: TEmojiRowProps) => {
 
   return (
     <div
-      className={
-        isSelected
-          ? 'flex items-center border-b border-line bg-raised py-3'
-          : 'flex items-center border-b border-line py-3'
-      }
+      className={cn(
+        'flex items-center border-b border-line py-3 last:border-b-0',
+        isSelected && 'bg-raised'
+      )}
     >
-      <div className="flex w-[54px] shrink-0 items-center">
+      <div className={cn(EMOJI_COLUMN_WIDTHS.icon, 'flex items-center')}>
         <img
           src={getFileUrl(emoji.file)}
           alt=""
           className="size-6 rounded-[4px] object-contain"
         />
       </div>
-      <span className="min-w-0 grow truncate text-sm leading-[18px] text-foreground">
+      <span
+        className={cn(
+          EMOJI_COLUMN_WIDTHS.name,
+          'truncate text-sm leading-[18px] text-foreground'
+        )}
+        title={emoji.name}
+      >
         {emoji.name}
       </span>
-      <span className="w-[100px] shrink-0 text-sm leading-[18px] text-muted-foreground">
+      <span
+        className={cn(
+          EMOJI_COLUMN_WIDTHS.size,
+          'text-sm leading-[18px] text-muted-foreground'
+        )}
+      >
         {filesize(emoji.file.size, { standard: 'jedec' })}
       </span>
-      <div className="flex w-[70px] shrink-0 items-center justify-end">
+      <div className={cn(EMOJI_COLUMN_WIDTHS.actions, 'flex items-center')}>
         <button
           type="button"
           onClick={handleEdit}
-          aria-label={`Edit ${emoji.name}`}
+          aria-label={t('editEmojiActionLabel', { name: emoji.name })}
           className="flex size-8 items-center justify-center rounded-[6px] text-muted-foreground transition-colors hover:bg-panel hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           <PencilIcon className="size-4" strokeWidth={1.5} />
@@ -99,18 +116,17 @@ const EmojiList = memo(
 
         <div className="flex w-full flex-col">
           <div className="flex items-center border-b border-line py-3">
-            <span className="w-[54px] shrink-0 text-xs uppercase leading-4 tracking-[0.07em] text-subtle-foreground">
-              {t('emojisIconColumn')}
-            </span>
-            <span className="grow text-xs uppercase leading-4 tracking-[0.07em] text-subtle-foreground">
-              {t('emojisNameColumn')}
-            </span>
-            <span className="w-[100px] shrink-0 text-xs uppercase leading-4 tracking-[0.07em] text-subtle-foreground">
-              {t('emojisSizeColumn')}
-            </span>
-            <span className="w-[70px] shrink-0 text-xs uppercase leading-4 tracking-[0.07em] text-subtle-foreground">
-              {t('emojisActionsColumn')}
-            </span>
+            {EMOJI_COLUMN_ORDER.map((id) => (
+              <span
+                key={id}
+                className={cn(
+                  EMOJI_COLUMN_WIDTHS[id],
+                  'text-xs uppercase leading-4 tracking-[0.07em] text-subtle-foreground'
+                )}
+              >
+                {t(EMOJI_COLUMN_LABEL_KEYS[id])}
+              </span>
+            ))}
           </div>
 
           {filteredEmojis.length === 0 ? (
