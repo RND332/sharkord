@@ -49,7 +49,7 @@
   "deleteUserDialogTitle": "Удалить пользователя",
   "deleteUserDialogDescription": "Удалить эту учётную запись с сервера.",
   "deleteUserQuestion": "Удалить {{name}} с сервера {{server}}?",
-  "deleteUserWarning": "Учётная запись и содержимое сервера будут удалены. Это действие необратимо.",
+  "deleteUserWarning": "Учётная запись будет удалена. Сообщения и загруженные файлы останутся на сервере и будут показаны как Deleted. Это действие необратимо.",
   "deleteUserConfirmLabel": "ВВЕДИТЕ DELETE ДЛЯ ПОДТВЕРЖДЕНИЯ",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Удалить пользователя",

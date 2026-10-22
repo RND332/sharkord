@@ -36,7 +36,7 @@
   "deleteUserDialogTitle": "Excluir usuário",
   "deleteUserDialogDescription": "Remover esta conta do servidor.",
   "deleteUserQuestion": "Excluir {{name}} de {{server}}?",
-  "deleteUserWarning": "A conta e o conteúdo do servidor serão removidos. Esta ação não pode ser desfeita.",
+  "deleteUserWarning": "A conta será removida. As mensagens e os arquivos enviados continuarão no servidor e aparecerão como Deleted. Esta ação não pode ser desfeita.",
   "deleteUserConfirmLabel": "DIGITE DELETE PARA CONFIRMAR",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Excluir usuário",

@@ -36,7 +36,7 @@
   "deleteUserDialogTitle": "Elimina utente",
   "deleteUserDialogDescription": "Rimuovi questo account dal server.",
   "deleteUserQuestion": "Eliminare {{name}} da {{server}}?",
-  "deleteUserWarning": "Il loro account e i contenuti del server verranno rimossi. Questa azione non puo essere annullata.",
+  "deleteUserWarning": "Il loro account verrà rimosso. I loro messaggi e i file caricati resteranno sul server e verranno mostrati come Deleted. Questa azione non puo essere annullata.",
   "deleteUserConfirmLabel": "DIGITA DELETE PER CONFERMARE",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Elimina utente",
