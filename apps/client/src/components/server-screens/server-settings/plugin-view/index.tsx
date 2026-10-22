@@ -1,4 +1,3 @@
-import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useCan } from '@/features/server/hooks';
 import { loadPluginTabs } from '@/features/server/plugins/actions';
 import {
@@ -23,11 +22,18 @@ import {
   TabsList,
   TabsTrigger
 } from '@sharkord/ui';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ImageWithFallback } from '../plugins/marketplace/image-with-fallback';
 import { PluginCommands } from './commands';
+import {
+  getDefaultPluginTab,
+  getPluginStatus,
+  getPluginTabs,
+  PLUGIN_STATUS_CLASSES,
+  PLUGIN_STATUS_LABEL_KEYS
+} from './helpers';
 import { PluginLogs } from './logs';
 import { PluginPermissions } from './permissions';
 import { PluginSettings } from './settings';
@@ -88,47 +94,79 @@ const PluginView = memo(({ plugin }: TPluginViewProps) => {
   const hasCommands = (commandsMap[plugin.id] ?? []).length > 0;
   const hasSettings = definitions.length > 0;
 
-  let defaultTab = 'logs';
+  const status = getPluginStatus(plugin);
 
-  if (hasCommands) defaultTab = 'commands';
-  if (hasSettings) defaultTab = 'settings';
+  const tabs = useMemo(
+    () =>
+      getPluginTabs({
+        hasSettings,
+        hasCommands,
+        canManagePermissions: canManagePluginPermissions,
+        customTabs,
+        labels: {
+          settings: t('pluginSettingsTab'),
+          commands: t('pluginCommandsTab'),
+          logs: t('pluginLogsTab'),
+          permissions: t('pluginPermissionsTab')
+        }
+      }),
+    [hasSettings, hasCommands, canManagePluginPermissions, customTabs, t]
+  );
+
+  const defaultTab = getDefaultPluginTab({ hasSettings, hasCommands });
 
   const identity = (
-    <SettingsSection
-      title={plugin.name}
-      description={plugin.description}
-      action={
-        <ImageWithFallback
-          src={plugin.logo}
-          alt=""
-          className="h-12 w-12 rounded-md object-cover"
-          iconFallback={<CubeIcon className="h-6 w-6 text-muted-foreground" />}
-        />
-      }
-    >
-      <div className="flex flex-wrap items-center gap-x-4 text-xs text-muted-foreground">
-        <span className="font-mono">v{plugin.version}</span>
-        <span>{plugin.author}</span>
-        {plugin.homepage && (
-          <a
-            href={plugin.homepage}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline transition-colors hover:text-accent-text"
-          >
-            {plugin.homepage}
-          </a>
-        )}
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex w-full max-w-[880px] flex-col gap-[15px] border-b border-line pb-[14px] sm:flex-row sm:items-center">
+        <div className="flex size-[50px] shrink-0 items-center justify-center overflow-hidden rounded-[9px] bg-raised">
+          <ImageWithFallback
+            src={plugin.logo}
+            alt=""
+            className="size-full object-cover"
+            iconFallback={<CubeIcon className="size-6 text-muted-foreground" />}
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
+          <h2 className="truncate text-[24px] font-bold leading-[29px] text-foreground">
+            {plugin.name}
+          </h2>
+          <div className="flex flex-wrap items-center gap-x-2 text-sm leading-[18px] text-muted-foreground">
+            <span className="truncate">{plugin.description}</span>
+            <span aria-hidden="true">·</span>
+            <span className="font-mono">v{plugin.version}</span>
+            <span aria-hidden="true">·</span>
+            <span className={PLUGIN_STATUS_CLASSES[status]}>
+              {t(PLUGIN_STATUS_LABEL_KEYS[status])}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-3 text-sm leading-[18px] text-muted-foreground">
+          <span className="truncate">{plugin.author}</span>
+          {plugin.homepage && (
+            <a
+              href={plugin.homepage}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate text-accent-text underline transition-colors hover:text-foreground"
+            >
+              {plugin.homepage}
+            </a>
+          )}
+        </div>
       </div>
 
       {plugin.loadError && (
-        <Alert variant="destructive">
-          <ExclamationCircleIcon className="h-4 w-4" />
-          <AlertTitle>{t('pluginLoadErrorTitle')}</AlertTitle>
-          <AlertDescription>{plugin.loadError}</AlertDescription>
-        </Alert>
+        <div className="w-full max-w-[880px]">
+          <Alert variant="destructive">
+            <ExclamationCircleIcon className="h-4 w-4" />
+            <AlertTitle>{t('pluginLoadErrorTitle')}</AlertTitle>
+            <AlertDescription>{plugin.loadError}</AlertDescription>
+          </Alert>
+        </div>
       )}
-    </SettingsSection>
+    </div>
   );
 
   if (loading) {
@@ -160,27 +198,14 @@ const PluginView = memo(({ plugin }: TPluginViewProps) => {
       {identity}
 
       <Tabs defaultValue={defaultTab}>
-        <TabsList className="mb-4">
-          {hasSettings && (
-            <TabsTrigger value="settings" data-tab="settings">
-              {t('pluginSettingsTab')}
-            </TabsTrigger>
-          )}
-          {hasCommands && (
-            <TabsTrigger value="commands" data-tab="commands">
-              {t('pluginCommandsTab')}
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="logs" data-tab="logs">
-            {t('pluginLogsTab')}
-          </TabsTrigger>
-          {canManagePluginPermissions && (
-            <TabsTrigger value="permissions" data-tab="permissions">
-              {t('pluginPermissionsTab')}
-            </TabsTrigger>
-          )}
-          {customTabs.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id} data-tab={tab.id}>
+        <TabsList className="mb-4 w-full max-w-[880px]">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              data-tab={tab.id}
+              className="data-[state=active]:font-semibold"
+            >
               {tab.label}
             </TabsTrigger>
           ))}

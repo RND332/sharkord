@@ -5,9 +5,15 @@ import { useAdminGeneral } from '@/features/server/admin/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { getTRPCClient } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 import { Input, LoadingCard, Switch, Textarea } from '@sharkord/ui';
 import { memo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  GENERAL_FEATURES,
+  type TGeneralFeature,
+  type TGeneralFeatureKey
+} from './helpers';
 
 type TServerGeneralValues = {
   name: string;
@@ -36,6 +42,43 @@ const INITIAL_VALUES: TServerGeneralValues = {
   enableSearch: true,
   showWelcomeDialog: true
 };
+
+type TFeatureToggleProps = {
+  feature: TGeneralFeature;
+  checked: boolean;
+  onChange: (key: TGeneralFeatureKey, checked: boolean) => void;
+};
+
+const FeatureToggle = memo(
+  ({ feature, checked, onChange }: TFeatureToggleProps) => {
+    const { t } = useTranslation('settings');
+    const handleChange = useCallback(
+      (next: boolean) => onChange(feature.key, next),
+      [feature.key, onChange]
+    );
+
+    return (
+      <SettingsRow
+        label={t(feature.labelKey)}
+        description={
+          feature.descriptionKey ? t(feature.descriptionKey) : undefined
+        }
+        className={cn(
+          'py-[13px]',
+          feature.key === 'webRtcSimulcastEnabled' && 'border-b-0'
+        )}
+      >
+        <Switch
+          aria-label={t(feature.labelKey)}
+          checked={checked}
+          onCheckedChange={handleChange}
+        />
+      </SettingsRow>
+    );
+  }
+);
+
+FeatureToggle.displayName = 'FeatureToggle';
 
 const General = memo(() => {
   const { t } = useTranslation('settings');
@@ -99,32 +142,8 @@ const General = memo(() => {
     [onChange]
   );
 
-  const handlePasswordOnFirstJoinChange = useCallback(
-    (checked: boolean) => onChange('onlyAskForPasswordOnFirstJoin', checked),
-    [onChange]
-  );
-  const handleAllowNewUsersChange = useCallback(
-    (checked: boolean) => onChange('allowNewUsers', checked),
-    [onChange]
-  );
-  const handleEnablePluginsChange = useCallback(
-    (checked: boolean) => onChange('enablePlugins', checked),
-    [onChange]
-  );
-  const handleSimulcastChange = useCallback(
-    (checked: boolean) => onChange('webRtcSimulcastEnabled', checked),
-    [onChange]
-  );
-  const handleDirectMessagesChange = useCallback(
-    (checked: boolean) => onChange('directMessagesEnabled', checked),
-    [onChange]
-  );
-  const handleSearchChange = useCallback(
-    (checked: boolean) => onChange('enableSearch', checked),
-    [onChange]
-  );
-  const handleWelcomeDialogChange = useCallback(
-    (checked: boolean) => onChange('showWelcomeDialog', checked),
+  const handleFeatureChange = useCallback(
+    (key: TGeneralFeatureKey, checked: boolean) => onChange(key, checked),
     [onChange]
   );
 
@@ -242,65 +261,14 @@ const General = memo(() => {
             </h3>
           </div>
 
-          <SettingsRow label={t('allowNewUsersLabel')}>
-            <Switch
-              aria-label={t('allowNewUsersLabel')}
-              checked={values.allowNewUsers}
-              onCheckedChange={handleAllowNewUsersChange}
+          {GENERAL_FEATURES.map((feature) => (
+            <FeatureToggle
+              key={feature.key}
+              feature={feature}
+              checked={values[feature.key]}
+              onChange={handleFeatureChange}
             />
-          </SettingsRow>
-
-          <SettingsRow label={t('onlyAskForPasswordOnFirstJoinLabel')}>
-            <Switch
-              aria-label={t('onlyAskForPasswordOnFirstJoinLabel')}
-              checked={values.onlyAskForPasswordOnFirstJoin}
-              onCheckedChange={handlePasswordOnFirstJoinChange}
-            />
-          </SettingsRow>
-
-          <SettingsRow label={t('directMessagesEnabledLabel')}>
-            <Switch
-              aria-label={t('directMessagesEnabledLabel')}
-              checked={values.directMessagesEnabled}
-              onCheckedChange={handleDirectMessagesChange}
-            />
-          </SettingsRow>
-
-          <SettingsRow label={t('searchEnabledLabel')}>
-            <Switch
-              aria-label={t('searchEnabledLabel')}
-              checked={values.enableSearch}
-              onCheckedChange={handleSearchChange}
-            />
-          </SettingsRow>
-
-          <SettingsRow label={t('pluginsLabel')}>
-            <Switch
-              aria-label={t('pluginsLabel')}
-              checked={values.enablePlugins}
-              onCheckedChange={handleEnablePluginsChange}
-            />
-          </SettingsRow>
-
-          <SettingsRow label={t('showWelcomeDialogLabel')}>
-            <Switch
-              aria-label={t('showWelcomeDialogLabel')}
-              checked={values.showWelcomeDialog}
-              onCheckedChange={handleWelcomeDialogChange}
-            />
-          </SettingsRow>
-
-          <SettingsRow
-            label={t('simulcastLabel')}
-            description={t('simulcastDesc')}
-            className="border-b-0"
-          >
-            <Switch
-              aria-label={t('simulcastLabel')}
-              checked={values.webRtcSimulcastEnabled}
-              onCheckedChange={handleSimulcastChange}
-            />
-          </SettingsRow>
+          ))}
         </div>
       </div>
     </SettingsSection>

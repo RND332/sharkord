@@ -86,6 +86,7 @@ const UpdateEmoji = memo(
                 icon={TrashIcon}
                 size="sm"
                 variant="destructive"
+                aria-label={t('deleteEmojiBtn')}
                 onClick={onDeleteEmoji}
               />
             </Tooltip>
@@ -94,6 +95,7 @@ const UpdateEmoji = memo(
                 icon={XMarkIcon}
                 size="sm"
                 variant="ghost"
+                aria-label={t('closeEditorTooltip')}
                 onClick={onClose}
               />
             </Tooltip>

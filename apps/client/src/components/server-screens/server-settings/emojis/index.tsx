@@ -4,11 +4,7 @@ import { useAdminEmojis } from '@/features/server/admin/hooks';
 import { uploadFiles } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
 import { getTRPCClient } from '@/lib/trpc';
-import {
-  ArrowUpTrayIcon,
-  FaceSmileIcon,
-  PlusIcon
-} from '@heroicons/react/24/outline';
+import { ArrowUpTrayIcon, FaceSmileIcon } from '@heroicons/react/24/outline';
 import { Button, LoadingCard, Spinner, Tooltip } from '@sharkord/ui';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,7 +68,7 @@ const Emojis = memo(() => {
         aria-label={t('uploadEmojiBtn')}
         className="flex size-[38px] items-center justify-center rounded-[7px] bg-raised text-foreground transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        <PlusIcon className="size-6" strokeWidth={1.5} />
+        <ArrowUpTrayIcon className="size-6" strokeWidth={1.5} />
       </button>
     </Tooltip>
   );
