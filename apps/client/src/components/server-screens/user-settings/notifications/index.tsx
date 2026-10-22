@@ -1,3 +1,4 @@
+import { Dialog } from '@/components/dialogs/dialogs';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import {
@@ -16,7 +17,8 @@ import {
   useMessageSentSound,
   useNotificationSounds
 } from '@/features/app/hooks';
-import { Switch } from '@dodecagon/ui';
+import { openDialog } from '@/features/dialogs/actions';
+import { Button, Switch } from '@dodecagon/ui';
 import { memo, type ReactNode, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -110,6 +112,10 @@ const Notifications = memo(() => {
     [onChange]
   );
 
+  const handleOpenSoundSettings = useCallback(() => {
+    openDialog(Dialog.SOUND_SETTINGS);
+  }, []);
+
   return (
     <SettingsSection
       title={t('notificationsTitle')}
@@ -173,6 +179,14 @@ const Notifications = memo(() => {
             disabled={!values.sounds}
             onCheckedChange={handleSentSoundChange}
           />
+        </NotificationRow>
+        <NotificationRow
+          label={t('soundSettingsLabel')}
+          description={t('soundSettingsDesc')}
+        >
+          <Button variant="secondary" onClick={handleOpenSoundSettings}>
+            {t('soundSettingsOpenBtn')}
+          </Button>
         </NotificationRow>
       </div>
     </SettingsSection>

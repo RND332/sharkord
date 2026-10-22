@@ -25,6 +25,8 @@ export interface TAppState {
   browserNotificationsForReplies: boolean;
   notificationSounds: boolean;
   messageSentSound: boolean;
+  joinLeaveSounds: boolean;
+  muteDeafenSounds: boolean;
   mutedChannelIds: number[];
   messageJumpTarget: TMessageJumpToTarget | undefined;
   voiceChatSidebarOpen: boolean;
@@ -70,6 +72,14 @@ const initialState: TAppState = {
   ),
   messageSentSound: getLocalStorageItemBool(
     LocalStorageKey.MESSAGE_SENT_SOUND,
+    true
+  ),
+  joinLeaveSounds: getLocalStorageItemBool(
+    LocalStorageKey.JOIN_LEAVE_SOUNDS,
+    true
+  ),
+  muteDeafenSounds: getLocalStorageItemBool(
+    LocalStorageKey.MUTE_DEAFEN_SOUNDS,
     true
   ),
   mutedChannelIds:
@@ -160,6 +170,12 @@ export const appSlice = createSlice({
     },
     setMessageSentSound: (state, action: PayloadAction<boolean>) => {
       state.messageSentSound = action.payload;
+    },
+    setJoinLeaveSounds: (state, action: PayloadAction<boolean>) => {
+      state.joinLeaveSounds = action.payload;
+    },
+    setMuteDeafenSounds: (state, action: PayloadAction<boolean>) => {
+      state.muteDeafenSounds = action.payload;
     },
     setMutedChannelIds: (state, action: PayloadAction<number[]>) => {
       state.mutedChannelIds = action.payload;

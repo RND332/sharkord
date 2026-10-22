@@ -82,6 +82,12 @@ export const notificationSoundsSelector = (state: IRootState) =>
 export const messageSentSoundSelector = (state: IRootState) =>
   state.app.messageSentSound;
 
+export const joinLeaveSoundsSelector = (state: IRootState) =>
+  state.app.joinLeaveSounds;
+
+export const muteDeafenSoundsSelector = (state: IRootState) =>
+  state.app.muteDeafenSounds;
+
 export const mutedChannelIdsSelector = (state: IRootState) =>
   state.app.mutedChannelIds;
 

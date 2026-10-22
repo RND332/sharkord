@@ -32,6 +32,8 @@ export enum LocalStorageKey {
   HIDDEN_REMOTE_WEBCAMS = 'dodecagon-hidden-remote-webcams',
   NOTIFICATION_SOUNDS = 'dodecagon-notification-sounds',
   MESSAGE_SENT_SOUND = 'dodecagon-message-sent-sound',
+  JOIN_LEAVE_SOUNDS = 'dodecagon-join-leave-sounds',
+  MUTE_DEAFEN_SOUNDS = 'dodecagon-mute-deafen-sounds',
   MUTED_CHANNEL_IDS = 'dodecagon-muted-channel-ids'
 }
 

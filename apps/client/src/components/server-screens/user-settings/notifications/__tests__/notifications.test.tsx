@@ -37,16 +37,39 @@ describe('Notifications', () => {
 
   test('should render the rows with a label on the left and a switch on the right', () => {
     const html = renderNotifications();
+    const rows = html
+      .split(
+        'flex w-full items-center justify-between gap-4 border-b border-line py-[15px]'
+      )
+      .slice(1);
 
-    expect(html.match(/border-b border-line py-\[15px\]/g)?.length).toBe(6);
+    // six notification rows plus the row that opens the sound settings dialog
+    expect(rows).toHaveLength(7);
+    expect(rows.filter((row) => row.includes('role="switch"'))).toHaveLength(6);
     expect(
       html.match(/text-sm leading-\[18px\] text-foreground/g)?.length
-    ).toBe(6);
+    ).toBe(7);
     expect(
       html.match(/text-\[13px\] leading-4 text-muted-foreground/g)?.length
-    ).toBe(6);
+    ).toBe(7);
     expect(html).toContain('flex w-full items-center justify-between gap-4');
     expect(html).toContain('flex max-w-[1040px] flex-col');
+  });
+
+  test('should offer the sound settings dialog as a separate row', () => {
+    const html = renderNotifications();
+    const soundSettingsRow = html
+      .split(
+        'flex w-full items-center justify-between gap-4 border-b border-line py-[15px]'
+      )
+      .slice(1)
+      .find((row) => row.includes('Sound settings'));
+
+    expect(soundSettingsRow).toBeDefined();
+    expect(soundSettingsRow).toContain('Choose what you hear in calls.');
+    expect(soundSettingsRow).toContain('>Open<');
+    // the row opens a dialog, it does not add another notification switch
+    expect(soundSettingsRow).not.toContain('role="switch"');
   });
 
   test('should reflect the saved values of every choice', () => {

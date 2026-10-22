@@ -9,6 +9,7 @@ const loadCreateChannel = memoizeImport(() => import('./create-channel'));
 const loadTextInput = memoizeImport(() => import('./text-input'));
 const loadServerPassword = memoizeImport(() => import('./server-password'));
 const loadSounds = memoizeImport(() => import('./sounds'));
+const loadSoundSettings = memoizeImport(() => import('./sound-settings'));
 const loadAssignRole = memoizeImport(() => import('./assign-role'));
 const loadCreateInvite = memoizeImport(() => import('./create-invite-dialog'));
 const loadCreateCategory = memoizeImport(() => import('./create-category'));
@@ -39,6 +40,9 @@ const ServerPasswordDialog = lazy(() =>
 );
 const SoundsDialog = lazy(() =>
   loadSounds().then((m) => ({ default: m.SoundsDialog }))
+);
+const SoundSettingsDialog = lazy(() =>
+  loadSoundSettings().then((m) => ({ default: m.SoundSettingsDialog }))
 );
 const AssignRoleDialog = lazy(() =>
   loadAssignRole().then((m) => ({ default: m.AssignRoleDialog }))
@@ -79,6 +83,7 @@ const DialogsMap = {
   [Dialog.TEXT_INPUT]: TextInputDialog,
   [Dialog.SERVER_PASSWORD]: ServerPasswordDialog,
   [Dialog.SOUNDS]: SoundsDialog,
+  [Dialog.SOUND_SETTINGS]: SoundSettingsDialog,
   [Dialog.ASSIGN_ROLE]: AssignRoleDialog,
   [Dialog.CREATE_INVITE]: CreateInviteDialog,
   [Dialog.CREATE_CATEGORY]: CreateCategoryDialog,
@@ -96,6 +101,7 @@ warmImportsWhenIdle([
   loadTextInput,
   loadServerPassword,
   loadSounds,
+  loadSoundSettings,
   loadAssignRole,
   loadCreateInvite,
   loadCreateCategory,

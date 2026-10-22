@@ -11,11 +11,13 @@ import {
   isAutoConnectingSelector,
   isChannelMutedSelector,
   isShiftHeldSelector,
+  joinLeaveSoundsSelector,
   loadingPluginsSelector,
   messageJumpTargetSelector,
   messageSentSoundSelector,
   modViewOpenSelector,
   modViewUserIdSelector,
+  muteDeafenSoundsSelector,
   notificationSoundsSelector,
   pluginSlotDebugSelector,
   selectedDmChannelIdSelector,
@@ -70,6 +72,10 @@ export const useNotificationSounds = () =>
   useSelector(notificationSoundsSelector);
 
 export const useMessageSentSound = () => useSelector(messageSentSoundSelector);
+
+export const useJoinLeaveSounds = () => useSelector(joinLeaveSoundsSelector);
+
+export const useMuteDeafenSounds = () => useSelector(muteDeafenSoundsSelector);
 
 export const useIsChannelMuted = (channelId: number) =>
   useSelector((state: IRootState) => isChannelMutedSelector(state, channelId));
