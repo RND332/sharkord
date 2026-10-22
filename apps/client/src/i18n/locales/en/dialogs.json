@@ -107,5 +107,22 @@
   "shortcutBackToVoice": "Back to voice channel",
   "createCategoryDesc": "Organize channels around a topic.",
   "createCategoryHint": "New channels can be added here after you create the category.",
-  "textInputLabel": "Value"
+  "textInputLabel": "Value",
+
+
+  "inviteCodeLabel": "Code",
+  "inviteCodePlaceholder": "Invite code",
+  "inviteCreated": "Invite created",
+  "invitePeopleTitle": "Invite people",
+  "invitePeopleDesc": "Share a link to bring others in.",
+  "inviteLinkLabel": "Your invite link",
+  "inviteLinkCopied": "Invite link copied to clipboard",
+  "inviteMetaRole": "Role: {{role}}",
+  "inviteExpiresInDays_one": "Link expires in {{count}} day",
+  "inviteExpiresInDays_other": "Link expires in {{count}} days",
+  "inviteNeverExpires": "Never expires",
+  "inviteNoUseLimit": "No use limit",
+  "inviteUseLimit_one": "Limit of {{count}} use",
+  "inviteUseLimit_other": "Limit of {{count}} uses",
+  "roleForUser": "Role for {{name}}"
 }

@@ -2,8 +2,13 @@ import { PermissionsList } from '@/components/permissions-list';
 import { useRoles } from '@/features/server/roles/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
-import { InformationCircleIcon } from '@heroicons/react/24/outline';
-import { getTrpcError, type TJoinedUser } from '@sharkord/shared';
+import { cn } from '@/lib/utils';
+import { CheckIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import {
+  getTrpcError,
+  type TJoinedRole,
+  type TJoinedUser
+} from '@sharkord/shared';
 import {
   Alert,
   AlertDescription,
@@ -14,15 +19,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AutoFocus,
-  Group,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+  AutoFocus
 } from '@sharkord/ui';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { TDialogBaseProps } from '../types';
@@ -31,6 +30,82 @@ type TAssignRoleDialogProps = TDialogBaseProps & {
   user: TJoinedUser;
   refetch: () => Promise<void>;
 };
+
+type TRoleAssignmentProps = {
+  label: string;
+  roles: TJoinedRole[];
+  selectedRoleId: number;
+  onSelect: (roleId: number) => void;
+};
+
+export const RoleAssignment = memo(
+  ({ label, roles, selectedRoleId, onSelect }: TRoleAssignmentProps) => {
+    const handleChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) => {
+        onSelect(Number(event.target.value));
+      },
+      [onSelect]
+    );
+
+    const selectedRole = useMemo(
+      () => roles.find((role) => role.id === selectedRoleId),
+      [roles, selectedRoleId]
+    );
+
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-[13px] leading-4 text-muted-foreground">{label}</p>
+        <div
+          role="radiogroup"
+          aria-label={label}
+          className="flex flex-col gap-2"
+        >
+          {roles.map((role) => {
+            const selected = role.id === selectedRoleId;
+
+            return (
+              <label key={role.id} className="block cursor-pointer">
+                <input
+                  type="radio"
+                  name="assign-role"
+                  value={role.id}
+                  checked={selected}
+                  onChange={handleChange}
+                  className="peer sr-only"
+                />
+                <span
+                  className={cn(
+                    'flex min-w-0 items-center gap-2 rounded-md border border-control-border bg-input-surface p-3.5 text-[15px] leading-[18px] text-foreground transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-canvas',
+                    selected && 'border-accent bg-raised text-accent-text'
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'size-2 shrink-0 rounded-full border',
+                      selected
+                        ? 'border-accent-text bg-accent-text'
+                        : 'border-muted-foreground'
+                    )}
+                  />
+                  <span className="min-w-0 break-words">{role.name}</span>
+                  {selected && <CheckIcon className="size-4 shrink-0" />}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        {selectedRole && (
+          <PermissionsList
+            permissions={selectedRole.permissions}
+            variant="default"
+            size="md"
+          />
+        )}
+      </div>
+    );
+  }
+);
 
 const AssignRoleDialog = memo(
   ({ isOpen, close, user, refetch }: TAssignRoleDialogProps) => {
@@ -46,10 +121,9 @@ const AssignRoleDialog = memo(
       [roles, user.roleIds]
     );
 
-    const selectedRole = useMemo(
-      () => roles.find((role) => role.id === selectedRoleId),
-      [roles, selectedRoleId]
-    );
+    const handleSelectRole = useCallback((roleId: number) => {
+      setSelectedRoleId(roleId);
+    }, []);
 
     const onSubmit = useCallback(async () => {
       if (selectedRoleId === 0) {
@@ -96,30 +170,12 @@ const AssignRoleDialog = memo(
             )}
           </AlertDialogHeader>
           <div className="flex flex-col gap-4">
-            <Group label={t('roleLabel')}>
-              <Select
-                onValueChange={(value) => setSelectedRoleId(Number(value))}
-                value={selectedRoleId.toString()}
-                disabled={availableRoles.length === 0}
-              >
-                <SelectTrigger className="w-[230px]">
-                  <SelectValue placeholder={t('selectRolePlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => (
-                    <SelectItem key={role.id} value={role.id.toString()}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Group>
-
-            {selectedRole && (
-              <PermissionsList
-                permissions={selectedRole.permissions}
-                variant="default"
-                size="md"
+            {availableRoles.length > 0 && (
+              <RoleAssignment
+                label={t('roleForUser', { name: user.name })}
+                roles={availableRoles}
+                selectedRoleId={selectedRoleId}
+                onSelect={handleSelectRole}
               />
             )}
           </div>

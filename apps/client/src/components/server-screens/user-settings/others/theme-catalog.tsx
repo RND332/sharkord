@@ -29,31 +29,36 @@ export const ThemeCatalog = memo(
     }, [query]);
     return (
       <section className="space-y-3" aria-label={t('themesTitle')}>
-        <Input
-          aria-label={t('searchThemes')}
-          placeholder={t('searchThemes')}
-          value={query}
-          onChange={handleQuery}
-        />
-        <ul className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {filtered.map((item) => (
-            <li key={item.id} className="min-w-0">
-              <ThemeCard
-                theme={item}
-                selected={selectedId === item.id}
-                onPreview={onPreview}
-              />
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground" role="status">
-          {t('themeResults', { count: filtered.length, total: THEMES.length })}
-        </p>
-        {filtered.length === 0 && (
-          <p className="py-4 text-sm text-muted-foreground">
-            {t('noThemesFound')}
-          </p>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h3 className="text-base font-semibold text-foreground" role="status">
+            {t('themesCount', { count: filtered.length })}
+          </h3>
+          <Input
+            aria-label={t('searchThemes')}
+            placeholder={t('searchThemes')}
+            value={query}
+            onChange={handleQuery}
+            className="w-[320px]"
+          />
+        </div>
+        <div className="max-h-[380px] overflow-y-auto pr-1">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {filtered.map((item) => (
+              <li key={item.id} className="min-w-0">
+                <ThemeCard
+                  theme={item}
+                  selected={selectedId === item.id}
+                  onPreview={onPreview}
+                />
+              </li>
+            ))}
+          </ul>
+          {filtered.length === 0 && (
+            <p className="py-4 text-sm text-muted-foreground">
+              {t('noThemesFound')}
+            </p>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground">
           {t('themePaletteSource')}{' '}
           <a

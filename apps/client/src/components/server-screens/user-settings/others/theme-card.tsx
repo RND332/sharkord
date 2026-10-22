@@ -24,53 +24,44 @@ export const ThemeCard = memo(
         aria-pressed={selected}
         onClick={handlePreview}
         className={cn(
-          'flex h-full w-full min-w-0 flex-col gap-2 rounded-lg border border-line bg-nav p-2 text-left outline-none hover:border-control-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
+          'flex h-full w-full min-w-0 flex-col gap-2 rounded-md border border-line bg-nav p-2 text-left outline-none hover:border-control-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
           selected && 'border-accent-text ring-1 ring-accent-text'
         )}
       >
         <svg
-          viewBox="0 0 220 90"
-          className="w-full shrink-0 rounded-md"
+          viewBox="0 0 262 82"
+          className="h-[82px] w-full shrink-0 rounded-md"
           aria-hidden="true"
         >
-          <rect width="220" height="90" fill={theme.bg} />
-          <rect width="26" height="90" fill={theme.nav} />
-          <rect x="26" width="44" height="90" fill={theme.panel} />
-          <rect x="32" y="14" width="27" height="4" rx="2" fill={theme.muted} />
+          <rect width="262" height="82" fill={theme.bg} />
+          <rect width="26" height="82" fill={theme.nav} />
+          <rect x="26" width="44" height="82" fill={theme.panel} />
+          <rect x="32" y="9" width="24" height="4" rx="2" fill={theme.muted} />
           <rect
             x="32"
-            y="25"
+            y="20"
             width="30"
             height="4"
             rx="2"
             fill={theme.accent}
           />
-          <rect x="82" y="16" width="60" height="5" rx="2" fill={theme.fg} />
+          <rect x="80" y="12" width="52" height="5" rx="3" fill={theme.fg} />
+          <rect x="80" y="25" width="85" height="4" rx="3" fill={theme.muted} />
+          <rect x="80" y="37" width="65" height="4" rx="3" fill={theme.muted} />
           <rect
-            x="82"
-            y="30"
-            width="111"
-            height="4"
-            rx="2"
-            fill={theme.muted}
-          />
-          <rect x="82" y="43" width="86" height="4" rx="2" fill={theme.muted} />
-          <rect
-            x="82"
-            y="59"
-            width="48"
-            height="13"
+            x="80"
+            y="49"
+            width="45"
+            height="12"
             rx="3"
             fill={theme.accent}
           />
         </svg>
-        <span className="flex min-w-0 flex-1 flex-col gap-2 px-1 pb-1">
-          <span className="flex items-center justify-between gap-2 text-[13px] font-medium">
-            {theme.name}
-            {selected && (
-              <CheckIcon className="size-4 shrink-0 text-accent-text" />
-            )}
-          </span>
+        <span className="flex min-w-0 items-center justify-between gap-2 px-1 text-sm font-medium">
+          <span className="min-w-0 truncate">{theme.name}</span>
+          {selected && (
+            <CheckIcon className="size-4 shrink-0 text-accent-text" />
+          )}
         </span>
       </button>
     );
