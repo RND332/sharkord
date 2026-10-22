@@ -63,7 +63,7 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
   return (
     <div
       data-testid={TestId.INSTALLED_PLUGIN_ITEM}
-      className="flex w-full items-center gap-[14px] border-b border-line py-[14px] last:border-b-0"
+      className="flex w-full items-center gap-[14px] py-[14px]"
     >
       <div className="flex size-[42px] shrink-0 items-center justify-center overflow-hidden rounded-[9px] bg-raised">
         {plugin.logo ? (
@@ -82,7 +82,7 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
         <h3 className="truncate text-[15px] font-semibold leading-[18px] text-foreground">
           {plugin.name}
         </h3>
-        <p className="truncate text-sm leading-4 text-muted-foreground">
+        <p className="truncate text-[13px] leading-4 text-muted-foreground">
           {plugin.description}
         </p>
         {plugin.loadError && (
@@ -96,10 +96,10 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
         <span
           className={
             plugin.loadError
-              ? 'text-sm leading-4 text-destructive'
+              ? 'text-[13px] leading-4 text-destructive'
               : plugin.enabled
-                ? 'text-sm leading-4 text-success'
-                : 'text-sm leading-4 text-muted-foreground'
+                ? 'text-[13px] leading-4 text-success'
+                : 'text-[13px] leading-4 text-muted-foreground'
           }
         >
           {plugin.loadError
@@ -207,6 +207,7 @@ const InstalledPlugins = memo(
     } else if (enabled) {
       content = (
         <ListWithSeparators
+          className="divide-y divide-line"
           items={plugins}
           getKey={(plugin) => plugin.id}
           renderItem={(plugin) => (

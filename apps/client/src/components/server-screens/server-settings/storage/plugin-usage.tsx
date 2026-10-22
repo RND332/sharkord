@@ -1,5 +1,4 @@
 import type { TPluginStorageUsage } from '@sharkord/shared';
-import { Badge } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,34 +14,37 @@ const PluginStorageUsage = memo(
     if (pluginStorage.length === 0) return null;
 
     return (
-      <div className="rounded-lg border p-4">
-        <div className="mb-1 text-sm font-medium">
-          {t('pluginStorageTitle')}
+      <div className="flex w-full max-w-[1040px] flex-col gap-1">
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] font-medium leading-[18px] text-foreground">
+            {t('pluginStorageTitle')}
+          </span>
+          <span className="text-xs leading-4 text-muted-foreground">
+            {t('pluginStorageDesc')}
+          </span>
         </div>
-        <div className="mb-3 text-xs text-muted-foreground">
-          {t('pluginStorageDesc')}
-        </div>
-        <div className="space-y-2">
+
+        <div className="flex flex-col">
           {pluginStorage.map((usage) => (
             <div
               key={usage.pluginId}
-              className="flex items-center justify-between gap-4"
+              className="flex items-center justify-between gap-4 border-b border-line py-[9px] last:border-b-0"
             >
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="truncate font-mono text-sm">
-                  {usage.pluginId}
-                </span>
+              <span className="truncate font-mono text-xs leading-4 text-muted-foreground">
+                {usage.pluginId}
+              </span>
+              <span className="flex shrink-0 items-center gap-2 text-xs leading-4 text-muted-foreground">
                 {!usage.installed && (
-                  <Badge variant="destructive">
+                  <span className="text-destructive">
                     {t('pluginStorageUninstalled')}
-                  </Badge>
+                  </span>
                 )}
-              </div>
-              <div className="shrink-0 text-sm text-muted-foreground">
-                {t('pluginStorageFiles', { count: usage.fileCount })}
-                {' · '}
-                {filesize(usage.usedSpace, { standard: 'jedec' })}
-              </div>
+                <span>
+                  {t('pluginStorageFiles', { count: usage.fileCount })}
+                  {' · '}
+                  {filesize(usage.usedSpace, { standard: 'jedec' })}
+                </span>
+              </span>
             </div>
           ))}
         </div>

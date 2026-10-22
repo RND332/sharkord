@@ -71,13 +71,14 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
             value={search}
             onChange={handleSearchChange}
             placeholder={t('marketplaceSearchPlaceholder')}
-            className="pl-9"
+            className="h-[42px] w-[540px] max-w-full rounded-[7px] px-[13px] pl-9 text-sm"
           />
         </div>
         {filtered.length === 0 ? (
           <StatePanel icon={CubeIcon} title={t('marketplaceNoResults')} />
         ) : (
           <ListWithSeparators
+            className="gap-4"
             items={filtered}
             getKey={(entry) => entry.plugin.id}
             renderItem={(entry) => (

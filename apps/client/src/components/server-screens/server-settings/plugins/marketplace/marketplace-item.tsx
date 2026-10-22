@@ -7,7 +7,9 @@ import {
   ArrowDownTrayIcon,
   CalendarIcon,
   CheckBadgeIcon,
+  ChevronDownIcon,
   CubeIcon,
+  PlusIcon,
   UserIcon
 } from '@heroicons/react/24/outline';
 import {
@@ -15,7 +17,7 @@ import {
   PLUGIN_SDK_VERSION,
   type TMarketplaceEntry
 } from '@sharkord/shared';
-import { Badge, Button, Tooltip } from '@sharkord/ui';
+import { Badge, Button, IconButton, Tooltip } from '@sharkord/ui';
 import { format } from 'date-fns';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +44,7 @@ const MarketplaceItem = memo(
     const dateLocale = useDateLocale();
     const [installingId, setInstallingId] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [detailsOpen, setDetailsOpen] = useState(false);
     const { plugin, versions } = entry;
     const latestVersion = versions[0];
 
@@ -156,136 +159,146 @@ const MarketplaceItem = memo(
     }, [plugin.name, performUpdate]);
 
     return (
-      <div className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-        <div className="shrink-0">
-          {plugin.logo ? (
-            <ImageWithFallback
-              src={plugin.logo}
-              alt={`${plugin.name} logo`}
-              className="w-12 h-12 rounded-md object-cover"
-              iconFallback={
-                <CubeIcon className="w-6 h-6 text-muted-foreground" />
-              }
-            />
-          ) : null}
-          <div
-            className={cn(
-              'w-12 h-12 rounded-md bg-muted flex items-center justify-center',
-              plugin.logo && 'hidden'
+      <div className="flex flex-col overflow-hidden rounded-[8px] border border-control-border bg-input-surface">
+        <div className="flex items-center gap-[15px] px-[18px] py-[14px]">
+          <div className="flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-raised">
+            {plugin.logo ? (
+              <ImageWithFallback
+                src={plugin.logo}
+                alt={`${plugin.name} logo`}
+                className="size-full object-cover"
+                iconFallback={
+                  <CubeIcon className="size-6 text-muted-foreground" />
+                }
+              />
+            ) : (
+              <CubeIcon className="size-6 text-muted-foreground" />
             )}
-          >
-            <CubeIcon className="w-6 h-6 text-muted-foreground" />
           </div>
-        </div>
 
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-base leading-tight">
-                  {plugin.name}
-                </h3>
-                {plugin.verified && (
-                  <Tooltip content={t('marketplaceVerifiedTooltip')}>
-                    <Badge variant="default" className="gap-1 text-xs shrink-0">
-                      <CheckBadgeIcon className="w-3 h-3" />
-                      {t('marketplaceVerified')}
-                    </Badge>
-                  </Tooltip>
-                )}
-                <Tooltip content={sdkTooltip}>
-                  <Badge
-                    variant={sdkCompatible ? 'secondary' : 'destructive'}
-                    className="text-xs shrink-0"
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h3 className="truncate text-[14px] font-semibold leading-[20px] text-foreground">
+                {plugin.name}
+              </h3>
+              {plugin.verified && (
+                <Tooltip content={t('marketplaceVerifiedTooltip')}>
+                  <span
+                    role="img"
+                    aria-label={t('marketplaceVerified')}
+                    className="flex shrink-0 items-center text-accent-text"
                   >
-                    {sdkCompatible
-                      ? t('marketplaceSdkCompatible')
-                      : t('marketplaceSdkIncompatible')}
-                  </Badge>
+                    <CheckBadgeIcon className="size-4" />
+                  </span>
                 </Tooltip>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {plugin.description}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {isInstalled && (
-                <Badge variant="secondary">
-                  {t('marketplaceInstalledBadge')}
-                </Badge>
               )}
-              {updateAvailable ? (
-                <Button
-                  size="sm"
-                  className="h-8"
-                  onClick={onUpdateClick}
-                  disabled={updatingId === plugin.id || !sdkCompatible}
+              <Tooltip content={sdkTooltip}>
+                <Badge
+                  variant={sdkCompatible ? 'secondary' : 'destructive'}
+                  className="shrink-0 text-[11px]"
                 >
-                  <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" />
-                  {t('marketplaceUpdateBtn')}
-                </Button>
-              ) : !isInstalled ? (
-                <Button
-                  size="sm"
-                  className="h-8"
-                  onClick={onInstallClick}
-                  disabled={installingId === plugin.id || !sdkCompatible}
-                >
-                  <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" />
-                  {t('marketplaceInstallBtn')}
-                </Button>
-              ) : null}
+                  {sdkCompatible
+                    ? t('marketplaceSdkCompatible')
+                    : t('marketplaceSdkIncompatible')}
+                </Badge>
+              </Tooltip>
             </div>
+            <p className="line-clamp-2 text-[12px] leading-[17px] text-muted-foreground">
+              {plugin.description}
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 text-xs text-muted-foreground">
-            {latestVersion && (
-              <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-3">
+            {isInstalled && (
+              <span className="text-[12px] leading-4 text-muted-foreground">
+                {t('marketplaceInstalledBadge')}
+              </span>
+            )}
+            {updateAvailable ? (
+              <Button
+                size="sm"
+                className="h-8 rounded-[8px] px-[10px] text-[12px]"
+                onClick={onUpdateClick}
+                disabled={updatingId === plugin.id || !sdkCompatible}
+              >
+                <ArrowDownTrayIcon className="size-4" />
+                {t('marketplaceUpdateBtn')}
+              </Button>
+            ) : !isInstalled ? (
+              <Button
+                size="sm"
+                className="h-8 rounded-[8px] px-[10px] text-[12px]"
+                onClick={onInstallClick}
+                disabled={installingId === plugin.id || !sdkCompatible}
+              >
+                <PlusIcon className="size-4" />
+                {t('marketplaceInstallBtn')}
+              </Button>
+            ) : null}
+            <Tooltip content={t('marketplaceDetailsTooltip')}>
+              <IconButton
+                icon={ChevronDownIcon}
+                variant="ghost"
+                size="sm"
+                aria-label={t('marketplaceDetailsTooltip')}
+                aria-expanded={detailsOpen}
+                onClick={() => setDetailsOpen((open) => !open)}
+                className={cn(detailsOpen && 'rotate-180')}
+              />
+            </Tooltip>
+          </div>
+        </div>
+
+        {detailsOpen && (
+          <div className="flex flex-col gap-3 border-t border-line px-[18px] py-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] leading-4 text-muted-foreground">
+              {latestVersion && (
                 <span className="font-mono">v{latestVersion.version}</span>
+              )}
+              <span
+                className="flex items-center gap-1"
+                title={t('marketplaceReleasedOn', { date: releaseDate.full })}
+              >
+                <CalendarIcon className="size-3.5" />
+                <span>
+                  {t('marketplaceReleasedOn', { date: releaseDate.short })}
+                </span>
+              </span>
+              <span className="flex items-center gap-1">
+                <UserIcon className="size-3.5" />
+                <span>{plugin.author}</span>
+              </span>
+              {plugin.homepage && (
+                <a
+                  href={plugin.homepage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline transition-colors hover:text-accent-text"
+                >
+                  {plugin.homepage}
+                </a>
+              )}
+            </div>
+
+            {plugin.tags && plugin.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {plugin.tags.map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-[11px]">
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             )}
-            <div
-              className="flex items-center gap-1"
-              title={t('marketplaceReleasedOn', { date: releaseDate.full })}
-            >
-              <CalendarIcon className="w-3.5 h-3.5" />
-              <span>
-                {t('marketplaceReleasedOn', { date: releaseDate.short })}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <UserIcon className="w-3.5 h-3.5" />
-              <span>{plugin.author}</span>
-            </div>
-            {plugin.homepage && (
-              <a
-                href={plugin.homepage}
-                target="_blank"
-                className="underline hover:text-accent-text transition-colors"
-              >
-                {plugin.homepage}
-              </a>
+
+            {plugin.screenshots && plugin.screenshots.length > 0 && (
+              <MarketplaceScreenshots
+                pluginId={plugin.id}
+                pluginName={plugin.name}
+                screenshots={plugin.screenshots}
+              />
             )}
           </div>
-
-          {plugin.tags && plugin.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {plugin.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {plugin.screenshots && plugin.screenshots.length > 0 && (
-            <MarketplaceScreenshots
-              pluginId={plugin.id}
-              pluginName={plugin.name}
-              screenshots={plugin.screenshots}
-            />
-          )}
-        </div>
+        )}
       </div>
     );
   }

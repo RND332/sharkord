@@ -23,18 +23,18 @@ const Plugins = memo(({ plugins, loading, refetch }: TPluginsProps) => {
       description={t('pluginsManageDesc')}
     >
       <Tabs defaultValue="installed" className="w-full">
-        <TabsList className="flex h-auto w-full items-center justify-start gap-7 rounded-none border-b border-line bg-transparent p-0">
+        <TabsList className="flex h-auto w-full items-center justify-start gap-6 rounded-none border-b border-line bg-transparent p-0">
           <TabsTrigger
             value="installed"
             disabled={!pluginsEnabled}
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
+            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
           >
             {t('installedTab')}
           </TabsTrigger>
           <TabsTrigger
             value="marketplace"
             disabled={!pluginsEnabled}
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
+            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
           >
             {t('marketplaceTab')}
           </TabsTrigger>
