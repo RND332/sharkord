@@ -71,6 +71,9 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             onPin={pinCard}
             onUnpin={unpinCard}
             voiceUser={voiceUser}
+            // the speaking highlight follows the overlay chrome: it is gone
+            // before the chat button and the call toolbar fade out
+            showSpeakingOutline={isChatButtonVisible}
           />
         );
       }
@@ -137,7 +140,8 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     ownUserId,
     viewedRemoteDemos,
     screenViewers,
-    isAnyCardPinned
+    isAnyCardPinned,
+    isChatButtonVisible
   ]);
 
   if (voiceUsers.length === 0) {

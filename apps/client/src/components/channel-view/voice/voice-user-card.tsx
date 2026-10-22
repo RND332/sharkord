@@ -48,6 +48,7 @@ type TVoiceUserCardProps = {
   className?: string;
   isPinned?: boolean;
   isAnyCardPinned?: boolean;
+  showSpeakingOutline?: boolean;
 };
 
 const VoiceUserCard = memo(
@@ -61,7 +62,8 @@ const VoiceUserCard = memo(
     isPinned = false,
     showPinControls = true,
     voiceUser,
-    isAnyCardPinned = false
+    isAnyCardPinned = false,
+    showSpeakingOutline = true
   }: TVoiceUserCardProps) => {
     const { t } = useTranslation('common');
     const { videoRef, hasVideoStream } = useVoiceRefs(userId);
@@ -72,6 +74,9 @@ const VoiceUserCard = memo(
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
     const { isSimulcastConsumer } = useVoice();
     const { isActivelySpeaking } = useSpeakingState(userId);
+    // The overlay drops the speaking highlight together with its auto-hidden
+    // chrome, so no green outline is left behind on the stage.
+    const isSpeaking = isActivelySpeaking && showSpeakingOutline;
     const { isWebcamHidden, toggleWebcamHidden } = useRemoteWebcamVisibility();
     const webcamHidden = isWebcamHidden(userId);
     const { isViewingDemo, stopViewingDemo } = useDemoVisibility();
@@ -148,7 +153,7 @@ const VoiceUserCard = memo(
             'flex items-center justify-center',
             'size-full',
             'border',
-            isActivelySpeaking ? 'border-success' : 'border-line',
+            isSpeaking ? 'border-success' : 'border-line',
             className
           )}
         >
@@ -189,7 +194,7 @@ const VoiceUserCard = memo(
               userId={userId}
               className={cn(
                 'pointer-events-none [&_[data-slot=avatar-fallback]]:font-semibold',
-                isActivelySpeaking && 'border-2 border-success',
+                isSpeaking && 'border-2 border-success',
                 avatarClass
               )}
               showStatusBadge={false}
