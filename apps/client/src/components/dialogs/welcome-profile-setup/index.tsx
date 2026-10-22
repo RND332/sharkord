@@ -6,7 +6,11 @@ import { uploadImage } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
 import { useForm } from '@/hooks/use-form';
 import { getTRPCClient } from '@/lib/trpc';
-import { ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowRightIcon,
+  ArrowUpTrayIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { AvatarImage } from '@radix-ui/react-avatar';
 import { DEFAULT_PROFILE_COLOR, getTrpcError } from '@sharkord/shared';
 import {
@@ -122,14 +126,33 @@ const WelcomeProfileSetupDialog = memo(
       }
     }, [close, ownPublicUser, setTrpcErrors, t, values.bio, values.name]);
 
+    const onAvatarRemoveClick = useCallback(
+      (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        onAvatarRemove();
+      },
+      [onAvatarRemove]
+    );
+
+    const onBannerRemoveClick = useCallback(
+      (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        onBannerRemove();
+      },
+      [onBannerRemove]
+    );
+
     if (!ownPublicUser) return null;
 
-    const previewName = values.name.trim() || ownPublicUser.name;
+    const profileColor = ownPublicUser.profileColor || '#5865f2';
 
     return (
       <Dialog open={isOpen}>
-        <DialogContent close={close} className="max-w-lg">
-          <DialogHeader>
+        <DialogContent
+          close={close}
+          className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0"
+        >
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-5 pr-14">
             <DialogTitle>
               {t('welcomeProfileSetupTitle', {
                 serverName: serverName ?? 'Dodecagon'
@@ -140,100 +163,130 @@ const WelcomeProfileSetupDialog = memo(
             </DialogDescription>
           </DialogHeader>
 
-          <div className="rounded-md border border-border overflow-hidden bg-card">
-            <div className="relative">
-              <button
-                type="button"
-                className="relative group cursor-pointer w-full h-28 block"
-                onClick={onBannerClick}
-              >
-                {ownPublicUser.banner ? (
-                  <img
-                    src={getFileUrl(ownPublicUser.banner)}
-                    alt="User banner"
-                    className="w-full h-28 object-cover transition-opacity group-hover:opacity-70"
-                  />
-                ) : (
-                  <div
-                    className="w-full h-28 border-b border-border transition-opacity group-hover:opacity-70"
-                    style={{
-                      background: ownPublicUser.profileColor || '#5865f2'
-                    }}
-                  />
-                )}
-
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-black/50 rounded-full p-2">
-                    <ArrowUpTrayIcon className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-
-                {ownPublicUser.banner && (
-                  <IconButton
-                    icon={XMarkIcon}
-                    size="sm"
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBannerRemove();
-                    }}
-                  />
-                )}
-              </button>
-
-              <div className="absolute left-4 top-20">
+          <div className="flex min-h-0 flex-col gap-6 overflow-y-auto p-6">
+            <div className="flex items-center gap-4">
+              <div className="group/avatar relative shrink-0">
                 <button
                   type="button"
-                  className="relative group cursor-pointer w-20 h-20"
+                  className="block size-[70px] cursor-pointer overflow-hidden rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={onAvatarClick}
+                  aria-label={t('welcomeChangeAvatarBtn')}
                 >
-                  <Avatar className="h-20 w-20 rounded-full bg-muted border-4 border-card transition-opacity group-hover:opacity-40">
+                  <Avatar
+                    className="size-[70px] rounded-full"
+                    style={{ backgroundColor: profileColor }}
+                  >
                     <AvatarImage
                       src={getFileUrl(ownPublicUser.avatar)}
                       key={ownPublicUser.avatarId}
+                      className="size-full"
                     />
-                    <AvatarFallback className="text-base">
-                      {getInitialsFromName(previewName)}
+                    <AvatarFallback className="bg-transparent text-[21px] font-bold leading-[26px]">
+                      {getInitialsFromName(ownPublicUser.name)}
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                    <div className="bg-black/50 rounded-full p-2">
-                      <ArrowUpTrayIcon className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
+                  <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-opacity group-hover/avatar:bg-black/50">
+                    <ArrowUpTrayIcon className="size-5 text-white" />
+                  </span>
+                </button>
 
-                  {ownPublicUser.avatar && (
+                {ownPublicUser.avatar && (
+                  <IconButton
+                    icon={XMarkIcon}
+                    size="sm"
+                    aria-label={t('welcomeRemoveAvatarBtn')}
+                    className="absolute -top-1 -right-1 opacity-0 transition-opacity group-hover/avatar:opacity-100"
+                    onClick={onAvatarRemoveClick}
+                  />
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="text-[13px] leading-4 text-accent-text transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={onAvatarClick}
+              >
+                {t('welcomeChangeAvatarBtn')}
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="welcome-display-name"
+                className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
+              >
+                {t('welcomeDisplayNameLabel')}
+              </label>
+              <Input
+                id="welcome-display-name"
+                {...r('name')}
+                className="h-[46px] px-[14px] text-[15px] leading-[18px] md:text-[15px]"
+                placeholder={t('welcomeUsernamePlaceholder')}
+              />
+            </div>
+
+            <div className="flex flex-col gap-4 border-t border-line pt-5">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground">
+                  {t('welcomeBannerLabel')}
+                </span>
+
+                <div
+                  className="group/banner relative h-[72px] w-full overflow-hidden rounded-[8px] border border-line"
+                  style={{ backgroundColor: profileColor }}
+                >
+                  {ownPublicUser.banner && (
+                    <img
+                      src={getFileUrl(ownPublicUser.banner)}
+                      alt=""
+                      className="size-full object-cover transition-opacity group-hover/banner:opacity-70"
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    className="absolute inset-0 size-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={onBannerClick}
+                    aria-label={t('welcomeChangeBannerBtn')}
+                  >
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-opacity group-hover/banner:bg-black/50">
+                      <span className="rounded-full bg-black/50 p-2">
+                        <ArrowUpTrayIcon className="size-4 text-white" />
+                      </span>
+                    </span>
+                  </button>
+
+                  {ownPublicUser.banner && (
                     <IconButton
                       icon={XMarkIcon}
                       size="sm"
-                      className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAvatarRemove();
-                      }}
+                      aria-label={t('welcomeRemoveBannerBtn')}
+                      className="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover/banner:opacity-100"
+                      onClick={onBannerRemoveClick}
                     />
                   )}
-                </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground">
+                  {t('welcomeBioLabel')}
+                </span>
+                <Textarea
+                  {...r('bio')}
+                  placeholder={t('welcomeBioPlaceholder')}
+                  rows={3}
+                />
               </div>
             </div>
 
-            <div className="px-4 pt-14 pb-4 space-y-3">
-              <Input
-                {...r('name')}
-                className="text-base font-semibold"
-                placeholder={t('welcomeUsernamePlaceholder')}
-              />
-
-              <Textarea
-                {...r('bio')}
-                placeholder={t('welcomeBioPlaceholder')}
-                rows={3}
-              />
-            </div>
+            <p className="text-[13px] leading-5 text-muted-foreground">
+              {t('welcomeProfileHint')}
+            </p>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="shrink-0 flex-row items-center justify-end gap-2.5 sm:mx-0 sm:mb-0">
             <Button variant="outline" onClick={close}>
               {t('welcomeSkipBtn')}
             </Button>
@@ -241,6 +294,7 @@ const WelcomeProfileSetupDialog = memo(
               onClick={onSave}
               disabled={loading || !values.name.trim().length}
             >
+              <ArrowRightIcon className="size-5" />
               {t('welcomeSaveBtn')}
             </Button>
           </DialogFooter>
