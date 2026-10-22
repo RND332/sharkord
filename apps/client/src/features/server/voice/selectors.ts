@@ -1,5 +1,5 @@
 import type { IRootState } from '@/features/store';
-import type { TScreenViewersSnapshot } from '@sharkord/shared';
+import type { TScreenViewersSnapshot } from '@dodecagon/shared';
 import { createCachedSelector } from 're-reselect';
 import type { TVoiceReaction } from '../types';
 

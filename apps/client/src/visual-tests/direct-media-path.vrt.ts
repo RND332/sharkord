@@ -3,7 +3,7 @@ import {
   useTransportStats,
   type TransportStatsData
 } from '@/components/voice-provider/hooks/use-transport-stats';
-import { StreamKind, type TDirectMediaEvent } from '@sharkord/shared';
+import { StreamKind, type TDirectMediaEvent } from '@dodecagon/shared';
 import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';

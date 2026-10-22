@@ -4,7 +4,7 @@
 // registration of a path for the whole test run, so the mocks of the other test
 // files would leak in.
 import settingsEn from '@/i18n/locales/en/settings.json';
-import * as sharkordUi from '@sharkord/ui';
+import * as dodecagonUi from '@dodecagon/ui';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import type { ComponentProps } from 'react';
@@ -61,7 +61,7 @@ const records = {
 
 // the real primitives are kept before the module is mocked, the spies below still
 // have to render the production markup
-const realUi = { ...sharkordUi };
+const realUi = { ...dodecagonUi };
 const RealInput = realUi.Input;
 const RealButton = realUi.Button;
 
@@ -85,7 +85,7 @@ const SpyButton = (props: TButtonProps) => {
   return <RealButton {...props} />;
 };
 
-mock.module('@sharkord/ui', () => ({
+mock.module('@dodecagon/ui', () => ({
   ...realUi,
   Input: SpyInput,
   Button: SpyButton

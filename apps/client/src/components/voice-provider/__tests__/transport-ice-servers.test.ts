@@ -1,4 +1,4 @@
-import { type TTransportParams } from '@sharkord/shared';
+import { type TTransportParams } from '@dodecagon/shared';
 import { expect, mock, test } from 'bun:test';
 import * as React from 'react';
 

@@ -1,4 +1,4 @@
-import { Permission, UploadHeaders, type TTempFile } from '@sharkord/shared';
+import { Permission, UploadHeaders, type TTempFile } from '@dodecagon/shared';
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import fs from 'fs/promises';

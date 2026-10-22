@@ -1,5 +1,6 @@
 import { useAdminPlugins } from '@/features/server/admin/hooks';
 import { useCan, usePluginsEnabled } from '@/features/server/hooks';
+import { Permission } from '@dodecagon/shared';
 import {
   ArrowPathIcon,
   Cog6ToothIcon,
@@ -10,7 +11,6 @@ import {
   ShieldExclamationIcon,
   UsersIcon
 } from '@heroicons/react/24/outline';
-import { Permission } from '@sharkord/shared';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';

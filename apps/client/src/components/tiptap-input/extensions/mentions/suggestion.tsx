@@ -1,7 +1,7 @@
 import { UserAvatar } from '@/components/user-avatar';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
+import type { TJoinedPublicUser, TJoinedRole } from '@dodecagon/shared';
 import { ShieldExclamationIcon } from '@heroicons/react/24/outline';
-import type { TJoinedPublicUser, TJoinedRole } from '@sharkord/shared';
 import type { Editor } from '@tiptap/core';
 import type { Ref } from 'react';
 import { createSuggestionRenderer } from '../create-suggestion-renderer';

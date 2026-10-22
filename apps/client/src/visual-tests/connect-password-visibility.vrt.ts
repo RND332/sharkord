@@ -4,7 +4,7 @@ import { store } from '@/features/store';
 import { suppressOidcAutoRedirect } from '@/helpers/oidc';
 import { LocalStorageKey, SessionStorageKey } from '@/helpers/storage';
 import { i18n } from '@/i18n';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import {

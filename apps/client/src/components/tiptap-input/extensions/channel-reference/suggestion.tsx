@@ -1,5 +1,5 @@
+import type { TChannel } from '@dodecagon/shared';
 import { HashtagIcon } from '@heroicons/react/24/outline';
-import type { TChannel } from '@sharkord/shared';
 import type { Editor } from '@tiptap/core';
 import type { Ref } from 'react';
 import { createSuggestionRenderer } from '../create-suggestion-renderer';

@@ -1,4 +1,4 @@
-import { getMediasoupKind, ServerEvents, StreamKind } from '@sharkord/shared';
+import { getMediasoupKind, ServerEvents, StreamKind } from '@dodecagon/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';

@@ -1,6 +1,6 @@
+import type { TRole } from '@dodecagon/shared';
+import { Badge, IconButton } from '@dodecagon/ui';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import type { TRole } from '@sharkord/shared';
-import { Badge, IconButton } from '@sharkord/ui';
 import { memo } from 'react';
 
 type TRoleBadgeProps = {

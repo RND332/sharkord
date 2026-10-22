@@ -17,7 +17,7 @@ import { updateOwnVoiceState } from '@/features/server/voice/actions';
 import { ownVoiceStateSelector } from '@/features/server/voice/selectors';
 import { store } from '@/features/store';
 import { LocalStorageKey } from '@/helpers/storage';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterAll, beforeAll, beforeEach, expect, test } from 'vitest';

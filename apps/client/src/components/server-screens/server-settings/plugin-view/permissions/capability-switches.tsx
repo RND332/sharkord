@@ -1,11 +1,11 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import {
   PluginCapabilityMode,
   PluginCapabilityType,
   type TPluginCapability
-} from '@sharkord/shared';
-import { Button, Label, Switch } from '@sharkord/ui';
+} from '@dodecagon/shared';
+import { Button, Label, Switch } from '@dodecagon/ui';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {

@@ -4,7 +4,7 @@
 // test files would leak in.
 import permissionsEn from '@/i18n/locales/en/permissions.json';
 import settingsEn from '@/i18n/locales/en/settings.json';
-import { ChannelPermission } from '@sharkord/shared';
+import { ChannelPermission } from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';

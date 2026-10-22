@@ -1,4 +1,4 @@
-import { Permission, REACTION_EMOJI_MAX_LENGTH } from '@sharkord/shared';
+import { Permission, REACTION_EMOJI_MAX_LENGTH } from '@dodecagon/shared';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';

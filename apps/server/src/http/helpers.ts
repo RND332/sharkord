@@ -1,5 +1,5 @@
-import type { TPluginHttpMethod } from '@sharkord/plugin-sdk';
-import { getErrorMessage, UploadHeaders } from '@sharkord/shared';
+import type { TPluginHttpMethod } from '@dodecagon/plugin-sdk';
+import { getErrorMessage, UploadHeaders } from '@dodecagon/shared';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import http from 'http';

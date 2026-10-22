@@ -12,6 +12,8 @@ import { useIsShiftHeld } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { useCustomEmojis } from '@/features/server/emojis/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { Permission, PluginSlot } from '@dodecagon/shared';
+import { IconButton } from '@dodecagon/ui';
 import {
   ArrowUturnLeftIcon,
   BookmarkIcon,
@@ -21,8 +23,6 @@ import {
   PencilIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
-import { Permission, PluginSlot } from '@sharkord/shared';
-import { IconButton } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

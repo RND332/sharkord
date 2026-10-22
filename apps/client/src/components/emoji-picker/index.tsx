@@ -1,5 +1,5 @@
 import type { TEmojiItem } from '@/components/tiptap-input/helpers';
-import { Popover, PopoverContent, PopoverTrigger } from '@sharkord/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@dodecagon/ui';
 import { memo, useCallback, useState } from 'react';
 import { EmojiPickerPanel, PICKER_PANEL_CONTENT_CLASS } from './picker-panel';
 

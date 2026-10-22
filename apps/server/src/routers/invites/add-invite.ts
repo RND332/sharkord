@@ -3,7 +3,7 @@ import {
   getRandomString,
   INVITE_CODE_REGEX,
   Permission
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';

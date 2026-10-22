@@ -19,7 +19,7 @@ import {
   type TIRole,
   type TISettings,
   type TIUser
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { randomUUIDv7 } from 'bun';
 import chalk from 'chalk';
 import { logger } from '../logger';

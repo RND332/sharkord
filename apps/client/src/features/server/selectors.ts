@@ -1,4 +1,3 @@
-import { createSelector } from '@reduxjs/toolkit';
 import {
   ChannelType,
   OWNER_ROLE_ID,
@@ -6,7 +5,8 @@ import {
   PluginSlot,
   type TJoinedRole,
   type TPluginStoreState
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
+import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
 import { selectedDmChannelIdSelector } from '../app/selectors';
 import type { IRootState } from '../store';

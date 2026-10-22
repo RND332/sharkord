@@ -4,7 +4,7 @@ import {
   ChannelType,
   OWNER_ROLE_ID,
   type TChannel
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { describe, expect, test } from 'bun:test';
 import { navigableTextChannelsSelector } from '../selectors';
 

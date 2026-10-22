@@ -14,13 +14,13 @@ import {
 } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   TestId,
   type TDirectMessageConversation
-} from '@sharkord/shared';
-import { Spinner } from '@sharkord/ui';
+} from '@dodecagon/shared';
+import { Spinner } from '@dodecagon/ui';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   memo,
   useCallback,

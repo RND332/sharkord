@@ -4,14 +4,14 @@ import { UserAvatar } from '@/components/user-avatar';
 import { useUsers } from '@/features/server/users/hooks';
 import { LocalStorageKey } from '@/helpers/storage';
 import { cn } from '@/lib/utils';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   PluginSlot,
   TestId,
   UserStatus
-} from '@sharkord/shared';
-import { IconButton } from '@sharkord/ui';
+} from '@dodecagon/shared';
+import { IconButton } from '@dodecagon/ui';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserPopover } from '../user-popover';

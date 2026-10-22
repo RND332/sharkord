@@ -1,4 +1,4 @@
-import type { TChannel } from '@sharkord/shared';
+import type { TChannel } from '@dodecagon/shared';
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import Suggestion from '@tiptap/suggestion';

@@ -3,7 +3,7 @@ import {
   DIRECT_MEDIA_KINDS,
   StreamKind,
   type TDirectMediaSession
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { channelUserCan } from '../../db/queries/channels';

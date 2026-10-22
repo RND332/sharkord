@@ -1,6 +1,6 @@
 import { FullScreenImage } from '@/components/fullscreen-image/content';
+import { Button } from '@dodecagon/ui';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { Button } from '@sharkord/ui';
 import useEmblaCarousel from 'embla-carousel-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { ImageWithFallback } from './image-with-fallback';

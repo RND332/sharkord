@@ -1,4 +1,4 @@
-import { Permission, ServerEvents, StreamKind } from '@sharkord/shared';
+import { Permission, ServerEvents, StreamKind } from '@dodecagon/shared';
 import { describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import type { RtpParameters } from 'mediasoup/types';

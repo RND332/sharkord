@@ -2,8 +2,8 @@ import { SettingsSection } from '@/components/server-screens/settings-shell/sect
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { useAdminRoles } from '@/features/server/admin/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { Card, LoadingCard } from '@dodecagon/ui';
 import { PlusIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
-import { Card, LoadingCard } from '@sharkord/ui';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

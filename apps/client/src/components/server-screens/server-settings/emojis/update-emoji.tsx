@@ -3,9 +3,9 @@ import { useSettingsForm } from '@/components/server-screens/settings-shell/use-
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { getTRPCClient } from '@/lib/trpc';
+import type { TJoinedEmoji } from '@dodecagon/shared';
+import { Group, IconButton, Input, Tooltip } from '@dodecagon/ui';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import type { TJoinedEmoji } from '@sharkord/shared';
-import { Group, IconButton, Input, Tooltip } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

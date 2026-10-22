@@ -1,5 +1,5 @@
 import { useForm } from '@/hooks/use-form';
-import { getTrpcError } from '@sharkord/shared';
+import { getTrpcError } from '@dodecagon/shared';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 import { useSettingsFormSlot, type TSettingsFormHandle } from './context';

@@ -1,5 +1,4 @@
 import { UserAvatar } from '@/components/user-avatar';
-import { PlusIcon } from '@heroicons/react/24/outline';
 import {
   AutoFocus,
   DropdownMenu,
@@ -8,7 +7,8 @@ import {
   DropdownMenuTrigger,
   IconButton,
   Input
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 

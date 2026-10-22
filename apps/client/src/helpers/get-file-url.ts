@@ -1,4 +1,4 @@
-import type { TFile } from '@sharkord/shared';
+import type { TFile } from '@dodecagon/shared';
 
 const getDevelopmentServerPort = () => VITE_SERVER_PORT;
 

@@ -1,4 +1,4 @@
-import { getErrorMessage } from '@sharkord/shared';
+import { getErrorMessage } from '@dodecagon/shared';
 import fs from 'fs/promises';
 import { parse, stringify } from 'ini';
 import z from 'zod';
@@ -320,28 +320,28 @@ if (!configExists) {
 }
 
 const envOverridesMap: Record<string, string> = {
-  'server.host': 'SHARKORD_HOST',
-  'server.port': 'SHARKORD_PORT',
-  'server.debug': 'SHARKORD_DEBUG',
-  'server.autoupdate': 'SHARKORD_AUTOUPDATE',
-  'server.backupDatabase': 'SHARKORD_BACKUP_DATABASE',
-  'server.maxRequestBodyBytes': 'SHARKORD_MAX_REQUEST_BODY_BYTES',
-  'server.allowedOrigins': 'SHARKORD_ALLOWED_ORIGINS',
-  'server.trustedProxies': 'SHARKORD_TRUSTED_PROXIES',
-  'oidc.enabled': 'SHARKORD_OIDC_ENABLED',
-  'oidc.issuer': 'SHARKORD_OIDC_ISSUER',
-  'oidc.clientId': 'SHARKORD_OIDC_CLIENT_ID',
-  'oidc.clientSecret': 'SHARKORD_OIDC_CLIENT_SECRET',
-  'oidc.redirectUri': 'SHARKORD_OIDC_REDIRECT_URI',
-  'oidc.disableLocalLogin': 'SHARKORD_OIDC_DISABLE_LOCAL_LOGIN',
-  'webRtc.port': 'SHARKORD_WEBRTC_PORT',
-  'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
-  'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE',
-  'webRtc.directScreenSharing': 'SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING',
-  'webRtc.directScreenStunUrls': 'SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS',
-  'webRtc.turnUrls': 'SHARKORD_WEBRTC_TURN_URLS',
-  'webRtc.turnSecret': 'SHARKORD_WEBRTC_TURN_SECRET',
-  'webRtc.turnTtl': 'SHARKORD_WEBRTC_TURN_TTL'
+  'server.host': 'DODECAGON_HOST',
+  'server.port': 'DODECAGON_PORT',
+  'server.debug': 'DODECAGON_DEBUG',
+  'server.autoupdate': 'DODECAGON_AUTOUPDATE',
+  'server.backupDatabase': 'DODECAGON_BACKUP_DATABASE',
+  'server.maxRequestBodyBytes': 'DODECAGON_MAX_REQUEST_BODY_BYTES',
+  'server.allowedOrigins': 'DODECAGON_ALLOWED_ORIGINS',
+  'server.trustedProxies': 'DODECAGON_TRUSTED_PROXIES',
+  'oidc.enabled': 'DODECAGON_OIDC_ENABLED',
+  'oidc.issuer': 'DODECAGON_OIDC_ISSUER',
+  'oidc.clientId': 'DODECAGON_OIDC_CLIENT_ID',
+  'oidc.clientSecret': 'DODECAGON_OIDC_CLIENT_SECRET',
+  'oidc.redirectUri': 'DODECAGON_OIDC_REDIRECT_URI',
+  'oidc.disableLocalLogin': 'DODECAGON_OIDC_DISABLE_LOCAL_LOGIN',
+  'webRtc.port': 'DODECAGON_WEBRTC_PORT',
+  'webRtc.announcedAddress': 'DODECAGON_WEBRTC_ANNOUNCED_ADDRESS',
+  'webRtc.maxBitrate': 'DODECAGON_WEBRTC_MAX_BITRATE',
+  'webRtc.directScreenSharing': 'DODECAGON_WEBRTC_DIRECT_SCREEN_SHARING',
+  'webRtc.directScreenStunUrls': 'DODECAGON_WEBRTC_DIRECT_SCREEN_STUN_URLS',
+  'webRtc.turnUrls': 'DODECAGON_WEBRTC_TURN_URLS',
+  'webRtc.turnSecret': 'DODECAGON_WEBRTC_TURN_SECRET',
+  'webRtc.turnTtl': 'DODECAGON_WEBRTC_TURN_TTL'
 };
 
 // validated again after the overrides, otherwise an env var could put a value

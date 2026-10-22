@@ -4,7 +4,7 @@ import {
   StreamKind,
   type TDirectMediaKind,
   type TProducibleStreamKind
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import { DirectMedia } from '../direct-media';
 

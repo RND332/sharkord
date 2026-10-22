@@ -2,7 +2,7 @@ import {
   PluginCapabilityMode,
   PluginCapabilityType,
   type TPluginCapabilityAccess
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { and, eq } from 'drizzle-orm';
 import { db } from '..';
 import { pluginCapabilities, pluginCapabilityRoles } from '../schema';

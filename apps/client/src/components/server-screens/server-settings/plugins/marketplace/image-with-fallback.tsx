@@ -1,4 +1,4 @@
-import { cn } from '@sharkord/ui';
+import { cn } from '@dodecagon/ui';
 import { useCallback, useState } from 'react';
 
 type ImageWithFallbackProps = {

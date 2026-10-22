@@ -2,7 +2,7 @@ import {
   ChannelType,
   Permission,
   type TDirectMediaKind
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { channels } from '../db/schema';

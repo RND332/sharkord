@@ -4,7 +4,7 @@ import {
   type StreamKind,
   type TDirectMediaEvent,
   type TScreenViewersSnapshot
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import { config } from '../../config';

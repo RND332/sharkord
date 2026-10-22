@@ -2,7 +2,7 @@ import { ScreenShareCard } from '@/components/channel-view/voice/screen-share-ca
 import { ThemeProvider } from '@/components/theme-provider';
 import { VolumeControlProvider } from '@/components/voice-provider/volume-control-context';
 import { i18n } from '@/i18n';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';

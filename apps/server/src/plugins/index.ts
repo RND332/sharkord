@@ -5,7 +5,7 @@ import type {
   PluginModule,
   TPluginHttpMethod,
   TUpgradeInfo
-} from '@sharkord/plugin-sdk';
+} from '@dodecagon/plugin-sdk';
 import {
   assertSdkVersionCompatibility,
   getErrorMessage,
@@ -22,7 +22,7 @@ import {
   type TPluginMetadata,
   type TPluginSettingDefinition,
   type TPluginSlotRequirements
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { watch } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';

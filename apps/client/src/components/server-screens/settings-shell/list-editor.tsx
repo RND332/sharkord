@@ -1,4 +1,4 @@
-import { Card, type TIconComponent } from '@sharkord/ui';
+import { Card, type TIconComponent } from '@dodecagon/ui';
 import { memo, type ReactNode } from 'react';
 import { StatePanel } from './state-panel';
 

@@ -1,4 +1,4 @@
-import { ChannelType, sha256 } from '@sharkord/shared';
+import { ChannelType, sha256 } from '@dodecagon/shared';
 import { describe, expect, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';

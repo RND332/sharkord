@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { TJoinedRole } from '@sharkord/shared';
+import type { TJoinedRole } from '@dodecagon/shared';
 import { memo, useCallback } from 'react';
 
 type TRoleItemProps = {

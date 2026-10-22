@@ -49,7 +49,7 @@ const diskMetrics = {
   totalSpace: 10 * GIGABYTE,
   usedSpace: 3.2 * GIGABYTE,
   freeSpace: 1.2 * GIGABYTE,
-  sharkordUsedSpace: 800 * MEGABYTE
+  dodecagonUsedSpace: 800 * MEGABYTE
 };
 
 const html = renderToStaticMarkup(

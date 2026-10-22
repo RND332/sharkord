@@ -1,4 +1,4 @@
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test';
 import type { AppData, Producer, Transport } from 'mediasoup-client/types';
 import * as React from 'react';

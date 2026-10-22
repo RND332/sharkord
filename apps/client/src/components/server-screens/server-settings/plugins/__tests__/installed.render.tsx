@@ -62,7 +62,7 @@ const plugin = {
   description: 'Create quick votes in text channels',
   author: 'Dodecagon Community',
   enabled: mode !== 'off',
-  sdkVersion: 2,
+  sdkVersion: 3,
   version: '1.0.0',
   path: '/plugins/polls',
   logo: undefined,

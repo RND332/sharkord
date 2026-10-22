@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   type TJoinedMessage
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { format, isValid } from 'date-fns';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';

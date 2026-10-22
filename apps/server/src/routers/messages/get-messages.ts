@@ -3,7 +3,7 @@ import {
   zMessagesCursor,
   type TMessage,
   type TMessagesCursor
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   and,
   asc,

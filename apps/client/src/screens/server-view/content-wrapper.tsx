@@ -9,13 +9,13 @@ import {
   useActiveFullscreenPluginId,
   useServerName
 } from '@/features/server/hooks';
+import { ChannelType, PluginSlot } from '@dodecagon/shared';
+import { Alert, AlertDescription } from '@dodecagon/ui';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { ChannelType, PluginSlot } from '@sharkord/shared';
-import { Alert, AlertDescription } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 

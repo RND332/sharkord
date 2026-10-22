@@ -5,9 +5,9 @@ import {
   useThreadMessages
 } from '@/features/server/messages/hooks';
 
+import type { TJoinedMessage } from '@dodecagon/shared';
+import { Spinner } from '@dodecagon/ui';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
-import type { TJoinedMessage } from '@sharkord/shared';
-import { Spinner } from '@sharkord/ui';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

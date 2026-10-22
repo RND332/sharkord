@@ -12,7 +12,7 @@ import {
 } from '@/features/server/selectors';
 import { store } from '@/features/store';
 import { cleanup, getTRPCClient } from '@/lib/trpc';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import type { CDPSession } from '@vitest/browser-playwright';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

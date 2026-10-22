@@ -3,7 +3,7 @@ import {
   isEmptyMessage,
   MessageSaveType,
   type TBeforeMessageSavePayload
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { pluginManager } from '../plugins';
 import { runHook } from '../plugins/run-hook';
 import { invariant } from '../utils/invariant';

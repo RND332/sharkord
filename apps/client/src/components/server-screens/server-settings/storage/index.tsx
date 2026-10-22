@@ -27,7 +27,7 @@ import {
   STORAGE_QUOTA,
   StorageOverflowAction,
   type TStorageSettings
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   Button,
   Group,
@@ -40,7 +40,7 @@ import {
   Separator,
   Slider,
   Switch
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
 import { filesize } from 'filesize';
 import { memo, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

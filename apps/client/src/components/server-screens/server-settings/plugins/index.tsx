@@ -1,7 +1,7 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { usePluginsEnabled } from '@/features/server/hooks';
-import type { TPluginInfo } from '@sharkord/shared';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sharkord/ui';
+import type { TPluginInfo } from '@dodecagon/shared';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@dodecagon/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InstalledPlugins } from './installed';

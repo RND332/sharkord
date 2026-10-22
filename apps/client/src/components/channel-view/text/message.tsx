@@ -6,13 +6,13 @@ import {
   useOwnUserRoleIds
 } from '@/features/server/users/hooks';
 import { cn } from '@/lib/utils';
-import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import {
   hasMention,
   Permission,
   TestId,
   type TJoinedMessage
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageActions } from './message-actions';

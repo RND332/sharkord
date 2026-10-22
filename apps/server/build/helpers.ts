@@ -1,4 +1,4 @@
-import type { TArtifact } from '@sharkord/shared';
+import type { TArtifact } from '@dodecagon/shared';
 import {
   validateReleaseMetadata,
   type TReleaseMetadata
@@ -156,10 +156,10 @@ const compile = async ({ out, target }: TTarget) => {
       target
     },
     define: {
-      'process.env.SHARKORD_ENV': '"production"',
-      'process.env.SHARKORD_BUILD_VERSION': `"${version}"`,
-      'process.env.SHARKORD_BUILD_DATE': `"${new Date().toISOString()}"`,
-      'process.env.SHARKORD_MEDIASOUP_BIN_NAME': `"${mediasoupBinary}"`,
+      'process.env.DODECAGON_ENV': '"production"',
+      'process.env.DODECAGON_BUILD_VERSION': `"${version}"`,
+      'process.env.DODECAGON_BUILD_DATE': `"${new Date().toISOString()}"`,
+      'process.env.DODECAGON_MEDIASOUP_BIN_NAME': `"${mediasoupBinary}"`,
       'process.env.CURRENT_VERSION': `"${version}"`
     }
   });

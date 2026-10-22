@@ -1,6 +1,8 @@
 import { FullScreenImage } from '@/components/fullscreen-image/content';
 import type { TDisplayItem } from '@/hooks/use-upload-files';
 import { cn } from '@/lib/utils';
+import { FileCategory, getFileCategory } from '@dodecagon/shared';
+import { Button } from '@dodecagon/ui';
 import {
   DocumentIcon,
   DocumentTextIcon,
@@ -9,8 +11,6 @@ import {
   PhotoIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
-import { FileCategory, getFileCategory } from '@sharkord/shared';
-import { Button } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { VideoPlayer } from './overrides/video-player';

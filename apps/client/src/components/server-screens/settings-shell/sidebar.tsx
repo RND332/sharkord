@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
+import { TestId } from '@dodecagon/shared';
+import { Separator, Tooltip } from '@dodecagon/ui';
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
-import { TestId } from '@sharkord/shared';
-import { Separator, Tooltip } from '@sharkord/ui';
 
 import { memo, useCallback, useEffect, useRef, type Ref } from 'react';
 import type { TSettingsEntry } from './types';

@@ -1,4 +1,4 @@
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import { beforeEach, expect, mock, test } from 'bun:test';
 import * as React from 'react';
 

@@ -1,8 +1,8 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import type { TAdminUser } from '@/features/server/admin/hooks';
 import { useAdminUsers } from '@/features/server/admin/hooks';
+import { LoadingCard, PaginatedList } from '@dodecagon/ui';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { LoadingCard, PaginatedList } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UsersTable } from './users-table';

@@ -4,15 +4,15 @@ import { useSettingsForm } from '@/components/server-screens/settings-shell/use-
 import { usePluginSlotIds } from '@/features/server/plugins/hooks';
 import { useRoles } from '@/features/server/roles/hooks';
 import { getTRPCClient } from '@/lib/trpc';
-import { UsersIcon } from '@heroicons/react/24/outline';
 import {
   getTrpcError,
   OWNER_ROLE_ID,
   PluginCapabilityMode,
   PluginCapabilityType,
   type TPluginCapability
-} from '@sharkord/shared';
-import { LoadingCard } from '@sharkord/ui';
+} from '@dodecagon/shared';
+import { LoadingCard } from '@dodecagon/ui';
+import { UsersIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

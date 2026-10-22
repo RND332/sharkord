@@ -1,4 +1,4 @@
-import type { TFile, TJoinedMessage } from '@sharkord/shared';
+import type { TFile, TJoinedMessage } from '@dodecagon/shared';
 
 export type TSearchResultMessage = TJoinedMessage & {
   plainContent: string;

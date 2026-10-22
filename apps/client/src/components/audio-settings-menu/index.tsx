@@ -1,7 +1,6 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { ServerScreen } from '@/components/server-screens/screens';
 import { openServerScreen } from '@/features/server-screens/actions';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Popover,
@@ -14,7 +13,8 @@ import {
   SelectValue,
   Separator,
   Slider
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   memo,
   useCallback,

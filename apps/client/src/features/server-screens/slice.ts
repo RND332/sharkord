@@ -1,6 +1,6 @@
 import type { ServerScreen } from '@/components/server-screens/screens';
+import type { TGenericObject } from '@dodecagon/shared';
 import { createSlice } from '@reduxjs/toolkit';
-import type { TGenericObject } from '@sharkord/shared';
 
 type TServerScreenState = {
   openServerScreen: ServerScreen | undefined;

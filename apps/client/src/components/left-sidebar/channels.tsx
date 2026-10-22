@@ -25,14 +25,14 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { HashtagIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import {
   ChannelPermission,
   Permission,
   type TChannel,
   TestId,
   getTrpcError
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
+import { HashtagIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

@@ -18,7 +18,7 @@ import {
 import { useVoice } from '@/features/server/voice/hooks';
 import { store } from '@/features/store';
 import { useSelectChannel } from '@/hooks/use-select-channel';
-import { ChannelPermission, getTrpcError } from '@sharkord/shared';
+import { ChannelPermission, getTrpcError } from '@dodecagon/shared';
 import { memo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

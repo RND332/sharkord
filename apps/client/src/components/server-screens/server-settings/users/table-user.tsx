@@ -6,12 +6,7 @@ import type { TAdminUser } from '@/features/server/admin/hooks';
 import { useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
 import { cn } from '@/lib/utils';
-import {
-  EllipsisHorizontalIcon,
-  TrashIcon,
-  UserCircleIcon
-} from '@heroicons/react/24/outline';
-import { UserStatus } from '@sharkord/shared';
+import { UserStatus } from '@dodecagon/shared';
 import {
   Button,
   DropdownMenu,
@@ -19,7 +14,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  EllipsisHorizontalIcon,
+  TrashIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 

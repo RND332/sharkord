@@ -1,6 +1,5 @@
 import { ErrorBoundary as BaseErrorBoundary } from '@/components/error-boundary';
 import { captureError } from '@/helpers/sentry';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Card,
@@ -9,7 +8,8 @@ import {
   CardHeader,
   CardTitle,
   GithubIcon
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { memo, type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -22,7 +22,7 @@ type TGlobalErrorFallbackProps = {
   reset: () => void;
 };
 
-const GITHUB_ISSUES_URL = 'https://github.com/RND332/sharkord/issues';
+const GITHUB_ISSUES_URL = 'https://github.com/dodecagon-mesh/dodecagon/issues';
 
 const copyErrorDetails = (
   error: Error,

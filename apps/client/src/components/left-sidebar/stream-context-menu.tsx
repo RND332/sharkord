@@ -1,17 +1,17 @@
 import { UserAvatar } from '@/components/user-avatar';
 import { useStreamVolumeControl } from '@/components/voice-provider/hooks/use-stream-volume-control';
 import {
-  ServerStackIcon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon
-} from '@heroicons/react/24/outline';
-import {
   Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
   Slider
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  ServerStackIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon
+} from '@heroicons/react/24/outline';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

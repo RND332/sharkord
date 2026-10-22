@@ -7,6 +7,8 @@ import { useChannelCan, useServerName } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
+import { ChannelPermission, getTrpcError, PluginSlot } from '@dodecagon/shared';
+import { Button } from '@dodecagon/ui';
 import {
   ArrowPathIcon,
   ExclamationTriangleIcon,
@@ -19,8 +21,6 @@ import {
   VideoCameraSlashIcon,
   WifiIcon
 } from '@heroicons/react/24/outline';
-import { ChannelPermission, getTrpcError, PluginSlot } from '@sharkord/shared';
-import { Button } from '@sharkord/ui';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

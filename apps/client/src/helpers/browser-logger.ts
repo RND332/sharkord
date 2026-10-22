@@ -1,4 +1,4 @@
-import { getErrorMessage } from '@sharkord/shared';
+import { getErrorMessage } from '@dodecagon/shared';
 import { isDebug } from './is-debug';
 import { captureError } from './sentry';
 import { pushVoiceDebugEvent } from './voice-debug';

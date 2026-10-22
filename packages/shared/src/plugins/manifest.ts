@@ -6,7 +6,7 @@ import { zHttpUrl, zPluginId } from './primitives';
  * `sdkVersion` in its manifest, and one that does not match is refused at load
  * rather than failing later against an API that moved.
  */
-export const PLUGIN_SDK_VERSION = 2;
+export const PLUGIN_SDK_VERSION = 3;
 
 /** where the host looks for a plugin's `onLoad` */
 export const SERVER_ENTRY_FILE = 'server/index.js';

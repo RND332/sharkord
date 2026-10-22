@@ -4,14 +4,14 @@ import {
   useVoice
 } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
-import { ServerStackIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
-import { StreamKind, type TExternalStream } from '@sharkord/shared';
+import { StreamKind, type TExternalStream } from '@dodecagon/shared';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
   HeadphonesIcon
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { ServerStackIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';

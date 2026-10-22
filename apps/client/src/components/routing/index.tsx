@@ -11,7 +11,7 @@ import {
 } from '@/features/server/hooks';
 import { memoizeImport, warmImportsWhenIdle } from '@/helpers/prefetch';
 import { LoadingApp } from '@/screens/loading-app';
-import { DisconnectCode } from '@sharkord/shared';
+import { DisconnectCode } from '@dodecagon/shared';
 import { lazy, memo, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from './hooks/use-document-title';

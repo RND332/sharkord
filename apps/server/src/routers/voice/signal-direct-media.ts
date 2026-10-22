@@ -2,7 +2,7 @@ import {
   ChannelPermission,
   DIRECT_MEDIA_SDP_MAX_LENGTH,
   Permission
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { channelUserCan } from '../../db/queries/channels';

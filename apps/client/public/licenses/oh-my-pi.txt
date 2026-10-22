@@ -1,6 +1,6 @@
 Oh My Pi theme palettes
 Source: https://github.com/can1357/oh-my-pi/tree/c2cb79e4c227aa4b22c4ccb933ff72fd88bceba4/packages/tui/src/theme
-Adapted to Sharkord semantic UI tokens.
+Adapted to Dodecagon semantic UI tokens.
 
 MIT License
 

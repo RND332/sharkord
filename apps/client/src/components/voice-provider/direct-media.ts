@@ -1,4 +1,7 @@
-import type { TDirectMediaKind, TProducibleStreamKind } from '@sharkord/shared';
+import type {
+  TDirectMediaKind,
+  TProducibleStreamKind
+} from '@dodecagon/shared';
 import {
   DIRECT_MEDIA_AUDIO_CONNECT_TIMEOUT_MS,
   DIRECT_MEDIA_CONNECT_TIMEOUT_MS,
@@ -7,7 +10,7 @@ import {
   type TDirectMediaEvent,
   type TDirectMediaSession,
   type TDirectMediaSignal
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 
 type TScreenKind = TProducibleStreamKind;
 export type TDirectMediaResult = 'direct' | 'relay' | 'failed';

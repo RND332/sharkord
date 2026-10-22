@@ -6,15 +6,15 @@ import {
 import type { TEmojiItem } from '@/components/tiptap-input/helpers';
 import { QUICK_VOICE_REACTION_EMOJIS } from '@/features/server/voice/statics';
 import { getTRPCClient } from '@/lib/trpc';
-import { FaceSmileIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { getTrpcError } from '@sharkord/shared';
+import { getTrpcError } from '@dodecagon/shared';
 import {
   Button,
   Popover,
   PopoverContent,
   PopoverTrigger,
   Tooltip
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { FaceSmileIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

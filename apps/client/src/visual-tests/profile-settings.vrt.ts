@@ -6,7 +6,7 @@ import {
 } from '@/features/server-screens/actions';
 import { setCurrentVoiceChannelId } from '@/features/server/channels/actions';
 import { updateOwnVoiceState } from '@/features/server/voice/actions';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import type { CDPSession } from '@vitest/browser-playwright';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

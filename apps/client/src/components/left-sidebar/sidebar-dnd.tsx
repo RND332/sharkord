@@ -6,8 +6,8 @@ import {
   SortableContext,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
+import { Permission } from '@dodecagon/shared';
 import { HashtagIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
-import { Permission } from '@sharkord/shared';
 import { memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChannelDragPreviewContext, categoryDndId } from './helpers';

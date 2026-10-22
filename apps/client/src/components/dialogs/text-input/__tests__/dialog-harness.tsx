@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- test harness, it exports helpers and not components */
 import dialogsEn from '@/i18n/locales/en/dialogs.json';
-import * as RealUI from '@sharkord/ui';
+import * as RealUI from '@dodecagon/ui';
 import { mock } from 'bun:test';
 import i18n from 'i18next';
 import type { ComponentProps, ReactElement, ReactNode } from 'react';
@@ -110,7 +110,7 @@ const SpyCancel = (props: TCancelProps) => {
   return <RealButton type="button" variant="outline" {...props} />;
 };
 
-mock.module('@sharkord/ui', () => ({
+mock.module('@dodecagon/ui', () => ({
   ...realUi,
   DialogContent: PortalFreeShell,
   AlertDialogContent: PortalFreeShell,

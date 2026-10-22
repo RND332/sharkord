@@ -1,4 +1,4 @@
-import { ServerEvents, StreamKind } from '@sharkord/shared';
+import { ServerEvents, StreamKind } from '@dodecagon/shared';
 import { describe, expect, test } from 'bun:test';
 import type { Consumer, Producer } from 'mediasoup/types';
 import { config } from '../../config';

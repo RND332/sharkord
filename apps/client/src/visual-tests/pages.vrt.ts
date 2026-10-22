@@ -1,4 +1,4 @@
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import { beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 

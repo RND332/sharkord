@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
+import { Tooltip } from '@dodecagon/ui';
 import { ChevronDownIcon, UsersIcon } from '@heroicons/react/24/outline';
-import { Tooltip } from '@sharkord/ui';
 import {
   isValidElement,
   memo,

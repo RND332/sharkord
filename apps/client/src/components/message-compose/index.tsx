@@ -17,6 +17,15 @@ import { useUploadFiles } from '@/hooks/use-upload-files';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import type { TReplyTarget } from '@/types';
+import type { TJoinedPublicUser, TTempFile } from '@dodecagon/shared';
+import {
+  ChannelPermission,
+  isEmptyMessage,
+  MESSAGE_MAX_LENGTH,
+  Permission,
+  PluginSlot
+} from '@dodecagon/shared';
+import { Button, Spinner } from '@dodecagon/ui';
 import {
   ArrowUturnLeftIcon,
   FaceSmileIcon,
@@ -24,15 +33,6 @@ import {
   PlusIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import type { TJoinedPublicUser, TTempFile } from '@sharkord/shared';
-import {
-  ChannelPermission,
-  isEmptyMessage,
-  MESSAGE_MAX_LENGTH,
-  Permission,
-  PluginSlot
-} from '@sharkord/shared';
-import { Button, Spinner } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import {
   memo,

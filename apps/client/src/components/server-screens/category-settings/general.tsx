@@ -2,8 +2,8 @@ import { SettingsSection } from '@/components/server-screens/settings-shell/sect
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { useAdminCategoryGeneral } from '@/features/server/admin/hooks';
 import { getTRPCClient } from '@/lib/trpc';
+import { Button, Input, LoadingCard, Spinner } from '@dodecagon/ui';
 import { CheckIcon } from '@heroicons/react/24/outline';
-import { Button, Input, LoadingCard, Spinner } from '@sharkord/ui';
 import { memo, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { shouldApplyCategoryValues } from './helpers';

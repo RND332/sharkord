@@ -1,4 +1,4 @@
-import { getPlainTextFromHtml, isEmptyMessage } from '@sharkord/shared';
+import { getPlainTextFromHtml, isEmptyMessage } from '@dodecagon/shared';
 import { eq } from 'drizzle-orm';
 import { pluginManager } from '..';
 import { db } from '../../db';

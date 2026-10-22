@@ -1,6 +1,6 @@
 import { getTheme, type TTheme } from '@/components/theme-provider/themes';
 import { useTheme } from '@/components/theme-provider/use-theme';
-import { Button, Switch } from '@sharkord/ui';
+import { Button, Switch } from '@dodecagon/ui';
 import { memo, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';

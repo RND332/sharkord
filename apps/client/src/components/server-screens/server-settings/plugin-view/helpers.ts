@@ -1,4 +1,4 @@
-import type { TPluginInfo, TPluginTab } from '@sharkord/shared';
+import type { TPluginInfo, TPluginTab } from '@dodecagon/shared';
 
 type TSettingsTranslations = typeof import('@/i18n/locales/en/settings.json');
 

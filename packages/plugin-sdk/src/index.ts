@@ -32,7 +32,7 @@ import type {
   TPluginTabs,
   TStreamQualityLayer,
   TVoiceProducerInfo
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   ChannelPermission,
   ChannelType,
@@ -42,7 +42,7 @@ import {
   PLUGIN_SDK_VERSION,
   PluginSlot,
   StreamKind
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { AppData, Producer, Router, RtpParameters } from 'mediasoup/types';
 
@@ -375,11 +375,11 @@ export interface PluginSettings<
  * are typed from it, names included:
  *
  * ```ts
- * type TSharkord = {
+ * type TDodecagon = {
  *   actions: { roll: { payload: { sides: number }; response: number } };
  * };
  *
- * const onLoad = (ctx: PluginContext<TSharkord>) => { ... };
+ * const onLoad = (ctx: PluginContext<TDodecagon>) => { ... };
  * ```
  *
  * The contract is optional, and so is every key in it: what you leave out
@@ -850,7 +850,7 @@ export type PluginModule<C extends TPluginContract = TPluginContract> = {
   ) => void | Promise<void>;
 };
 
-type TSharkordState = ReturnType<TPluginStore['getState']>;
+type TDodecagonState = ReturnType<TPluginStore['getState']>;
 
 // re-export mediasoup types for plugin usage
 export type {
@@ -880,6 +880,7 @@ export type {
   TChannel,
   TCommandArg,
   TCommandContract,
+  TDodecagonState,
   TInvokerContext,
   TPluginActions,
   TPluginComponentsMapBySlotId,
@@ -889,8 +890,7 @@ export type {
   TPluginStore,
   TPluginStoreState,
   TPluginTab,
-  TPluginTabs,
-  TSharkordState
+  TPluginTabs
 };
 
 export * from './actions';

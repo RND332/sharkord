@@ -2,8 +2,7 @@ import { useRoles } from '@/features/server/roles/hooks';
 import { getUrlFromServer } from '@/helpers/get-file-url';
 import { useForm } from '@/hooks/use-form';
 import { getTRPCClient } from '@/lib/trpc';
-import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
-import { getRandomString } from '@sharkord/shared';
+import { getRandomString } from '@dodecagon/shared';
 import {
   Button,
   DatePicker,
@@ -20,7 +19,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useMemo, useState, type FocusEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

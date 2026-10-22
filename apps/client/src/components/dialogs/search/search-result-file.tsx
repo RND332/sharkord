@@ -1,8 +1,8 @@
 import { RelativeTime } from '@/components/relative-time';
 import { getFileUrl } from '@/helpers/get-file-url';
 import type { TMessageJumpToTarget } from '@/types';
+import { Button } from '@dodecagon/ui';
 import { DocumentTextIcon, HashtagIcon } from '@heroicons/react/24/outline';
-import { Button } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import type { TSearchResultFile } from './types';
 

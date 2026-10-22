@@ -3,7 +3,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import type { TransportStatsData } from '@/components/voice-provider/hooks/use-transport-stats';
 import { VoiceStatsContext } from '@/components/voice-provider/stats-context';
 import { i18n } from '@/i18n';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';

@@ -4,7 +4,7 @@ import {
   Permission,
   type TJoinedRole,
   type TJoinedUser
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { createElement, type ReactNode } from 'react';

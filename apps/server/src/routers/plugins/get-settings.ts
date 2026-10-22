@@ -1,4 +1,4 @@
-import { Permission, zPluginId } from '@sharkord/shared';
+import { Permission, zPluginId } from '@dodecagon/shared';
 import z from 'zod';
 import { pluginManager } from '../../plugins';
 import { protectedProcedure } from '../../utils/trpc';

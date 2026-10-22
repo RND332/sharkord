@@ -1,11 +1,11 @@
 import { setDmsOpen } from '@/features/server/actions';
 import { useDirectMessagesUnreadCount } from '@/features/server/channels/hooks';
 import { useDmsOpen } from '@/features/server/hooks';
+import { cn, Tooltip } from '@dodecagon/ui';
 import {
   ChatBubbleLeftEllipsisIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { cn, Tooltip } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 

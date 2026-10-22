@@ -27,11 +27,7 @@ import {
   VideoCodec,
   type TDeviceSettings
 } from '@/types';
-import {
-  InformationCircleIcon,
-  SpeakerWaveIcon
-} from '@heroicons/react/24/outline';
-import { DEFAULT_BITRATE } from '@sharkord/shared';
+import { DEFAULT_BITRATE } from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -46,7 +42,11 @@ import {
   SelectValue,
   Slider,
   Switch
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  InformationCircleIcon,
+  SpeakerWaveIcon
+} from '@heroicons/react/24/outline';
 import { filesize } from 'filesize';
 import {
   memo,

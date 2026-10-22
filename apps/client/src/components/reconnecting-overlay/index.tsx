@@ -1,7 +1,7 @@
 import { disconnectFromServer } from '@/features/server/actions';
 import { useReconnectState } from '@/features/server/hooks';
+import { Button } from '@dodecagon/ui';
 import { ArrowPathIcon, SignalSlashIcon } from '@heroicons/react/24/outline';
-import { Button } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCountdownSeconds } from './use-countdown-seconds';

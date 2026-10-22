@@ -351,7 +351,7 @@
   "diskTotalSpace": "Espacio total en disco",
   "diskAvailableSpace": "Espacio disponible",
   "diskSystemUsed": "Usado por el sistema",
-  "diskSharkordUsed": "Usado por Dodecagon",
+  "diskDodecagonUsed": "Usado por Dodecagon",
   "diskUsage": "Uso de disco",
   "diskPluginData": "Datos del plugin",
   "diskMetricsUnavailable": "No disponible",

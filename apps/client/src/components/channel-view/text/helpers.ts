@@ -1,4 +1,4 @@
-import type { TJoinedMessage } from '@sharkord/shared';
+import type { TJoinedMessage } from '@dodecagon/shared';
 
 type TMessagesGroupComparatorProps = {
   showClockTime?: boolean;

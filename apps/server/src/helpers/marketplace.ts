@@ -2,7 +2,7 @@ import {
   MARKETPLACE_REGISTRY_URL,
   parseMarketplaceRegistry,
   type TMarketplacePluginVersion
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { invariant } from '../utils/invariant';
 
 const fetchMarketplaceVersion = async (

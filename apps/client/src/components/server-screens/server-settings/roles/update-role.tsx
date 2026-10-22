@@ -2,19 +2,13 @@ import { useSettingsForm } from '@/components/server-screens/settings-shell/use-
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getTRPCClient } from '@/lib/trpc';
 import {
-  InformationCircleIcon,
-  StarIcon,
-  TrashIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
-import {
   getTrpcError,
   OWNER_ROLE_ID,
   type Permission,
   STORAGE_MAX_QUOTA_PER_USER,
   STORAGE_MIN_QUOTA_PER_USER,
   type TJoinedRole
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -24,7 +18,13 @@ import {
   Separator,
   Switch,
   Tooltip
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  InformationCircleIcon,
+  StarIcon,
+  TrashIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { filesize } from 'filesize';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

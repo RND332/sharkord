@@ -14,15 +14,15 @@ import { playSound } from '@/helpers/sounds';
 import { useTypingSignal } from '@/hooks/use-typing-signal';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
-import { ArrowDownIcon, HashtagIcon } from '@heroicons/react/24/outline';
 import {
   ChannelPermission,
   getTrpcError,
   prepareMessageHtml,
   TestId,
   type TJoinedMessage
-} from '@sharkord/shared';
-import { Spinner } from '@sharkord/ui';
+} from '@dodecagon/shared';
+import { Spinner } from '@dodecagon/ui';
+import { ArrowDownIcon, HashtagIcon } from '@heroicons/react/24/outline';
 import { format, isSameDay, isToday } from 'date-fns';
 import { Fragment, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

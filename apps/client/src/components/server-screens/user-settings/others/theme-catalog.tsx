@@ -1,5 +1,5 @@
 import { THEMES } from '@/components/theme-provider/themes';
-import { Input } from '@sharkord/ui';
+import { Input } from '@dodecagon/ui';
 import { memo, useCallback, useMemo, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ThemeCard } from './theme-card';

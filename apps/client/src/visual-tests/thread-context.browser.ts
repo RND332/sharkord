@@ -18,8 +18,8 @@ import {
 import { store } from '@/features/store';
 import { LocalStorageKey } from '@/helpers/storage';
 import { getTRPCClient } from '@/lib/trpc';
+import { TestId, type TJoinedMessage } from '@dodecagon/shared';
 import { configureStore } from '@reduxjs/toolkit';
-import { TestId, type TJoinedMessage } from '@sharkord/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Provider } from 'react-redux';

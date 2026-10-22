@@ -16,6 +16,41 @@
 Development data is stored in `apps/server/data`, including the database and uploaded files.
 Delete that folder if you want a clean reset.
 
+## Environment variables
+
+A deployment reads its settings from `config.ini` in the data directory, and
+every setting can be overridden by an environment variable.
+
+| Variable | What it changes |
+| --- | --- |
+| `DODECAGON_DATA_PATH` | directory that holds the database, the uploaded files and `config.ini` |
+| `DODECAGON_HOST` | interface the server binds to |
+| `DODECAGON_PORT` | port the server listens on, `4991` by default |
+| `DODECAGON_DEBUG` | verbose logging |
+| `DODECAGON_AUTOUPDATE` | automatic server updates |
+| `DODECAGON_BACKUP_DATABASE` | nightly database backups |
+| `DODECAGON_MAX_REQUEST_BODY_BYTES` | size limit for uploads |
+| `DODECAGON_ALLOWED_ORIGINS` | origins allowed to call the API |
+| `DODECAGON_TRUSTED_PROXIES` | proxies whose forwarded headers are trusted |
+| `DODECAGON_WEBRTC_PORT` | UDP port of the media server, `40000` by default |
+| `DODECAGON_WEBRTC_ANNOUNCED_ADDRESS` | address the media server announces |
+| `DODECAGON_WEBRTC_MAX_BITRATE` | bitrate ceiling for streams |
+| `DODECAGON_WEBRTC_TURN_URLS` | TURN relays for restrictive networks |
+| `DODECAGON_WEBRTC_TURN_SECRET` | shared secret of those relays |
+| `DODECAGON_WEBRTC_TURN_TTL` | lifetime of the issued TURN credentials |
+| `DODECAGON_OIDC_ENABLED` | turns the OpenID Connect login on |
+| `DODECAGON_OIDC_ISSUER` | issuer of the identity provider |
+| `DODECAGON_OIDC_CLIENT_ID` | client id at the identity provider |
+| `DODECAGON_OIDC_CLIENT_SECRET` | client secret at the identity provider |
+| `DODECAGON_OIDC_REDIRECT_URI` | callback the provider sends the user back to |
+| `DODECAGON_OIDC_DISABLE_LOCAL_LOGIN` | closes the password login |
+
+The data directory defaults to `~/.config/dodecagon` on Linux,
+`~/Library/Application Support/dodecagon` on macOS, `%APPDATA%\dodecagon` on
+Windows, and `/home/bun/.config/dodecagon` inside the container image. A data
+directory written by an earlier release keeps its old name, so point
+`DODECAGON_DATA_PATH` at it or move it to the new one.
+
 ## Mock data
 
 To start from a server that looks used rather than empty, stop the dev server and run:
@@ -50,7 +85,7 @@ To enable the optional path, set `webRtc.directScreenSharing` to `true` in the
 server configuration or start `apps/server` with:
 
 ```bash
-SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING=true bun dev
+DODECAGON_WEBRTC_DIRECT_SCREEN_SHARING=true bun dev
 ```
 
 Both participants must have **Direct screen sharing (1:1)** enabled in **User
@@ -76,7 +111,7 @@ Existing relayed shares are never upgraded in place. Canceling a handover stops
 the original capture; late producer cleanup cannot close a newer share.
 
 For peers on different networks, configure `webRtc.directScreenStunUrls` or the
-comma-separated `SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS` environment variable.
+comma-separated `DODECAGON_WEBRTC_DIRECT_SCREEN_STUN_URLS` environment variable.
 Only `stun:` and `stuns:` URLs are accepted, with no public STUN service enabled by
 default. Some NAT/firewall combinations cannot connect directly. TURN is not used
 for this path: mediasoup is the relay fallback. Group calls and older clients that

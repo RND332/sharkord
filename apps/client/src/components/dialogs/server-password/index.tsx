@@ -2,7 +2,6 @@ import { openDialog } from '@/features/dialogs/actions';
 import { joinServer } from '@/features/server/actions';
 import { useForm } from '@/hooks/use-form';
 import * as trpc from '@/lib/trpc';
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +13,8 @@ import {
   AlertDialogTitle,
   AutoFocus,
   Input
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '../dialogs';

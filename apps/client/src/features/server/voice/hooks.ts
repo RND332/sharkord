@@ -2,7 +2,7 @@ import { useAudioLevel } from '@/components/channel-view/voice/hooks/use-audio-l
 import { VoiceProviderContext } from '@/components/voice-provider';
 import type { IRootState } from '@/features/store';
 import { getTRPCClient } from '@/lib/trpc';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import { useContext, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { handleSubscriptionError } from '../subscription-error';

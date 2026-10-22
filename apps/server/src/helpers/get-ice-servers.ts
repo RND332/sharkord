@@ -1,4 +1,4 @@
-import type { TIceServer } from '@sharkord/shared';
+import type { TIceServer } from '@dodecagon/shared';
 import { createHmac } from 'node:crypto';
 import { config } from '../config';
 

@@ -3,6 +3,8 @@ import { toggleChannelMuted } from '@/features/app/actions';
 import { useIsChannelMuted } from '@/features/app/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
 import { useUserById } from '@/features/server/users/hooks';
+import { ChannelType, PluginSlot, TestId, UserStatus } from '@dodecagon/shared';
+import { IconButton, Tooltip } from '@dodecagon/ui';
 import {
   BellSlashIcon,
   ChatBubbleLeftEllipsisIcon,
@@ -11,8 +13,6 @@ import {
   UsersIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { ChannelType, PluginSlot, TestId, UserStatus } from '@sharkord/shared';
-import { IconButton, Tooltip } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PinnedMessagesPopover } from './pinned-messages-popover';

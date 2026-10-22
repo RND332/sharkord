@@ -1,5 +1,4 @@
 import { SUPPORTED_LANGUAGES } from '@/i18n';
-import { LanguageIcon } from '@heroicons/react/24/outline';
 import {
   cn,
   Select,
@@ -7,7 +6,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { LanguageIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 

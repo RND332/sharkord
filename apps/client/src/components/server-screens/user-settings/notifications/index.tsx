@@ -16,7 +16,7 @@ import {
   useMessageSentSound,
   useNotificationSounds
 } from '@/features/app/hooks';
-import { Switch } from '@sharkord/ui';
+import { Switch } from '@dodecagon/ui';
 import { memo, type ReactNode, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
