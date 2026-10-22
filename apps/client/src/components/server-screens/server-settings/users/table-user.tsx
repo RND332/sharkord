@@ -5,10 +5,9 @@ import { openDialog } from '@/features/dialogs/actions';
 import type { TAdminUser } from '@/features/server/admin/hooks';
 import { useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
-import { useDateLocale } from '@/hooks/use-date-locale';
 import { cn } from '@/lib/utils';
 import {
-  EllipsisVerticalIcon,
+  EllipsisHorizontalIcon,
   TrashIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline';
@@ -21,8 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@sharkord/ui';
-import { format, formatDistanceToNow } from 'date-fns';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TTableUserProps = {
@@ -32,10 +30,14 @@ type TTableUserProps = {
 
 const TableUser = memo(({ user, refetch }: TTableUserProps) => {
   const { t } = useTranslation('settings');
-  const dateLocale = useDateLocale();
   const roles = useUserRoles(user.id);
   const status = useUserStatus(user.id);
   const ownUserId = useOwnUserId();
+
+  const rolesText = useMemo(
+    () => roles.map((role) => role.name).join(', '),
+    [roles]
+  );
 
   const onModerateClick = useCallback(() => {
     setModViewOpen(true, user.id);
@@ -46,106 +48,70 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
   }, [user, refetch]);
 
   return (
-    <>
-      <div
-        key={user.id}
-        className="grid grid-cols-[60px_1fr_120px_120px_120px_80px_50px] gap-4 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
-      >
-        <div className="flex items-center justify-center">
-          <UserAvatar
-            userId={user.id}
-            className="h-8 w-8 flex-shrink-0"
-            showUserPopover
-          />
-        </div>
-
-        <div className="flex items-center min-w-0">
-          <div className="min-w-0">
-            <div className="font-medium text-foreground truncate">
-              {user.name}
-            </div>
-            {user.bio && (
-              <div className="text-xs text-muted-foreground truncate">
-                {user.bio}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center min-w-0 gap-2">
-          <span
-            className="text-xs truncate text-muted-foreground"
-            title={roles.map((role) => role.name).join(', ')}
-          >
-            {roles.map((role) => role.name).join(', ')}
-          </span>
-        </div>
-
-        <div className="flex items-center text-muted-foreground">
-          <span
-            className="text-xs"
-            title={format(user.createdAt, 'PPP p', { locale: dateLocale })}
-          >
-            {formatDistanceToNow(user.createdAt, {
-              addSuffix: true,
-              locale: dateLocale
-            })}
-          </span>
-        </div>
-
-        <div className="flex items-center text-muted-foreground">
-          <span className="text-xs">
-            {formatDistanceToNow(user.lastLoginAt, {
-              addSuffix: true,
-              locale: dateLocale
-            })}
-          </span>
-        </div>
-
-        <div className="flex items-center text-muted-foreground">
-          <span
-            className={cn('capitalize text-xs', {
-              'text-green-500': status === UserStatus.ONLINE,
-              'text-yellow-500': status === UserStatus.IDLE
-            })}
-          >
-            {status}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              >
-                <EllipsisVerticalIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onModerateClick}>
-                <UserCircleIcon className="h-4 w-4" />
-                {t('moderateUserAction')}
-              </DropdownMenuItem>
-              {ownUserId !== user.id && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={onDeleteClick}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                    {t('deleteUserAction', { defaultValue: t('deleteBtn') })}
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+    <div className="flex items-center py-[13px] transition-colors hover:bg-muted/30">
+      <div className="flex min-w-0 flex-1 basis-0 items-center gap-2">
+        <UserAvatar
+          userId={user.id}
+          className="size-6 flex-shrink-0"
+          showUserPopover
+        />
+        <div
+          className="min-w-0 truncate text-sm leading-[18px] text-foreground"
+          title={user.name}
+        >
+          {user.name}
         </div>
       </div>
-    </>
+
+      <div
+        className="w-[180px] shrink-0 truncate text-sm leading-[18px] text-foreground"
+        title={rolesText || undefined}
+      >
+        {rolesText}
+      </div>
+
+      <div
+        className={cn('w-[90px] shrink-0 text-sm capitalize leading-[18px]', {
+          'text-success': status === UserStatus.ONLINE,
+          'text-yellow-500': status === UserStatus.IDLE,
+          'text-muted-foreground': status === UserStatus.OFFLINE
+        })}
+      >
+        {status}
+      </div>
+
+      <div className="flex w-[44px] shrink-0 justify-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              aria-label={t('usersRowActionsLabel', { name: user.name })}
+            >
+              <EllipsisHorizontalIcon className="size-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onModerateClick}>
+              <UserCircleIcon className="h-4 w-4" />
+              {t('moderateUserAction')}
+            </DropdownMenuItem>
+            {ownUserId !== user.id && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={onDeleteClick}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  {t('deleteUserAction', { defaultValue: t('deleteBtn') })}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 });
 

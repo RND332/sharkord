@@ -1,42 +1,41 @@
-import { PaginatedTable } from '@/components/paginated-table';
 import type { TAdminUser } from '@/features/server/admin/hooks';
-import { memo, useCallback } from 'react';
+import { PaginatedList } from '@sharkord/ui';
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableUser } from './table-user';
 
 type TUsersTableProps = {
-  users: TAdminUser[];
   refetch?: () => void;
 };
 
-const UsersTable = memo(({ users, refetch }: TUsersTableProps) => {
+const UsersTable = memo(({ refetch }: TUsersTableProps) => {
   const { t } = useTranslation('settings');
 
-  const searchFilter = useCallback((user: TAdminUser, searchTerm: string) => {
-    return user.name.toLowerCase().includes(searchTerm.toLowerCase());
-  }, []);
-
   return (
-    <PaginatedTable
-      items={users}
-      renderRow={(user) => <TableUser user={user} refetch={refetch} />}
-      searchFilter={searchFilter}
-      headerColumns={
-        <>
-          <div>{t('usersAvatarCol')}</div>
-          <div>{t('usersUserCol')}</div>
-          <div>{t('usersRolesCol')}</div>
-          <div>{t('usersJoinedAtCol')}</div>
-          <div>{t('usersLastJoinCol')}</div>
-          <div>{t('usersStatusCol')}</div>
-          <div>{t('usersActionsCol')}</div>
-        </>
-      }
-      gridCols="grid-cols-[60px_1fr_120px_120px_120px_80px_50px]"
-      itemsPerPage={8}
-      searchPlaceholder={t('searchUsersPlaceholder')}
-      emptyMessage={t('noUsersFound')}
-    />
+    <div className="w-full max-w-[1040px]">
+      <div className="flex items-center border-b border-line py-[10px] text-[12px] uppercase leading-4 tracking-[0.07em] text-subtle-foreground">
+        <div className="min-w-0 flex-1 basis-0">{t('usersMemberCol')}</div>
+        <div className="w-[180px] shrink-0">{t('usersRoleCol')}</div>
+        <div className="w-[90px] shrink-0">{t('usersStatusCol')}</div>
+        <div className="w-[44px] shrink-0" />
+      </div>
+
+      <PaginatedList.List<TAdminUser>
+        className="divide-y divide-line"
+        getItemKey={(user) => user.id}
+      >
+        {(user) => <TableUser user={user} refetch={refetch} />}
+      </PaginatedList.List>
+
+      <PaginatedList.Empty className="py-8 text-center text-sm text-muted-foreground">
+        {t('noUsersFound')}
+      </PaginatedList.Empty>
+
+      <div className="flex items-center justify-between pt-4">
+        <PaginatedList.Info className="text-xs text-muted-foreground" />
+        <PaginatedList.Pagination />
+      </div>
+    </div>
   );
 });
 
