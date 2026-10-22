@@ -139,11 +139,16 @@ test('shows up to four watchers with an overflow count and the full roster on de
   await expect.element(page.getByText('Watching · 5')).not.toBeInTheDocument();
 });
 
-test('hides the watcher control when nobody is watching', async () => {
+test('keeps the watcher control reachable with an empty roster', async () => {
   await mount([]);
-  expect(page.getByRole('button', { name: /viewers/ }).elements()).toHaveLength(
-    0
-  );
+
+  const trigger = page.getByRole('button', { name: '0 viewers' });
+  await expect.element(trigger).toBeVisible();
+  expect(host!.querySelectorAll('[data-slot="avatar"]')).toHaveLength(0);
+
+  await trigger.click();
+  await expect.element(page.getByText('Watching · 0')).toBeVisible();
+  await expect.element(page.getByText('No one is watching yet.')).toBeVisible();
 });
 
 void StreamKind;

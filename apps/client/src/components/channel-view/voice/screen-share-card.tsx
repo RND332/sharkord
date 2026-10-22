@@ -258,17 +258,19 @@ const ScreenShareCard = memo(
       }
     }, [stopViewingDemo, userId, isPinned, onUnpin, resetZoom, t]);
 
-    const viewerIndicator =
-      viewerCount > 0 ? (
-        <div className="absolute right-2 top-2 z-10">
-          <Popover open={viewersOpen} onOpenChange={onViewersOpenChange}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                onMouseDown={onViewersPointerDown}
-                aria-label={t('screenShareViewers', { count: viewerCount })}
-                className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/65 px-1.5 text-[13px] font-medium leading-[17px] text-white transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-              >
+    // The trigger stays visible with an empty roster: the Paper design keeps the
+    // eye and the count on screen, so the roster is always reachable.
+    const viewerIndicator = (
+      <div className="absolute right-2 top-2 z-10">
+        <Popover open={viewersOpen} onOpenChange={onViewersOpenChange}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              onMouseDown={onViewersPointerDown}
+              aria-label={t('screenShareViewers', { count: viewerCount })}
+              className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/65 px-1.5 text-[13px] font-medium leading-[17px] text-white transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+            >
+              {viewerCount > 0 && (
                 <span className="flex -space-x-1.5">
                   {shownViewerIds.map((viewerId) => (
                     <UserAvatar
@@ -279,24 +281,30 @@ const ScreenShareCard = memo(
                     />
                   ))}
                 </span>
-                {overflowViewerCount > 0 && (
-                  <span className="tabular-nums text-white/80">
-                    +{overflowViewerCount}
-                  </span>
-                )}
-                <EyeIcon aria-hidden="true" className="size-3.5" />
-                <span className="tabular-nums">{viewerCount}</span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              sideOffset={8}
-              className="w-[272px] gap-0 p-0"
-            >
-              <div className="border-b border-line px-3 py-2 text-xs font-semibold text-muted-foreground">
-                {t('watching')} · {viewerCount}
-              </div>
-              <div className="max-h-80 overflow-y-auto p-1">
+              )}
+              {overflowViewerCount > 0 && (
+                <span className="tabular-nums text-white/80">
+                  +{overflowViewerCount}
+                </span>
+              )}
+              <EyeIcon aria-hidden="true" className="size-3.5" />
+              <span className="tabular-nums">{viewerCount}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className="w-[272px] gap-0 p-0"
+          >
+            <div className="border-b border-line px-3 py-2 text-xs font-semibold text-muted-foreground">
+              {t('watching')} · {viewerCount}
+            </div>
+            {viewerCount === 0 ? (
+              <p className="px-3 py-2 text-sm text-muted-foreground">
+                {t('noOneWatching')}
+              </p>
+            ) : (
+              <div className="max-h-[294px] overflow-y-auto p-1">
                 {viewerIds.map((viewerId) => (
                   <div
                     key={viewerId}
@@ -309,10 +317,11 @@ const ScreenShareCard = memo(
                   </div>
                 ))}
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      ) : null;
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
 
     if (!user || devices.voiceOnlyMode) return null;
 
@@ -448,7 +457,8 @@ const ScreenShareCard = memo(
             <div
               className={cn(
                 'absolute top-0 right-0 z-10 justify-end',
-                viewerCount > 0 && 'top-9',
+                // the viewers trigger always occupies the top-right corner
+                'top-9',
                 density.inset,
                 'flex opacity-0 pointer-events-none group-hover/screen-share-card:opacity-100 group-hover/screen-share-card:pointer-events-auto group-focus-within/screen-share-card:opacity-100 group-focus-within/screen-share-card:pointer-events-auto',
                 'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
