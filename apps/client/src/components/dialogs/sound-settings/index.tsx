@@ -3,7 +3,6 @@ import {
   setMuteDeafenSounds
 } from '@/features/app/actions';
 import { useJoinLeaveSounds, useMuteDeafenSounds } from '@/features/app/hooks';
-import { CheckIcon } from '@heroicons/react/20/solid';
 import {
   Button,
   Dialog,
@@ -14,6 +13,7 @@ import {
   DialogTitle,
   Switch
 } from '@dodecagon/ui';
+import { CheckIcon } from '@heroicons/react/20/solid';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
