@@ -129,6 +129,11 @@ const Storage = memo(() => {
     [values]
   );
 
+  const pluginDataUsed = useMemo(
+    () => pluginStorage.reduce((total, usage) => total + usage.usedSpace, 0),
+    [pluginStorage]
+  );
+
   const onMaxFilesPerMessageChange = useCallback(
     (nextValue: number) => {
       onChange('storageMaxFilesPerMessage', Math.round(nextValue));
@@ -163,7 +168,7 @@ const Storage = memo(() => {
 
   return (
     <SettingsSection title={t('storageTitle')} description={t('storageDesc')}>
-      <DiskMetrics diskMetrics={diskMetrics!} />
+      <DiskMetrics diskMetrics={diskMetrics} pluginDataUsed={pluginDataUsed} />
 
       <PluginStorageUsage pluginStorage={pluginStorage} />
 

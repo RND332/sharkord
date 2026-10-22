@@ -4,53 +4,80 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface DiskMetricsProps {
-  diskMetrics: TDiskMetrics;
+  diskMetrics?: TDiskMetrics;
+  pluginDataUsed?: number;
 }
 
-const DiskMetrics = memo(({ diskMetrics }: DiskMetricsProps) => {
-  const { t } = useTranslation('settings');
-  const usedPercent = diskMetrics.totalSpace
-    ? Math.min((diskMetrics.usedSpace / diskMetrics.totalSpace) * 100, 100)
-    : 0;
+const DiskMetrics = memo(
+  ({ diskMetrics, pluginDataUsed }: DiskMetricsProps) => {
+    const { t } = useTranslation('settings');
 
-  return (
-    <div className="flex w-full max-w-[1040px] flex-col gap-2">
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-sm leading-[18px] text-foreground">
-          {t('diskUsage')}
-        </span>
-        <span className="text-sm leading-[18px] text-foreground">
-          {filesize(diskMetrics.usedSpace, { standard: 'jedec' })} of{' '}
-          {filesize(diskMetrics.totalSpace, { standard: 'jedec' })}
-        </span>
-      </div>
+    const totalSpace = diskMetrics?.totalSpace ?? 0;
+    const usedSpace = diskMetrics?.usedSpace ?? 0;
+    const freeSpace = diskMetrics?.freeSpace ?? 0;
+    const sharkordUsedSpace = diskMetrics?.sharkordUsedSpace ?? 0;
 
-      <div
-        className="h-2 w-full overflow-hidden rounded-[4px] bg-raised"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(usedPercent)}
-      >
-        <div
-          className="h-2 rounded-[4px] bg-primary transition-[width] duration-300"
-          style={{ width: `${usedPercent}%` }}
-        />
-      </div>
+    // without a capacity the numbers are unknown, not zero
+    const hasCapacity = totalSpace > 0;
+    const usedPercent = hasCapacity
+      ? Math.min((usedSpace / totalSpace) * 100, 100)
+      : 0;
 
-      <div className="text-xs leading-4 text-muted-foreground">
-        {t('diskAvailableSpace')}{' '}
-        {filesize(diskMetrics.freeSpace, { standard: 'jedec' })}
-        {' · '}
-        {t('diskSharkordUsed')}{' '}
-        {filesize(diskMetrics.sharkordUsedSpace, { standard: 'jedec' })}
-        {' · '}
-        {t('diskSystemUsed')}{' '}
-        {filesize(diskMetrics.usedSpace, { standard: 'jedec' })}
+    return (
+      <div className="flex w-full max-w-[1040px] flex-col gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm leading-[18px] text-foreground">
+            {t('diskUsage')}
+          </span>
+          <span className="text-sm leading-[18px] text-foreground">
+            {hasCapacity ? (
+              <>
+                {filesize(usedSpace, { standard: 'jedec' })} of{' '}
+                {filesize(totalSpace, { standard: 'jedec' })}
+              </>
+            ) : (
+              t('diskMetricsUnavailable')
+            )}
+          </span>
+        </div>
+
+        {hasCapacity && (
+          <div
+            className="h-2 w-full overflow-hidden rounded-[4px] bg-raised"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(usedPercent)}
+          >
+            <div
+              className="h-2 rounded-sm bg-primary transition-[width] duration-300"
+              style={{ width: `${usedPercent}%` }}
+            />
+          </div>
+        )}
+
+        {hasCapacity && (
+          <div className="text-xs leading-4 text-muted-foreground">
+            {t('diskAvailableSpace')}{' '}
+            {filesize(freeSpace, { standard: 'jedec' })}
+            {' · '}
+            {t('diskSharkordUsed')}{' '}
+            {filesize(sharkordUsedSpace, { standard: 'jedec' })}
+            {' · '}
+            {t('diskSystemUsed')} {filesize(usedSpace, { standard: 'jedec' })}
+            {pluginDataUsed ? (
+              <>
+                {' · '}
+                {t('diskPluginData')}{' '}
+                {filesize(pluginDataUsed, { standard: 'jedec' })}
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 DiskMetrics.displayName = 'DiskMetrics';
 

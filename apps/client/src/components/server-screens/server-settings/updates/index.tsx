@@ -1,13 +1,15 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useAdminUpdates } from '@/features/server/admin/hooks';
+import { cn } from '@/lib/utils';
 import {
   ArrowDownTrayIcon,
+  ArrowPathIcon,
   ArrowUpCircleIcon,
-  CheckCircleIcon,
+  CheckIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 import { Button, LoadingCard } from '@sharkord/ui';
-import { memo } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Updates = memo(() => {
@@ -18,19 +20,41 @@ const Updates = memo(() => {
     latestVersion,
     currentVersion,
     canUpdate,
+    refetch,
     update
   } = useAdminUpdates();
+  const [isChecking, setIsChecking] = useState(false);
 
-  if (loading) {
+  const checkAgain = useCallback(async () => {
+    setIsChecking(true);
+
+    try {
+      await refetch();
+    } finally {
+      setIsChecking(false);
+    }
+  }, [refetch]);
+
+  // a manual re-check keeps the row on screen, only the first load replaces it
+  if (loading && !isChecking) {
     return <LoadingCard className="h-[600px]" />;
   }
 
-  let statusIcon = <CheckCircleIcon className="size-6 text-success" />;
+  // the server always reports a version, so a missing one means the check
+  // never came back and the real state is unknown
+  const checkFailed = !currentVersion;
+
+  let statusIcon = <CheckIcon className="size-6 text-success" />;
   let statusTitle = t('upToDateTitle');
   let statusDescription = t('upToDateDesc');
   let statusBackground = 'bg-success-solid/25';
 
-  if (!canUpdate) {
+  if (checkFailed) {
+    statusIcon = <ExclamationCircleIcon className="size-6 text-destructive" />;
+    statusTitle = t('updateCheckFailedTitle');
+    statusDescription = t('updateCheckFailedDesc');
+    statusBackground = 'bg-destructive/15';
+  } else if (!canUpdate) {
     statusIcon = <ExclamationCircleIcon className="size-6 text-destructive" />;
     statusTitle = t('updatesNotSupportedTitle');
     statusDescription = t('updatesNotSupportedDesc');
@@ -70,18 +94,33 @@ const Updates = memo(() => {
               {statusDescription}
             </span>
           </div>
+          {checkFailed && (
+            <div className="ml-auto shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={checkAgain}
+                disabled={isChecking}
+              >
+                <ArrowPathIcon
+                  className={cn('size-4', isChecking && 'animate-spin')}
+                />
+                {t('updateCheckAgainBtn')}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-[30px] border-t border-line pt-2 text-sm leading-4 text-muted-foreground">
           <span>
             {t('currentVersionLabel')}{' '}
-            <span className="font-mono text-foreground">
+            <span className="font-mono">
               {currentVersion || t('unknownVersion')}
             </span>
           </span>
           <span>
             {t('latestVersionLabel')}{' '}
-            <span className="font-mono text-foreground">
+            <span className="font-mono">
               {latestVersion || t('unknownVersion')}
             </span>
           </span>
