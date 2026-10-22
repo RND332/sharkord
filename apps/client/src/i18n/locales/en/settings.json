@@ -585,5 +585,6 @@
   "emojisIconColumn": "Icon",
   "emojisNameColumn": "Name",
   "emojisSizeColumn": "Size",
-  "emojisActionsColumn": "Actions"
+  "emojisActionsColumn": "Actions",
+  "themesCount": "Themes · {{count}}"
 }
