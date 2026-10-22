@@ -3,7 +3,6 @@ import { useRoles } from '@/features/server/roles/hooks';
 import { useUsers } from '@/features/server/users/hooks';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
-  Button,
   Input,
   Popover,
   PopoverContent,
@@ -55,9 +54,14 @@ const SearchPopover = memo(
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button size="icon" variant="ghost">
-            <PlusIcon className="h-4 w-4" />
-          </Button>
+          <button
+            type="button"
+            aria-label={t('addOverrideTooltip')}
+            title={t('addOverrideTooltip')}
+            className="flex size-[18px] items-center justify-center text-accent-text transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <PlusIcon className="size-[18px]" strokeWidth={1.5} />
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="end">
           <Tabs
@@ -99,7 +103,7 @@ const SearchPopover = memo(
                     <button
                       key={role.id}
                       onClick={() => onSelect('role', role.id)}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                      className="flex w-full items-center gap-2 rounded-[6px] px-[10px] py-[10px] text-left text-[13px] leading-4 text-muted-foreground transition-colors hover:bg-raised hover:text-foreground"
                     >
                       <div
                         className="h-3 w-3 rounded-full"
@@ -123,7 +127,7 @@ const SearchPopover = memo(
                     <button
                       key={user.id}
                       onClick={() => onSelect('user', user.id)}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                      className="flex w-full items-center gap-2 rounded-[6px] px-[10px] py-[10px] text-left text-[13px] leading-4 text-muted-foreground transition-colors hover:bg-raised hover:text-foreground"
                     >
                       <UserAvatar userId={user.id} />
                       <span>{user.name}</span>

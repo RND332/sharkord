@@ -1,4 +1,5 @@
-import { SettingsListEditor } from '@/components/server-screens/settings-shell/list-editor';
+import { SettingsSection } from '@/components/server-screens/settings-shell/section';
+import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { useAdminChannelPermissions } from '@/features/server/admin/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
 import {
@@ -30,7 +31,7 @@ const ChannelPermissions = memo(({ channelId }: TChannelPermissionsProps) => {
     if (!selectedOverrideId) return [];
 
     const [type, idStr] = selectedOverrideId.split('-');
-    const id = parseInt(idStr);
+    const id = parseInt(idStr, 10);
     const matches =
       type === 'role'
         ? rolePermissions.filter((perm) => perm.roleId === id)
@@ -47,7 +48,11 @@ const ChannelPermissions = memo(({ channelId }: TChannelPermissionsProps) => {
   }
 
   return (
-    <>
+    <SettingsSection
+      className="max-w-[900px]"
+      title={t('permissionsTitle')}
+      description={t('permissionsDesc')}
+    >
       {!channel?.private && (
         <Alert variant="destructive">
           <ExclamationTriangleIcon />
@@ -56,33 +61,32 @@ const ChannelPermissions = memo(({ channelId }: TChannelPermissionsProps) => {
         </Alert>
       )}
 
-      <SettingsListEditor
-        emptyIcon={UsersIcon}
-        emptyTitle={t('selectRoleOrUser')}
-        list={
-          <OverridesList
+      <div className="flex w-full flex-col overflow-hidden rounded-[8px] border border-line bg-canvas md:flex-row">
+        <OverridesList
+          channelId={channelId}
+          rolePermissions={rolePermissions}
+          userPermissions={userPermissions}
+          selectedOverrideId={selectedOverrideId}
+          setSelectedOverrideId={setSelectedOverrideId}
+          refetch={refetch}
+        />
+
+        {selectedOverrideId ? (
+          <Override
+            key={selectedOverrideId}
             channelId={channelId}
-            rolePermissions={rolePermissions}
-            userPermissions={userPermissions}
-            selectedOverrideId={selectedOverrideId}
+            overrideId={selectedOverrideId}
+            permissions={selectedPermissions}
             setSelectedOverrideId={setSelectedOverrideId}
             refetch={refetch}
           />
-        }
-        editor={
-          selectedOverrideId && (
-            <Override
-              key={selectedOverrideId}
-              channelId={channelId}
-              overrideId={selectedOverrideId}
-              permissions={selectedPermissions}
-              setSelectedOverrideId={setSelectedOverrideId}
-              refetch={refetch}
-            />
-          )
-        }
-      />
-    </>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center justify-center px-[24px] py-[20px]">
+            <StatePanel icon={UsersIcon} title={t('selectRoleOrUser')} />
+          </div>
+        )}
+      </div>
+    </SettingsSection>
   );
 });
 
