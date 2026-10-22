@@ -153,6 +153,7 @@
   "volume": "Hlasitost",
   "stopWatching": "Přestat sledovat",
   "watching": "Sleduje",
+  "noOneWatching": "Zatím nikdo nesleduje.",
   "screenShareViewers": "{{count}} diváků",
   "enableZoom": "Zapnout přiblížení",
   "disableZoom": "Vypnout přiblížení",

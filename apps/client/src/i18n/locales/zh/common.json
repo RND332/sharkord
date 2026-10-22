@@ -153,6 +153,7 @@
   "volume": "音量",
   "stopWatching": "停止观看",
   "watching": "正在观看",
+  "noOneWatching": "还没有人在观看。",
   "screenShareViewers": "{{count}} 位观看者",
   "enableZoom": "启用缩放",
   "disableZoom": "禁用缩放",

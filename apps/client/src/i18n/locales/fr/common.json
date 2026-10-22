@@ -153,6 +153,7 @@
   "volume": "Volume",
   "stopWatching": "Arrêter de regarder",
   "watching": "Regarde",
+  "noOneWatching": "Personne ne regarde pour l’instant.",
   "screenShareViewers": "{{count}} spectateurs",
   "enableZoom": "Activer le zoom",
   "disableZoom": "Désactiver le zoom",
