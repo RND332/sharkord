@@ -10,25 +10,25 @@
     "./client": "./src/client.ts"
   },
   "scripts": {
-    "format": "prettier --write \"**/*.ts*\" --config ./.prettierrc.json",
-    "format:check": "prettier --check \"**/*.ts*\" --config ./.prettierrc.json",
+    "format": "prettier --write \"**/*.ts*\" --cache --config ./.prettierrc.json",
+    "format:check": "prettier --check \"**/*.ts*\" --cache --config ./.prettierrc.json",
     "lint": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives",
     "lint:fix": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives --fix",
     "check-types": "tsc --noEmit",
     "magic": "bun --bun run lint:fix && bun --bun run format && bun --bun run check-types"
   },
   "devDependencies": {
+    "@dodecagon/shared": "workspace:*",
     "@types/bun": "latest",
-    "mediasoup": "^3.19.11",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
-    "@dodecagon/shared": "workspace:*",
-    "typescript": "^5",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "eslint": "^8.56.0",
     "eslint-plugin-unused-imports": "^4.1.4",
+    "mediasoup": "^3.19.11",
     "prettier": "^3.5.3",
-    "prettier-plugin-organize-imports": "^4.1.0"
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "typescript-native": "npm:typescript@^7.0.2"
   },
   "peerDependencies": {
     "mediasoup": "^3.19.11",

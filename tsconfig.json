@@ -1,8 +1,13 @@
 {
+  // the workspaces typecheck with the native TypeScript 7 compiler, which they get as the
+  // "typescript-native" alias (its `tsc` is the Go binary). TypeScript 7 ships no
+  // JavaScript API, so the root keeps 5.9.3 under the plain name for the tools that need
+  // one (eslint, knip, prettier-plugin-organize-imports), and the override pins every
+  // other `typescript` request to it. TypeScript 7 also removed `baseUrl`, which is why
+  // the paths below are relative to this file
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "@dodecagon/shared": ["packages/shared/src/index.ts"]
+      "@dodecagon/shared": ["./packages/shared/src/index.ts"]
     },
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
