@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Group,
   Input
 } from '@sharkord/ui';
 import { memo, useCallback, useState } from 'react';
@@ -47,29 +46,45 @@ const CreateCategoryDialog = memo(
 
     return (
       <Dialog open={isOpen}>
-        <DialogContent onInteractOutside={close} close={close}>
-          <DialogHeader>
-            <DialogTitle>{t('createCategoryTitle')}</DialogTitle>
-            <DialogDescription>{t('createCategoryDesc')}</DialogDescription>
+        <DialogContent
+          onInteractOutside={close}
+          close={close}
+          className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0"
+        >
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-5 pr-14">
+            <DialogTitle className="text-[20px] leading-7">
+              {t('createCategoryTitle')}
+            </DialogTitle>
+            <DialogDescription className="text-[13px] leading-[19px]">
+              {t('createCategoryDesc')}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-7">
-            <Group label={t('categoryNameLabel')}>
+          <div className="flex min-h-0 flex-col gap-7 overflow-y-auto p-6">
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="create-category-name"
+                className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
+              >
+                {t('categoryNameLabel')}
+              </label>
               <AutoFocus>
                 <Input
+                  id="create-category-name"
                   {...r('name')}
+                  className="h-auto px-[15px] py-[15px] text-[15px] leading-[18px] md:text-[15px]"
                   placeholder={t('categoryNamePlaceholder')}
                   onEnter={onSubmit}
                 />
               </AutoFocus>
-            </Group>
+            </div>
 
             <p className="text-sm leading-[21px] text-muted-foreground">
               {t('createCategoryHint')}
             </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0 flex-row items-center justify-end sm:mx-0 sm:mb-0">
             <Button onClick={onSubmit} disabled={loading}>
               <PlusIcon className="size-5" />
               {t('createCategoryBtn')}
