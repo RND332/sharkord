@@ -14,10 +14,11 @@ jobs:
   build-and-publish:
     needs: [ci]
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build project artifacts
         uses: ./.github/actions/build-dodecagon
