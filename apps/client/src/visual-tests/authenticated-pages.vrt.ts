@@ -1888,6 +1888,47 @@ test('create channel uses the Paper sheet geometry and selectable options', asyn
   ).toHaveLength(1);
 });
 
+test('create channel type choices are keyboard operable', async () => {
+  openDialog(Dialog.CREATE_CHANNEL);
+  await expect.element(page.getByRole('dialog')).toBeVisible();
+  const text = page.getByRole('radio', { name: 'Text channel' });
+  const voice = page.getByRole('radio', { name: 'Voice channel' });
+
+  // the group keeps a single tab stop on the selected option
+  expect(text.element().getAttribute('tabindex')).toBe('0');
+  expect(voice.element().getAttribute('tabindex')).toBe('-1');
+
+  await text.click();
+  await expect.element(text).toHaveFocus();
+
+  await userEvent.keyboard('{ArrowDown}');
+  await expect.element(voice).toHaveFocus();
+  await expect.element(voice).toHaveAttribute('aria-checked', 'true');
+  await expect.element(text).toHaveAttribute('aria-checked', 'false');
+
+  await userEvent.keyboard('{ArrowDown}');
+  await expect.element(text).toHaveFocus();
+  await expect.element(text).toHaveAttribute('aria-checked', 'true');
+
+  await userEvent.keyboard('{ArrowUp}');
+  await expect.element(voice).toHaveFocus();
+  await expect.element(voice).toHaveAttribute('aria-checked', 'true');
+
+  await userEvent.keyboard('{End}');
+  await expect.element(voice).toHaveFocus();
+
+  await userEvent.keyboard('{Home}');
+  await expect.element(text).toHaveFocus();
+  await expect.element(text).toHaveAttribute('aria-checked', 'true');
+
+  // the next snapshots expect no focused element and the pointer away from the
+  // dialogs, so both are restored before the test ends
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
+  (document.activeElement as HTMLElement | null)?.blur();
+  await page.getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME).hover();
+});
+
 test('create channel dialog matches the Paper design', async () => {
   openDialog(Dialog.CREATE_CHANNEL);
   await expect.element(page.getByRole('dialog')).toBeVisible();
