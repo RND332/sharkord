@@ -207,8 +207,9 @@ describe('migrations', () => {
     const sqlite = new Database(dbPath, { create: true, strict: true });
     const db = drizzle({ client: sqlite });
 
-    // setup.ts migrates a fresh database before every test, so the buffer already holds a
-    // full chain's worth of these lines. cleared before each run rather than once at the top
+    // setup.ts restores a database that was already migrated, so the buffer starts out
+    // without migration lines. cleared here anyway, so the assertions below only see what
+    // this test ran
     testLogs.length = 0;
 
     // stop short of the rebuild, so the rest of the chain is left to report on a second run
