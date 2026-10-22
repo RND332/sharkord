@@ -246,26 +246,22 @@ afterEach(async () => {
   }
 });
 
-test('delete user keeps both confirmation steps visibly destructive', async () => {
+test('delete user asks for the typed confirmation and stays visibly destructive', async () => {
   const { store } = await import('@/features/store');
   const { userByIdSelector } =
     await import('@/features/server/users/selectors');
   const state = store.getState();
   const user = userByIdSelector(state, 2)!;
   openDialog(Dialog.DELETE_USER, { user, refetch: async () => undefined });
-  const action = page.getByRole('button', { name: 'Delete User', exact: true });
+  const action = page.getByRole('button', { name: 'Delete user', exact: true });
   try {
     await expect.element(action).toBeVisible();
+    await expect.element(action).toBeDisabled();
     const initialStyle = getComputedStyle(action.element());
     expect(initialStyle.backgroundColor).toBe('rgb(179, 38, 62)');
     expect(initialStyle.color).toBe('rgb(255, 255, 255)');
-    await action.click();
-    await expect
-      .element(page.getByRole('heading', { name: 'Delete aria?' }))
-      .toBeVisible();
-    const confirmationStyle = getComputedStyle(action.element());
-    expect(confirmationStyle.backgroundColor).toBe('rgb(179, 38, 62)');
-    expect(confirmationStyle.color).toBe('rgb(255, 255, 255)');
+    await page.getByPlaceholder('DELETE').fill('DELETE');
+    await expect.element(action).toBeEnabled();
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     const currentState = store.getState();
     expect(userByIdSelector(currentState, user.id)).toBeDefined();

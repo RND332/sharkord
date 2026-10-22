@@ -1,26 +1,23 @@
-import { requestConfirmation } from '@/features/dialogs/actions';
+import { useServerName } from '@/features/server/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { getTrpcError, type TJoinedUser } from '@dodecagon/shared';
 import {
-  Alert,
-  AlertDescription,
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AutoFocus,
-  buttonVariants,
-  Group,
-  Switch
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input
 } from '@dodecagon/ui';
-import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { TDialogBaseProps } from '../types';
+
+// the word the requester has to type before the action unlocks
+const DELETE_CONFIRMATION = 'DELETE';
 
 type TDeleteUserDialogProps = TDialogBaseProps & {
   user: TJoinedUser;
@@ -31,19 +28,22 @@ type TDeleteUserDialogProps = TDialogBaseProps & {
 const DeleteUserDialog = memo(
   ({ isOpen, close, user, refetch, onDelete }: TDeleteUserDialogProps) => {
     const { t } = useTranslation('dialogs');
-    const [wipe, setWipe] = useState(false);
+    const serverName = useServerName();
+    const [confirmation, setConfirmation] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const onSubmit = useCallback(async () => {
-      const choice = await requestConfirmation({
-        title: t('confirmDeleteTitle', { name: user.name }),
-        message: wipe ? t('confirmDeleteMsgWithWipe') : t('confirmDeleteMsg'),
-        confirmLabel: t('deleteUserBtn'),
-        cancelLabel: t('cancel'),
-        variant: 'danger'
-      });
+    const isConfirmed =
+      confirmation.trim().toUpperCase() === DELETE_CONFIRMATION;
 
-      if (!choice) {
+    const onConfirmationChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        setConfirmation(event.target.value);
+      },
+      []
+    );
+
+    const onSubmit = useCallback(async () => {
+      if (!isConfirmed || isDeleting) {
         return;
       }
 
@@ -52,10 +52,7 @@ const DeleteUserDialog = memo(
       try {
         setIsDeleting(true);
 
-        await trpc.users.delete.mutate({
-          userId: user.id,
-          wipe
-        });
+        await trpc.users.delete.mutate({ userId: user.id });
 
         toast.success(t('userDeletedSuccess'));
 
@@ -67,54 +64,78 @@ const DeleteUserDialog = memo(
       } finally {
         setIsDeleting(false);
       }
-    }, [close, refetch, wipe, user.name, user.id, onDelete, t]);
+    }, [close, isConfirmed, isDeleting, onDelete, refetch, t, user.id]);
+
+    const onCancel = useCallback(() => {
+      close();
+    }, [close]);
+
+    // a destructive confirmation must not disappear under a stray click
+    const onInteractOutside = useCallback((event: Event) => {
+      event.preventDefault();
+    }, []);
 
     return (
-      <AlertDialog open={isOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('deleteUserTitle', { name: user.name })}
-            </AlertDialogTitle>
-          </AlertDialogHeader>
-          <div className="flex flex-col gap-4">
-            <Group label={t('wipeAllDataLabel')}>
-              <Switch
-                checked={wipe}
-                onCheckedChange={(checked) => setWipe(checked)}
-              />
-            </Group>
+      <Dialog open={isOpen}>
+        <DialogContent
+          close={close}
+          onInteractOutside={onInteractOutside}
+          className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0"
+        >
+          <DialogHeader className="shrink-0 gap-1.5 px-6 pt-6 pb-5 pr-14">
+            <DialogTitle className="text-[20px] leading-7 font-bold tracking-[-0.025em]">
+              {t('deleteUserDialogTitle')}
+            </DialogTitle>
+            <DialogDescription className="text-[13px] leading-[19px]">
+              {t('deleteUserDialogDescription')}
+            </DialogDescription>
+          </DialogHeader>
 
-            {wipe ? (
-              <Alert variant="destructive" className="py-2">
-                <ExclamationCircleIcon className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  {t('wipeDestructiveWarning')}
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert variant="info" className="py-2">
-                <ExclamationCircleIcon className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  {t('wipeInfoWarning')}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel onClick={close}>{t('cancel')}</AlertDialogCancel>
-            <AutoFocus>
-              <AlertDialogAction
-                onClick={onSubmit}
-                disabled={isDeleting}
-                className={buttonVariants({ variant: 'destructive' })}
+          <div className="flex min-h-0 flex-col gap-5 overflow-y-auto p-6">
+            <p className="text-[15px] leading-[23px] text-foreground">
+              {t('deleteUserQuestion', {
+                name: user.name,
+                server: serverName ?? ''
+              })}
+            </p>
+
+            <p className="text-[14px] leading-[22px] text-muted-foreground">
+              {t('deleteUserWarning')}
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="delete-user-confirmation"
+                className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
               >
-                {t('deleteUserBtn')}
-              </AlertDialogAction>
-            </AutoFocus>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                {t('deleteUserConfirmLabel')}
+              </label>
+              <Input
+                id="delete-user-confirmation"
+                value={confirmation}
+                onChange={onConfirmationChange}
+                placeholder={t('deleteUserConfirmPlaceholder')}
+                className="h-auto px-[15px] py-[15px] text-[15px] leading-[18px] md:text-[15px]"
+                disabled={isDeleting}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="shrink-0 gap-2.5 bg-nav px-6 py-4">
+            <Button variant="secondary" onClick={onCancel}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={onSubmit}
+              disabled={!isConfirmed || isDeleting}
+            >
+              {t('deleteUserBtn')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     );
   }
 );
