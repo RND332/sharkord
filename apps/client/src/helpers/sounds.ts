@@ -1,5 +1,7 @@
 import {
+  joinLeaveSoundsSelector,
   messageSentSoundSelector,
+  muteDeafenSoundsSelector,
   notificationSoundsSelector
 } from '@/features/app/selectors';
 import { SoundType } from '@/features/server/types';
@@ -12,6 +14,21 @@ let pendingAudioContext: Promise<AudioContext | null> | null = null;
 const SOUNDS_VOLUME = 2;
 
 const ALL_SOUND_TYPES = Object.values(SoundType);
+
+// the call sounds the sound settings dialog can switch off per device
+const JOIN_LEAVE_SOUND_TYPES = new Set<SoundType>([
+  SoundType.OWN_USER_JOINED_VOICE_CHANNEL,
+  SoundType.OWN_USER_LEFT_VOICE_CHANNEL,
+  SoundType.REMOTE_USER_JOINED_VOICE_CHANNEL,
+  SoundType.REMOTE_USER_LEFT_VOICE_CHANNEL
+]);
+
+const MUTE_DEAFEN_SOUND_TYPES = new Set<SoundType>([
+  SoundType.OWN_USER_MUTED_MIC,
+  SoundType.OWN_USER_UNMUTED_MIC,
+  SoundType.OWN_USER_MUTED_SOUND,
+  SoundType.OWN_USER_UNMUTED_SOUND
+]);
 
 const createAudioContext = (): AudioContext | null => {
   const AudioContextCtor =
@@ -466,14 +483,39 @@ const sfxRemoteUserStoppedScreenshare = () => {
 
 const getSoundTypes = () => ALL_SOUND_TYPES;
 
+type TSoundPreferences = {
+  notificationSounds: boolean;
+  messageSentSound: boolean;
+  joinLeaveSounds: boolean;
+  muteDeafenSounds: boolean;
+};
+
+const shouldPlaySound = (type: SoundType, preferences: TSoundPreferences) => {
+  if (!preferences.notificationSounds) return false;
+
+  if (type === SoundType.MESSAGE_SENT && !preferences.messageSentSound)
+    return false;
+
+  if (JOIN_LEAVE_SOUND_TYPES.has(type) && !preferences.joinLeaveSounds)
+    return false;
+
+  if (MUTE_DEAFEN_SOUND_TYPES.has(type) && !preferences.muteDeafenSounds)
+    return false;
+
+  return true;
+};
+
 const playSound = async (type: SoundType) => {
   const state = store.getState();
-  const notificationSounds = notificationSoundsSelector(state);
-  const messageSentSound = messageSentSoundSelector(state);
 
-  if (!notificationSounds) return;
+  const isEnabled = shouldPlaySound(type, {
+    notificationSounds: notificationSoundsSelector(state),
+    messageSentSound: messageSentSoundSelector(state),
+    joinLeaveSounds: joinLeaveSoundsSelector(state),
+    muteDeafenSounds: muteDeafenSoundsSelector(state)
+  });
 
-  if (type === SoundType.MESSAGE_SENT && !messageSentSound) return;
+  if (!isEnabled) return;
 
   try {
     const ctx = await ensureAudioContextRunning();
@@ -533,4 +575,5 @@ const playSound = async (type: SoundType) => {
   }
 };
 
-export { getSoundTypes, playSound };
+export { getSoundTypes, playSound, shouldPlaySound };
+export type { TSoundPreferences };

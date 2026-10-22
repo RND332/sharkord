@@ -207,6 +207,16 @@ export const setMessageSentSound = (enabled: boolean) => {
   setLocalStorageItemBool(LocalStorageKey.MESSAGE_SENT_SOUND, enabled);
 };
 
+export const setJoinLeaveSounds = (enabled: boolean) => {
+  store.dispatch(appSliceActions.setJoinLeaveSounds(enabled));
+  setLocalStorageItemBool(LocalStorageKey.JOIN_LEAVE_SOUNDS, enabled);
+};
+
+export const setMuteDeafenSounds = (enabled: boolean) => {
+  store.dispatch(appSliceActions.setMuteDeafenSounds(enabled));
+  setLocalStorageItemBool(LocalStorageKey.MUTE_DEAFEN_SOUNDS, enabled);
+};
+
 export const toggleChannelMuted = (channelId: number) => {
   const mutedChannelIds = mutedChannelIdsSelector(store.getState());
   const nextMutedChannelIds = mutedChannelIds.includes(channelId)
