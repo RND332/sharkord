@@ -1,4 +1,3 @@
-import { SettingsRow } from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import {
@@ -18,7 +17,7 @@ import {
   useNotificationSounds
 } from '@/features/app/hooks';
 import { Switch } from '@sharkord/ui';
-import { memo, useCallback } from 'react';
+import { memo, type ReactNode, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TNotificationsValues = {
@@ -29,6 +28,36 @@ type TNotificationsValues = {
   sounds: boolean;
   sentSound: boolean;
 };
+
+type TNotificationRowProps = {
+  label: string;
+  description?: string;
+  children: ReactNode;
+};
+
+// Paper · Notifications: a compact row keeps the label on the left and the
+// switch on the right, with the hint one step smaller than the label
+const NotificationRow = memo(
+  ({ label, description, children }: TNotificationRowProps) => {
+    return (
+      <div className="flex w-full items-center justify-between gap-4 border-b border-line py-[15px]">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-sm leading-[18px] text-foreground">
+            {label}
+          </span>
+          {description && (
+            <span className="text-[13px] leading-4 text-muted-foreground">
+              {description}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">{children}</div>
+      </div>
+    );
+  }
+);
+
+NotificationRow.displayName = 'NotificationRow';
 
 const Notifications = memo(() => {
   const { t } = useTranslation('settings');
@@ -87,7 +116,7 @@ const Notifications = memo(() => {
       description={t('notificationsDesc')}
     >
       <div className="flex max-w-[1040px] flex-col">
-        <SettingsRow
+        <NotificationRow
           label={t('allMessagesLabel')}
           description={t('allMessagesDesc')}
         >
@@ -96,8 +125,8 @@ const Notifications = memo(() => {
             checked={values.all}
             onCheckedChange={handleAllChange}
           />
-        </SettingsRow>
-        <SettingsRow
+        </NotificationRow>
+        <NotificationRow
           label={t('mentionsOnlyLabel')}
           description={t('mentionsOnlyDesc')}
         >
@@ -106,8 +135,8 @@ const Notifications = memo(() => {
             checked={values.mentions}
             onCheckedChange={handleMentionsChange}
           />
-        </SettingsRow>
-        <SettingsRow
+        </NotificationRow>
+        <NotificationRow
           label={t('dmNotificationsLabel')}
           description={t('dmNotificationsDesc')}
         >
@@ -116,8 +145,8 @@ const Notifications = memo(() => {
             checked={values.dms}
             onCheckedChange={handleDmsChange}
           />
-        </SettingsRow>
-        <SettingsRow
+        </NotificationRow>
+        <NotificationRow
           label={t('repliesNotificationsLabel')}
           description={t('repliesNotificationsDesc')}
         >
@@ -126,18 +155,17 @@ const Notifications = memo(() => {
             checked={values.replies}
             onCheckedChange={handleRepliesChange}
           />
-        </SettingsRow>
-        <SettingsRow label={t('soundsLabel')} description={t('soundsDesc')}>
+        </NotificationRow>
+        <NotificationRow label={t('soundsLabel')} description={t('soundsDesc')}>
           <Switch
             aria-label={t('soundsLabel')}
             checked={values.sounds}
             onCheckedChange={handleSoundsChange}
           />
-        </SettingsRow>
-        <SettingsRow
+        </NotificationRow>
+        <NotificationRow
           label={t('messageSentSoundLabel')}
           description={t('messageSentSoundDesc')}
-          className="border-b-0"
         >
           <Switch
             aria-label={t('messageSentSoundLabel')}
@@ -145,7 +173,7 @@ const Notifications = memo(() => {
             disabled={!values.sounds}
             onCheckedChange={handleSentSoundChange}
           />
-        </SettingsRow>
+        </NotificationRow>
       </div>
     </SettingsSection>
   );

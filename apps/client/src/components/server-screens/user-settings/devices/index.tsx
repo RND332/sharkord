@@ -1,8 +1,4 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
-import {
-  SettingsGroupLabel,
-  SettingsRow
-} from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { getVoiceControlsBridge } from '@/components/voice-provider/controls-bridge';
@@ -58,7 +54,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useSyncExternalStore
+  useSyncExternalStore,
+  type ReactNode
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -70,6 +67,44 @@ import { RestrictOwnAudioAlert } from './restrict-own-audio-alert';
 import { SuppressLocalAudioPlaybackAlert } from './suppress-local-audio-playback-alert';
 
 const DEFAULT_NAME = 'default';
+
+// Paper · Voice & video: the rows carry no separator of their own, the group
+// label and the 17px group gap keep the sections apart
+const DEVICE_ROW_CLASS = 'flex w-full items-center justify-between gap-4';
+const DEVICE_GROUP_LABEL_CLASS =
+  'text-[13px] font-bold uppercase leading-4 tracking-[0.08em] text-subtle-foreground';
+// a preference is a plain value with a chevron, not a boxed field
+const INLINE_SELECT_TRIGGER_CLASS =
+  'h-auto w-auto border-0 bg-transparent px-0 py-1 text-sm text-muted-foreground hover:bg-transparent';
+// picking a device keeps the recessed field of the design
+const DEVICE_SELECT_TRIGGER_CLASS = 'w-full px-[15px]';
+const DEVICE_FIELD_LABEL_CLASS = 'text-[13px] leading-4 text-foreground';
+
+type TDeviceRowProps = {
+  label: ReactNode;
+  description?: ReactNode;
+  children?: ReactNode;
+};
+
+const DeviceRow = memo(({ label, description, children }: TDeviceRowProps) => {
+  return (
+    <div className={DEVICE_ROW_CLASS}>
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-sm leading-[18px] text-foreground">{label}</span>
+        {description && (
+          <span className="text-[13px] leading-4 text-muted-foreground">
+            {description}
+          </span>
+        )}
+      </div>
+      {children && (
+        <div className="flex shrink-0 items-center gap-2">{children}</div>
+      )}
+    </div>
+  );
+});
+
+DeviceRow.displayName = 'DeviceRow';
 
 const Devices = memo(() => {
   const { t } = useTranslation('settings');
@@ -134,6 +169,101 @@ const Devices = memo(() => {
 
   const handleScreenShareSimulcastChange = useCallback(
     (enabled: boolean) => onChange('screenShareSimulcastEnabled', enabled),
+    [onChange]
+  );
+
+  const handlePlaybackChange = useCallback(
+    (value: string) => onChange('playbackId', value),
+    [onChange]
+  );
+
+  const handleMicrophoneChange = useCallback(
+    (value: string) => onChange('microphoneId', value),
+    [onChange]
+  );
+
+  const handleWebcamChange = useCallback(
+    (value: string) => onChange('webcamId', value),
+    [onChange]
+  );
+
+  const handleNoiseSuppressionChange = useCallback(
+    (value: string) => onChange('noiseSuppression', value as NoiseSuppression),
+    [onChange]
+  );
+
+  const handleEchoCancellationChange = useCallback(
+    (checked: boolean) => onChange('echoCancellation', checked),
+    [onChange]
+  );
+
+  const handleAutoGainControlChange = useCallback(
+    (checked: boolean) => onChange('autoGainControl', checked),
+    [onChange]
+  );
+
+  const handleNoiseGateChange = useCallback(
+    (checked: boolean) => onChange('noiseGateEnabled', checked),
+    [onChange]
+  );
+
+  const handleMirrorOwnVideoChange = useCallback(
+    (checked: boolean) => onChange('mirrorOwnVideo', checked),
+    [onChange]
+  );
+
+  const handleScreenCursorChange = useCallback(
+    (value: string) => onChange('screenCursor', value as ScreenCursor),
+    [onChange]
+  );
+
+  const handleSimulcastChange = useCallback(
+    (checked: boolean) => onChange('simulcastEnabled', checked),
+    [onChange]
+  );
+
+  const handleRestrictOwnAudioChange = useCallback(
+    (checked: boolean) => onChange('restrictOwnAudio', checked),
+    [onChange]
+  );
+
+  const handleSuppressLocalAudioPlaybackChange = useCallback(
+    (checked: boolean) => onChange('suppressLocalAudioPlayback', checked),
+    [onChange]
+  );
+
+  const handleWebcamFramerateChange = useCallback(
+    (value: number) => onChange('webcamFramerate', value),
+    [onChange]
+  );
+
+  const handleWebcamResolutionChange = useCallback(
+    (value: string) => onChange('webcamResolution', value as Resolution),
+    [onChange]
+  );
+
+  const handleScreenFramerateChange = useCallback(
+    (value: number) => onChange('screenFramerate', value),
+    [onChange]
+  );
+
+  const handleScreenResolutionChange = useCallback(
+    (value: string) => onChange('screenResolution', value as Resolution),
+    [onChange]
+  );
+
+  const handleScreenCodecChange = useCallback(
+    (value: string) => onChange('screenCodec', value as VideoCodec),
+    [onChange]
+  );
+
+  const handleScreenBitrateChange = useCallback(
+    (value: number[]) => onChange('screenBitrate', value[0]),
+    [onChange]
+  );
+
+  const handleNoiseGateThresholdChange = useCallback(
+    (value: number) => onChange('noiseGateThresholdDb', value),
     [onChange]
   );
 
@@ -334,33 +464,34 @@ const Devices = memo(() => {
         </Alert>
       )}
 
-      <div className="flex max-w-[1040px] flex-col gap-6">
-        <SettingsRow
+      <div className="flex max-w-[1040px] flex-col gap-[26px]">
+        <DeviceRow
           label={t('voiceOnlyModeLabel')}
           description={t('voiceOnlyModeDesc')}
-          className="border-b-0 py-0"
         >
           <Switch
             aria-label={t('voiceOnlyModeLabel')}
             checked={!!values.voiceOnlyMode}
             onCheckedChange={handleVoiceOnlyModeChange}
           />
-        </SettingsRow>
+        </DeviceRow>
 
         <div className="flex flex-col gap-4 border-t border-line pt-[14px]">
-          <SettingsGroupLabel>{t('audioDevicesLabel')}</SettingsGroupLabel>
+          <div className={DEVICE_GROUP_LABEL_CLASS}>
+            {t('audioDevicesLabel')}
+          </div>
 
           <div className="flex flex-wrap gap-5">
-            <label className="flex w-full max-w-[510px] flex-col gap-2">
-              <span className="text-sm leading-4 text-foreground">
+            <label className="flex w-full max-w-[510px] basis-[510px] flex-col gap-2">
+              <span className={DEVICE_FIELD_LABEL_CLASS}>
                 {t('playbackLabel')}
               </span>
               <Select
-                onValueChange={(value) => onChange('playbackId', value)}
+                onValueChange={handlePlaybackChange}
                 value={values.playbackId}
                 disabled={playbackDevices.length === 0}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={DEVICE_SELECT_TRIGGER_CLASS}>
                   <SelectValue placeholder={t('playbackPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -383,16 +514,16 @@ const Devices = memo(() => {
               </Select>
             </label>
 
-            <label className="flex w-full max-w-[510px] flex-col gap-2">
-              <span className="text-sm leading-4 text-foreground">
+            <label className="flex w-full max-w-[510px] basis-[510px] flex-col gap-2">
+              <span className={DEVICE_FIELD_LABEL_CLASS}>
                 {t('microphoneLabel')}
               </span>
               <Select
-                onValueChange={(value) => onChange('microphoneId', value)}
+                onValueChange={handleMicrophoneChange}
                 value={values.microphoneId}
                 disabled={inputDevices.length === 0}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={DEVICE_SELECT_TRIGGER_CLASS}>
                   <SelectValue placeholder={t('microphonePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -413,16 +544,14 @@ const Devices = memo(() => {
         </div>
 
         <div className="flex flex-col gap-[17px] border-t border-line pt-[14px]">
-          <SettingsGroupLabel>{t('microphoneLabel')}</SettingsGroupLabel>
+          <div className={DEVICE_GROUP_LABEL_CLASS}>{t('microphoneLabel')}</div>
 
-          <SettingsRow label={t('noiseSuppressionLabel')}>
+          <DeviceRow label={t('noiseSuppressionLabel')}>
             <Select
               value={values.noiseSuppression}
-              onValueChange={(value) =>
-                onChange('noiseSuppression', value as NoiseSuppression)
-              }
+              onValueChange={handleNoiseSuppressionChange}
             >
-              <SelectTrigger className="w-[240px]">
+              <SelectTrigger className={INLINE_SELECT_TRIGGER_CLASS}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -442,29 +571,25 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow label={t('echoCancellationLabel')}>
+          <DeviceRow label={t('echoCancellationLabel')}>
             <Switch
               aria-label={t('echoCancellationLabel')}
               checked={!!values.echoCancellation}
-              onCheckedChange={(checked) =>
-                onChange('echoCancellation', checked)
-              }
+              onCheckedChange={handleEchoCancellationChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow label={t('autoGainControlLabel')}>
+          <DeviceRow label={t('autoGainControlLabel')}>
             <Switch
               aria-label={t('autoGainControlLabel')}
               checked={!!values.autoGainControl}
-              onCheckedChange={(checked) =>
-                onChange('autoGainControl', checked)
-              }
+              onCheckedChange={handleAutoGainControlChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow
+          <DeviceRow
             label={t('noiseGateLabel')}
             description={
               isNoiseGateAvailable
@@ -475,19 +600,16 @@ const Devices = memo(() => {
                       : ''
                   }`
             }
-            className="border-b-0"
           >
             <Switch
               aria-label={t('noiseGateLabel')}
               checked={values.noiseGateEnabled}
               disabled={!isNoiseGateAvailable}
-              onCheckedChange={(checked) =>
-                onChange('noiseGateEnabled', checked)
-              }
+              onCheckedChange={handleNoiseGateChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
-          <div className="flex flex-col gap-3 rounded-md bg-panel p-[15px]">
+          <div className="flex flex-col gap-3 rounded-[8px] bg-panel p-[15px]">
             <div className="flex flex-wrap items-center gap-[15px]">
               <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[7px] bg-raised">
                 <SpeakerWaveIcon className="size-[22px] text-foreground" />
@@ -525,7 +647,7 @@ const Devices = memo(() => {
             </div>
 
             {currentVoiceChannelId && isTesting && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[13px] leading-4 text-muted-foreground">
                 {t('mutedDuringTest')}
               </p>
             )}
@@ -535,9 +657,7 @@ const Devices = memo(() => {
               noiseGateEnabled={values.noiseGateEnabled}
               noiseGateControlsDisabled={!isNoiseGateAvailable}
               noiseGateThresholdDb={values.noiseGateThresholdDb}
-              onThresholdChange={(value) =>
-                onChange('noiseGateThresholdDb', value)
-              }
+              onThresholdChange={handleNoiseGateThresholdChange}
               getAudioLevelSnapshot={getAudioLevelSnapshot}
             />
 
@@ -553,14 +673,11 @@ const Devices = memo(() => {
         </div>
 
         <div className="flex flex-col gap-[17px] border-t border-line pt-[14px]">
-          <SettingsGroupLabel>{t('cameraLabel')}</SettingsGroupLabel>
+          <div className={DEVICE_GROUP_LABEL_CLASS}>{t('cameraLabel')}</div>
 
-          <SettingsRow label={t('webcamLabel')}>
-            <Select
-              onValueChange={(value) => onChange('webcamId', value)}
-              value={values.webcamId}
-            >
-              <SelectTrigger className="w-[280px]">
+          <DeviceRow label={t('webcamLabel')}>
+            <Select onValueChange={handleWebcamChange} value={values.webcamId}>
+              <SelectTrigger className={INLINE_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder={t('webcamPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -581,17 +698,17 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow label={t('mirrorOwnVideoLabel')}>
+          <DeviceRow label={t('mirrorOwnVideoLabel')}>
             <Switch
               aria-label={t('mirrorOwnVideoLabel')}
               checked={!!values.mirrorOwnVideo}
-              onCheckedChange={(checked) => onChange('mirrorOwnVideo', checked)}
+              onCheckedChange={handleMirrorOwnVideoChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
-          <div className="group relative h-[140px] w-full max-w-[520px] overflow-hidden rounded-sm border border-line bg-panel">
+          <div className="group relative h-[140px] w-full overflow-hidden rounded-[8px] bg-panel">
             <video
               ref={testVideoRef}
               autoPlay
@@ -614,7 +731,7 @@ const Devices = memo(() => {
             )}
 
             {(isVideoStarting || (isVideoTesting && !isVideoPreviewReady)) && (
-              <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+              <div className="absolute inset-0 flex items-center justify-center text-[13px] leading-4 text-muted-foreground">
                 {t('startingCamera')}
               </div>
             )}
@@ -644,18 +761,18 @@ const Devices = memo(() => {
             <ResolutionFpsControl
               framerate={values.webcamFramerate}
               resolution={values.webcamResolution}
-              onFramerateChange={(value) => onChange('webcamFramerate', value)}
-              onResolutionChange={(value) =>
-                onChange('webcamResolution', value as Resolution)
-              }
+              onFramerateChange={handleWebcamFramerateChange}
+              onResolutionChange={handleWebcamResolutionChange}
             />
           </div>
         </div>
 
         <div className="flex flex-col gap-[17px] border-t border-line pt-[14px]">
-          <SettingsGroupLabel>{t('screenSharingLabel')}</SettingsGroupLabel>
+          <div className={DEVICE_GROUP_LABEL_CLASS}>
+            {t('screenSharingLabel')}
+          </div>
 
-          <SettingsRow
+          <DeviceRow
             label={t('screenSharePresetLabel')}
             description={t('screenSharePresetDesc')}
           >
@@ -663,7 +780,7 @@ const Devices = memo(() => {
               value={screenSharePreset ?? ''}
               onValueChange={handleScreenSharePresetChange}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className={INLINE_SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder={t('screenSharePresetCustom')} />
               </SelectTrigger>
               <SelectContent>
@@ -677,16 +794,14 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow label={t('screenCursorLabel')}>
+          <DeviceRow label={t('screenCursorLabel')}>
             <Select
               value={values.screenCursor ?? ScreenCursor.ALWAYS}
-              onValueChange={(value) =>
-                onChange('screenCursor', value as ScreenCursor)
-              }
+              onValueChange={handleScreenCursorChange}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className={INLINE_SELECT_TRIGGER_CLASS}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -703,9 +818,9 @@ const Devices = memo(() => {
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow
+          <DeviceRow
             label={t('simulcastUserLabel')}
             description={
               settings?.webRtcSimulcastEnabled
@@ -717,13 +832,11 @@ const Devices = memo(() => {
               aria-label={t('simulcastUserLabel')}
               checked={!!values.simulcastEnabled}
               disabled={!settings?.webRtcSimulcastEnabled}
-              onCheckedChange={(checked) =>
-                onChange('simulcastEnabled', checked)
-              }
+              onCheckedChange={handleSimulcastChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow
+          <DeviceRow
             label={t('directScreenSharingLabel')}
             description={t('directScreenSharingDesc')}
           >
@@ -736,9 +849,9 @@ const Devices = memo(() => {
               }
               onCheckedChange={handleDirectMediaSharingChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow
+          <DeviceRow
             label={t('screenShareSimulcastLabel')}
             description={
               settings?.webRtcSimulcastEnabled
@@ -752,7 +865,7 @@ const Devices = memo(() => {
               disabled={!settings?.webRtcSimulcastEnabled}
               onCheckedChange={handleScreenShareSimulcastChange}
             />
-          </SettingsRow>
+          </DeviceRow>
 
           <div className="flex flex-col gap-2">
             <Label>{t('screenSharingLabel')}</Label>
@@ -760,19 +873,13 @@ const Devices = memo(() => {
               <ResolutionFpsControl
                 framerate={values.screenFramerate}
                 resolution={values.screenResolution}
-                onFramerateChange={(value) =>
-                  onChange('screenFramerate', value)
-                }
-                onResolutionChange={(value) =>
-                  onChange('screenResolution', value as Resolution)
-                }
+                onFramerateChange={handleScreenFramerateChange}
+                onResolutionChange={handleScreenResolutionChange}
               />
 
               <Select
                 value={values.screenCodec ?? VideoCodec.AUTO}
-                onValueChange={(value) =>
-                  onChange('screenCodec', value as VideoCodec)
-                }
+                onValueChange={handleScreenCodecChange}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder={t('selectCodecPlaceholder')} />
@@ -799,7 +906,7 @@ const Devices = memo(() => {
               max={maxBitrate}
               step={100}
               value={[values.screenBitrate ?? DEFAULT_BITRATE]}
-              onValueChange={([value]) => onChange('screenBitrate', value)}
+              onValueChange={handleScreenBitrateChange}
               rightSlot={
                 <span className="w-20 text-right text-sm text-muted-foreground">
                   {filesize((values.screenBitrate ?? DEFAULT_BITRATE) * 125, {
@@ -811,7 +918,7 @@ const Devices = memo(() => {
             />
           </div>
 
-          <SettingsRow
+          <DeviceRow
             label={t('restrictOwnAudioLabel')}
             description={t('restrictOwnAudioDesc')}
           >
@@ -820,18 +927,16 @@ const Devices = memo(() => {
                 aria-label={t('restrictOwnAudioLabel')}
                 checked={!!values.restrictOwnAudio}
                 disabled={!isRestrictOwnAudioSupported}
-                onCheckedChange={(checked) =>
-                  onChange('restrictOwnAudio', checked)
-                }
+                onCheckedChange={handleRestrictOwnAudioChange}
               />
             ) : (
               <RestrictOwnAudioAlert
                 isSupported={isRestrictOwnAudioSupported}
               />
             )}
-          </SettingsRow>
+          </DeviceRow>
 
-          <SettingsRow
+          <DeviceRow
             label={t('suppressLocalAudioPlaybackLabel')}
             description={t('suppressLocalAudioPlaybackDesc')}
           >
@@ -840,18 +945,16 @@ const Devices = memo(() => {
                 aria-label={t('suppressLocalAudioPlaybackLabel')}
                 checked={!!values.suppressLocalAudioPlayback}
                 disabled={!isSuppressLocalAudioPlaybackSupported}
-                onCheckedChange={(checked) =>
-                  onChange('suppressLocalAudioPlayback', checked)
-                }
+                onCheckedChange={handleSuppressLocalAudioPlaybackChange}
               />
             ) : (
               <SuppressLocalAudioPlaybackAlert
                 isSupported={isSuppressLocalAudioPlaybackSupported}
               />
             )}
-          </SettingsRow>
+          </DeviceRow>
 
-          <span className="text-sm text-muted-foreground">
+          <span className="text-[13px] leading-4 text-muted-foreground">
             {t('screenSharingNote')}
           </span>
         </div>
