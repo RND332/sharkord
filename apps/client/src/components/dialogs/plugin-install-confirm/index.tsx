@@ -1,12 +1,14 @@
 import { useCountdown } from '@/hooks/use-countdown';
+import { useOnEsc } from '@/hooks/use-on-esc';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   buttonVariants
 } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
@@ -35,6 +37,8 @@ const PluginInstallConfirmDialog = memo(
       isActive: isOpen
     });
 
+    useOnEsc(close);
+
     const handleCancel = useCallback(() => {
       onCancel?.();
       close();
@@ -46,64 +50,94 @@ const PluginInstallConfirmDialog = memo(
       close();
     }, [countdown, onConfirm, close]);
 
+    const handleInteractOutside = useCallback((event: Event) => {
+      event.preventDefault();
+    }, []);
+
     const canConfirm = countdown === 0;
 
     return (
-      <AlertDialog open={isOpen}>
-        <AlertDialogContent aria-describedby={undefined}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+      <Dialog open={isOpen}>
+        <DialogContent
+          close={close}
+          onInteractOutside={handleInteractOutside}
+          className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0"
+        >
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-5 pr-14">
+            <DialogTitle>
               {t('pluginInstallConfirmTitle', { name: pluginName })}
-            </AlertDialogTitle>
-          </AlertDialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm">{t('pluginInstallConfirmLead')}</p>
+            </DialogTitle>
+            <DialogDescription>
+              {t('pluginInstallConfirmSubtitle')}
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm space-y-2">
-              <p>
+          <div className="flex min-h-0 flex-col gap-[22px] overflow-y-auto p-6">
+            <div className="flex items-center gap-3.5">
+              <div className="flex size-[46px] shrink-0 items-center justify-center rounded-[10px] bg-raised">
+                <Cog6ToothIcon className="size-6 text-accent-text" />
+              </div>
+              <span className="text-[16px] font-bold leading-5 text-foreground">
+                {pluginName}
+              </span>
+            </div>
+
+            <p className="text-[13px] leading-5 text-muted-foreground">
+              {t('pluginInstallConfirmLead')}
+            </p>
+
+            <span className="text-[13px] font-bold leading-4 uppercase tracking-[0.07em] text-subtle-foreground">
+              {t('pluginInstallWarningLabel')}
+            </span>
+
+            <ul className="flex flex-col gap-1 text-[14px] leading-[25px] text-foreground">
+              <li>
                 {t('pluginInstallWarningLine1')}{' '}
                 <span className="font-semibold text-destructive">
                   {t('pluginInstallWarningHighlight1')}
                 </span>
                 .
-              </p>
-              <p>
+              </li>
+              <li>
                 {t('pluginInstallWarningLine2')}{' '}
                 <span className="font-semibold text-destructive">
                   {t('pluginInstallWarningHighlight2')}
                 </span>
                 .
-              </p>
-              <p>
+              </li>
+              <li>
                 {t('pluginInstallWarningLine3')}{' '}
                 <span className="font-semibold text-destructive">
                   {t('pluginInstallWarningHighlight3')}
                 </span>
                 .
+              </li>
+            </ul>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-[13px] leading-5 text-muted-foreground">
+                {t('pluginInstallUseDocker')}
+              </p>
+
+              <p className="text-[13px] leading-5 text-muted-foreground">
+                {t('pluginInstallDocsNote')}{' '}
+                <a
+                  href="https://sharkord.com/docs/plugins/security"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline transition-colors hover:text-accent-text"
+                >
+                  https://sharkord.com/docs/plugins/security
+                </a>
               </p>
             </div>
-
-            <p className="text-sm text-accent-text">
-              {t('pluginInstallUseDocker')}
-            </p>
-
-            <p className="text-sm">
-              {t('pluginInstallDocsNote')}{' '}
-              <a
-                href="https://sharkord.com/docs/plugins/security"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-accent-text transition-colors"
-              >
-                https://sharkord.com/docs/plugins/security
-              </a>
-            </p>
           </div>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel onClick={handleCancel}>
+
+          <DialogFooter className="shrink-0 flex-row items-center justify-end gap-2.5 sm:mx-0 sm:mb-0">
+            <Button variant="secondary" onClick={handleCancel}>
               {t('cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={handleConfirm}
               disabled={!canConfirm}
               className={buttonVariants({ variant: 'destructive' })}
@@ -111,10 +145,10 @@ const PluginInstallConfirmDialog = memo(
               {canConfirm
                 ? t('pluginInstallConfirmBtn')
                 : t('pluginInstallConfirmCountdown', { seconds: countdown })}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     );
   }
 );

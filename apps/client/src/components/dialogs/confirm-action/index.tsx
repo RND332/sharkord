@@ -39,17 +39,22 @@ const ConfirmActionDialog = memo(
 
     return (
       <AlertDialog open={isOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogContent className="flex flex-col gap-0 p-0">
+          <AlertDialogHeader className="px-6 pt-6 pb-5">
             <AlertDialogTitle>
               {title ?? t('confirmActionTitle')}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {message ?? t('confirmActionMsg')}
-            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel onClick={onCancel}>
+
+          <AlertDialogDescription className="px-6 py-6 text-[15px] leading-[23px] text-foreground">
+            {message ?? t('confirmActionMsg')}
+          </AlertDialogDescription>
+
+          <AlertDialogFooter className="gap-2.5 bg-nav px-6 py-4">
+            <AlertDialogCancel
+              onClick={onCancel}
+              className="border-0 bg-raised text-foreground hover:bg-raised/80"
+            >
               {cancelLabel ?? t('cancel')}
             </AlertDialogCancel>
             <AutoFocus>
