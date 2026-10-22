@@ -12,6 +12,11 @@ type TPasswordValues = {
   confirmNewPassword: string;
 };
 
+// Paper · Password: two fields share a row, the confirmation sits below them
+const FIELD_CLASS = 'flex w-full max-w-[510px] basis-[510px] flex-col gap-2';
+const FIELD_LABEL_CLASS = 'text-[13px] leading-4 text-foreground';
+const FIELD_INPUT_CLASS = 'px-[15px] placeholder:text-muted-foreground';
+
 const Password = memo(() => {
   const { t } = useTranslation('settings');
   const canChangePassword = useOwnUserPasswordSet();
@@ -43,44 +48,47 @@ const Password = memo(() => {
         </Alert>
       )}
 
-      <div className="flex max-w-[1040px] flex-wrap gap-5">
-        <label className="flex w-full max-w-[510px] flex-col gap-2">
-          <span className="text-sm leading-4 text-foreground">
-            {t('currentPasswordLabel')}
-          </span>
-          <Input
-            {...r('currentPassword', 'password')}
-            placeholder={t('currentPasswordPlaceholder')}
-            disabled={!canChangePassword}
-          />
-        </label>
+      <div className="flex max-w-[1040px] flex-col gap-[22px]">
+        <div className="flex flex-wrap gap-5">
+          <label className={FIELD_CLASS}>
+            <span className={FIELD_LABEL_CLASS}>
+              {t('currentPasswordLabel')}
+            </span>
+            <Input
+              {...r('currentPassword', 'password')}
+              placeholder={t('currentPasswordPlaceholder')}
+              disabled={!canChangePassword}
+              className={FIELD_INPUT_CLASS}
+            />
+          </label>
 
-        <label className="flex w-full max-w-[510px] flex-col gap-2">
-          <span className="text-sm leading-4 text-foreground">
-            {t('newPasswordLabel')}
-          </span>
-          <Input
-            {...r('newPassword', 'password')}
-            placeholder={t('newPasswordPlaceholder')}
-            disabled={!canChangePassword}
-          />
-        </label>
+          <label className={FIELD_CLASS}>
+            <span className={FIELD_LABEL_CLASS}>{t('newPasswordLabel')}</span>
+            <Input
+              {...r('newPassword', 'password')}
+              placeholder={t('newPasswordPlaceholder')}
+              disabled={!canChangePassword}
+              className={FIELD_INPUT_CLASS}
+            />
+          </label>
+        </div>
 
-        <label className="flex w-full max-w-[510px] flex-col gap-2">
-          <span className="text-sm leading-4 text-foreground">
+        <label className={FIELD_CLASS}>
+          <span className={FIELD_LABEL_CLASS}>
             {t('confirmNewPasswordLabel')}
           </span>
           <Input
             {...r('confirmNewPassword', 'password')}
             placeholder={t('confirmPasswordPlaceholder')}
             disabled={!canChangePassword}
+            className={FIELD_INPUT_CLASS}
           />
         </label>
-      </div>
 
-      <p className="text-sm leading-4 text-subtle-foreground">
-        {t('passwordMatchHint')}
-      </p>
+        <p className="text-[13px] leading-4 text-subtle-foreground">
+          {t('passwordMatchHint')}
+        </p>
+      </div>
     </SettingsSection>
   );
 });
