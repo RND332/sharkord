@@ -2041,13 +2041,17 @@ test('plugin detail loads through the existing installed fixture and real server
     await expect.element(entry).toBeVisible();
     await entry.click();
     await expect
-      .element(page.getByRole('heading', { name: 'E2E Plugin', exact: true }))
+      .element(
+        page.getByRole('heading', { name: 'E2E Plugin', exact: true, level: 2 })
+      )
       .toBeVisible();
     await expect
       .element(page.getByRole('tab', { name: 'Commands', exact: true }))
       .toBeVisible();
     await page.getByRole('tab', { name: 'Logs', exact: true }).click();
-    await expect.element(page.getByRole('tabpanel')).toBeVisible();
+    await expect
+      .element(page.getByRole('tabpanel', { name: 'Logs' }))
+      .toBeVisible();
   } finally {
     closeServerScreens();
     await client.plugins.toggle.mutate({

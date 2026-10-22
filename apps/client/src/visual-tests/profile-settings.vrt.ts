@@ -329,7 +329,7 @@ test('Escape confirms before discarding unsaved profile changes', async () => {
       name: /Edit bio/
     });
     await editBioButton.click();
-    const bioTextbox = page.getByRole('textbox');
+    const bioTextbox = page.getByRole('textbox', { name: 'Bio' });
     await bioTextbox.fill('Unsaved profile bio');
     await userEvent.keyboard('{Escape}');
 
