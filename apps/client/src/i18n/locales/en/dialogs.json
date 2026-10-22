@@ -37,7 +37,7 @@
   "deleteUserDialogTitle": "Delete user",
   "deleteUserDialogDescription": "Remove this account from the server.",
   "deleteUserQuestion": "Delete {{name}} from {{server}}?",
-  "deleteUserWarning": "Their account and server content will be removed. This cannot be undone.",
+  "deleteUserWarning": "Their account will be removed. Their messages and uploads stay in the server and are shown as Deleted. This cannot be undone.",
   "deleteUserConfirmLabel": "TYPE DELETE TO CONFIRM",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Delete user",

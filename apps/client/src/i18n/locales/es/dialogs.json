@@ -50,7 +50,7 @@
   "deleteUserDialogTitle": "Eliminar usuario",
   "deleteUserDialogDescription": "Eliminar esta cuenta del servidor.",
   "deleteUserQuestion": "¿Eliminar a {{name}} de {{server}}?",
-  "deleteUserWarning": "Su cuenta y el contenido del servidor se eliminarán. Esta acción no se puede deshacer.",
+  "deleteUserWarning": "Su cuenta se eliminará. Sus mensajes y archivos subidos seguirán en el servidor y se mostrarán como Deleted. Esta acción no se puede deshacer.",
   "deleteUserConfirmLabel": "ESCRIBA DELETE PARA CONFIRMAR",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Eliminar usuario",

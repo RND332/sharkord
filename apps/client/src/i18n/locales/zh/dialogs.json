@@ -49,7 +49,7 @@
   "deleteUserDialogTitle": "删除用户",
   "deleteUserDialogDescription": "从服务器移除该账户。",
   "deleteUserQuestion": "从 {{server}} 删除 {{name}}？",
-  "deleteUserWarning": "该账户及其服务器内容将被移除。此操作无法撤销。",
+  "deleteUserWarning": "该账户将被移除。其消息和已上传的文件会保留在服务器上，并显示为 Deleted。此操作无法撤销。",
   "deleteUserConfirmLabel": "输入 DELETE 以确认",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "删除用户",

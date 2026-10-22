@@ -30,7 +30,7 @@ describe('DeleteUserDialog', () => {
     expect(html).toContain('Remove this account from the server.');
     expect(html).toContain('Delete mika from Rnd Community?');
     expect(html).toContain(
-      'Their account and server content will be removed. This cannot be undone.'
+      'Their account will be removed. Their messages and uploads stay in the server and are shown as Deleted. This cannot be undone.'
     );
     expect(html).toContain('TYPE DELETE TO CONFIRM');
     expect(html).toContain('placeholder="DELETE"');

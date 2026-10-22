@@ -36,7 +36,7 @@
   "deleteUserDialogTitle": "Odstranit uživatele",
   "deleteUserDialogDescription": "Odebrat tento účet ze serveru.",
   "deleteUserQuestion": "Odstranit {{name}} ze serveru {{server}}?",
-  "deleteUserWarning": "Jejich účet a obsah serveru budou odstraněny. Tuto akci nelze vzít zpět.",
+  "deleteUserWarning": "Účet bude odstraněn. Jejich zprávy a nahrané soubory zůstanou na serveru a zobrazí se jako Deleted. Tuto akci nelze vzít zpět.",
   "deleteUserConfirmLabel": "PRO POTVRZENÍ NAPIŠTE DELETE",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Odstranit uživatele",

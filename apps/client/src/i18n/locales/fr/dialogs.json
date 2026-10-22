@@ -50,7 +50,7 @@
   "deleteUserDialogTitle": "Supprimer l'utilisateur",
   "deleteUserDialogDescription": "Retirer ce compte du serveur.",
   "deleteUserQuestion": "Supprimer {{name}} de {{server}} ?",
-  "deleteUserWarning": "Leur compte et le contenu du serveur seront supprimés. Cette action est irréversible.",
+  "deleteUserWarning": "Leur compte sera supprimé. Leurs messages et fichiers envoyés resteront sur le serveur et s'afficheront comme Deleted. Cette action est irréversible.",
   "deleteUserConfirmLabel": "TAPEZ DELETE POUR CONFIRMER",
   "deleteUserConfirmPlaceholder": "DELETE",
   "deleteUserBtn": "Supprimer l'utilisateur",
