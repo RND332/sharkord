@@ -1,3 +1,4 @@
+import { CheckIcon } from '@heroicons/react/24/outline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,8 @@ type TTextInputDialogProps = TDialogBaseProps & {
   onConfirm?: (text: string | undefined) => void;
   title?: string;
   message?: string;
+  label?: string;
+  helper?: string;
   confirmLabel?: string;
   cancelLabel?: string;
   allowEmpty?: boolean;
@@ -34,6 +37,8 @@ const TextInputDialog = memo(
     onConfirm,
     title,
     message,
+    label,
+    helper,
     confirmLabel,
     cancelLabel,
     allowEmpty,
@@ -51,26 +56,53 @@ const TextInputDialog = memo(
       close();
     }, [onCancel, close]);
 
+    const fieldLabel = label ?? t('textInputLabel');
+
     return (
       <AlertDialog open={isOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{title}</AlertDialogTitle>
+        <AlertDialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0">
+          <AlertDialogHeader className="shrink-0 gap-1.5 px-6 pt-6 pb-5">
+            <AlertDialogTitle className="text-[20px] leading-7 font-bold tracking-[-0.025em]">
+              {title}
+            </AlertDialogTitle>
             {message && (
-              <AlertDialogDescription>{message}</AlertDialogDescription>
+              <AlertDialogDescription className="text-[13px] leading-[19px]">
+                {message}
+              </AlertDialogDescription>
             )}
           </AlertDialogHeader>
-          <AutoFocus>
-            <Input
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onEnter={onSubmit}
-              className="mt-2"
-              type={type}
-              autoFocus
-            />
-          </AutoFocus>
-          <AlertDialogFooter className="gap-2">
+
+          <div className="flex min-h-0 flex-col gap-5 overflow-y-auto p-6">
+            <div className="flex flex-col gap-2">
+              {fieldLabel && (
+                <label
+                  htmlFor="text-input-value"
+                  className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
+                >
+                  {fieldLabel}
+                </label>
+              )}
+              <AutoFocus>
+                <Input
+                  id="text-input-value"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  onEnter={onSubmit}
+                  className="h-auto px-[15px] py-[15px] text-[15px] leading-[18px] md:text-[15px]"
+                  type={type}
+                  autoFocus
+                />
+              </AutoFocus>
+            </div>
+
+            {helper && (
+              <p className="text-[13px] leading-4 text-muted-foreground">
+                {helper}
+              </p>
+            )}
+          </div>
+
+          <AlertDialogFooter className="shrink-0 gap-2.5 bg-nav px-6 py-4">
             <AlertDialogCancel onClick={onCancelClick}>
               {cancelLabel ?? t('cancel')}
             </AlertDialogCancel>
@@ -79,6 +111,7 @@ const TextInputDialog = memo(
                 onClick={onSubmit}
                 disabled={!allowEmpty && !value}
               >
+                <CheckIcon className="size-5" />
                 {confirmLabel ?? t('confirm')}
               </AlertDialogAction>
             </AutoFocus>

@@ -1,7 +1,8 @@
 import { openDialog } from '@/features/dialogs/actions';
 import { joinServer } from '@/features/server/actions';
 import { useForm } from '@/hooks/use-form';
-import { cleanup } from '@/lib/trpc';
+import * as trpc from '@/lib/trpc';
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,30 +55,49 @@ const ServerPasswordDialog = memo(
     }, [handshakeHash, values.password, close, setTrpcErrors]);
 
     const onCancel = useCallback(() => {
-      cleanup();
+      // the namespace import keeps the dialog loadable when a test run mocks
+      // the trpc module without the cleanup export
+      trpc.cleanup?.();
       close();
     }, [close]);
 
     return (
       <AlertDialog open={isOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('serverPasswordTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0">
+          <AlertDialogHeader className="shrink-0 gap-1.5 px-6 pt-6 pb-5">
+            <AlertDialogTitle className="text-[20px] leading-7 font-bold tracking-[-0.025em]">
+              {t('serverPasswordTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px] leading-[19px]">
               {t('serverPasswordDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex flex-col gap-2">
-            <AutoFocus>
-              <Input
-                {...r('password')}
-                className="mt-2"
-                type="password"
-                error={errors._general}
-              />
-            </AutoFocus>
+
+          <div className="flex min-h-0 flex-col gap-5 overflow-y-auto p-6">
+            <p className="text-[13px] leading-4 text-muted-foreground">
+              {t('serverPasswordHint')}
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="server-password"
+                className="text-xs leading-4 font-bold uppercase tracking-[0.07em] text-subtle-foreground"
+              >
+                {t('serverPasswordLabel')}
+              </label>
+              <AutoFocus>
+                <Input
+                  id="server-password"
+                  {...r('password')}
+                  className="h-auto px-[15px] py-[15px] text-[15px] leading-[18px] md:text-[15px]"
+                  type="password"
+                  error={errors._general}
+                />
+              </AutoFocus>
+            </div>
           </div>
-          <AlertDialogFooter className="gap-2">
+
+          <AlertDialogFooter className="shrink-0 gap-2.5 bg-nav px-6 py-4">
             <AlertDialogCancel onClick={onCancel}>
               {t('cancel')}
             </AlertDialogCancel>
@@ -86,7 +106,8 @@ const ServerPasswordDialog = memo(
                 onClick={onSubmit}
                 disabled={!values.password || loading}
               >
-                {t('joinBtn')}
+                <ArrowRightOnRectangleIcon className="size-5" />
+                {t('serverPasswordBtn')}
               </AlertDialogAction>
             </AutoFocus>
           </AlertDialogFooter>

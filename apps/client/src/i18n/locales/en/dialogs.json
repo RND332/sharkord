@@ -64,9 +64,11 @@
   "unsavedChange_other": "{{count}} unsaved changes",
   "argument_one": "{{count}} argument",
   "argument_other": "{{count}} arguments",
-  "serverPasswordTitle": "Enter the password",
-  "serverPasswordDesc": "This server is password protected. Please enter the password to join.",
-  "joinBtn": "Join",
+  "serverPasswordTitle": "Enter server password",
+  "serverPasswordDesc": "This server requires a password.",
+  "serverPasswordLabel": "Password",
+  "serverPasswordHint": "Ask a server admin for the password.",
+  "serverPasswordBtn": "Unlock server",
   "welcomeProfileSetupTitle": "Welcome to {{serverName}}!",
   "welcomeProfileSetupDesc": "Let's set up your profile to get started.",
   "welcomeUsernamePlaceholder": "Username",
@@ -104,5 +106,6 @@
   "shortcutNextChannel": "Next text channel",
   "shortcutBackToVoice": "Back to voice channel",
   "createCategoryDesc": "Organize channels around a topic.",
-  "createCategoryHint": "New channels can be added here after you create the category."
+  "createCategoryHint": "New channels can be added here after you create the category.",
+  "textInputLabel": "Value"
 }
