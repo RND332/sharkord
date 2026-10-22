@@ -156,6 +156,7 @@
   "volume": "Volume",
   "stopWatching": "Stop watching",
   "watching": "Watching",
+  "noOneWatching": "No one is watching yet.",
   "screenShareViewers": "{{count}} viewers",
   "enableZoom": "Enable zoom",
   "disableZoom": "Disable zoom",
