@@ -1,12 +1,11 @@
-import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
-import { UserAvatar } from '@/components/user-avatar';
+import { requestConfirmation } from '@/features/dialogs/actions';
 import { useRoleById } from '@/features/server/roles/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ChannelPermission, getTrpcError } from '@sharkord/shared';
-import { CardTitle, IconButton, Tooltip } from '@sharkord/ui';
+import { IconButton, Tooltip } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -23,10 +22,9 @@ const UserHeader = memo(({ userId }: TUserHeaderProps) => {
   if (!user) return null;
 
   return (
-    <div className="flex items-center gap-3">
-      <UserAvatar userId={userId} />
-      <CardTitle>{user.name}</CardTitle>
-    </div>
+    <span className="truncate text-base font-bold leading-5 text-foreground">
+      {user.name}
+    </span>
   );
 });
 
@@ -40,13 +38,9 @@ const RoleHeader = memo(({ roleId }: TRoleHeaderProps) => {
   if (!role) return null;
 
   return (
-    <div className="flex items-center gap-3">
-      <div
-        className="h-6 w-6 rounded-full"
-        style={{ backgroundColor: role.color }}
-      />
-      <CardTitle>{role.name}</CardTitle>
-    </div>
+    <span className="truncate text-base font-bold leading-5 text-foreground">
+      {role.name}
+    </span>
   );
 });
 
@@ -93,7 +87,7 @@ const Override = memo(
       [channelId, isRole, targetId, refetch]
     );
 
-    const { values, onChange } = useSettingsForm<TOverrideValues>({
+    const { values, onChange, isDirty } = useSettingsForm<TOverrideValues>({
       initialValues: { permissions },
       onSave,
       successMessage: t('permissionOverrideUpdated'),
@@ -116,10 +110,21 @@ const Override = memo(
       }
     }, [channelId, isRole, targetId, setSelectedOverrideId, refetch, t]);
 
-    const onClose = useCallback(
-      () => setSelectedOverrideId(undefined),
-      [setSelectedOverrideId]
-    );
+    // closing the editor with unsaved edits asks first, the draft is not lost silently
+    const onClose = useCallback(async () => {
+      if (isDirty) {
+        const choice = await requestConfirmation({
+          title: t('discardChangesTitle'),
+          message: t('discardChangesMsg'),
+          confirmLabel: t('discardChangesBtn'),
+          variant: 'danger'
+        });
+
+        if (!choice) return;
+      }
+
+      setSelectedOverrideId(undefined);
+    }, [isDirty, setSelectedOverrideId, t]);
 
     const onTogglePermission = useCallback(
       (permission: ChannelPermission) => {
@@ -136,17 +141,20 @@ const Override = memo(
     );
 
     return (
-      <SettingsSection
-        className="flex-1"
-        title={
-          isRole ? (
-            <RoleHeader roleId={targetId} />
-          ) : (
-            <UserHeader userId={targetId} />
-          )
-        }
-        action={
-          <>
+      <div className="flex min-w-0 flex-1 flex-col gap-4 px-[24px] py-[20px]">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            {isRole ? (
+              <RoleHeader roleId={targetId} />
+            ) : (
+              <UserHeader userId={targetId} />
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-xs leading-4 text-muted-foreground">
+              {isRole ? t('roleOverrideLabel') : t('memberOverrideLabel')}
+            </span>
             <Tooltip content={t('deleteOverrideTooltip')}>
               <IconButton
                 icon={TrashIcon}
@@ -163,14 +171,14 @@ const Override = memo(
                 onClick={onClose}
               />
             </Tooltip>
-          </>
-        }
-      >
+          </div>
+        </div>
+
         <ChannelPermissionList
           permissions={values.permissions}
           onTogglePermission={onTogglePermission}
         />
-      </SettingsSection>
+      </div>
     );
   }
 );

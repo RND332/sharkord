@@ -1,4 +1,3 @@
-import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useRoleById } from '@/features/server/roles/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { getInitialsFromName } from '@/helpers/get-initials-from-name';
@@ -9,12 +8,48 @@ import type {
   TChannelUserPermission
 } from '@sharkord/shared';
 import { getTrpcError } from '@sharkord/shared';
-import { Avatar, AvatarFallback, Separator } from '@sharkord/ui';
-import { memo, useCallback, useMemo } from 'react';
+import { Avatar, AvatarFallback } from '@sharkord/ui';
+import { memo, useCallback, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { SearchPopover } from './search-popover';
 import type { TChannelPermissionType } from './types';
+
+type TOverrideItemProps = {
+  selectedKey: string;
+  setSelectedKey: (key: string) => void;
+  isSelected: boolean;
+  children: ReactNode;
+};
+
+const OverrideItem = memo(
+  ({
+    selectedKey,
+    setSelectedKey,
+    isSelected,
+    children
+  }: TOverrideItemProps) => {
+    const handleClick = useCallback(
+      () => setSelectedKey(selectedKey),
+      [selectedKey, setSelectedKey]
+    );
+
+    return (
+      <button
+        onClick={handleClick}
+        aria-current={isSelected ? 'true' : undefined}
+        className={cn(
+          'flex w-full items-center gap-[9px] rounded-[6px] px-[10px] py-[10px] text-left text-[13px] leading-4 transition-colors',
+          isSelected
+            ? 'bg-raised text-foreground'
+            : 'text-muted-foreground hover:bg-raised'
+        )}
+      >
+        {children}
+      </button>
+    );
+  }
+);
 
 type TRoleItemProps = {
   roleId: number;
@@ -31,23 +66,17 @@ const RoleItem = memo(
     if (!role) return null;
 
     return (
-      <button
-        onClick={() => setSelectedKey(key)}
-        className={cn(
-          'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
-          {
-            'bg-accent': isSelected
-          }
-        )}
+      <OverrideItem
+        selectedKey={key}
+        setSelectedKey={setSelectedKey}
+        isSelected={isSelected}
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="h-3 w-3 rounded-full"
-            style={{ backgroundColor: role.color }}
-          />
-          <span>{role.name}</span>
-        </div>
-      </button>
+        <span
+          className="size-2 shrink-0 rounded-full"
+          style={{ backgroundColor: role.color }}
+        />
+        <span className="truncate">{role.name}</span>
+      </OverrideItem>
     );
   }
 );
@@ -67,24 +96,18 @@ const UserItem = memo(
     if (!user) return null;
 
     return (
-      <button
-        onClick={() => setSelectedKey(key)}
-        className={cn(
-          'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
-          {
-            'bg-accent': isSelected
-          }
-        )}
+      <OverrideItem
+        selectedKey={key}
+        setSelectedKey={setSelectedKey}
+        isSelected={isSelected}
       >
-        <div className="flex items-center gap-2">
-          <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[10px]">
-              {getInitialsFromName(user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <span>{user.name}</span>
-        </div>
-      </button>
+        <Avatar className="size-5 shrink-0">
+          <AvatarFallback className="text-[10px]">
+            {getInitialsFromName(user.name)}
+          </AvatarFallback>
+        </Avatar>
+        <span className="truncate">{user.name}</span>
+      </OverrideItem>
     );
   }
 );
@@ -107,9 +130,9 @@ const RolesSection = memo(
 
     return (
       <>
-        <div className="px-3 py-1 text-xs font-semibold uppercase text-muted-foreground">
+        <span className="px-[10px] pt-3 pb-1 text-[10px] font-bold uppercase leading-3 tracking-[1px] text-subtle-foreground">
           {t('rolesSection')}
-        </div>
+        </span>
         {roleIds.map((roleId) => (
           <RoleItem
             key={roleId}
@@ -141,9 +164,9 @@ const UsersSection = memo(
 
     return (
       <>
-        <div className="px-3 py-1 text-xs font-semibold uppercase text-muted-foreground">
-          {t('usersSection')}
-        </div>
+        <span className="px-[10px] pt-3 pb-1 text-[10px] font-bold uppercase leading-3 tracking-[1px] text-subtle-foreground">
+          {t('membersLabel')}
+        </span>
         {userIds.map((userId) => (
           <UserItem
             key={userId}
@@ -221,18 +244,20 @@ const OverridesList = memo(
     );
 
     return (
-      <SettingsSection
-        title={t('rolesUsersTitle')}
-        action={
+      <div className="flex w-full shrink-0 flex-col gap-2 p-[14px] md:w-[250px]">
+        <div className="flex items-center justify-between px-1 pb-2">
+          <span className="text-[13px] font-bold uppercase leading-[18px] tracking-[1px] text-muted-foreground">
+            {t('overridesLabel')}
+          </span>
           <SearchPopover
             onSelect={onSelect}
             ignoreRoleIds={usedRolesIds}
             ignoreUserIds={usedUserIds}
           />
-        }
-      >
+        </div>
+
         {isEmpty ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
+          <div className="py-6 text-center text-sm text-muted-foreground">
             {t('noPermissionOverridesYet')}
           </div>
         ) : (
@@ -243,8 +268,6 @@ const OverridesList = memo(
               setSelectedKey={setSelectedOverrideId}
             />
 
-            {hasRoles && hasUsers && <Separator className="my-2" />}
-
             <UsersSection
               userPermissions={userPermissions}
               selectedKey={selectedOverrideId || ''}
@@ -252,7 +275,7 @@ const OverridesList = memo(
             />
           </>
         )}
-      </SettingsSection>
+      </div>
     );
   }
 );
