@@ -88,14 +88,21 @@ const targets: TTarget[] = [
   // mediasoup doesn't support macOS x64
 ];
 
-for (const target of targets) {
-  console.log(`Building for target: ${target.target}...`);
+// the four targets are independent — each one downloads its own mediasoup binary and runs
+// its own Bun.build — so they compile concurrently instead of one after another. the
+// sequential version spent most of the build waiting on three idle compilers
+await Promise.all(
+  targets.map(async (target) => {
+    console.log(`Building for target: ${target.target}...`);
 
-  await compile({
-    out: path.join(outPath, target.out),
-    target: target.target
-  });
-}
+    await compile({
+      out: path.join(outPath, target.out),
+      target: target.target
+    });
+
+    console.log(`Built for target: ${target.target}`);
+  })
+);
 
 const releaseInfo = await getVersionInfo(targets, outPath);
 
