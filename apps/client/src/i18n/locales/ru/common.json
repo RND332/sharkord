@@ -154,6 +154,7 @@
   "volume": "Громкость",
   "stopWatching": "Прекратить просмотр",
   "watching": "Смотрят",
+  "noOneWatching": "Пока никто не смотрит.",
   "screenShareViewers": "{{count}} зрителей",
   "enableZoom": "Включить масштабирование",
   "disableZoom": "Выключить масштабирование",
