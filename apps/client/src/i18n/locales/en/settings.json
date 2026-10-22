@@ -323,6 +323,7 @@
   "categoryInfoDesc": "Organize related channels under one category.",
   "categoryNameLabel": "Category name",
   "categoryNamePlaceholder": "Enter category name",
+  "saveCategory": "Save category",
   "emojiTitle": "Emojis",
   "searchEmojisPlaceholder": "Search emojis...",
   "noEmojisFound": "No emojis found",
