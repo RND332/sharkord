@@ -18,13 +18,16 @@
     "lint": "bun run --filter '*' lint",
     "knip": "knip",
     "knip:production": "knip --production",
+    "verify": "bun run format:check && bun run lint && bun run check-types && bun run test && bun run --filter '@dodecagon/server' build",
     "magic": "bun run format && bun run check-types && bun run lint"
   },
   "devDependencies": {
     "@types/bun": "1.4.3",
-    "knip": "^5.80.0"
+    "knip": "^5.80.0",
+    "typescript": "5.9.3"
   },
   "overrides": {
-    "@types/bun": "1.4.3"
+    "@types/bun": "1.4.3",
+    "typescript": "5.9.3"
   }
 }
