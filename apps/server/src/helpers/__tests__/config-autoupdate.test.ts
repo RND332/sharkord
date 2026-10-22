@@ -5,7 +5,7 @@ import path from 'path';
 
 test('autoupdate defaults on only for standalone production unless explicitly disabled', async () => {
   const dataPath = await fs.mkdtemp(
-    path.join(os.tmpdir(), 'sharkord-autoupdate-config-')
+    path.join(os.tmpdir(), 'dodecagon-autoupdate-config')
   );
 
   try {
@@ -47,17 +47,17 @@ test('autoupdate defaults on only for standalone production unless explicitly di
           cwd: process.cwd(),
           env: {
             ...process.env,
-            SHARKORD_ENV: item.environment,
-            SHARKORD_MEDIASOUP_BIN_NAME: 'mediasoup-worker',
-            SHARKORD_DATA_PATH: path.join(
+            DODECAGON_ENV: item.environment,
+            DODECAGON_MEDIASOUP_BIN_NAME: 'mediasoup-worker',
+            DODECAGON_DATA_PATH: path.join(
               dataPath,
               item.environment,
               item.docker,
               String(item.autoUpdate)
             ),
-            SHARKORD_WEBRTC_ANNOUNCED_ADDRESS: '127.0.0.1',
+            DODECAGON_WEBRTC_ANNOUNCED_ADDRESS: '127.0.0.1',
             RUNNING_IN_DOCKER: item.docker,
-            SHARKORD_AUTOUPDATE: item.autoUpdate,
+            DODECAGON_AUTOUPDATE: item.autoUpdate,
             NODE_ENV: 'production'
           }
         }

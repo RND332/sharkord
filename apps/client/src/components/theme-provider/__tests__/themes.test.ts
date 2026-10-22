@@ -30,7 +30,7 @@ describe('built-in theme catalog', () => {
   });
 
   test('keeps body text, muted text and action labels readable in every adapted palette', () => {
-    for (const theme of THEMES.filter((item) => item.source !== 'sharkord')) {
+    for (const theme of THEMES.filter((item) => item.source !== 'dodecagon')) {
       const variables = getThemeVariables(theme);
       for (const token of [
         '--foreground',
@@ -60,7 +60,7 @@ describe('built-in theme catalog', () => {
     }
   });
 
-  test('includes all 102 Oh My Pi palettes without colliding with Sharkord defaults', () => {
+  test('includes all 102 Oh My Pi palettes without colliding with Dodecagon defaults', () => {
     const imported = THEMES.filter((theme) => theme.source === 'omp');
     expect(imported).toHaveLength(102);
     expect(new Set(THEMES.map((theme) => theme.id)).size).toBe(106);

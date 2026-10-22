@@ -2,15 +2,21 @@ import { requestConfirmation } from '@/features/dialogs/actions';
 import { usePluginsEnabled } from '@/features/server/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import type { TPluginInfo } from '@dodecagon/shared';
+import { getTrpcError, TestId } from '@dodecagon/shared';
+import {
+  Button,
+  IconButton,
+  LoadingCard,
+  Switch,
+  Tooltip
+} from '@dodecagon/ui';
 import {
   ArrowPathIcon,
   CubeIcon,
   ExclamationCircleIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
-import type { TPluginInfo } from '@sharkord/shared';
-import { getTrpcError, TestId } from '@sharkord/shared';
-import { Button, IconButton, LoadingCard, Switch, Tooltip } from '@sharkord/ui';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

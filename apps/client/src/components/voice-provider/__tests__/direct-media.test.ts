@@ -3,7 +3,7 @@ import {
   type TDirectMediaEvent,
   type TDirectMediaSession,
   type TDirectMediaSignal
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { DirectMedia, type TDirectMediaResult } from '../direct-media';
 

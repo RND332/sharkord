@@ -8,25 +8,25 @@ import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import {
-  ChatBubbleLeftIcon,
-  ShieldCheckIcon,
-  TrashIcon,
-  UserCircleIcon
-} from '@heroicons/react/24/outline';
-import {
   DELETED_USER_IDENTITY_AND_NAME,
   Permission,
   PluginSlot,
   TestId,
   UserStatus,
   getTrpcError
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  ChatBubbleLeftIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

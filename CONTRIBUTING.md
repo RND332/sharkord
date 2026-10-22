@@ -141,7 +141,7 @@ Make sure all checks are passing when you submit your PR. This includes linting,
 
 When applicable, please include unit and integration tests for your changes. This helps ensure the stability and reliability of the project. If your change is in a area that already has tests, please make sure to update or add tests as needed.
 
-## Fork workflow (RND332/sharkord)
+## Fork workflow (dodecagon-mesh/dodecagon)
 
 This fork has a single branch, `master`. Upstream rules above still apply to code style and tests.
 

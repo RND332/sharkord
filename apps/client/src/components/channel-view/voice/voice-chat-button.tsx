@@ -6,8 +6,8 @@ import {
   useUnreadMessagesCount
 } from '@/features/server/hooks';
 import { cn } from '@/lib/utils';
+import { Button, Tooltip } from '@dodecagon/ui';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
-import { Button, Tooltip } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 

@@ -1,9 +1,9 @@
 import { useRemoteWebcamVisibility } from '@/components/voice-provider/remote-webcam-visibility-context';
+import { IconButton, type TIconButtonSize } from '@dodecagon/ui';
 import {
   VideoCameraIcon,
   VideoCameraSlashIcon
 } from '@heroicons/react/24/outline';
-import { IconButton, type TIconButtonSize } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 

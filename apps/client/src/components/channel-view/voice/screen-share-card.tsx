@@ -11,10 +11,10 @@ import {
 import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
+import { StreamKind } from '@dodecagon/shared';
+import { Popover, PopoverContent, PopoverTrigger } from '@dodecagon/ui';
 import { EyeIcon, PlayIcon } from '@heroicons/react/20/solid';
 import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
-import { StreamKind } from '@sharkord/shared';
-import { Popover, PopoverContent, PopoverTrigger } from '@sharkord/ui';
 import {
   memo,
   useCallback,

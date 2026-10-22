@@ -1,44 +1,55 @@
 export enum LocalStorageKey {
-  IDENTITY = 'sharkord-identity',
+  IDENTITY = 'dodecagon-identity',
   VITE_UI_THEME = 'vite-ui-theme',
-  DEVICES_SETTINGS = 'sharkord-devices-settings',
-  RIGHT_SIDEBAR_STATE = 'sharkord-right-sidebar-state',
-  VOICE_CHAT_SIDEBAR_STATE = 'sharkord-voice-chat-sidebar-state',
-  VOICE_CHAT_SIDEBAR_CHANNEL_ID = 'sharkord-voice-chat-sidebar-channel-id',
-  VOICE_CHAT_SIDEBAR_WIDTH = 'sharkord-voice-chat-sidebar-width',
-  VOICE_CHAT_SHOW_USER_BANNERS = 'sharkord-voice-chat-show-user-banners',
-  VOLUME_SETTINGS = 'sharkord-volume-settings',
-  STREAM_QUALITY_SETTINGS = 'sharkord-stream-quality-settings',
-  RECENT_EMOJIS = 'sharkord-recent-emojis',
-  DEBUG = 'sharkord-debug',
-  DRAFT_MESSAGES = 'sharkord-draft-messages',
-  HIDE_NON_VIDEO_PARTICIPANTS = 'sharkord-hide-non-video-participants',
-  THREAD_SIDEBAR_WIDTH = 'sharkord-thread-sidebar-width',
-  LEFT_SIDEBAR_WIDTH = 'sharkord-left-sidebar-width',
-  RIGHT_SIDEBAR_WIDTH = 'sharkord-right-sidebar-width',
-  CATEGORIES_EXPANDED = 'sharkord-categories-expanded',
-  AUTO_LOGIN = 'sharkord-auto-login',
-  AUTO_LOGIN_TOKEN = 'sharkord-auto-login-token',
-  LAST_SELECTED_CHANNEL = 'sharkord-last-selected-channel',
-  AUTO_JOIN_LAST_CHANNEL = 'sharkord-auto-join-last-channel',
-  BROWSER_NOTIFICATIONS = 'sharkord-browser-notifications',
-  BROWSER_NOTIFICATIONS_FOR_MENTIONS = 'sharkord-browser-notifications-for-mentions',
-  BROWSER_NOTIFICATIONS_FOR_DMS = 'sharkord-browser-notifications-for-dms',
+  DEVICES_SETTINGS = 'dodecagon-devices-settings',
+  RIGHT_SIDEBAR_STATE = 'dodecagon-right-sidebar-state',
+  VOICE_CHAT_SIDEBAR_STATE = 'dodecagon-voice-chat-sidebar-state',
+  VOICE_CHAT_SIDEBAR_CHANNEL_ID = 'dodecagon-voice-chat-sidebar-channel-id',
+  VOICE_CHAT_SIDEBAR_WIDTH = 'dodecagon-voice-chat-sidebar-width',
+  VOICE_CHAT_SHOW_USER_BANNERS = 'dodecagon-voice-chat-show-user-banners',
+  VOLUME_SETTINGS = 'dodecagon-volume-settings',
+  STREAM_QUALITY_SETTINGS = 'dodecagon-stream-quality-settings',
+  RECENT_EMOJIS = 'dodecagon-recent-emojis',
+  DEBUG = 'dodecagon-debug',
+  DRAFT_MESSAGES = 'dodecagon-draft-messages',
+  HIDE_NON_VIDEO_PARTICIPANTS = 'dodecagon-hide-non-video-participants',
+  THREAD_SIDEBAR_WIDTH = 'dodecagon-thread-sidebar-width',
+  LEFT_SIDEBAR_WIDTH = 'dodecagon-left-sidebar-width',
+  RIGHT_SIDEBAR_WIDTH = 'dodecagon-right-sidebar-width',
+  CATEGORIES_EXPANDED = 'dodecagon-categories-expanded',
+  AUTO_LOGIN = 'dodecagon-auto-login',
+  AUTO_LOGIN_TOKEN = 'dodecagon-auto-login-token',
+  LAST_SELECTED_CHANNEL = 'dodecagon-last-selected-channel',
+  AUTO_JOIN_LAST_CHANNEL = 'dodecagon-auto-join-last-channel',
+  BROWSER_NOTIFICATIONS = 'dodecagon-browser-notifications',
+  BROWSER_NOTIFICATIONS_FOR_MENTIONS = 'dodecagon-browser-notifications-for-mentions',
+  BROWSER_NOTIFICATIONS_FOR_DMS = 'dodecagon-browser-notifications-for-dms',
 
-  BROWSER_NOTIFICATIONS_FOR_REPLIES = 'sharkord-browser-notifications-for-replies',
-  LANGUAGE = 'sharkord-language',
-  PLUGIN_SLOT_DEBUG = 'sharkord-plugin-slot-debug',
-  HIDE_OWN_SCREEN_SHARE = 'sharkord-hide-own-screen-share',
-  HIDDEN_REMOTE_WEBCAMS = 'sharkord-hidden-remote-webcams',
-  NOTIFICATION_SOUNDS = 'sharkord-notification-sounds',
-  MESSAGE_SENT_SOUND = 'sharkord-message-sent-sound',
-  MUTED_CHANNEL_IDS = 'sharkord-muted-channel-ids'
+  BROWSER_NOTIFICATIONS_FOR_REPLIES = 'dodecagon-browser-notifications-for-replies',
+  LANGUAGE = 'dodecagon-language',
+  PLUGIN_SLOT_DEBUG = 'dodecagon-plugin-slot-debug',
+  HIDE_OWN_SCREEN_SHARE = 'dodecagon-hide-own-screen-share',
+  HIDDEN_REMOTE_WEBCAMS = 'dodecagon-hidden-remote-webcams',
+  NOTIFICATION_SOUNDS = 'dodecagon-notification-sounds',
+  MESSAGE_SENT_SOUND = 'dodecagon-message-sent-sound',
+  MUTED_CHANNEL_IDS = 'dodecagon-muted-channel-ids'
 }
 
 export enum SessionStorageKey {
-  TOKEN = 'sharkord-token',
-  OIDC_NO_AUTO_REDIRECT = 'sharkord-oidc-no-auto-redirect'
+  TOKEN = 'dodecagon-token',
+  OIDC_NO_AUTO_REDIRECT = 'dodecagon-oidc-no-auto-redirect'
 }
+
+// the keys carried the old brand until the rename, so the values an existing
+// install already saved have to move over once instead of being dropped
+const LEGACY_KEY_PREFIX = 'sharkord-';
+const CURRENT_KEY_PREFIX = 'dodecagon-';
+
+const legacyKeyFor = (key: string): string | null => {
+  if (!key.startsWith(CURRENT_KEY_PREFIX)) return null;
+
+  return `${LEGACY_KEY_PREFIX}${key.slice(CURRENT_KEY_PREFIX.length)}`;
+};
 
 // librewolf and firefox private mode throw SecurityError when privacy hardening
 // blocks storage access, so every read/write has to survive the storage being gone
@@ -152,12 +163,41 @@ const removeSessionStorageItem = (key: SessionStorageKey): void => {
   deleteItem('session', key);
 };
 
+const migrateStorageKeys = (
+  kind: 'local' | 'session',
+  keys: (LocalStorageKey | SessionStorageKey)[]
+): void => {
+  for (const key of keys) {
+    const legacyKey = legacyKeyFor(key);
+
+    if (!legacyKey) continue;
+
+    const legacyValue = readItem(kind, legacyKey);
+
+    if (legacyValue === null) continue;
+
+    if (readItem(kind, key) === null) writeItem(kind, key, legacyValue);
+
+    deleteItem(kind, legacyKey);
+  }
+};
+
+/**
+ * Moves the values saved under the old brand's keys to the current ones and
+ * drops the old keys. Runs once per install, the values themselves are kept.
+ */
+const migrateLegacyStorageKeys = (): void => {
+  migrateStorageKeys('local', Object.values(LocalStorageKey));
+  migrateStorageKeys('session', Object.values(SessionStorageKey));
+};
+
 export {
   getLocalStorageItem,
   getLocalStorageItemAsJSON,
   getLocalStorageItemAsNumber,
   getLocalStorageItemBool,
   getSessionStorageItem,
+  migrateLegacyStorageKeys,
   removeLocalStorageItem,
   removeSessionStorageItem,
   setLocalStorageItem,

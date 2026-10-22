@@ -1,10 +1,10 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@dodecagon/ui';
 import {
   ChartBarIcon,
   ChatBubbleLeftRightIcon,
   DocumentIcon,
   LinkIcon
 } from '@heroicons/react/24/outline';
-import { Card, CardContent, CardHeader, CardTitle } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModViewScreen, useModViewContext } from '../context';

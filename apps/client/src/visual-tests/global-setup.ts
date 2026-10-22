@@ -13,7 +13,7 @@ const seedEntry = path.join(
   'packages/e2e/tests/setup/seed-db.ts'
 );
 const visualSeedEntry = path.join(import.meta.dirname, 'seed.ts');
-const visualTestServerPort = process.env.SHARKORD_TEST_PORT || '4991';
+const visualTestServerPort = process.env.DODECAGON_TEST_PORT || '4991';
 const serverUrl = `http://localhost:${visualTestServerPort}/info`;
 const serverLifetimeMs = 180_000;
 
@@ -28,7 +28,7 @@ const run = (command: string, args: string[], timeoutMs = 30_000) => {
     env: {
       ...process.env,
       NODE_ENV: 'development',
-      SHARKORD_DATA_PATH: dataPath
+      DODECAGON_DATA_PATH: dataPath
     },
     signal: AbortSignal.timeout(timeoutMs),
     stdio: 'inherit'
@@ -140,8 +140,8 @@ const startSetup = async () => {
     env: {
       ...process.env,
       NODE_ENV: 'development',
-      SHARKORD_DATA_PATH: dataPath,
-      SHARKORD_PORT: visualTestServerPort
+      DODECAGON_DATA_PATH: dataPath,
+      DODECAGON_PORT: visualTestServerPort
     },
     stdio: 'inherit'
   });

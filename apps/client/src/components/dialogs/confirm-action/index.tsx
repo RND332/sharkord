@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
   AutoFocus,
   buttonVariants
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';

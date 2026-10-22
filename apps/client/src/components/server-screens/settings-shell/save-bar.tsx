@@ -1,5 +1,5 @@
+import { Button, Spinner } from '@dodecagon/ui';
 import { ArrowUturnLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { Button, Spinner } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 

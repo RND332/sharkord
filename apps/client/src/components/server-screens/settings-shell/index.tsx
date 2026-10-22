@@ -3,8 +3,8 @@ import { requestConfirmation } from '@/features/dialogs/actions';
 import { useDialogInfo } from '@/features/dialogs/hooks';
 import { usePreventExit } from '@/hooks/use-prevent-exit';
 import { cn } from '@/lib/utils';
+import { IconButton } from '@dodecagon/ui';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { IconButton } from '@sharkord/ui';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {

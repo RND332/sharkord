@@ -1,7 +1,6 @@
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { getTRPCClient } from '@/lib/trpc';
-import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
-import { getTrpcError, type TJoinedUser } from '@sharkord/shared';
+import { getTrpcError, type TJoinedUser } from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -16,7 +15,8 @@ import {
   buttonVariants,
   Group,
   Switch
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

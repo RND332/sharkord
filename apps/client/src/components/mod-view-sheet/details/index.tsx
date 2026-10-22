@@ -1,5 +1,14 @@
 import { Protect } from '@/components/protect';
 import { useDateLocale } from '@/hooks/use-date-locale';
+import { Permission } from '@dodecagon/shared/src/statics/permissions';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  IconButton,
+  Tooltip
+} from '@dodecagon/ui';
 import {
   CalendarIcon,
   ClipboardDocumentListIcon,
@@ -12,15 +21,6 @@ import {
   ScaleIcon,
   ShareIcon
 } from '@heroicons/react/24/outline';
-import { Permission } from '@sharkord/shared/src/statics/permissions';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  IconButton,
-  Tooltip
-} from '@sharkord/ui';
 import { format, formatDistanceToNow } from 'date-fns';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

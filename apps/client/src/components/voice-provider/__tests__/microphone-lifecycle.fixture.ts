@@ -1,6 +1,6 @@
 import * as ChannelSelectors from '@/features/server/channels/selectors';
 import { NoiseSuppression } from '@/types';
-import { ChannelType, StreamKind } from '@sharkord/shared';
+import { ChannelType, StreamKind } from '@dodecagon/shared';
 import { beforeEach, expect, mock, test } from 'bun:test';
 import * as React from 'react';
 import * as ReactI18n from 'react-i18next';

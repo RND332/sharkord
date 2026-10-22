@@ -33,7 +33,7 @@ export default defineConfig({
   define: {
     VITE_APP_VERSION: JSON.stringify(pkg.version),
     VITE_SENTRY_DSN: JSON.stringify(''),
-    VITE_SERVER_PORT: JSON.stringify(process.env.SHARKORD_TEST_PORT || '4991')
+    VITE_SERVER_PORT: JSON.stringify(process.env.DODECAGON_TEST_PORT || '4991')
   },
   server: { fs: { allow: fsAllow } },
   test: {

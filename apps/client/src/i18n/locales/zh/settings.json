@@ -324,7 +324,7 @@
   "diskTotalSpace": "总磁盘空间",
   "diskAvailableSpace": "可用空间",
   "diskSystemUsed": "系统占用",
-  "diskSharkordUsed": "Dodecagon 占用",
+  "diskDodecagonUsed": "Dodecagon 占用",
   "diskUsage": "磁盘使用情况",
   "diskPluginData": "插件数据",
   "diskMetricsUnavailable": "不可用",

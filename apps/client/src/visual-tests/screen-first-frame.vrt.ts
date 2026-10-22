@@ -2,7 +2,7 @@ import {
   StreamKind,
   type AppRouter,
   type TProducibleStreamKind
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import { Device } from 'mediasoup-client';
 import type { Transport } from 'mediasoup-client/types';

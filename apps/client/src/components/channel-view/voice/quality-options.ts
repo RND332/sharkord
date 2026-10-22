@@ -1,4 +1,4 @@
-import type { TStreamQuality, TStreamQualityLayer } from '@sharkord/shared';
+import type { TStreamQuality, TStreamQualityLayer } from '@dodecagon/shared';
 
 const getStreamQualityMetadataLabel = (
   quality: TStreamQuality,

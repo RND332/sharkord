@@ -14,7 +14,7 @@ import {
   setSessionStorageItem
 } from '@/helpers/storage';
 import { useForm } from '@/hooks/use-form';
-import { PluginSlot, TestId } from '@sharkord/shared';
+import { PluginSlot, TestId } from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -29,7 +29,7 @@ import {
   Label,
   Spinner,
   Switch
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
 import {
   memo,
   useCallback,
@@ -361,7 +361,7 @@ const Connect = memo(() => {
       <div className="absolute bottom-5 flex items-center justify-center gap-2 text-xs text-subtle-foreground select-none">
         <span>v{VITE_APP_VERSION}</span>
         <a
-          href="https://github.com/RND332/sharkord"
+          href="https://github.com/dodecagon-mesh/dodecagon"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -370,7 +370,7 @@ const Connect = memo(() => {
 
         <a
           className="text-xs"
-          href="https://github.com/RND332/sharkord"
+          href="https://github.com/dodecagon-mesh/dodecagon"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -1,13 +1,13 @@
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { cn } from '@/lib/utils';
+import type { TPluginInfo } from '@dodecagon/shared';
+import { Button, Input } from '@dodecagon/ui';
 import {
   ArrowPathIcon,
   CubeIcon,
   ExclamationCircleIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
-import type { TPluginInfo } from '@sharkord/shared';
-import { Button, Input } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListWithSeparators } from '../list-with-separators';

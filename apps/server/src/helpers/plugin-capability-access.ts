@@ -4,7 +4,7 @@ import {
   PluginCapabilityType,
   type TPluginCapabilityAccess,
   type TPluginCapabilityAccessRule
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   getCapabilityAccess,
   getCapabilityRows

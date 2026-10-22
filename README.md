@@ -2,9 +2,9 @@
   <h1>Dodecagon</h1>
   <p><strong>A lightweight, self-hosted real-time communication platform</strong></p>
 
-  [![Version](https://img.shields.io/github/v/release/RND332/sharkord)](https://github.com/RND332/sharkord/releases)
-  [![License](https://img.shields.io/github/license/RND332/sharkord)](LICENSE)
-  [![Last Commit](https://img.shields.io/github/last-commit/RND332/sharkord)](https://github.com/RND332/sharkord/commits)
+  [![Version](https://img.shields.io/github/v/release/dodecagon-mesh/dodecagon)](https://github.com/dodecagon-mesh/dodecagon/releases)
+  [![License](https://img.shields.io/github/license/dodecagon-mesh/dodecagon)](LICENSE)
+  [![Last Commit](https://img.shields.io/github/last-commit/dodecagon-mesh/dodecagon)](https://github.com/dodecagon-mesh/dodecagon/commits)
 
   [![Bun](https://img.shields.io/badge/Bun-v1.3.14-green.svg)](https://bun.sh)
   [![Mediasoup](https://img.shields.io/badge/Mediasoup-v3.19.19-green.svg)](https://mediasoup.org)
@@ -32,17 +32,15 @@ Dodecagon is a fork of [Sharkord](https://github.com/Sharkord/sharkord), maintai
 
 ## Getting Started
 
-Dodecagon is distributed as a standalone binary that bundles both server and client components. Download the latest release for your platform from the [Releases](https://github.com/RND332/sharkord/releases) page.
+Dodecagon is distributed as a standalone binary that bundles both server and client components. Download the latest release for your platform from the [Releases](https://github.com/dodecagon-mesh/dodecagon/releases) page.
 
 #### Linux x64
 
 ```bash
-curl -L https://github.com/RND332/sharkord/releases/latest/download/sharkord-linux-x64 -o dodecagon
+curl -L https://github.com/dodecagon-mesh/dodecagon/releases/latest/download/dodecagon-linux-x64 -o dodecagon
 chmod +x dodecagon
 ./dodecagon
 ```
-
-The artifact and Docker identifiers still use the Sharkord name while the infrastructure rename is in progress.
 
 #### Docker
 
@@ -51,9 +49,9 @@ docker run \
   -p 4991:4991/tcp \
   -p 40000:40000/tcp \
   -p 40000:40000/udp \
-  -v ./data:/home/bun/.config/sharkord \
+  -v ./data:/home/bun/.config/dodecagon \
   --name dodecagon \
-  ghcr.io/rnd332/sharkord:latest
+  ghcr.io/dodecagon-mesh/dodecagon:latest
 ```
 
 > [!WARNING]
@@ -85,7 +83,7 @@ Built with open-source technologies:
 <div align="center">
   <p>Maintained by RND332. Originally built by the Sharkord team.</p>
   <p>
-    <a href="https://github.com/RND332/sharkord">GitHub</a> •
-    <a href="https://github.com/RND332/sharkord/issues">Issues</a>
+    <a href="https://github.com/dodecagon-mesh/dodecagon">GitHub</a> •
+    <a href="https://github.com/dodecagon-mesh/dodecagon/issues">Issues</a>
   </p>
 </div>

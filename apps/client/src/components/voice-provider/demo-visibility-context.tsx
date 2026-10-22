@@ -3,7 +3,7 @@ import { useVoice } from '@/features/server/voice/hooks';
 import { voiceChannelStateSelector } from '@/features/server/voice/selectors';
 import type { IRootState } from '@/features/store';
 import { logVoiceError } from '@/helpers/browser-logger';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import {
   createContext,
   memo,

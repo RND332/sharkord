@@ -5,13 +5,12 @@ import {
   usePluginTabs
 } from '@/features/server/plugins/hooks';
 import { getTRPCClient } from '@/lib/trpc';
-import { CubeIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import {
   getTrpcError,
   Permission,
   type TPluginInfo,
   type TPluginSettingDefinition
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -21,7 +20,8 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { CubeIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

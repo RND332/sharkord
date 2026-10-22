@@ -1,6 +1,7 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useAdminUpdates } from '@/features/server/admin/hooks';
 import { cn } from '@/lib/utils';
+import { Button, LoadingCard } from '@dodecagon/ui';
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
@@ -8,7 +9,6 @@ import {
   CheckIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
-import { Button, LoadingCard } from '@sharkord/ui';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

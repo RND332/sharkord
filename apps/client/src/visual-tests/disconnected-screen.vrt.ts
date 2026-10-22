@@ -1,7 +1,7 @@
 import { getHostFromServer } from '@/helpers/get-file-url';
 import { i18n } from '@/i18n';
 import { Disconnected } from '@/screens/disconnected';
-import { DisconnectCode } from '@sharkord/shared';
+import { DisconnectCode } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';

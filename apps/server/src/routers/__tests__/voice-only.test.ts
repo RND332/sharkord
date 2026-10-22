@@ -1,4 +1,4 @@
-import { ChannelPermission, Permission, StreamKind } from '@sharkord/shared';
+import { ChannelPermission, Permission, StreamKind } from '@dodecagon/shared';
 import { describe, expect, spyOn, test } from 'bun:test';
 import type { Consumer, Producer, RtpParameters } from 'mediasoup/types';
 import { createMockContext } from '../../__tests__/context';

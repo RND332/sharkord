@@ -1,4 +1,3 @@
-import { CheckIcon } from '@heroicons/react/24/outline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +9,8 @@ import {
   AlertDialogTitle,
   AutoFocus,
   Input
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { CheckIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';

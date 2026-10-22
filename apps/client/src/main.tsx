@@ -1,7 +1,7 @@
 import { i18nReady } from '@/i18n';
+import { Toaster } from '@dodecagon/ui';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/inter/wght-italic.css';
-import { Toaster } from '@sharkord/ui';
 import 'prosemirror-view/style/prosemirror.css';
 import { StrictMode } from 'react';
 import { Provider } from 'react-redux';
@@ -20,8 +20,13 @@ import { exposePluginStore } from './features/server/plugins/plugin-store.ts';
 import { store } from './features/store.ts';
 import { exposeLibs, exposeReact } from './helpers/exposes.ts';
 import { initSentry } from './helpers/sentry.ts';
-import { LocalStorageKey } from './helpers/storage.ts';
+import {
+  LocalStorageKey,
+  migrateLegacyStorageKeys
+} from './helpers/storage.ts';
 import './index.css';
+
+migrateLegacyStorageKeys();
 
 initSentry(VITE_SENTRY_DSN, import.meta.env.MODE, VITE_APP_VERSION);
 

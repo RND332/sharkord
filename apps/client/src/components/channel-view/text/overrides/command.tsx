@@ -1,3 +1,4 @@
+import { type TParsedDomCommand } from '@dodecagon/shared';
 import {
   ArrowPathIcon,
   CheckCircleIcon,
@@ -6,7 +7,6 @@ import {
   CommandLineIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
-import { type TParsedDomCommand } from '@sharkord/shared';
 import { memo, useCallback, useState } from 'react';
 import { OverrideLayout } from './layout';
 

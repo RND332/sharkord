@@ -1,12 +1,12 @@
 import { highlightMessageElement } from '@/features/server/messages/helpers';
-import { WifiIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   IconButton,
   Select,
   SelectTrigger,
   SelectValue
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { WifiIcon } from '@heroicons/react/24/outline';
 import { createElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test } from 'vitest';

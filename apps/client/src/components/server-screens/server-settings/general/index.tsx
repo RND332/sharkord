@@ -6,7 +6,7 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { Input, LoadingCard, Switch, Textarea } from '@sharkord/ui';
+import { Input, LoadingCard, Switch, Textarea } from '@dodecagon/ui';
 import { memo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {

@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils';
 import type {
   TChannelRolePermission,
   TChannelUserPermission
-} from '@sharkord/shared';
-import { getTrpcError } from '@sharkord/shared';
-import { Avatar, AvatarFallback } from '@sharkord/ui';
+} from '@dodecagon/shared';
+import { getTrpcError } from '@dodecagon/shared';
+import { Avatar, AvatarFallback } from '@dodecagon/ui';
 import { memo, useCallback, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

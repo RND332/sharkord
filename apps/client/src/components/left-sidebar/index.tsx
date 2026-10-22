@@ -7,7 +7,7 @@ import {
 } from '@/features/server/hooks';
 import { LocalStorageKey } from '@/helpers/storage';
 import { cn } from '@/lib/utils';
-import { PluginSlot, TestId } from '@sharkord/shared';
+import { PluginSlot, TestId } from '@dodecagon/shared';
 import { memo } from 'react';
 import { Categories } from './categories';
 import { DirectMessages } from './direct-messages';

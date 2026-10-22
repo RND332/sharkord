@@ -3,7 +3,7 @@ import {
   Permission,
   StreamKind,
   type TProducibleStreamKind
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 
 const voiceKindPermissions: Record<
   TProducibleStreamKind,

@@ -1,6 +1,6 @@
 import { useDirectMedia } from '@/components/voice-provider/hooks/use-direct-media';
 import * as trpc from '@/lib/trpc';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';

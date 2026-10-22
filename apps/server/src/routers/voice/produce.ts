@@ -2,7 +2,7 @@ import {
   getMediasoupKind,
   PRODUCIBLE_STREAM_KINDS,
   ServerEvents
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { z } from 'zod';
 import { config } from '../../config';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';

@@ -1,8 +1,7 @@
 import { openDialog, requestConfirmation } from '@/features/dialogs/actions';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { disconnectFromServer } from '@/features/server/actions';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { Permission, TestId } from '@sharkord/shared';
+import { Permission, TestId } from '@dodecagon/shared';
 import {
   Button,
   DropdownMenu,
@@ -11,7 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '../dialogs/dialogs';

@@ -5,14 +5,14 @@ import { useChannelCan } from '@/features/server/hooks';
 import { useOwnPublicUser } from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
-import { Cog6ToothIcon, MicrophoneIcon } from '@heroicons/react/24/outline';
-import { ChannelPermission, TestId } from '@sharkord/shared';
+import { ChannelPermission, TestId } from '@dodecagon/shared';
 import {
   Button,
   HeadphonesIcon,
   HeadphonesOffIcon,
   MicOffIcon
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { Cog6ToothIcon, MicrophoneIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ServerScreen } from '../server-screens/screens';

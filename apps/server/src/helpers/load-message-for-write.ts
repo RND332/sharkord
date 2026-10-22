@@ -1,4 +1,4 @@
-import { Permission } from '@sharkord/shared';
+import { Permission } from '@dodecagon/shared';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { messages } from '../db/schema';

@@ -1,4 +1,4 @@
-import type { TJoinedMessage } from '@sharkord/shared';
+import type { TJoinedMessage } from '@dodecagon/shared';
 import { Element, htmlToDOM, type DOMNode } from 'html-react-parser';
 import type {
   TFoundMedia,

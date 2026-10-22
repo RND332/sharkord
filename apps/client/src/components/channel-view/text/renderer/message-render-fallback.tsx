@@ -1,5 +1,5 @@
+import { Alert, AlertDescription } from '@dodecagon/ui';
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
-import { Alert, AlertDescription } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 

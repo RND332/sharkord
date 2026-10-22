@@ -1,5 +1,5 @@
-import { Permission as EPermission } from '@sharkord/shared';
-import { Switch } from '@sharkord/ui';
+import { Permission as EPermission } from '@dodecagon/shared';
+import { Switch } from '@dodecagon/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 

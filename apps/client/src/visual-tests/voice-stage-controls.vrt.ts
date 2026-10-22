@@ -6,7 +6,7 @@ import {
   setPinnedCard,
   updateOwnVoiceState
 } from '@/features/server/voice/actions';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import '../index.css';

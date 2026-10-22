@@ -1,5 +1,5 @@
+import { TestId } from '@dodecagon/shared';
 import { expect, test } from '@playwright/test';
-import { TestId } from '@sharkord/shared';
 import { loginAs } from './fixtures';
 import { INFINITE_SCROLL_CHANNEL, openChannel } from './helpers/channels';
 import {

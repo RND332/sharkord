@@ -50,7 +50,7 @@ import {
   type TDirectMediaKind,
   type TStreamQualityLayer,
   type TVoiceUserState
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { Device } from 'mediasoup-client';
 import type {
   AppData,

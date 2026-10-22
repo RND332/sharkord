@@ -1,7 +1,6 @@
 import { UserAvatar } from '@/components/user-avatar';
 import { useRoles } from '@/features/server/roles/hooks';
 import { useUsers } from '@/features/server/users/hooks';
-import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
   Input,
   Popover,
@@ -11,7 +10,8 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TChannelPermissionType } from './types';

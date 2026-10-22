@@ -1,4 +1,4 @@
-import type { TDiskMetrics } from '@sharkord/shared';
+import type { TDiskMetrics } from '@dodecagon/shared';
 import { filesize } from 'filesize';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ const DiskMetrics = memo(
     const totalSpace = diskMetrics?.totalSpace ?? 0;
     const usedSpace = diskMetrics?.usedSpace ?? 0;
     const freeSpace = diskMetrics?.freeSpace ?? 0;
-    const sharkordUsedSpace = diskMetrics?.sharkordUsedSpace ?? 0;
+    const dodecagonUsedSpace = diskMetrics?.dodecagonUsedSpace ?? 0;
 
     // without a capacity the numbers are unknown, not zero
     const hasCapacity = totalSpace > 0;
@@ -61,8 +61,8 @@ const DiskMetrics = memo(
             {t('diskAvailableSpace')}{' '}
             {filesize(freeSpace, { standard: 'jedec' })}
             {' · '}
-            {t('diskSharkordUsed')}{' '}
-            {filesize(sharkordUsedSpace, { standard: 'jedec' })}
+            {t('diskDodecagonUsed')}{' '}
+            {filesize(dodecagonUsedSpace, { standard: 'jedec' })}
             {' · '}
             {t('diskSystemUsed')} {filesize(usedSpace, { standard: 'jedec' })}
             {pluginDataUsed ? (

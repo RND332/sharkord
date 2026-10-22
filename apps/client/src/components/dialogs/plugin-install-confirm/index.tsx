@@ -1,6 +1,5 @@
 import { useCountdown } from '@/hooks/use-countdown';
 import { useOnEsc } from '@/hooks/use-on-esc';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Dialog,
@@ -10,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   buttonVariants
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';

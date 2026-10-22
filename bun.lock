@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "sharkord",
+      "name": "dodecagon",
       "devDependencies": {
         "@types/bun": "1.4.3",
         "knip": "^5.80.0",
@@ -16,14 +16,14 @@
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
+        "@dodecagon/shared": "workspace:*",
+        "@dodecagon/ui": "workspace:*",
         "@floating-ui/dom": "^1.7.4",
         "@fontsource-variable/inter": "5.3.0",
         "@heroicons/react": "2.2.0",
         "@radix-ui/react-avatar": "^1.1.10",
         "@reduxjs/toolkit": "^2.9.0",
         "@sentry/react": "^11.8.0",
-        "@sharkord/shared": "workspace:*",
-        "@sharkord/ui": "workspace:*",
         "@tailwindcss/vite": "^4.1.13",
         "@tanstack/react-router": "^1.170.42",
         "@tanstack/react-start": "^1.168.61",
@@ -86,12 +86,12 @@
       },
     },
     "apps/server": {
-      "name": "@sharkord/server",
+      "name": "@dodecagon/server",
       "version": "0.0.51",
       "dependencies": {
+        "@dodecagon/plugin-sdk": "workspace:*",
+        "@dodecagon/shared": "workspace:*",
         "@sentry/bun": "^11.8.0",
-        "@sharkord/plugin-sdk": "workspace:*",
-        "@sharkord/shared": "workspace:*",
         "@trpc/server": "^11.6.0",
         "bun-sfe-autoupdater": "^0.0.4",
         "chalk": "^5.6.2",
@@ -138,11 +138,11 @@
       },
     },
     "packages/e2e": {
-      "name": "@sharkord/e2e",
+      "name": "@dodecagon/e2e",
       "version": "0.0.51",
       "devDependencies": {
+        "@dodecagon/shared": "workspace:*",
         "@playwright/test": "^1.58.2",
-        "@sharkord/shared": "workspace:*",
         "@types/bun": "latest",
         "@types/react": "^19",
         "drizzle-orm": "^0.44.5",
@@ -157,10 +157,10 @@
       },
     },
     "packages/plugin-sdk": {
-      "name": "@sharkord/plugin-sdk",
+      "name": "@dodecagon/plugin-sdk",
       "version": "0.0.51",
       "devDependencies": {
-        "@sharkord/shared": "workspace:*",
+        "@dodecagon/shared": "workspace:*",
         "@types/bun": "latest",
         "@types/react": "^19.1.13",
         "@types/react-dom": "^19.1.9",
@@ -179,7 +179,7 @@
       },
     },
     "packages/scripts": {
-      "name": "@sharkord/scripts",
+      "name": "@dodecagon/scripts",
       "version": "0.0.51",
       "devDependencies": {
         "@types/bun": "latest",
@@ -195,7 +195,7 @@
       },
     },
     "packages/shared": {
-      "name": "@sharkord/shared",
+      "name": "@dodecagon/shared",
       "version": "0.0.51",
       "dependencies": {
         "drizzle-orm": "^0.44.6",
@@ -220,9 +220,10 @@
       },
     },
     "packages/ui": {
-      "name": "@sharkord/ui",
+      "name": "@dodecagon/ui",
       "version": "0.0.51",
       "dependencies": {
+        "@dodecagon/shared": "workspace:*",
         "@heroicons/react": "2.2.0",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-avatar": "^1.1.10",
@@ -238,7 +239,6 @@
         "@radix-ui/react-switch": "^1.2.6",
         "@radix-ui/react-tabs": "^1.1.13",
         "@radix-ui/react-tooltip": "^1.2.8",
-        "@sharkord/shared": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "next-themes": "^0.4.6",
@@ -320,6 +320,18 @@
     "@dnd-kit/sortable": ["@dnd-kit/sortable@10.0.0", "", { "dependencies": { "@dnd-kit/utilities": "^3.2.2", "tslib": "^2.0.0" }, "peerDependencies": { "@dnd-kit/core": "^6.3.0", "react": ">=16.8.0" } }, "sha512-+xqhmIIzvAYMGfBYYnbKuNicfSsk4RksY2XdmJhT+HAC01nix6fHCztU68jooFiMUB01Ky3F0FyOvhG/BZrWkg=="],
 
     "@dnd-kit/utilities": ["@dnd-kit/utilities@3.2.2", "", { "dependencies": { "tslib": "^2.0.0" }, "peerDependencies": { "react": ">=16.8.0" } }, "sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg=="],
+
+    "@dodecagon/e2e": ["@dodecagon/e2e@workspace:packages/e2e"],
+
+    "@dodecagon/plugin-sdk": ["@dodecagon/plugin-sdk@workspace:packages/plugin-sdk"],
+
+    "@dodecagon/scripts": ["@dodecagon/scripts@workspace:packages/scripts"],
+
+    "@dodecagon/server": ["@dodecagon/server@workspace:apps/server"],
+
+    "@dodecagon/shared": ["@dodecagon/shared@workspace:packages/shared"],
+
+    "@dodecagon/ui": ["@dodecagon/ui@workspace:packages/ui"],
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
 
@@ -724,18 +736,6 @@
     "@sentry/server-runtime-injection": ["@sentry/server-runtime-injection@11.8.0", "", { "dependencies": { "@sentry/core": "11.8.0", "@sentry/server-utils": "11.8.0" } }, "sha512-4uB4E8+9ni5NcJ463aYK/+n1hTMw/vSt4s+AkQ84CKigRDwv2FNNnD1AWpipWNj/xEQ6eQbUitGl7wg7/Ri8Pg=="],
 
     "@sentry/server-utils": ["@sentry/server-utils@11.8.0", "", { "dependencies": { "@opentelemetry/api": "^1.9.1", "@sentry/conventions": "^0.27.0", "@sentry/core": "11.8.0" } }, "sha512-2MRFz1rXxnuDGafl6o/itwKHZeZn5hUZYeXNbQK012uO/a2pXhEc8Zh3FeO5L4tjGrIWHx419saAFnKwbVC2IQ=="],
-
-    "@sharkord/e2e": ["@sharkord/e2e@workspace:packages/e2e"],
-
-    "@sharkord/plugin-sdk": ["@sharkord/plugin-sdk@workspace:packages/plugin-sdk"],
-
-    "@sharkord/scripts": ["@sharkord/scripts@workspace:packages/scripts"],
-
-    "@sharkord/server": ["@sharkord/server@workspace:apps/server"],
-
-    "@sharkord/shared": ["@sharkord/shared@workspace:packages/shared"],
-
-    "@sharkord/ui": ["@sharkord/ui@workspace:packages/ui"],
 
     "@so-ric/colorspace": ["@so-ric/colorspace@1.1.6", "", { "dependencies": { "color": "^5.0.2", "text-hex": "1.0.x" } }, "sha512-/KiKkpHNOBgkFJwu9sh48LkHSMYGyuTcSFK/qMBdnOAlrRJzRSXAOFB5qwzaVQuDl8wAvHVMkaASQDReTahxuw=="],
 

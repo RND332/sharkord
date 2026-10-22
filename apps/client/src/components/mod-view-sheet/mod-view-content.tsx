@@ -1,5 +1,5 @@
+import { Button } from '@dodecagon/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Button } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModViewScreen, useModViewContext } from './context';

@@ -3,7 +3,7 @@
 // path for the whole test run, so the mocks of the other test files would
 // leak in.
 import settingsEn from '@/i18n/locales/en/settings.json';
-import * as sharkordUi from '@sharkord/ui';
+import * as dodecagonUi from '@dodecagon/ui';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -133,8 +133,8 @@ mock.module('@/features/dialogs/actions', () => ({
 
 // the dropdown content is portalled and stays closed in static markup, so the
 // menu is rendered inline to keep the row actions observable
-mock.module('@sharkord/ui', () => ({
-  ...sharkordUi,
+mock.module('@dodecagon/ui', () => ({
+  ...dodecagonUi,
   DropdownMenu: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-menu">{children}</div>
   ),

@@ -1,11 +1,11 @@
 import { ErrorBoundary as BaseErrorBoundary } from '@/components/error-boundary';
-import { BugAntIcon } from '@heroicons/react/24/outline';
 import {
   IconButton,
   Popover,
   PopoverContent,
   PopoverTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { BugAntIcon } from '@heroicons/react/24/outline';
 import { type ErrorInfo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

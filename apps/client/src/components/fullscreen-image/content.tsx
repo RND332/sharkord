@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
+import { TestId } from '@dodecagon/shared';
+import { IconButton } from '@dodecagon/ui';
 import { LinkIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { TestId } from '@sharkord/shared';
-import { IconButton } from '@sharkord/ui';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';

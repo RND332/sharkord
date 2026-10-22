@@ -9,18 +9,18 @@ import { useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import {
+  DELETED_USER_IDENTITY_AND_NAME,
+  getTrpcError,
+  TestId,
+  UserStatus
+} from '@dodecagon/shared';
+import { Button } from '@dodecagon/ui';
+import {
   PlusIcon,
   ScaleIcon,
   TrashIcon,
   UserMinusIcon
 } from '@heroicons/react/24/outline';
-import {
-  DELETED_USER_IDENTITY_AND_NAME,
-  getTrpcError,
-  TestId,
-  UserStatus
-} from '@sharkord/shared';
-import { Button } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

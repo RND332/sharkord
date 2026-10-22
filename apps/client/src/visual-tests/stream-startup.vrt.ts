@@ -5,7 +5,7 @@ import {
   removeUserFromVoiceChannel
 } from '@/features/server/voice/actions';
 import * as trpc from '@/lib/trpc';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import type { Transport } from 'mediasoup-client/types';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

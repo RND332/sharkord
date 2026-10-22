@@ -1,4 +1,8 @@
-import { ChannelPermission, ChannelType, ServerEvents } from '@sharkord/shared';
+import {
+  ChannelPermission,
+  ChannelType,
+  ServerEvents
+} from '@dodecagon/shared';
 import { describe, expect, test } from 'bun:test';
 import { createFakeSocket, initTest } from '../../__tests__/helpers';
 import { getChannelsReadStatesForUser } from '../../db/queries/channels';

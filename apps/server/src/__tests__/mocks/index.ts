@@ -1,4 +1,4 @@
-import type { TMarketplacePluginVersion } from '@sharkord/shared';
+import type { TMarketplacePluginVersion } from '@dodecagon/shared';
 import { spyOn } from 'bun:test';
 import fs from 'fs/promises';
 import path from 'path';

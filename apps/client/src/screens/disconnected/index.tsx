@@ -3,14 +3,14 @@ import { connect, setDisconnectInfo } from '@/features/server/actions';
 import { useServerName } from '@/features/server/hooks';
 import type { TDisconnectInfo } from '@/features/server/types';
 import { getHostFromServer } from '@/helpers/get-file-url';
+import { DisconnectCode } from '@dodecagon/shared';
+import { Button } from '@dodecagon/ui';
 import {
   ArrowPathIcon,
   ExclamationCircleIcon,
   ScaleIcon,
   SignalSlashIcon
 } from '@heroicons/react/24/outline';
-import { DisconnectCode } from '@sharkord/shared';
-import { Button } from '@sharkord/ui';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

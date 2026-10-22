@@ -1,5 +1,5 @@
 import type { TAdminUser } from '@/features/server/admin/hooks';
-import { PaginatedList } from '@sharkord/ui';
+import { PaginatedList } from '@dodecagon/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableUser } from './table-user';

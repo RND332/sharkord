@@ -12,7 +12,7 @@ import {
   type TPluginCapabilityAccessRule,
   type TPluginInfo,
   type TPluginPushEvent
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';

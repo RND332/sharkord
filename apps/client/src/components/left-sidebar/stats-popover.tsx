@@ -7,15 +7,15 @@ import { useCurrentVoicePeers } from '@/features/server/hooks';
 import { formatBigNumber } from '@/helpers/format-big-number';
 import { cn } from '@/lib/utils';
 import { NoiseSuppression } from '@/types';
-import { WrenchIcon } from '@heroicons/react/24/outline';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import {
   IconButton,
   Popover,
   PopoverAnchor,
   PopoverContent,
   PopoverTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { WrenchIcon } from '@heroicons/react/24/outline';
 import { filesize } from 'filesize';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

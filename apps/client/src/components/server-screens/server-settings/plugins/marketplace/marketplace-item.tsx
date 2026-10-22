@@ -4,6 +4,12 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
+  getTrpcError,
+  PLUGIN_SDK_VERSION,
+  type TMarketplaceEntry
+} from '@dodecagon/shared';
+import { Badge, Button, IconButton, Tooltip } from '@dodecagon/ui';
+import {
   ArrowDownTrayIcon,
   CalendarIcon,
   CheckBadgeIcon,
@@ -12,12 +18,6 @@ import {
   PlusIcon,
   UserIcon
 } from '@heroicons/react/24/outline';
-import {
-  getTrpcError,
-  PLUGIN_SDK_VERSION,
-  type TMarketplaceEntry
-} from '@sharkord/shared';
-import { Badge, Button, IconButton, Tooltip } from '@sharkord/ui';
 import { format } from 'date-fns';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

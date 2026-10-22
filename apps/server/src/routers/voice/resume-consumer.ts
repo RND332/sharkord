@@ -1,4 +1,4 @@
-import { ServerEvents, StreamKind } from '@sharkord/shared';
+import { ServerEvents, StreamKind } from '@dodecagon/shared';
 import { z } from 'zod';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { invariant } from '../../utils/invariant';

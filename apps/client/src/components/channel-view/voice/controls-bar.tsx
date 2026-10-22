@@ -6,6 +6,14 @@ import { useChannelCan } from '@/features/server/hooks';
 import { leaveVoice } from '@/features/server/voice/actions';
 import { useOwnVoiceState, useVoice } from '@/features/server/voice/hooks';
 import { cn } from '@/lib/utils';
+import { ChannelPermission, Permission } from '@dodecagon/shared';
+import {
+  Button,
+  HeadphonesIcon,
+  HeadphonesOffIcon,
+  MicOffIcon,
+  Tooltip
+} from '@dodecagon/ui';
 import {
   ComputerDesktopIcon,
   MicrophoneIcon,
@@ -13,14 +21,6 @@ import {
   VideoCameraIcon,
   VideoCameraSlashIcon
 } from '@heroicons/react/24/outline';
-import { ChannelPermission, Permission } from '@sharkord/shared';
-import {
-  Button,
-  HeadphonesIcon,
-  HeadphonesOffIcon,
-  MicOffIcon,
-  Tooltip
-} from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { ControlToggleButton } from './control-toggle-button';
 import { ReactionsButton } from './reactions-button';

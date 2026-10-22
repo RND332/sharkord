@@ -1,5 +1,5 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@dodecagon/ui';
 import { CircleStackIcon } from '@heroicons/react/24/outline';
-import { Card, CardContent, CardHeader, CardTitle } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';

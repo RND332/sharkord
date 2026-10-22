@@ -3,7 +3,7 @@ import ompPalettes from './omp-palettes.json';
 export type TTheme = {
   id: string;
   name: string;
-  source: 'sharkord' | 'personal' | 'omp';
+  source: 'dodecagon' | 'personal' | 'omp';
   mode: 'dark' | 'light';
   bg: string;
   nav: string;
@@ -19,11 +19,11 @@ export type TTheme = {
   raised?: string;
 };
 
-export const SHARKORD_THEMES: TTheme[] = [
+export const DODECAGON_THEMES: TTheme[] = [
   {
     id: 'dark',
     name: 'Dodecagon Dark',
-    source: 'sharkord',
+    source: 'dodecagon',
     mode: 'dark',
     bg: '#313338',
     nav: '#2b2d31',
@@ -36,7 +36,7 @@ export const SHARKORD_THEMES: TTheme[] = [
   {
     id: 'light',
     name: 'Dodecagon Light',
-    source: 'sharkord',
+    source: 'dodecagon',
     mode: 'light',
     bg: '#ffffff',
     nav: '#f7f7f8',
@@ -86,13 +86,13 @@ export const PERSONAL_THEMES: TTheme[] = [
 export const OMP_THEMES = ompPalettes as TTheme[];
 
 export const THEMES: TTheme[] = [
-  ...SHARKORD_THEMES,
+  ...DODECAGON_THEMES,
   ...PERSONAL_THEMES,
   ...OMP_THEMES
 ];
 
 export const getTheme = (id: string): TTheme =>
-  THEMES.find((theme) => theme.id === id) ?? SHARKORD_THEMES[0]!;
+  THEMES.find((theme) => theme.id === id) ?? DODECAGON_THEMES[0]!;
 
 export const isThemePreference = (value: string | null): value is string =>
   value === 'system' || THEMES.some((theme) => theme.id === value);
@@ -113,7 +113,7 @@ export const contrast = (a: string, b: string) => {
 };
 
 export const getThemeVariables = (theme: TTheme): Record<string, string> => {
-  if (theme.source === 'sharkord') return {};
+  if (theme.source === 'dodecagon') return {};
   const { bg, nav, panel, border, accent, mode } = theme;
   const surfaces = [bg, nav, panel];
   if (theme.selection) surfaces.push(theme.selection);

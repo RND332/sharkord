@@ -1,11 +1,11 @@
 import { useStreamVolumeControl } from '@/components/voice-provider/hooks/use-stream-volume-control';
+import type { TExternalStreamTracks } from '@dodecagon/shared';
+import { HeadphonesIcon, Tooltip } from '@dodecagon/ui';
 import {
   ServerStackIcon,
   SpeakerXMarkIcon,
   VideoCameraIcon
 } from '@heroicons/react/24/outline';
-import type { TExternalStreamTracks } from '@sharkord/shared';
-import { HeadphonesIcon, Tooltip } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StreamContextMenu } from './stream-context-menu';

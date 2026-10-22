@@ -1,5 +1,5 @@
 import dialogsEn from '@/i18n/locales/en/dialogs.json';
-import type { TJoinedRole } from '@sharkord/shared';
+import type { TJoinedRole } from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { createElement, type ReactNode } from 'react';
@@ -117,7 +117,7 @@ await i18n.init({
   interpolation: { escapeValue: false }
 });
 
-const { Dialog, DialogContent } = await import('@sharkord/ui');
+const { Dialog, DialogContent } = await import('@dodecagon/ui');
 const { CreateInviteDialog, InviteReadyLink } =
   await import('@/components/dialogs/create-invite-dialog');
 const { copyInviteLink } =

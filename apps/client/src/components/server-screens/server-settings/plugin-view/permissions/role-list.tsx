@@ -1,7 +1,7 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { cn } from '@/lib/utils';
+import type { TJoinedRole } from '@dodecagon/shared';
 import { GlobeAltIcon } from '@heroicons/react/24/outline';
-import type { TJoinedRole } from '@sharkord/shared';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EVERYONE_KEY } from './types';

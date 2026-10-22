@@ -12,14 +12,14 @@ import * as media from '../../utils/mediasoup';
 import { updater } from '../updater';
 
 const releaseRoot =
-  'https://github.com/RND332/sharkord/releases/download/v0.0.35/';
+  'https://github.com/dodecagon-mesh/dodecagon/releases/download/v0.0.35/';
 const newBytes = new TextEncoder().encode('verified-new-binary');
 const checksum = new Bun.CryptoHasher('sha256').update(newBytes).digest('hex');
 const json = (value: unknown) => new Response(JSON.stringify(value));
 
 const setup = async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'idle-install-'));
-  const binary = path.join(directory, 'sharkord');
+  const binary = path.join(directory, 'dodecagon');
   await fs.writeFile(binary, 'old-running-binary', { mode: 0o755 });
   const previousExecPath = process.execPath;
   const previousAutoupdate = config.server.autoupdate;
@@ -45,7 +45,8 @@ const setup = async () => {
   const transport = (async (input) => {
     const url = String(input);
     if (
-      url === 'https://api.github.com/repos/RND332/sharkord/releases/latest'
+      url ===
+      'https://api.github.com/repos/dodecagon-mesh/dodecagon/releases/latest'
     ) {
       return json({
         tag_name: 'v0.0.35',
@@ -56,9 +57,9 @@ const setup = async () => {
             url: releaseRoot + 'release.json'
           },
           {
-            name: 'sharkord-linux-x64',
-            browser_download_url: releaseRoot + 'sharkord-linux-x64',
-            url: releaseRoot + 'sharkord-linux-x64'
+            name: 'dodecagon-linux-x64',
+            browser_download_url: releaseRoot + 'dodecagon-linux-x64',
+            url: releaseRoot + 'dodecagon-linux-x64'
           }
         ]
       });
@@ -69,7 +70,7 @@ const setup = async () => {
         releaseDate: '2026-10-15T00:00:00Z',
         artifacts: [
           {
-            name: 'sharkord-linux-x64',
+            name: 'dodecagon-linux-x64',
             target: 'linux-x64',
             size: newBytes.length,
             checksum
@@ -77,7 +78,7 @@ const setup = async () => {
         ]
       });
     }
-    if (url === releaseRoot + 'sharkord-linux-x64')
+    if (url === releaseRoot + 'dodecagon-linux-x64')
       return new Response(newBytes);
     throw new Error('Unexpected download ' + url);
   }) as typeof fetch;
@@ -159,7 +160,7 @@ test('hourly checks wait for all voice channels including muted and voice-only m
   }
 });
 
-for (const phase of ['release.json', 'sharkord-linux-x64']) {
+for (const phase of ['release.json', 'dodecagon-linux-x64']) {
   test(`a real voice join during ${phase} defers install without disconnecting the member`, async () => {
     const fixture = await setup();
     const runtime = new VoiceRuntime(9000702);
@@ -179,7 +180,7 @@ for (const phase of ['release.json', 'sharkord-linux-x64']) {
       );
       expect(
         (await fs.readdir(fixture.directory)).filter((name) =>
-          name.startsWith('.sharkord-update-')
+          name.startsWith('.dodecagon-update-')
         )
       ).toHaveLength(0);
     } finally {
@@ -228,7 +229,7 @@ for (const failure of ['checksum', 'size', 'http']) {
     const fixture = await setup();
     try {
       fixture.fetchSpy.mockImplementation((async (input, init) => {
-        if (String(input) === releaseRoot + 'sharkord-linux-x64') {
+        if (String(input) === releaseRoot + 'dodecagon-linux-x64') {
           if (failure === 'http')
             return new Response('failed', { status: 503 });
           return new Response(
@@ -247,7 +248,7 @@ for (const failure of ['checksum', 'size', 'http']) {
       expect(await fs.readFile(fixture.binary, 'utf8')).toBe(
         'old-running-binary'
       );
-      expect(await fs.readdir(fixture.directory)).toEqual(['sharkord']);
+      expect(await fs.readdir(fixture.directory)).toEqual(['dodecagon']);
     } finally {
       await fixture.cleanup();
     }
@@ -259,7 +260,7 @@ test('the next hourly check retries after a failed download', async () => {
   let fail = true;
   try {
     fixture.fetchSpy.mockImplementation((async (input, init) => {
-      if (fail && String(input) === releaseRoot + 'sharkord-linux-x64')
+      if (fail && String(input) === releaseRoot + 'dodecagon-linux-x64')
         return new Response('failed', { status: 503 });
       return fixture.transport(input, init);
     }) as typeof fetch);
@@ -317,7 +318,7 @@ test('stopping during a download prevents replacement', async () => {
   const fixture = await setup();
   try {
     fixture.fetchSpy.mockImplementation((async (input, init) => {
-      if (String(input) === releaseRoot + 'sharkord-linux-x64') updater.stop();
+      if (String(input) === releaseRoot + 'dodecagon-linux-x64') updater.stop();
       return fixture.transport(input, init);
     }) as typeof fetch);
     updater.start();
@@ -338,7 +339,7 @@ test('staging cleanup completes before exec replaces the process', async () => {
   try {
     fixture.execve.mockImplementation(() => {
       directoriesAtExec = readdirSync(fixture.directory).filter((name) =>
-        name.startsWith('.sharkord-update-')
+        name.startsWith('.dodecagon-update-')
       );
       return undefined as never;
     });

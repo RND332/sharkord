@@ -1,9 +1,9 @@
 import { useCan } from '@/features/server/hooks';
+import { Permission } from '@dodecagon/shared';
 import {
   Cog6ToothIcon,
   ShieldExclamationIcon
 } from '@heroicons/react/24/outline';
-import { Permission } from '@sharkord/shared';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';

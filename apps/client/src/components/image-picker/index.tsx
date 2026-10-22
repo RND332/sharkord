@@ -1,7 +1,7 @@
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { cn } from '@/lib/utils';
+import { Button, buttonVariants, Group } from '@dodecagon/ui';
 import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
-import { Button, buttonVariants, Group } from '@sharkord/ui';
 import { memo, useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 

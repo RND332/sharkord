@@ -4,8 +4,8 @@ import {
   useFullscreenPluginIds,
   usePluginMetadata
 } from '@/features/server/plugins/hooks';
+import { cn, Tooltip } from '@dodecagon/ui';
 import { CubeIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { cn, Tooltip } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { ImageWithFallback } from '../server-screens/server-settings/plugins/marketplace/image-with-fallback';
 

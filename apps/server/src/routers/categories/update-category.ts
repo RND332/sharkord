@@ -1,4 +1,4 @@
-import { Permission } from '@sharkord/shared';
+import { Permission } from '@dodecagon/shared';
 import { z } from 'zod';
 import { updateCategory, zCategoryName } from '../../helpers/categories';
 import { protectedProcedure } from '../../utils/trpc';

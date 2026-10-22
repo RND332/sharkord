@@ -1,5 +1,5 @@
-import type { TJoinedInvite } from '@sharkord/shared';
-import { PaginatedList } from '@sharkord/ui';
+import type { TJoinedInvite } from '@dodecagon/shared';
+import { PaginatedList } from '@dodecagon/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableInvite } from './table-invite';

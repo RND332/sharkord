@@ -5,7 +5,7 @@ import {
   FileSaveType,
   STORAGE_MIN_QUOTA_PER_USER,
   type TInvokerContext
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   afterEach,
   beforeAll,

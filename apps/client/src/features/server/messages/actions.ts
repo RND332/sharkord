@@ -14,7 +14,7 @@ import {
   hasMention,
   TYPING_MS,
   type TJoinedMessage
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { markChannelAsRead } from '../actions';
 import {
   channelByIdSelector,

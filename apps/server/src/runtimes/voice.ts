@@ -17,7 +17,7 @@ import {
   type TVoiceMap,
   type TVoiceProducerInfo,
   type TVoiceUserState
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import type {
   AppData,
   Consumer,

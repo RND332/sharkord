@@ -3,12 +3,11 @@ import { useRoles } from '@/features/server/roles/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { CheckIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import {
   getTrpcError,
   type TJoinedRole,
   type TJoinedUser
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -20,7 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AutoFocus
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import { CheckIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback, useMemo, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

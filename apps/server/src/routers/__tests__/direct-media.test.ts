@@ -4,7 +4,7 @@ import {
   ServerEvents,
   StreamKind,
   type TDirectMediaEvent
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import { getCaller, initTest, type TTestCaller } from '../../__tests__/helpers';
@@ -558,8 +558,8 @@ describe('direct screen configuration', () => {
 
   test('supports validated environment opt-in and STUN configuration', () => {
     const keys = [
-      'SHARKORD_WEBRTC_DIRECT_SCREEN_SHARING',
-      'SHARKORD_WEBRTC_DIRECT_SCREEN_STUN_URLS'
+      'DODECAGON_WEBRTC_DIRECT_SCREEN_SHARING',
+      'DODECAGON_WEBRTC_DIRECT_SCREEN_STUN_URLS'
     ];
     const saved = keys.map((key) => process.env[key]);
     try {

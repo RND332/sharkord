@@ -3,6 +3,14 @@ import {
   type TVolumeKey
 } from '@/components/voice-provider/volume-control-context';
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+  Slider
+} from '@dodecagon/ui';
+import {
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
   BookmarkIcon,
@@ -14,14 +22,6 @@ import {
   VideoCameraIcon,
   VideoCameraSlashIcon
 } from '@heroicons/react/24/outline';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-  Slider
-} from '@sharkord/ui';
 import {
   memo,
   useCallback,

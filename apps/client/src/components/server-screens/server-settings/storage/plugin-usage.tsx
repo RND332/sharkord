@@ -1,4 +1,4 @@
-import type { TPluginStorageUsage } from '@sharkord/shared';
+import type { TPluginStorageUsage } from '@dodecagon/shared';
 import { filesize } from 'filesize';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';

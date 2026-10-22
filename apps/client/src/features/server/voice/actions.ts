@@ -14,7 +14,7 @@ import {
   type TExternalStream,
   type TScreenViewersSnapshot,
   type TVoiceUserState
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import type { RtpCapabilities } from 'mediasoup-client/types';
 import { toast } from 'sonner';
 import {

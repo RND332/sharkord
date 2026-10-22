@@ -2,12 +2,17 @@ import { SettingsSection } from '@/components/server-screens/settings-shell/sect
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { useAdminChannelPermissions } from '@/features/server/admin/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
+import { ChannelPermission } from '@dodecagon/shared';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  LoadingCard
+} from '@dodecagon/ui';
 import {
   ExclamationTriangleIcon,
   UsersIcon
 } from '@heroicons/react/24/outline';
-import { ChannelPermission } from '@sharkord/shared';
-import { Alert, AlertDescription, AlertTitle, LoadingCard } from '@sharkord/ui';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Override } from './override';

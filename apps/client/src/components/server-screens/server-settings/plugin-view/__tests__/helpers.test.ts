@@ -1,5 +1,5 @@
 import settings from '@/i18n/locales/en/settings.json';
-import type { TPluginInfo, TPluginTab } from '@sharkord/shared';
+import type { TPluginInfo, TPluginTab } from '@dodecagon/shared';
 import { describe, expect, test } from 'bun:test';
 import {
   getDefaultPluginTab,
@@ -12,7 +12,7 @@ import {
 const createPlugin = (overrides: Partial<TPluginInfo> = {}): TPluginInfo => ({
   id: 'test-plugin',
   enabled: true,
-  sdkVersion: 2,
+  sdkVersion: 3,
   author: 'author',
   description: 'a plugin',
   version: '1.0.0',

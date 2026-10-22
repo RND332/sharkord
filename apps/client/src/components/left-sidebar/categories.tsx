@@ -10,13 +10,13 @@ import {
 } from '@/features/server/hooks';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Permission, TestId } from '@dodecagon/shared';
+import { IconButton } from '@dodecagon/ui';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
-import { Permission, TestId } from '@sharkord/shared';
-import { IconButton } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CategoryContextMenu } from '../context-menus/category';

@@ -9,12 +9,7 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import {
-  CheckIcon,
-  PaintBrushIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
-import { DEFAULT_PROFILE_COLOR, UserStatus } from '@sharkord/shared';
+import { DEFAULT_PROFILE_COLOR, UserStatus } from '@dodecagon/shared';
 import {
   ColorPicker,
   DropdownMenu,
@@ -23,7 +18,12 @@ import {
   DropdownMenuTrigger,
   IconButton,
   Textarea
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  CheckIcon,
+  PaintBrushIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

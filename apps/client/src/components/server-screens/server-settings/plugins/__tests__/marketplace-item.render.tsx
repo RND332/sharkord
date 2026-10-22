@@ -50,7 +50,7 @@ await i18n.init({
   interpolation: { escapeValue: false }
 });
 
-const { PLUGIN_SDK_VERSION } = await import('@sharkord/shared');
+const { PLUGIN_SDK_VERSION } = await import('@dodecagon/shared');
 const { MarketplaceItem } = await import('../marketplace/marketplace-item');
 
 const entry = {

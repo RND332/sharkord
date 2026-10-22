@@ -9,7 +9,7 @@ import {
   ServerEvents,
   UserStatus,
   type TConnectionParams
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { TRPCError } from '@trpc/server';
 import {
   applyWSSHandler,

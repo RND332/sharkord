@@ -4,7 +4,7 @@ import type {
   TBeforeLoginHook,
   TBeforeMessageSaveHook,
   TBeforeVoiceJoinHook
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import { HOOK_EXECUTION_TIMEOUT_MS, withTimeout } from './execution-timeout';
 
 type THookHandlers = {

@@ -1,6 +1,6 @@
 import { logVoice, logVoiceError } from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import type { AppData, Producer, Transport } from 'mediasoup-client/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DirectMedia } from '../direct-media';
@@ -743,13 +743,13 @@ const useTransportStats = (
   }, [stats]);
 
   useEffect(() => {
-    window.sharkordDebug = {
-      ...window.sharkordDebug,
+    window.dodecagonDebug = {
+      ...window.dodecagonDebug,
       printVoiceStats: printStats
     };
 
     return () => {
-      delete window.sharkordDebug?.printVoiceStats;
+      delete window.dodecagonDebug?.printVoiceStats;
     };
   }, [printStats]);
 

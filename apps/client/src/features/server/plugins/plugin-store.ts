@@ -3,8 +3,8 @@ import { store } from '@/features/store';
 import { getPluginRouteUrl } from '@/helpers/get-plugin-route-url';
 import { getSessionStorageItem, SessionStorageKey } from '@/helpers/storage';
 import { getTRPCClient } from '@/lib/trpc';
-import type { TPluginActions, TPluginStore } from '@sharkord/shared';
-import { prepareMessageHtml, UploadHeaders } from '@sharkord/shared';
+import type { TPluginActions, TPluginStore } from '@dodecagon/shared';
+import { prepareMessageHtml, UploadHeaders } from '@dodecagon/shared';
 import { setSelectedChannelId } from '../channels/actions';
 import { selectedChannelIdSelector } from '../channels/selectors';
 import { mapStateToPluginState } from '../selectors';
@@ -83,7 +83,7 @@ const pluginStore: TPluginStore = {
 };
 
 const exposePluginStore = () => {
-  window.__SHARKORD_STORE__ = pluginStore;
+  window.__DODECAGON_STORE__ = pluginStore;
 };
 
 export { exposePluginStore, pluginActions, pluginStore };

@@ -1,5 +1,5 @@
+import { TestId } from '@dodecagon/shared';
 import type { Page } from '@playwright/test';
-import { TestId } from '@sharkord/shared';
 import { expect, loginAs, test } from './fixtures';
 import { confirmDialog } from './helpers/dialogs';
 

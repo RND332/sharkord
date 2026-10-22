@@ -14,8 +14,8 @@ import {
 } from '@/features/server/voice/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { cn } from '@/lib/utils';
-import { PluginSlot, StreamKind } from '@sharkord/shared';
-import { HeadphonesOffIcon, MicOffIcon } from '@sharkord/ui';
+import { PluginSlot, StreamKind } from '@dodecagon/shared';
+import { HeadphonesOffIcon, MicOffIcon } from '@dodecagon/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

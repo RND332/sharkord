@@ -1,18 +1,18 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { getTRPCClient } from '@/lib/trpc';
-import {
-  BugAntIcon,
-  ExclamationCircleIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
-import type { TLogEntry } from '@sharkord/shared';
+import type { TLogEntry } from '@dodecagon/shared';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  BugAntIcon,
+  ExclamationCircleIcon,
+  InformationCircleIcon
+} from '@heroicons/react/24/outline';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StatePanel } from '../../settings-shell/state-panel';

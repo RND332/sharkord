@@ -4,20 +4,20 @@ import { getUrlFromServer } from '@/helpers/get-file-url';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import {
-  ClipboardIcon,
-  EllipsisHorizontalIcon,
-  TrashIcon
-} from '@heroicons/react/24/outline';
-import type { TJoinedInvite } from '@sharkord/shared';
-import { getTrpcError } from '@sharkord/shared';
+import type { TJoinedInvite } from '@dodecagon/shared';
+import { getTrpcError } from '@dodecagon/shared';
 import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  ClipboardIcon,
+  EllipsisHorizontalIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 import { format, formatDistanceToNow } from 'date-fns';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

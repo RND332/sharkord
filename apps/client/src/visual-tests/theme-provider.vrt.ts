@@ -145,7 +145,7 @@ test('every catalog palette is applied to real browser surfaces and portal desce
     expect(getComputedStyle(host).backgroundColor, theme.id).toBe(
       expectedBackground
     );
-    if (theme.source !== 'sharkord')
+    if (theme.source !== 'dodecagon')
       expect(getComputedStyle(portal).backgroundColor, theme.id).toBe(
         rgb(theme.nav)
       );

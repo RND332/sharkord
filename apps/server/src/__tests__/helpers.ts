@@ -1,4 +1,4 @@
-import { sha256, UploadHeaders } from '@sharkord/shared';
+import { sha256, UploadHeaders } from '@dodecagon/shared';
 import type { DecorateRouterRecord } from '@trpc/server/unstable-core-do-not-import';
 import jwt from 'jsonwebtoken';
 import type WebSocket from 'ws';

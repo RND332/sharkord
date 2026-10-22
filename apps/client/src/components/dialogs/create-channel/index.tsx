@@ -1,16 +1,10 @@
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
-  CheckIcon,
-  HashtagIcon,
-  PlusIcon,
-  SpeakerWaveIcon
-} from '@heroicons/react/24/outline';
-import {
   ChannelType,
   parseTrpcErrors,
   type TTrpcErrors
-} from '@sharkord/shared';
+} from '@dodecagon/shared';
 import {
   AutoFocus,
   Button,
@@ -21,7 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
   Input
-} from '@sharkord/ui';
+} from '@dodecagon/ui';
+import {
+  CheckIcon,
+  HashtagIcon,
+  PlusIcon,
+  SpeakerWaveIcon
+} from '@heroicons/react/24/outline';
 import { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TDialogBaseProps } from '../types';

@@ -32,7 +32,11 @@ import {
 } from '@/features/server/voice/actions';
 import { clearVoiceDebugEvents } from '@/helpers/voice-debug';
 import * as trpc from '@/lib/trpc';
-import { MARKETPLACE_REGISTRY_URL, TestId, type TFile } from '@sharkord/shared';
+import {
+  MARKETPLACE_REGISTRY_URL,
+  TestId,
+  type TFile
+} from '@dodecagon/shared';
 import { toast } from 'sonner';
 import {
   afterAll,
@@ -2270,7 +2274,7 @@ test('create-channel dialog submits and composer uploads and persists a message'
 });
 
 test('paginated history suppresses welcome until the oldest page and keeps unique day boundaries', async () => {
-  const { ChannelType } = await import('@sharkord/shared');
+  const { ChannelType } = await import('@dodecagon/shared');
   const client = trpc.getTRPCClient();
   const original = await client.messages.get.query({
     channelId: 1,
@@ -2417,7 +2421,7 @@ test('redesigned channel header preserves upstream mute and unmute control', asy
 });
 
 test('warm A-B-A switching shows cached messages before delayed revalidation', async () => {
-  const { ChannelType } = await import('@sharkord/shared');
+  const { ChannelType } = await import('@dodecagon/shared');
   const client = trpc.getTRPCClient();
   const originalA = await client.messages.get.query({
     channelId: 1,

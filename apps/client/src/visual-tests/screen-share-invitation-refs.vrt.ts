@@ -1,5 +1,5 @@
 import { useVoiceRefs } from '@/components/channel-view/voice/hooks/use-voice-refs';
-import { StreamKind } from '@sharkord/shared';
+import { StreamKind } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';

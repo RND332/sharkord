@@ -5,27 +5,27 @@
 declare global {
   interface Window {
     useToken: (token: string) => Promise<void>;
-    sharkordDebug?: {
+    dodecagonDebug?: {
       openSoundsModal?: () => void;
       printVoiceStats?: () => void;
     };
     DEBUG?: boolean;
 
     // plugin store exposed for plugins to use imperatively
-    __SHARKORD_STORE__: import('@sharkord/shared').TPluginStore;
+    __DODECAGON_STORE__: import('@dodecagon/shared').TPluginStore;
 
     // libs exposed for plugins to use
-    __SHARKORD_EXPOSED_LIBS__: {
+    __DODECAGON_EXPOSED_LIBS__: {
       createSelector: typeof import('@reduxjs/toolkit').createSelector;
       createCachedSelector: typeof import('re-reselect').createCachedSelector;
     };
 
     // react and react-dom for plugins to use, injected in main.tsx
-    __SHARKORD_REACT__: typeof import('react');
-    __SHARKORD_REACT_JSX__: typeof import('react/jsx-runtime');
-    __SHARKORD_REACT_JSX_DEV__: typeof import('react/jsx-dev-runtime');
-    __SHARKORD_REACT_DOM__: typeof import('react-dom');
-    __SHARKORD_REACT_DOM_CLIENT__: typeof import('react-dom/client');
+    __DODECAGON_REACT__: typeof import('react');
+    __DODECAGON_REACT_JSX__: typeof import('react/jsx-runtime');
+    __DODECAGON_REACT_JSX_DEV__: typeof import('react/jsx-dev-runtime');
+    __DODECAGON_REACT_DOM__: typeof import('react-dom');
+    __DODECAGON_REACT_DOM_CLIENT__: typeof import('react-dom/client');
   }
 
   const VITE_APP_VERSION: string;

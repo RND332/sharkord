@@ -1,8 +1,8 @@
+import { Button, PaginatedList } from '@dodecagon/ui';
 import {
   ArrowTopRightOnSquareIcon,
   LinkIcon
 } from '@heroicons/react/24/outline';
-import { Button, PaginatedList } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModViewContext } from '../context';

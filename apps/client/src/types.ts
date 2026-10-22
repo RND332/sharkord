@@ -1,4 +1,4 @@
-import type { StreamKind, TStreamQuality } from '@sharkord/shared';
+import type { StreamKind, TStreamQuality } from '@dodecagon/shared';
 
 export type TDevices = {
   input: {

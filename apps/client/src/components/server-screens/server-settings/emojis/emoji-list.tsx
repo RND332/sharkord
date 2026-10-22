@@ -1,8 +1,8 @@
 import { getFileUrl } from '@/helpers/get-file-url';
 import { cn } from '@/lib/utils';
+import type { TJoinedEmoji } from '@dodecagon/shared';
+import { Input } from '@dodecagon/ui';
 import { MagnifyingGlassIcon, PencilIcon } from '@heroicons/react/24/outline';
-import type { TJoinedEmoji } from '@sharkord/shared';
-import { Input } from '@sharkord/ui';
 import { filesize } from 'filesize';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

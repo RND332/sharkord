@@ -1,4 +1,4 @@
-import { getErrorMessage } from '@sharkord/shared';
+import { getErrorMessage } from '@dodecagon/shared';
 import { BunUpdater, validateReleaseMetadata } from 'bun-sfe-autoupdater';
 import { renameSync, rmdirSync } from 'fs';
 import fs from 'fs/promises';
@@ -17,9 +17,9 @@ import { sha256File } from '../utils/sha-256-file';
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const CONSECUTIVE_FAILURES_BEFORE_ALARM = 3;
 const RELEASE_API =
-  'https://api.github.com/repos/RND332/sharkord/releases/latest';
+  'https://api.github.com/repos/dodecagon-mesh/dodecagon/releases/latest';
 const RELEASE_ASSET_ROOT = new URL(
-  'https://github.com/RND332/sharkord/releases/download/'
+  'https://github.com/dodecagon-mesh/dodecagon/releases/download/'
 );
 const MAX_BINARY_BYTES = 512 * 1024 * 1024;
 const zGithubRelease = z.object({
@@ -50,8 +50,8 @@ const readJson = async (response: Response): Promise<unknown> => {
 
 class Updater {
   private bunUpdater = new BunUpdater({
-    repoOwner: 'RND332',
-    repoName: 'sharkord',
+    repoOwner: 'dodecagon-mesh',
+    repoName: 'dodecagon',
     currentVersion: SERVER_VERSION,
     autoStart: true
   });
@@ -151,7 +151,7 @@ class Updater {
     }
     const binary = process.execPath;
     const directory = await fs.mkdtemp(
-      path.join(path.dirname(binary), '.sharkord-update-')
+      path.join(path.dirname(binary), '.dodecagon-update-')
     );
     const staged = path.join(directory, 'binary');
     const backup = binary + '.old';

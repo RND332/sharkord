@@ -309,7 +309,7 @@
   "diskTotalSpace": "Общее дисковое пространство",
   "diskAvailableSpace": "Доступное место",
   "diskSystemUsed": "Использовано системой",
-  "diskSharkordUsed": "Использовано Dodecagon",
+  "diskDodecagonUsed": "Использовано Dodecagon",
   "diskUsage": "Использование диска",
   "diskPluginData": "Данные плагинов",
   "diskMetricsUnavailable": "Недоступно",

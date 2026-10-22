@@ -1,5 +1,5 @@
 import '@/i18n';
-import { TestId } from '@sharkord/shared';
+import { TestId } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test } from 'vitest';

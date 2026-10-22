@@ -3,8 +3,8 @@ import {
   voiceChatSidebarDataSelector
 } from '@/features/app/selectors';
 import type { IRootState } from '@/features/store';
+import { ChannelType, type TChannel } from '@dodecagon/shared';
 import { createSelector } from '@reduxjs/toolkit';
-import { ChannelType, type TChannel } from '@sharkord/shared';
 import { createCachedSelector } from 're-reselect';
 
 const DEFAULT_OBJECT = {};

@@ -1,4 +1,4 @@
-import type { TIconComponent } from '@sharkord/ui';
+import type { TIconComponent } from '@dodecagon/ui';
 import type { ReactNode } from 'react';
 
 export type TSettingsEntry = {

@@ -1,4 +1,4 @@
-import { isEmojiOnlyMessage, type TJoinedMessage } from '@sharkord/shared';
+import { isEmojiOnlyMessage, type TJoinedMessage } from '@dodecagon/shared';
 import parse, { type DOMNode } from 'html-react-parser';
 import type { ReactNode } from 'react';
 import { extractYoutubeVideoIds } from './helpers';
