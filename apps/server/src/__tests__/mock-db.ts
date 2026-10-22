@@ -4,14 +4,16 @@ import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrateDatabase } from '../db/migrate';
 import { DRIZZLE_PATH } from '../helpers/paths';
 import { seedTestDb } from './seed';
+import { buildTestDbTemplate } from './test-db-template';
 
 /**
  * This file is preloaded FIRST (via bunfig.toml) to mock the db module
  * before any other code imports it.
  *
  * Architecture:
- * 1. mock-db.ts (this file) - Creates initial db for module imports
- * 2. setup.ts - beforeEach creates fresh db for each test
+ * 1. mock-db.ts (this file) - Creates initial db for module imports and keeps the
+ *    migrated and seeded image every test is copied from
+ * 2. setup.ts - beforeEach copies that image into a fresh db for each test
  *
  * The initial db here ensures that helper functions (like getMockedToken)
  * that are imported at module-level can access a valid database.
@@ -30,6 +32,10 @@ const initDb = async () => {
 
   await migrateDatabase(sqlite, tdb, DRIZZLE_PATH);
   await seedTestDb(tdb);
+
+  // taken from the database that was just migrated and seeded, so the image the tests
+  // copy cannot drift from the one the seed produced
+  buildTestDbTemplate(sqlite);
 
   return tdb;
 };

@@ -1,9 +1,8 @@
 import { Database } from 'bun:sqlite';
 import { afterAll, afterEach, beforeAll, beforeEach, mock } from 'bun:test';
-import { drizzle, type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import { type BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import fs from 'fs/promises';
 import path from 'path';
-import { migrateDatabase } from '../db/migrate';
 import { DATA_PATH } from '../helpers/paths';
 import { clearVoiceMoveGrantsForTests } from '../helpers/voice-move-grants';
 import { createHttpServer } from '../http';
@@ -13,19 +12,21 @@ import { drainLoginsQueue } from '../queues/logins';
 import { loadMediasoup } from '../utils/mediasoup';
 import { clearRateLimitersForTests } from '../utils/rate-limiters/rate-limiter';
 import { clearUserSocketsForTests } from '../utils/wss';
-import { DRIZZLE_PATH, setTestDb } from './mock-db';
-import { seedTestDb } from './seed';
+import { setTestDb } from './mock-db';
+import { restoreTestDb } from './test-db-template';
 
 /**
  * Global test setup - creates a fresh isolated database before each test.
  * This ensures tests don't interfere with each other.
  *
  * The database is:
- * 1. Created in-memory (fast, isolated)
- * 2. Migrated (applies schema)
- * 3. Seeded (with test data)
- * 4. Set as the mocked db (via setTestDb)
- * 5. Cleaned up after the test
+ * 1. Copied from the migrated and seeded image (fast, isolated)
+ * 2. Set as the mocked db (via setTestDb)
+ * 3. Cleaned up after the test
+ *
+ * The image itself is built once per process in mock-db.ts, which migrates and seeds a
+ * database at module load. Copying it per test gives every test the same rows and the
+ * same ids a migrate and a seed of its own would have produced.
  */
 
 const DISABLE_CONSOLE = true;
@@ -89,7 +90,7 @@ beforeAll(async () => {
   testsBaseUrl = `http://localhost:${address.port}`;
 });
 
-beforeEach(async () => {
+beforeEach(() => {
   testLogs.length = 0;
 
   clearRateLimitersForTests();
@@ -104,15 +105,13 @@ beforeEach(async () => {
     }
   }
 
-  sqlite = new Database(':memory:', { create: true, strict: true });
+  const restored = restoreTestDb();
 
-  tdb = drizzle({ client: sqlite });
+  sqlite = restored.sqlite;
+  tdb = restored.db;
 
   // updates the mocked db to use this new test database
   setTestDb(tdb);
-
-  await migrateDatabase(sqlite, tdb, DRIZZLE_PATH);
-  await seedTestDb(tdb);
 });
 
 afterEach(async () => {
