@@ -117,6 +117,8 @@
   "invitePeopleDesc": "Share a link to bring others in.",
   "inviteLinkLabel": "Your invite link",
   "inviteLinkCopied": "Invite link copied to clipboard",
+  "copyInviteLinkBtn": "Copy invite link",
+  "failedCopyInviteLink": "Failed to copy the invite link",
   "inviteMetaRole": "Role: {{role}}",
   "inviteExpiresInDays_one": "Link expires in {{count}} day",
   "inviteExpiresInDays_other": "Link expires in {{count}} days",
