@@ -3,17 +3,18 @@ import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { TestId } from '@sharkord/shared';
 import { Separator, Tooltip } from '@sharkord/ui';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect, useRef, type Ref } from 'react';
 import type { TSettingsEntry } from './types';
 
 type TSidebarEntryProps = {
   entry: TSettingsEntry;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  activeRef?: Ref<HTMLButtonElement>;
 };
 
 const SidebarEntry = memo(
-  ({ entry, isSelected, onSelect }: TSidebarEntryProps) => {
+  ({ entry, isSelected, onSelect, activeRef }: TSidebarEntryProps) => {
     const { icon: Icon, logo, label, error } = entry;
 
     const handleClick = useCallback(
@@ -23,6 +24,7 @@ const SidebarEntry = memo(
 
     return (
       <button
+        ref={isSelected ? activeRef : undefined}
         data-testid={TestId.SETTINGS_SIDEBAR_ENTRY}
         onClick={handleClick}
         aria-current={isSelected ? 'page' : undefined}
@@ -75,6 +77,14 @@ const SettingsSidebar = memo(
     navigationLabel,
     className
   }: TSettingsSidebarProps) => {
+    const activeRef = useRef<HTMLButtonElement | null>(null);
+
+    // the navigation scrolls with the page, the row of the section that is in view
+    // has to stay visible inside the navigation
+    useEffect(() => {
+      activeRef.current?.scrollIntoView({ block: 'nearest' });
+    }, [selectedId]);
+
     return (
       <nav
         id="settings-sidebar"
@@ -95,6 +105,7 @@ const SettingsSidebar = memo(
             entry={entry}
             isSelected={entry.id === selectedId}
             onSelect={onSelect}
+            activeRef={activeRef}
           />
         ))}
 
@@ -107,6 +118,7 @@ const SettingsSidebar = memo(
                 entry={entry}
                 isSelected={entry.id === selectedId}
                 onSelect={onSelect}
+                activeRef={activeRef}
               />
             ))}
           </>

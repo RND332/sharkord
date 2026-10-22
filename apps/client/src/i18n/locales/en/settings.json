@@ -474,6 +474,7 @@
   "discardChangesBtn": "Discard",
   "discardChangesMsg": "You have unsaved changes. If you leave now, they will be lost.",
   "discardChangesTitle": "Discard unsaved changes?",
+  "discardEdits": "Discard edits",
   "failedExecuteCommand": "Failed to execute command",
   "failedSaveDeviceSettings": "Failed to save device settings",
   "failedSavePluginSettings": "Failed to save plugin settings",

@@ -5,9 +5,21 @@ import { usePreventExit } from '@/hooks/use-prevent-exit';
 import { cn } from '@/lib/utils';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { IconButton } from '@sharkord/ui';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SettingsFormContext, type TSettingsFormHandle } from './context';
+import {
+  SettingsFormContext,
+  type TSettingsFormHandle,
+  type TSettingsFormRegistry
+} from './context';
+import {
+  dirtyForms,
+  hasUnsavedWork,
+  pickActiveSectionId,
+  registerForm,
+  unregisterForm,
+  type TSettingsSectionPosition
+} from './helpers';
 import { SaveBar } from './save-bar';
 import { SettingsSidebar } from './sidebar';
 import type { TSettingsEntry } from './types';
@@ -23,6 +35,10 @@ type TSettingsShellProps = {
 
 const NO_ENTRIES: TSettingsEntry[] = [];
 
+// a section takes over as the active one once its top reaches this line below the top
+// of the scroll area, the same distance the content keeps above the first section
+const ACTIVE_SECTION_OFFSET = 32;
+
 const SettingsShell = memo(
   ({
     title,
@@ -33,26 +49,47 @@ const SettingsShell = memo(
     groupLabel
   }: TSettingsShellProps) => {
     const { t } = useTranslation('settings');
-    const [selectedId, setSelectedId] = useState(
+    const [forms, setForms] = useState<TSettingsFormRegistry>({});
+    const [activeId, setActiveId] = useState(
       () => initialEntryId ?? entries[0]?.id ?? ''
     );
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [form, setForm] = useState<TSettingsFormHandle | null>(null);
     const { isOpen: isModViewOpen } = useModViewOpen();
     const { isOpen: isDialogOpen } = useDialogInfo();
 
-    usePreventExit(form?.isDirty);
+    const scrollRef = useRef<HTMLElement | null>(null);
+    const sectionRefs = useRef(new Map<string, HTMLElement>());
+    const frameRef = useRef<number | null>(null);
 
     const allEntries = useMemo(
       () => [...entries, ...pluginEntries],
       [entries, pluginEntries]
     );
 
-    const selectedEntry =
-      allEntries.find((entry) => entry.id === selectedId) ?? allEntries[0];
+    const formHandles = useMemo(() => Object.values(forms), [forms]);
+    const isDirty = hasUnsavedWork(forms);
+    const isSaving = formHandles.some((handle) => handle.isSaving);
+
+    usePreventExit(isDirty);
+
+    const register = useCallback((id: string, handle: TSettingsFormHandle) => {
+      setForms((current) => registerForm(current, id, handle));
+    }, []);
+
+    const unregister = useCallback(
+      (id: string, handle: TSettingsFormHandle) => {
+        setForms((current) => unregisterForm(current, id, handle));
+      },
+      []
+    );
+
+    const formSlot = useMemo(
+      () => ({ register, unregister }),
+      [register, unregister]
+    );
 
     const confirmLeave = useCallback(async () => {
-      if (!form?.isDirty) return true;
+      if (!isDirty) return true;
 
       return requestConfirmation({
         title: t('discardChangesTitle'),
@@ -60,33 +97,117 @@ const SettingsShell = memo(
         confirmLabel: t('discardChangesBtn'),
         variant: 'danger'
       });
-    }, [form?.isDirty, t]);
+    }, [isDirty, t]);
 
     const handleClose = useCallback(async () => {
       if (await confirmLeave()) close();
     }, [confirmLeave, close]);
 
-    const handleSelect = useCallback(
-      async (id: string) => {
-        if (id === selectedId) {
-          setIsDrawerOpen(false);
-          return;
-        }
+    const sectionRefCallbacks = useMemo(() => {
+      const callbacks: Record<string, (element: HTMLElement | null) => void> =
+        {};
 
-        if (!(await confirmLeave())) return;
+      for (const entry of allEntries) {
+        callbacks[entry.id] = (element: HTMLElement | null) => {
+          if (element) {
+            sectionRefs.current.set(entry.id, element);
+            return;
+          }
 
-        setForm(null);
-        setSelectedId(id);
-        setIsDrawerOpen(false);
-      },
-      [confirmLeave, selectedId]
-    );
+          sectionRefs.current.delete(entry.id);
+        };
+      }
+
+      return callbacks;
+    }, [allEntries]);
+
+    const syncActiveSection = useCallback(() => {
+      const container = scrollRef.current;
+      if (!container) return;
+
+      const containerTop = container.getBoundingClientRect().top;
+      const positions: TSettingsSectionPosition[] = [];
+
+      for (const entry of allEntries) {
+        const element = sectionRefs.current.get(entry.id);
+        if (!element) continue;
+
+        const top = element.getBoundingClientRect().top - containerTop;
+
+        positions.push({ id: entry.id, top });
+      }
+
+      const nextId = pickActiveSectionId(positions, ACTIVE_SECTION_OFFSET);
+
+      setActiveId((current) => (current === nextId ? current : nextId));
+    }, [allEntries]);
+
+    const handleScroll = useCallback(() => {
+      if (frameRef.current !== null) return;
+
+      frameRef.current = requestAnimationFrame(() => {
+        frameRef.current = null;
+        syncActiveSection();
+      });
+    }, [syncActiveSection]);
+
+    const handleSelect = useCallback((id: string) => {
+      const element = sectionRefs.current.get(id);
+
+      if (element) element.scrollIntoView({ block: 'start' });
+
+      setActiveId(id);
+      setIsDrawerOpen(false);
+    }, []);
+
+    const handleSave = useCallback(async () => {
+      const dirty = dirtyForms(formHandles);
+      const saves = dirty.map((handle) => handle.save());
+
+      await Promise.all(saves);
+    }, [formHandles]);
+
+    const handleDiscard = useCallback(() => {
+      const dirty = dirtyForms(formHandles);
+
+      for (const handle of dirty) {
+        handle.discard();
+      }
+    }, [formHandles]);
 
     const toggleDrawer = useCallback(
       () => setIsDrawerOpen((open) => !open),
       []
     );
     const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
+
+    useEffect(() => {
+      syncActiveSection();
+    }, [syncActiveSection]);
+
+    // the settings can be opened on a section that is not the first one, the page opens there
+    // instead of asking the user to scroll down to it
+    const initialScrolledRef = useRef<string | null>(null);
+
+    useEffect(() => {
+      if (!initialEntryId) return;
+      if (initialScrolledRef.current === initialEntryId) return;
+
+      const element = sectionRefs.current.get(initialEntryId);
+      if (!element) return;
+
+      initialScrolledRef.current = initialEntryId;
+
+      element.scrollIntoView({ block: 'start' });
+    }, [allEntries, initialEntryId]);
+
+    useEffect(() => {
+      return () => {
+        if (frameRef.current === null) return;
+
+        cancelAnimationFrame(frameRef.current);
+      };
+    }, []);
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -110,7 +231,7 @@ const SettingsShell = memo(
     }, [handleClose, isModViewOpen, isDialogOpen]);
 
     return (
-      <SettingsFormContext.Provider value={setForm}>
+      <SettingsFormContext.Provider value={formSlot}>
         <div className="flex h-dvh flex-col bg-canvas text-foreground">
           <div className="relative flex min-h-0 flex-1">
             {isDrawerOpen && (
@@ -123,7 +244,7 @@ const SettingsShell = memo(
             <SettingsSidebar
               entries={entries}
               pluginEntries={pluginEntries}
-              selectedId={selectedEntry?.id ?? ''}
+              selectedId={activeId}
               onSelect={handleSelect}
               groupLabel={groupLabel}
               navigationLabel={t('settingsNavigationLabel')}
@@ -135,7 +256,11 @@ const SettingsShell = memo(
               )}
             />
 
-            <main className="relative flex-1 overflow-y-auto bg-canvas">
+            <main
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="relative flex-1 overflow-y-auto bg-canvas"
+            >
               <div className="pointer-events-none sticky top-0 z-50 h-0">
                 <div className="relative mx-auto w-full max-w-[1188px]">
                   <div className="absolute top-0 right-5 left-5 flex items-center justify-between md:right-8 md:left-8 md:justify-end">
@@ -158,13 +283,29 @@ const SettingsShell = memo(
                   </div>
                 </div>
               </div>
-              <div className="relative mx-auto w-full max-w-[1188px] p-5 pt-8 md:p-8 md:pt-8 lg:px-[60px]">
+              <div className="relative mx-auto w-full max-w-[1188px] p-5 pt-8 md:p-8 md:pt-8 lg:px-[60px] lg:pb-11">
                 <h1 className="sr-only">{title}</h1>
-                {selectedEntry?.content}
+                {allEntries.map((entry, index) => (
+                  <section
+                    key={entry.id}
+                    ref={sectionRefCallbacks[entry.id]}
+                    data-settings-section={entry.id}
+                    className={cn(
+                      'scroll-mt-8',
+                      index > 0 && 'mt-[22px] border-t border-line pt-9'
+                    )}
+                  >
+                    {entry.content}
+                  </section>
+                ))}
               </div>
 
-              {form?.isDirty && (
-                <SaveBar isSaving={form.isSaving} save={form.save} />
+              {isDirty && (
+                <SaveBar
+                  isSaving={isSaving}
+                  save={handleSave}
+                  discard={handleDiscard}
+                />
               )}
             </main>
           </div>

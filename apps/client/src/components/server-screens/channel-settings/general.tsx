@@ -1,11 +1,11 @@
-import { SettingsRow } from '@/components/server-screens/settings-shell/row';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { useAdminChannelGeneral } from '@/features/server/admin/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { Input, LoadingCard, Switch, Textarea } from '@sharkord/ui';
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { shouldApplyChannelValues } from './helpers';
 
 type TGeneralProps = {
   channelId: number;
@@ -42,8 +42,16 @@ const General = memo(({ channelId }: TGeneralProps) => {
     errorMessage: t('failedUpdateChannel')
   });
 
+  // the channel is refetched after every update, the draft of the user has to survive those
+  // refetches until it is saved or discarded
+  const initializedChannelIdRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!channel) return;
+    if (!shouldApplyChannelValues(initializedChannelIdRef.current, channel.id))
+      return;
+
+    initializedChannelIdRef.current = channel.id;
 
     reset({
       name: channel.name,
@@ -68,12 +76,16 @@ const General = memo(({ channelId }: TGeneralProps) => {
       : displayName || t('channelInfoTitle');
 
   return (
-    <SettingsSection title={title} description={t('channelInfoDesc')}>
-      <div className="flex w-full max-w-[900px] flex-col gap-[22px]">
-        <div className="flex w-full max-w-[880px] flex-col gap-4">
+    <SettingsSection
+      className="max-w-[880px]"
+      title={title}
+      description={t('channelInfoDesc')}
+    >
+      <div className="flex w-full flex-col gap-[22px]">
+        <div className="flex w-full flex-col gap-4">
           <div className="flex flex-col gap-[7px]">
             <label
-              className="text-sm font-semibold leading-[18px] text-foreground"
+              className="text-[13px] font-semibold leading-[18px] text-foreground"
               htmlFor="channel-name"
             >
               {t('channelNameLabel')}
@@ -88,7 +100,7 @@ const General = memo(({ channelId }: TGeneralProps) => {
 
           <div className="flex flex-col gap-[7px]">
             <label
-              className="text-sm font-semibold leading-[18px] text-foreground"
+              className="text-[13px] font-semibold leading-[18px] text-foreground"
               htmlFor="channel-topic"
             >
               {t('channelTopicLabel')}
@@ -103,18 +115,20 @@ const General = memo(({ channelId }: TGeneralProps) => {
           </div>
         </div>
 
-        <div className="w-full max-w-[650px]">
-          <SettingsRow
-            label={t('privateLabel')}
-            description={t('privateDesc')}
-            className="border-b-0"
-          >
-            <Switch
-              aria-label={t('privateLabel')}
-              checked={values.private}
-              onCheckedChange={handlePrivateChange}
-            />
-          </SettingsRow>
+        <div className="flex w-full max-w-[650px] items-center justify-between gap-4 border-t border-line py-[15px]">
+          <div className="flex min-w-0 flex-col gap-[3px]">
+            <span className="text-sm font-semibold leading-5 text-foreground">
+              {t('privateLabel')}
+            </span>
+            <span className="text-[12px] leading-[17px] text-muted-foreground">
+              {t('privateDesc')}
+            </span>
+          </div>
+          <Switch
+            aria-label={t('privateLabel')}
+            checked={values.private}
+            onCheckedChange={handlePrivateChange}
+          />
         </div>
       </div>
     </SettingsSection>
