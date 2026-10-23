@@ -1,7 +1,7 @@
 import { StatePanel } from '@/components/server-screens/settings-shell/state-panel';
 import { cn } from '@/lib/utils';
 import type { TPluginInfo } from '@dodecagon/shared';
-import { Button, Input } from '@dodecagon/ui';
+import { Button, Input, Spinner } from '@dodecagon/ui';
 import {
   ArrowPathIcon,
   CubeIcon,
@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { ListWithSeparators } from '../list-with-separators';
 import { useMarketplaceData } from './hooks';
 import { MarketplaceItem } from './marketplace-item';
-import { MarketplaceSkeleton } from './marketplace-skeleton';
 
 type TMarketplaceProps = {
   plugins: TPluginInfo[];
@@ -45,7 +44,11 @@ const Marketplace = memo(({ plugins, refetchInstalled }: TMarketplaceProps) => {
 
   const renderContent = () => {
     if (loading) {
-      return <MarketplaceSkeleton />;
+      return (
+        <div className="flex items-center justify-center py-10">
+          <Spinner size="sm" />
+        </div>
+      );
     }
 
     if (error) {

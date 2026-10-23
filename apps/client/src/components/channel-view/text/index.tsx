@@ -34,7 +34,6 @@ import { useScrollController } from './hooks/use-scroll-controller';
 import { useScrollToJumpTarget } from './hooks/use-scroll-to-jump-target';
 import { MessagesGroup } from './messages-group';
 import { TextNoAccess } from './text-no-access';
-import { TextSkeleton } from './text-skeleton';
 import { TextTopbar } from './text-top-bar';
 import {
   getChannelDraftKey,
@@ -183,10 +182,6 @@ const TextChannel = memo((props: TChannelProps) => {
     return <TextNoAccess />;
   }
 
-  if (loading) {
-    return <TextSkeleton />;
-  }
-
   return (
     <>
       {fetching && (
@@ -216,71 +211,77 @@ const TextChannel = memo((props: TChannelProps) => {
         data-messages-container
         className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-6 pb-2"
       >
-        <div className="flex min-h-full flex-col justify-end [&>*]:shrink-0">
-          {!hasMore && !detachedFromPresent && channel && !channel.isDm && (
-            <div
-              data-channel-welcome
-              className="flex flex-col gap-[7px] pb-[22px]"
-            >
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-[#3d414b]">
-                <HashtagIcon className="size-6" />
-              </div>
-              <h2 className="text-[27px] leading-[33px] font-bold tracking-[-0.02em]">
-                {t('welcomeToChannel', { name: channel.name })}
-              </h2>
-              <p className="text-[15px] leading-[23px]">
-                {t('channelWelcomeDesc')}
-              </p>
-            </div>
-          )}
-          {!hasMore && !detachedFromPresent && channel?.isDm && dmPartner && (
-            <div
-              data-dm-welcome
-              className="flex flex-col items-center gap-3 pb-8 pt-6 text-center"
-            >
-              <UserAvatar userId={dmPartner.id} className="size-20" />
-              <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-semibold tracking-[-0.01em]">
-                  {t('dmWelcomeTitle', { name: dmPartner.name })}
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <Spinner size="sm" />
+          </div>
+        ) : (
+          <div className="flex min-h-full flex-col justify-end [&>*]:shrink-0">
+            {!hasMore && !detachedFromPresent && channel && !channel.isDm && (
+              <div
+                data-channel-welcome
+                className="flex flex-col gap-[7px] pb-[22px]"
+              >
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-[#3d414b]">
+                  <HashtagIcon className="size-6" />
+                </div>
+                <h2 className="text-[27px] leading-[33px] font-bold tracking-[-0.02em]">
+                  {t('welcomeToChannel', { name: channel.name })}
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t('dmWelcomeDescription', { name: dmPartner.name })}
+                <p className="text-[15px] leading-[23px]">
+                  {t('channelWelcomeDesc')}
                 </p>
               </div>
-            </div>
-          )}
-          {groupedMessages.map((group, index) => (
-            <Fragment key={group.key}>
-              {(index === 0 ||
-                !isSameDay(
-                  new Date(group.messages[0].createdAt),
-                  new Date(groupedMessages[index - 1].messages[0].createdAt)
-                )) && (
-                <div
-                  data-message-date
-                  className="flex h-9 items-center gap-[14px]"
-                >
-                  <div className="h-px flex-1 bg-line" />
-                  <span className="text-xs leading-4 font-semibold uppercase text-[#a7abb2]">
-                    {isToday(new Date(group.messages[0].createdAt))
-                      ? t('today')
-                      : format(new Date(group.messages[0].createdAt), 'PPP')}
-                  </span>
-                  <div className="h-px flex-1 bg-line" />
+            )}
+            {!hasMore && !detachedFromPresent && channel?.isDm && dmPartner && (
+              <div
+                data-dm-welcome
+                className="flex flex-col items-center gap-3 pb-8 pt-6 text-center"
+              >
+                <UserAvatar userId={dmPartner.id} className="size-20" />
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-xl font-semibold tracking-[-0.01em]">
+                    {t('dmWelcomeTitle', { name: dmPartner.name })}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t('dmWelcomeDescription', { name: dmPartner.name })}
+                  </p>
                 </div>
-              )}
-              <MessagesGroup
-                showClockTime
-                group={group.messages}
-                onReplyMessageSelect={onReplyMessageSelect}
-                replyTargetMessageId={replyingToMessage?.id}
-                activeThreadMessageId={activeThreadMessageId}
-                editingMessageId={editingMessageId}
-                onEditComplete={handleEditComplete}
-              />
-            </Fragment>
-          ))}
-        </div>
+              </div>
+            )}
+            {groupedMessages.map((group, index) => (
+              <Fragment key={group.key}>
+                {(index === 0 ||
+                  !isSameDay(
+                    new Date(group.messages[0].createdAt),
+                    new Date(groupedMessages[index - 1].messages[0].createdAt)
+                  )) && (
+                  <div
+                    data-message-date
+                    className="flex h-9 items-center gap-[14px]"
+                  >
+                    <div className="h-px flex-1 bg-line" />
+                    <span className="text-xs leading-4 font-semibold uppercase text-[#a7abb2]">
+                      {isToday(new Date(group.messages[0].createdAt))
+                        ? t('today')
+                        : format(new Date(group.messages[0].createdAt), 'PPP')}
+                    </span>
+                    <div className="h-px flex-1 bg-line" />
+                  </div>
+                )}
+                <MessagesGroup
+                  showClockTime
+                  group={group.messages}
+                  onReplyMessageSelect={onReplyMessageSelect}
+                  replyTargetMessageId={replyingToMessage?.id}
+                  activeThreadMessageId={activeThreadMessageId}
+                  editingMessageId={editingMessageId}
+                  onEditComplete={handleEditComplete}
+                />
+              </Fragment>
+            ))}
+          </div>
+        )}
       </div>
 
       {detachedFromPresent && (

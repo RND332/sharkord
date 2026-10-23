@@ -69,7 +69,7 @@ for (const readerScrolledUp of [false, true]) {
   );
 }
 
-test('content mounted after a loading skeleton keeps following late resize', async () => {
+test('content mounted after a loading state keeps following late resize', async () => {
   const host = document.createElement('div');
   document.body.append(host);
   const root = createRoot(host);
