@@ -565,8 +565,6 @@
   "searchThemes": "Cerca temi",
   "themeResults": "{{count}} / {{total}} temi",
   "noThemesFound": "Nessun tema trovato.",
-  "themePaletteSource": "Fonte delle palette:",
-  "themeLicense": "Licenza",
   "groupAccount": "Account",
   "groupAdministration": "Amministrazione",
   "groupChannel": "Canale",

@@ -59,26 +59,6 @@ export const ThemeCatalog = memo(
             </p>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {t('themePaletteSource')}{' '}
-          <a
-            className="text-accent-text underline"
-            href="https://github.com/can1357/oh-my-pi/tree/c2cb79e4c227aa4b22c4ccb933ff72fd88bceba4/packages/tui/src/theme"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Oh My Pi
-          </a>
-          {' · '}
-          <a
-            className="text-accent-text underline"
-            href="/licenses/oh-my-pi.txt"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t('themeLicense')}
-          </a>
-        </p>
       </section>
     );
   }

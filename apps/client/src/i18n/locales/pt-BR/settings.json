@@ -568,8 +568,6 @@
   "searchThemes": "Buscar temas",
   "themeResults": "{{count}} / {{total}} temas",
   "noThemesFound": "Nenhum tema encontrado.",
-  "themePaletteSource": "Origem das paletas:",
-  "themeLicense": "Licença",
   "groupAccount": "Conta",
   "groupAdministration": "Administração",
   "groupChannel": "Canal",

@@ -565,8 +565,6 @@
   "searchThemes": "Hledat motivy",
   "themeResults": "Motivy: {{count}} / {{total}}",
   "noThemesFound": "Žádné motivy nenalezeny.",
-  "themePaletteSource": "Zdroj palet:",
-  "themeLicense": "Licence",
   "groupAccount": "Účet",
   "groupAdministration": "Správa",
   "groupChannel": "Kanál",

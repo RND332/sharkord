@@ -574,8 +574,6 @@
   "searchThemes": "Поиск тем",
   "themeResults": "Темы: {{count}} / {{total}}",
   "noThemesFound": "Темы не найдены.",
-  "themePaletteSource": "Источник палитр:",
-  "themeLicense": "Лицензия",
   "themesCount": "Темы · {{count}}",
   "groupAccount": "Аккаунт",
   "groupAdministration": "Администрирование",
