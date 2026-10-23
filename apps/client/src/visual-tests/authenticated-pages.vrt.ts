@@ -1255,19 +1255,18 @@ test('profile settings edit a live preview that matches the user popover', async
     const bannerOverlay = bannerAffordances[0]!;
     const bannerPaintBrush = bannerAffordances[1]!;
 
-    await userEvent.hover(bannerButton);
+    await bannerButton.click();
     const menu = page.getByRole('menu');
     await expect.element(menu).toBeVisible();
     const changeColorMenuItem = menu.getByRole('menuitem', {
       name: 'Change profile color',
       exact: true
     });
-    await userEvent.hover(changeColorMenuItem);
     const overlayStyle = getComputedStyle(bannerOverlay);
     const paintBrushStyle = getComputedStyle(bannerPaintBrush);
     expect(overlayStyle.backgroundColor).toBe('oklab(0 0 0 / 0.25)');
     expect(paintBrushStyle.opacity).toBe('1');
-    await snapshot('profile-preview-banner-hover');
+    await snapshot('profile-preview-banner-menu');
     updateUser(ownUser.id, { banner: previewBanner });
     await expect
       .element(
