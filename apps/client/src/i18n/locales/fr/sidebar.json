@@ -48,6 +48,8 @@
   "sessionTotals": "Totaux de la session",
   "expandCategory": "Développer la catégorie",
   "collapseCategory": "Réduire la catégorie",
+  "expandDirectChannels": "Développer les canaux privés",
+  "collapseDirectChannels": "Réduire les canaux privés",
   "createChannel": "Créer un canal",
   "failedReorderChannels": "Échec du réordonnancement des canaux",
   "failedReorderCategories": "Échec du réordonnancement des catégories",

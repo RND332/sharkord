@@ -48,6 +48,8 @@
   "sessionTotals": "Celkem za relaci",
   "expandCategory": "Rozbalit kategorii",
   "collapseCategory": "Sbalit kategorii",
+  "expandDirectChannels": "Rozbalit přímé kanály",
+  "collapseDirectChannels": "Sbalit přímé kanály",
   "createChannel": "Vytvořit kanál",
   "failedReorderChannels": "Nepodařilo se změnit pořadí kanálů",
   "failedReorderCategories": "Nepodařilo se změnit pořadí kategorií",

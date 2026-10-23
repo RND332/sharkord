@@ -50,6 +50,8 @@
   "sessionTotals": "Session Totals",
   "expandCategory": "Expand category",
   "collapseCategory": "Collapse category",
+  "expandDirectChannels": "Expand direct channels",
+  "collapseDirectChannels": "Collapse direct channels",
   "createChannel": "Create channel",
   "failedReorderChannels": "Failed to reorder channels",
   "failedReorderCategories": "Failed to reorder categories",

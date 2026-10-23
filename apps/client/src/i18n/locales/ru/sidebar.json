@@ -48,6 +48,8 @@
   "sessionTotals": "Итоги сеанса",
   "expandCategory": "Развернуть категорию",
   "collapseCategory": "Свернуть категорию",
+  "expandDirectChannels": "Развернуть личные каналы",
+  "collapseDirectChannels": "Свернуть личные каналы",
   "createChannel": "Создать канал",
   "failedReorderChannels": "Не удалось изменить порядок каналов",
   "failedReorderCategories": "Не удалось изменить порядок категорий",
