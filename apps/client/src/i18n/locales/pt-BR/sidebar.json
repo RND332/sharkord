@@ -50,6 +50,8 @@
   "sessionTotals": "Totais da Sessão",
   "expandCategory": "Expandir categoria",
   "collapseCategory": "Recolher categoria",
+  "expandDirectChannels": "Expandir canais diretos",
+  "collapseDirectChannels": "Recolher canais diretos",
   "createChannel": "Criar canal",
   "failedReorderChannels": "Falha ao reordenar canais",
   "failedReorderCategories": "Falha ao reordenar categorias",

@@ -47,7 +47,7 @@ const SearchUserDropdown = memo(
             variant="ghost"
             size="sm"
             icon={PlusIcon}
-            className="[&_svg]:size-[18px]"
+            className="-mr-1.5 [&_svg]:size-[18px]"
             title={t('startNewConversation')}
           />
         </DropdownMenuTrigger>

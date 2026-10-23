@@ -19,7 +19,7 @@ import {
   TestId,
   type TDirectMessageConversation
 } from '@dodecagon/shared';
-import { Spinner } from '@dodecagon/ui';
+import { IconButton, Spinner } from '@dodecagon/ui';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   memo,
@@ -166,18 +166,29 @@ const DirectMessages = memo(() => {
 
   const ChevronIcon = expanded ? ChevronDownIcon : ChevronRightIcon;
 
+  // the header shares the control columns of the category headers, the chevron
+  // and the action button sit on the same edges
   return (
     <div data-direct-channels className="mx-2 mt-3">
-      <div className="flex h-7 items-center justify-between px-2.5">
+      <div className="flex h-7 items-center gap-1.5 px-2.5">
+        <IconButton
+          variant="ghost"
+          size="xs"
+          className="-ml-1.5"
+          icon={ChevronIcon}
+          onClick={toggleExpanded}
+          title={
+            expanded ? t('collapseDirectChannels') : t('expandDirectChannels')
+          }
+        />
         <button
           ref={disclosureRef}
           type="button"
           aria-label={t('directChannels')}
           aria-expanded={expanded}
           onClick={toggleExpanded}
-          className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left text-[13px] font-semibold leading-[18px] tracking-[0.06em] text-muted-foreground uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-7 min-w-0 flex-1 items-center rounded-sm text-left text-[13px] font-semibold leading-[18px] tracking-[0.06em] text-muted-foreground uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ChevronIcon aria-hidden="true" className="size-3.5 shrink-0" />
           <span className="truncate">{t('directChannels')}</span>
         </button>
         <SearchUserDropdown

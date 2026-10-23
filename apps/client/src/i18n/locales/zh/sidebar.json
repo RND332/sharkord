@@ -48,6 +48,8 @@
   "sessionTotals": "本次会话总计",
   "expandCategory": "展开分类",
   "collapseCategory": "折叠分类",
+  "expandDirectChannels": "展开私信频道",
+  "collapseDirectChannels": "折叠私信频道",
   "createChannel": "创建频道",
   "failedReorderChannels": "重新排序频道失败",
   "failedReorderCategories": "重新排序分类失败",
