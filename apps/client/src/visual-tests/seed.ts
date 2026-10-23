@@ -4,6 +4,9 @@ import path from 'node:path';
 const databasePath = path.resolve(process.cwd(), 'e2e-data/db.sqlite');
 const database = new Database(databasePath, { strict: true });
 const timestamp = Date.UTC(2026, 9, 9, 9, 40);
+// the member since date is rendered in the profile, so it has to be a fixed
+// value instead of the moment the test database was created
+const userCreatedAt = Date.UTC(2026, 9, 22, 12, 0);
 
 const transaction = database.transaction(() => {
   database.run(
@@ -20,8 +23,8 @@ const transaction = database.transaction(() => {
 
   for (const [id, identity, name, profileColor] of users) {
     database.run(
-      'UPDATE users SET identity = ?, name = ?, profile_color = ? WHERE id = ?',
-      [identity, name, profileColor, id]
+      'UPDATE users SET identity = ?, name = ?, profile_color = ?, created_at = ? WHERE id = ?',
+      [identity, name, profileColor, userCreatedAt, id]
     );
   }
 
