@@ -6,7 +6,8 @@ import {
 import type { TLocale } from '@dodecagon/shared';
 import type { Locale } from 'date-fns';
 import { cs, enUS, es, fr, it, ptBR, ru, zhCN } from 'date-fns/locale';
-import i18n from 'i18next';
+import type { Resource } from 'i18next';
+import i18next, { type i18n as TI18nInstance } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next } from 'react-i18next';
 
@@ -22,6 +23,28 @@ export const SUPPORTED_LANGUAGES = [
 ] satisfies Array<{ code: TLocale; label: string; dateLocale: Locale }>;
 
 export type SupportedLanguage = TLocale;
+
+const NAMESPACE_LIST = [
+  'common',
+  'connect',
+  'disconnected',
+  'sidebar',
+  'topbar',
+  'dialogs',
+  'settings',
+  'permissions',
+  'audio'
+];
+
+const I18N_OPTIONS = {
+  fallbackLng: 'en',
+  ns: NAMESPACE_LIST,
+  defaultNS: 'common',
+  fallbackNS: 'common',
+  interpolation: {
+    escapeValue: false
+  }
+};
 
 const savedLanguage = getLocalStorageItem(LocalStorageKey.LANGUAGE);
 
@@ -50,37 +73,95 @@ const initialLanguage: SupportedLanguage = isSavedLanguageValid
   ? savedLanguage
   : detectBrowserLanguage();
 
-export const i18nReady = i18n
-  .use(initReactI18next)
-  .use(
-    resourcesToBackend(
-      (language: string, namespace: string) =>
-        import(`./locales/${language}/${namespace}.json`)
-    )
-  )
-  .init({
-    lng: initialLanguage,
-    fallbackLng: 'en',
-    ns: [
-      'common',
-      'connect',
-      'disconnected',
-      'sidebar',
-      'topbar',
-      'dialogs',
-      'settings',
-      'permissions',
-      'audio'
-    ],
-    defaultNS: 'common',
-    fallbackNS: 'common',
-    interpolation: {
-      escapeValue: false
-    }
-  });
+const getLanguageCode = (value: string): string => {
+  const [tag] = value.split(';');
+  const [code] = tag.trim().split('-');
 
-i18n.on('languageChanged', (lng) => {
+  return code;
+};
+
+// the server has no local storage and no navigator, so the language of a request
+// comes from the header of the browser
+export const detectLanguageFromHeader = (
+  header: string | null
+): SupportedLanguage => {
+  if (!header) {
+    return 'en';
+  }
+
+  for (const part of header.split(',')) {
+    const code = getLanguageCode(part);
+
+    if (SUPPORTED_LANGUAGES.some((l) => l.code === code)) {
+      return code as SupportedLanguage;
+    }
+  }
+
+  return 'en';
+};
+
+const loadResources = (language: string, namespace: string) =>
+  import(`./locales/${language}/${namespace}.json`);
+
+// the resources of a language are loaded by the server and handed to the browser,
+// so the first render of the browser shows the same text as the server
+export const createI18n = (
+  language: SupportedLanguage,
+  resources?: Resource
+): TI18nInstance => {
+  const instance = i18next.createInstance();
+
+  instance
+    .use(initReactI18next)
+    .use(resourcesToBackend(loadResources))
+    .init({ ...I18N_OPTIONS, lng: language, resources });
+
+  return instance;
+};
+
+export const whenI18nReady = (instance: TI18nInstance): Promise<unknown> => {
+  if (instance.isInitialized) {
+    return Promise.resolve(instance);
+  }
+
+  return new Promise((resolve) => {
+    instance.on('initialized', () => resolve(instance));
+  });
+};
+
+// the browser knows the language of the user, the server could only guess it
+export const getSavedLanguage = (): SupportedLanguage | null =>
+  isSavedLanguageValid ? savedLanguage : null;
+
+export const getLanguageResources = (
+  instance: TI18nInstance,
+  language: SupportedLanguage
+): Resource => {
+  const resources: Resource = {};
+  const namespaces = instance.options.ns ?? [];
+
+  for (const namespace of namespaces) {
+    const bundle = instance.getResourceBundle(language, namespace);
+
+    if (bundle) {
+      resources[language] = { ...resources[language], [namespace]: bundle };
+    }
+  }
+
+  return resources;
+};
+
+const clientInstance = i18next.createInstance();
+
+export const i18nReady = clientInstance
+  .use(initReactI18next)
+  .use(resourcesToBackend(loadResources))
+  .init({ ...I18N_OPTIONS, lng: initialLanguage });
+
+// the storage of the language belongs to the client, a server instance must not
+// write to it
+clientInstance.on('languageChanged', (lng) => {
   setLocalStorageItem(LocalStorageKey.LANGUAGE, lng);
 });
 
-export { i18n };
+export const i18n = clientInstance;
