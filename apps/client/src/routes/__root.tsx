@@ -1,20 +1,91 @@
-import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
+import { Routing } from '@/components/routing';
+import { hydrateAppFromStorage } from '@/features/app/slice';
+import { getRequestContext } from '@/features/server/server-functions';
+import { hydrateServerFromStorage } from '@/features/server/slice';
+import { createStore, store } from '@/features/store';
+import { StoreProvider } from '@/features/store-context';
+import { RenderClockProvider } from '@/helpers/render-clock';
+import {
+  createI18n,
+  getLanguageResources,
+  getSavedLanguage,
+  whenI18nReady
+} from '@/i18n';
+import { I18nProvider } from '@/i18n/i18n-context';
+import {
+  ClientOnly,
+  createRootRoute,
+  HeadContent,
+  Outlet,
+  Scripts
+} from '@tanstack/react-router';
+import { lazy, useEffect, useState } from 'react';
 import '../index.css';
 
+// the shell of the app needs a browser, the server only renders the screen of
+// the route
+const ClientShell = lazy(() =>
+  import('@/main').then((module) => ({ default: module.ClientShell }))
+);
+
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
-      { title: 'Dodecagon' }
-    ],
-    links: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { rel: 'manifest', href: '/manifest.json' }
-    ]
-  }),
+  loader: async () => {
+    const requestContext = await getRequestContext();
+    const instance = createI18n(requestContext.language);
+
+    await whenI18nReady(instance);
+
+    const resources = getLanguageResources(instance, requestContext.language);
+
+    return { ...requestContext, resources };
+  },
+  // the loader is not stale for a minute, so the browser does not ask the server
+  // again right after the hydration
+  staleTime: 60_000,
+  component: RootComponent,
   shellComponent: RootDocument
 });
+
+function RootComponent() {
+  const { language, resources, now } = Route.useLoaderData();
+  // the server renders every request with its own store, the browser keeps the
+  // one instance for the whole session
+  const [requestStore] = useState(() =>
+    typeof window === 'undefined' ? createStore() : store
+  );
+  const [instance] = useState(() => createI18n(language, resources));
+
+  useEffect(() => {
+    // the flags of the storage belong to the browser, the first render of the
+    // server and of the browser have to be the same
+    requestStore.dispatch(hydrateAppFromStorage());
+    requestStore.dispatch(hydrateServerFromStorage());
+  }, [requestStore]);
+
+  useEffect(() => {
+    // the browser knows the language of the user, the server could only guess it
+    // from the header of the request
+    const savedLanguage = getSavedLanguage();
+
+    if (savedLanguage && savedLanguage !== instance.language) {
+      void instance.changeLanguage(savedLanguage);
+    }
+  }, [instance]);
+
+  return (
+    <StoreProvider value={requestStore}>
+      <I18nProvider value={instance}>
+        <RenderClockProvider now={now}>
+          <ClientOnly>
+            <ClientShell />
+          </ClientOnly>
+          <Routing />
+          <Outlet />
+        </RenderClockProvider>
+      </I18nProvider>
+    </StoreProvider>
+  );
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

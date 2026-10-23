@@ -13,13 +13,14 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       tanstackStart({
-        prerender: {
-          enabled: true,
-          autoStaticPathsDiscovery: false,
-          crawlLinks: false,
-          failOnError: true
+        client: {
+          entry: 'src/client.tsx'
         },
-        pages: [{ path: '/', prerender: { outputPath: '/index.html' } }],
+        prerender: {
+          // the pages are rendered by the server for every request, there is
+          // nothing to prerender
+          enabled: false
+        },
         router: {
           // the tests of the server routes live next to the routes and must not
           // become routes themselves

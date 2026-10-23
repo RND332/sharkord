@@ -1,93 +1,66 @@
 import { ReconnectingOverlay } from '@/components/reconnecting-overlay';
-import {
-  useIsAppLoading,
-  useIsAutoConnecting,
-  useIsPluginsLoading
-} from '@/features/app/hooks';
+import { useIsAppLoading, useIsPluginsLoading } from '@/features/app/hooks';
 import {
   useDisconnectInfo,
   useIsConnected,
   useIsReconnecting
 } from '@/features/server/hooks';
-import { memoizeImport, warmImportsWhenIdle } from '@/helpers/prefetch';
-import { LoadingApp } from '@/screens/loading-app';
 import { DisconnectCode } from '@dodecagon/shared';
-import { lazy, memo, Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
+import { memo, useEffect } from 'react';
 import { useDocumentTitle } from './hooks/use-document-title';
 import { useOidcAutoRedirect } from './hooks/use-oidc-auto-redirect';
 
-const loadConnect = memoizeImport(() => import('@/screens/connect'));
-const loadDisconnected = memoizeImport(() => import('@/screens/disconnected'));
-const loadServerView = memoizeImport(() => import('@/screens/server-view'));
-
-const Connect = lazy(() =>
-  loadConnect().then(({ Connect }) => ({ default: Connect }))
-);
-const Disconnected = lazy(() =>
-  loadDisconnected().then(({ Disconnected }) => ({ default: Disconnected }))
-);
-const ServerView = lazy(() =>
-  loadServerView().then(({ ServerView }) => ({ default: ServerView }))
-);
-
-warmImportsWhenIdle([loadConnect, loadDisconnected, loadServerView]);
-
+// the screens live in the routes now, this component only decides which one
+// the browser should show
 const Routing = memo(() => {
-  const { t } = useTranslation('connect');
   const isConnected = useIsConnected();
   const isAppLoading = useIsAppLoading();
   const isPluginsLoading = useIsPluginsLoading();
   const disconnectInfo = useDisconnectInfo();
-  const isAutoConnecting = useIsAutoConnecting();
   const isReconnecting = useIsReconnecting();
+  const navigate = useNavigate();
 
   useDocumentTitle();
   useOidcAutoRedirect();
 
-  if (isAppLoading || isPluginsLoading) {
-    return (
-      <LoadingApp text={isAppLoading ? t('loadingApp') : t('loadingPlugins')} />
-    );
-  }
+  useEffect(() => {
+    if (isAppLoading || isPluginsLoading) return;
 
-  if (!isConnected && !isReconnecting) {
-    if (isAutoConnecting) {
-      return <LoadingApp text={t('loggingInAutomatically')} />;
+    if (isConnected || isReconnecting) {
+      void navigate({ to: '/app' });
+
+      return;
     }
 
-    if (
+    const isDisconnected =
       disconnectInfo &&
       (!disconnectInfo.wasClean ||
         disconnectInfo.code === DisconnectCode.KICKED ||
         disconnectInfo.code === DisconnectCode.BANNED ||
-        disconnectInfo.code === DisconnectCode.SERVER_SHUTDOWN)
-    ) {
-      return (
-        <Suspense fallback={<LoadingApp text={t('loadingApp')} />}>
-          <Disconnected info={disconnectInfo} />
-        </Suspense>
-      );
+        disconnectInfo.code === DisconnectCode.SERVER_SHUTDOWN);
+
+    if (isDisconnected) {
+      void navigate({ to: '/disconnected' });
+
+      return;
     }
 
-    return (
-      <Suspense fallback={<LoadingApp text={t('loadingApp')} />}>
-        <Connect />
-      </Suspense>
-    );
+    void navigate({ to: '/connect' });
+  }, [
+    disconnectInfo,
+    isAppLoading,
+    isConnected,
+    isPluginsLoading,
+    isReconnecting,
+    navigate
+  ]);
+
+  if (isReconnecting) {
+    return <ReconnectingOverlay />;
   }
 
-  return (
-    <>
-      {isReconnecting && <ReconnectingOverlay />}
-
-      <div className="contents" inert={isReconnecting}>
-        <Suspense fallback={<LoadingApp text={t('loadingApp')} />}>
-          <ServerView />
-        </Suspense>
-      </div>
-    </>
-  );
+  return null;
 });
 
 export { Routing };

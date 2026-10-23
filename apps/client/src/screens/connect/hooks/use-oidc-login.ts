@@ -1,26 +1,24 @@
-import { useInfo } from '@/features/server/hooks';
 import { getUrlFromServer } from '@/helpers/get-file-url';
 import { getOidcHandoffCode, startOidcLogin } from '@/helpers/oidc';
 import { useStrictEffect } from '@/hooks/use-strict-effect';
-import { OidcError } from '@dodecagon/shared';
+import { OidcError, type TServerInfo } from '@dodecagon/shared';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 type TUseOidcLoginOptions = {
   onToken: (token: string) => Promise<void>;
+  info?: TServerInfo;
+  error?: string | null;
 };
 
-const getOidcError = () =>
-  new URLSearchParams(window.location.search).get('oidc_error');
-
-const useOidcLogin = ({ onToken }: TUseOidcLoginOptions) => {
+const useOidcLogin = ({ onToken, info, error }: TUseOidcLoginOptions) => {
   const { t } = useTranslation('connect');
-  const info = useInfo();
 
-  const [isCompleting, setIsCompleting] = useState(
-    () => !!getOidcHandoffCode()
-  );
+  // the fragment of the url never reaches the server, so the code of the
+  // handoff can only be read in the browser. the first render of the server
+  // and of the browser have to look the same, so the work starts after it
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const exchangeCode = useCallback(
     async (code: string) => {
@@ -36,8 +34,11 @@ const useOidcLogin = ({ onToken }: TUseOidcLoginOptions) => {
         const data = (await response.json()) as { token: string };
 
         await onToken(data.token);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+      } catch (exchangeError) {
+        const message =
+          exchangeError instanceof Error
+            ? exchangeError.message
+            : String(exchangeError);
 
         toast.error(t('connectError', { message }));
       } finally {
@@ -49,7 +50,6 @@ const useOidcLogin = ({ onToken }: TUseOidcLoginOptions) => {
 
   useStrictEffect(() => {
     const code = getOidcHandoffCode();
-    const error = getOidcError();
 
     if (!code && !error) return;
 
@@ -64,8 +64,9 @@ const useOidcLogin = ({ onToken }: TUseOidcLoginOptions) => {
       return;
     }
 
+    setIsCompleting(true);
     exchangeCode(code!);
-  }, [exchangeCode, t]);
+  }, [error, exchangeCode, t]);
 
   return {
     isCompleting,
