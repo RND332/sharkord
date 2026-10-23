@@ -12,6 +12,7 @@ export enum TestId {
   MESSAGE_COMPOSE_EDITOR = 'message-compose-editor',
   CATEGORY_ITEM = 'category-item',
   SEARCH_INPUT = 'search-input',
+  SEARCH_BUTTON = 'search-button',
   SEARCH_RESULT_JUMP = 'search-result-jump',
   SEARCH_TRUNCATED_NOTICE = 'search-truncated-notice',
   RETURN_TO_PRESENT = 'return-to-present',

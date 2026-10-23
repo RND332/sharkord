@@ -1,5 +1,7 @@
+import { Dialog } from '@/components/dialogs/dialogs';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { ResizableSidebar } from '@/components/resizable-sidebar';
+import { openDialog } from '@/features/dialogs/actions';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import {
   usePublicServerSettings,
@@ -8,7 +10,10 @@ import {
 import { LocalStorageKey } from '@/helpers/storage';
 import { cn } from '@/lib/utils';
 import { PluginSlot, TestId } from '@dodecagon/shared';
-import { memo } from 'react';
+import { IconButton, Tooltip } from '@dodecagon/ui';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Categories } from './categories';
 import { DirectMessages } from './direct-messages';
 import { DmButton } from './direct-messages/dm-button';
@@ -27,11 +32,16 @@ type TLeftSidebarProps = {
 };
 
 const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
+  const { t } = useTranslation('topbar');
   const serverName = useServerName();
   const publicSettings = usePublicServerSettings();
 
   useRestoreLastSelectedChannel();
   useFollowVoiceMove();
+
+  const onSearchClick = useCallback(() => {
+    openDialog(Dialog.SEARCH);
+  }, []);
 
   return (
     <ResizableSidebar
@@ -53,6 +63,19 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
         </h2>
         <div className="flex items-center gap-1">
           <PluginSlotRenderer slotId={PluginSlot.TOPBAR_RIGHT} />
+          {publicSettings?.enableSearch && (
+            <Tooltip content={t('searchContent')}>
+              <IconButton
+                onClick={onSearchClick}
+                icon={MagnifyingGlassIcon}
+                variant="ghost"
+                size="sm"
+                className="size-5 p-0 [&_svg]:size-5"
+                aria-label={t('searchContent')}
+                data-testid={TestId.SEARCH_BUTTON}
+              />
+            </Tooltip>
+          )}
           <ServerDropdownMenu />
         </div>
       </div>

@@ -439,6 +439,7 @@ test('the shared shell uses compact headers without a global strip', async () =>
       })
       .elements()
   ).toHaveLength(0);
+  await expect.element(page.getByTestId(TestId.SEARCH_BUTTON)).toBeVisible();
   const sidebarHeader = page
     .getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME)
     .element().parentElement!;
