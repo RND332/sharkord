@@ -32,8 +32,7 @@ const settingsEntry = (page: Page, label: string) =>
   page.getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY).filter({ hasText: label });
 
 const openServerSettings = async (page: Page) => {
-  await page.getByTestId(TestId.SERVER_MENU_TRIGGER).click();
-  await page.getByTestId(TestId.SERVER_MENU_SERVER_SETTINGS).click();
+  await page.getByTestId(TestId.SERVER_SETTINGS_BUTTON).click();
 };
 
 const pluginToggle = (page: Page, name: string) =>
