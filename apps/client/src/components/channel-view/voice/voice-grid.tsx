@@ -166,15 +166,17 @@ const VoiceGrid = memo(
               inert={hideParticipants}
               aria-hidden={hideParticipants}
               className={cn(
-                'flex h-[114px] shrink-0 justify-center-safe gap-3 overflow-x-auto',
+                'flex h-[90px] shrink-0 justify-center-safe gap-3 overflow-x-auto',
                 'transition-[max-height,opacity] duration-300 ease-in-out',
                 hideParticipants
                   ? 'max-h-0 opacity-0'
-                  : 'max-h-[114px] opacity-100'
+                  : 'max-h-[90px] opacity-100'
               )}
             >
               {regularCards.map((card, index) => (
-                <div key={index} className="h-[114px] w-38 shrink-0">
+                // the participant thumbnails keep the 16:9 shape of the stage
+                // tiles, so a pinned view does not change the frame of a user
+                <div key={index} className="aspect-video w-40 shrink-0">
                   {card}
                 </div>
               ))}
