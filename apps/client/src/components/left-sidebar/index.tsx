@@ -54,7 +54,6 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       className={cn('h-full bg-nav', className)}
       data-testid={TestId.LEFT_SIDEBAR}
     >
-
       <SidebarContextMenu>
         <div className="flex h-12 w-full items-center gap-2 border-b border-line px-4">
           <h2
@@ -81,7 +80,6 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
               </Tooltip>
             )}
           </div>
-
         </div>
       </SidebarContextMenu>
       {publicSettings?.directMessagesEnabled && <DmButton />}
