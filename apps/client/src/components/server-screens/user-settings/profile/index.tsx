@@ -11,17 +11,22 @@ import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import { DEFAULT_PROFILE_COLOR, UserStatus } from '@dodecagon/shared';
 import {
-  ColorPicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   Textarea
 } from '@dodecagon/ui';
-import { PaintBrushIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PaintBrushIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ColorPickerPopover } from './color-picker-popover';
+
+// the bio is edited in place: the field stays transparent and keeps the height of
+// the resting line, so nothing around it moves when the user starts typing
+const BIO_FIELD_CLASS =
+  'block min-h-[21px] w-full resize-none border-0 bg-transparent p-0 text-sm leading-[21px] text-foreground placeholder:text-muted-foreground focus-visible:ring-0';
 
 type TProfileValues = {
   name: string;
@@ -31,11 +36,6 @@ type TProfileValues = {
   avatar?: TPickedImage | null;
   banner?: TPickedImage | null;
 };
-
-// the bio is edited in place: the field stays transparent and keeps the height of
-// the resting line, so nothing around it moves when the user starts typing
-const BIO_FIELD_CLASS =
-  'block min-h-[21px] w-full resize-none border-0 bg-transparent p-0 text-sm leading-[21px] text-foreground placeholder:text-muted-foreground focus-visible:ring-0';
 
 const Profile = memo(() => {
   const { t } = useTranslation('settings');
@@ -108,9 +108,6 @@ const Profile = memo(() => {
     [onChange]
   );
 
-  const handleToggleColorPicker = useCallback(() => {
-    setIsColorPickerOpen((open) => !open);
-  }, []);
   const handleOpenColorPicker = useCallback(() => {
     setIsColorPickerOpen(true);
   }, []);
@@ -155,39 +152,49 @@ const Profile = memo(() => {
           onOpenChange={setIsBannerMenuOpen}
           modal={false}
         >
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              data-profile-banner
-              aria-label={t('changeBannerLabel')}
-              className="group/banner relative block h-32 w-full overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              style={{ backgroundColor: values.profileColor }}
-            >
-              {bannerUrl && (
-                <img
-                  src={bannerUrl}
-                  alt=""
-                  className="absolute inset-0 size-full object-cover"
-                />
-              )}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover/banner:bg-black/25 group-focus-visible/banner:bg-black/25',
-                  isBannerMenuOpen && 'bg-black/25'
-                )}
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'pointer-events-none absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover/banner:opacity-100 group-focus-visible/banner:opacity-100',
-                  isBannerMenuOpen && 'opacity-100'
-                )}
-              >
-                <PaintBrushIcon className="size-5" />
-              </span>
-            </button>
-          </DropdownMenuTrigger>
+          <ColorPickerPopover
+            open={isColorPickerOpen}
+            onOpenChange={setIsColorPickerOpen}
+            value={values.profileColor}
+            onChange={handleColorChange}
+            label={t('profileColorLabel')}
+          >
+            <span className="block">
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  data-profile-banner
+                  aria-label={t('changeBannerLabel')}
+                  className="group/banner relative block h-32 w-full overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  style={{ backgroundColor: values.profileColor }}
+                >
+                  {bannerUrl && (
+                    <img
+                      src={bannerUrl}
+                      alt=""
+                      className="absolute inset-0 size-full object-cover"
+                    />
+                  )}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover/banner:bg-black/25 group-focus-visible/banner:bg-black/25',
+                      isBannerMenuOpen && 'bg-black/25'
+                    )}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'pointer-events-none absolute top-2 right-2 z-10 flex size-9 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover/banner:opacity-100 group-focus-visible/banner:opacity-100',
+                      isBannerMenuOpen && 'opacity-100'
+                    )}
+                  >
+                    <PaintBrushIcon className="size-5" />
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+            </span>
+          </ColorPickerPopover>
           <DropdownMenuContent
             side="right"
             align="start"
@@ -281,30 +288,6 @@ const Profile = memo(() => {
           </div>
         </div>
       </div>
-
-      {isColorPickerOpen && (
-        <div className="mt-4 w-full max-w-[320px] rounded-md border border-line bg-nav p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-foreground">
-              {t('profileColorLabel')}
-            </span>
-            <button
-              type="button"
-              onClick={handleToggleColorPicker}
-              aria-label={t('close')}
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <XMarkIcon className="size-4" />
-            </button>
-          </div>
-          <ColorPicker
-            value={values.profileColor}
-            onChange={handleColorChange}
-            defaultValue={DEFAULT_PROFILE_COLOR}
-            ariaLabel={t('profileColorLabel')}
-          />
-        </div>
-      )}
     </SettingsSection>
   );
 });

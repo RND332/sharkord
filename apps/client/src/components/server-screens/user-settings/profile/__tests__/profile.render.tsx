@@ -3,6 +3,7 @@
 // the whole test run, so the mocks of the other test files would leak in.
 import commonEn from '@/i18n/locales/en/common.json';
 import settingsEn from '@/i18n/locales/en/settings.json';
+import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
@@ -30,18 +31,40 @@ globalThis.document =
     getElementsByTagName: () => [{ appendChild: noop }]
   } as unknown as Document);
 
+mock.module('@radix-ui/react-portal', () => ({
+  Portal: ({ children }: { children: unknown }) => children,
+  PortalProvider: ({ children }: { children: unknown }) => children
+}));
+
+const bio = process.argv[2] ?? '';
+
+mock.module('@/features/server/users/hooks', () => ({
+  useOwnPublicUser: () => ({
+    id: 'user-1',
+    name: 'RND332',
+    username: 'rnd332',
+    profileColor: '#5865f2',
+    bio,
+    status: 'online',
+    avatar: null,
+    banner: null,
+    createdAt: '2026-06-13T00:00:00.000Z'
+  })
+}));
+
 const i18n = i18next.createInstance();
 
 await i18n.init({
   lng: 'en',
   fallbackLng: 'en',
   resources: {
-    en: { common: commonEn, settings: settingsEn }
+    en: {
+      common: commonEn,
+      settings: settingsEn
+    }
   },
   interpolation: { escapeValue: false }
 });
-
-const bio = process.argv[2] ?? '';
 
 const store = {
   getState: () => ({
@@ -67,8 +90,9 @@ const store = {
 };
 
 const { Profile } = await import('../index');
+const { ColorPickerPopover } = await import('../color-picker-popover');
 
-const html = renderToStaticMarkup(
+const profileHtml = renderToStaticMarkup(
   <Provider store={store as never}>
     <I18nextProvider i18n={i18n}>
       <Profile />
@@ -76,4 +100,30 @@ const html = renderToStaticMarkup(
   </Provider>
 );
 
-console.log(`__MARKUP__${html}`);
+const pickerHtml = renderToStaticMarkup(
+  <ColorPickerPopover
+    open
+    onOpenChange={noop}
+    value="#5865f2"
+    onChange={noop}
+    label="Profile color"
+  >
+    <button type="button">anchor</button>
+  </ColorPickerPopover>
+);
+
+const closedPickerHtml = renderToStaticMarkup(
+  <ColorPickerPopover
+    open={false}
+    onOpenChange={noop}
+    value="#5865f2"
+    onChange={noop}
+    label="Profile color"
+  >
+    <button type="button">anchor</button>
+  </ColorPickerPopover>
+);
+
+console.log(`__PROFILE__${profileHtml}`);
+console.log(`__PICKER__${pickerHtml}`);
+console.log(`__CLOSED__${closedPickerHtml}`);
