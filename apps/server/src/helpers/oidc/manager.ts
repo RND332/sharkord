@@ -104,11 +104,14 @@ class OidcManager {
     return value;
   };
 
-  public resolveRedirectUri = (req: http.IncomingMessage): string => {
+  public resolveRedirectUriFromOrigin = (origin: string): string => {
     if (config.oidc.redirectUri) return config.oidc.redirectUri;
 
-    return `${getPublicOrigin(req)}/oidc/callback`;
+    return `${origin}/oidc/callback`;
   };
+
+  public resolveRedirectUri = (req: http.IncomingMessage): string =>
+    this.resolveRedirectUriFromOrigin(getPublicOrigin(req));
 
   // logins in flight live in the database, so a restart in the middle of one does not
   // strand the user on the provider with a state nothing here remembers

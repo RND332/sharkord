@@ -15,6 +15,7 @@ import { loadCrons } from './crons';
 import { loadDb } from './db';
 import { getHost } from './helpers/get-host';
 import { initSentry } from './helpers/sentry';
+import { installServerBridge } from './helpers/server-bridge';
 import { updater } from './helpers/updater';
 import { pluginManager } from './plugins';
 import { enqueueActivityLog } from './queues/activity-log';
@@ -27,6 +28,7 @@ initSentry();
 
 await loadDb();
 await pluginManager.init();
+installServerBridge();
 await createServers();
 await loadMediasoup();
 await initVoiceRuntimes();
