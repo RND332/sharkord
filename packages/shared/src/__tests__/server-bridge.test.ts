@@ -11,6 +11,16 @@ const createBridge = () => ({
     oidcEnabled: false,
     oidcDisableLocalLogin: false
   }),
+  getWebAppManifest: async () => ({
+    name: 'Demo',
+    short_name: 'Demo',
+    description: '',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#15171C',
+    theme_color: '#15171C',
+    icons: []
+  }),
   authenticateUser: async () => ({ token: 'token' }),
   createOidcLogin: async () => ({ location: '/', cookie: '' }),
   consumeOidcCallback: async () => ({ location: '/' }),

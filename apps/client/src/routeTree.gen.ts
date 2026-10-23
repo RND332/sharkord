@@ -10,33 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as InfoRouteImport } from './routes/info'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ManifestDotjsonRouteImport } from './routes/manifest[.]json'
+import { Route as PluginComponentsRouteImport } from './routes/plugin-components'
+import { Route as OidcBackchannelLogoutRouteImport } from './routes/oidc/backchannel-logout'
+import { Route as OidcCallbackRouteImport } from './routes/oidc/callback'
+import { Route as OidcExchangeRouteImport } from './routes/oidc/exchange'
+import { Route as OidcLoginRouteImport } from './routes/oidc/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HealthzRoute = HealthzRouteImport.update({
+  id: '/healthz',
+  path: '/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InfoRoute = InfoRouteImport.update({
+  id: '/info',
+  path: '/info',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestDotjsonRoute = ManifestDotjsonRouteImport.update({
+  id: '/manifest.json',
+  path: '/manifest.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PluginComponentsRoute = PluginComponentsRouteImport.update({
+  id: '/plugin-components',
+  path: '/plugin-components',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OidcBackchannelLogoutRoute = OidcBackchannelLogoutRouteImport.update({
+  id: '/oidc/backchannel-logout',
+  path: '/oidc/backchannel-logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OidcCallbackRoute = OidcCallbackRouteImport.update({
+  id: '/oidc/callback',
+  path: '/oidc/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OidcExchangeRoute = OidcExchangeRouteImport.update({
+  id: '/oidc/exchange',
+  path: '/oidc/exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OidcLoginRoute = OidcLoginRouteImport.update({
+  id: '/oidc/login',
+  path: '/oidc/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/healthz': typeof HealthzRoute
+  '/info': typeof InfoRoute
+  '/login': typeof LoginRoute
+  '/manifest.json': typeof ManifestDotjsonRoute
+  '/plugin-components': typeof PluginComponentsRoute
+  '/oidc/backchannel-logout': typeof OidcBackchannelLogoutRoute
+  '/oidc/callback': typeof OidcCallbackRoute
+  '/oidc/exchange': typeof OidcExchangeRoute
+  '/oidc/login': typeof OidcLoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/healthz': typeof HealthzRoute
+  '/info': typeof InfoRoute
+  '/login': typeof LoginRoute
+  '/manifest.json': typeof ManifestDotjsonRoute
+  '/plugin-components': typeof PluginComponentsRoute
+  '/oidc/backchannel-logout': typeof OidcBackchannelLogoutRoute
+  '/oidc/callback': typeof OidcCallbackRoute
+  '/oidc/exchange': typeof OidcExchangeRoute
+  '/oidc/login': typeof OidcLoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/healthz': typeof HealthzRoute
+  '/info': typeof InfoRoute
+  '/login': typeof LoginRoute
+  '/manifest.json': typeof ManifestDotjsonRoute
+  '/plugin-components': typeof PluginComponentsRoute
+  '/oidc/backchannel-logout': typeof OidcBackchannelLogoutRoute
+  '/oidc/callback': typeof OidcCallbackRoute
+  '/oidc/exchange': typeof OidcExchangeRoute
+  '/oidc/login': typeof OidcLoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/healthz'
+    | '/info'
+    | '/login'
+    | '/manifest.json'
+    | '/plugin-components'
+    | '/oidc/backchannel-logout'
+    | '/oidc/callback'
+    | '/oidc/exchange'
+    | '/oidc/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/healthz'
+    | '/info'
+    | '/login'
+    | '/manifest.json'
+    | '/plugin-components'
+    | '/oidc/backchannel-logout'
+    | '/oidc/callback'
+    | '/oidc/exchange'
+    | '/oidc/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/healthz'
+    | '/info'
+    | '/login'
+    | '/manifest.json'
+    | '/plugin-components'
+    | '/oidc/backchannel-logout'
+    | '/oidc/callback'
+    | '/oidc/exchange'
+    | '/oidc/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HealthzRoute: typeof HealthzRoute
+  InfoRoute: typeof InfoRoute
+  LoginRoute: typeof LoginRoute
+  ManifestDotjsonRoute: typeof ManifestDotjsonRoute
+  PluginComponentsRoute: typeof PluginComponentsRoute
+  OidcBackchannelLogoutRoute: typeof OidcBackchannelLogoutRoute
+  OidcCallbackRoute: typeof OidcCallbackRoute
+  OidcExchangeRoute: typeof OidcExchangeRoute
+  OidcLoginRoute: typeof OidcLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +169,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/healthz': {
+      id: '/healthz'
+      path: '/healthz'
+      fullPath: '/healthz'
+      preLoaderRoute: typeof HealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/info': {
+      id: '/info'
+      path: '/info'
+      fullPath: '/info'
+      preLoaderRoute: typeof InfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest.json': {
+      id: '/manifest.json'
+      path: '/manifest.json'
+      fullPath: '/manifest.json'
+      preLoaderRoute: typeof ManifestDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plugin-components': {
+      id: '/plugin-components'
+      path: '/plugin-components'
+      fullPath: '/plugin-components'
+      preLoaderRoute: typeof PluginComponentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oidc/backchannel-logout': {
+      id: '/oidc/backchannel-logout'
+      path: '/oidc/backchannel-logout'
+      fullPath: '/oidc/backchannel-logout'
+      preLoaderRoute: typeof OidcBackchannelLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oidc/callback': {
+      id: '/oidc/callback'
+      path: '/oidc/callback'
+      fullPath: '/oidc/callback'
+      preLoaderRoute: typeof OidcCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oidc/exchange': {
+      id: '/oidc/exchange'
+      path: '/oidc/exchange'
+      fullPath: '/oidc/exchange'
+      preLoaderRoute: typeof OidcExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oidc/login': {
+      id: '/oidc/login'
+      path: '/oidc/login'
+      fullPath: '/oidc/login'
+      preLoaderRoute: typeof OidcLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HealthzRoute: HealthzRoute,
+  InfoRoute: InfoRoute,
+  LoginRoute: LoginRoute,
+  ManifestDotjsonRoute: ManifestDotjsonRoute,
+  PluginComponentsRoute: PluginComponentsRoute,
+  OidcBackchannelLogoutRoute: OidcBackchannelLogoutRoute,
+  OidcCallbackRoute: OidcCallbackRoute,
+  OidcExchangeRoute: OidcExchangeRoute,
+  OidcLoginRoute: OidcLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

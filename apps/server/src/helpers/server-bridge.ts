@@ -4,6 +4,7 @@ import {
   type TServerBridge
 } from '@dodecagon/shared';
 import { authenticateUserService } from './services/auth';
+import { getWebAppManifestService } from './services/manifest';
 import {
   consumeOidcCallbackService,
   consumeOidcHandoffService,
@@ -27,6 +28,7 @@ const unwrap = <TBody>(result: TServiceResult<TBody>): TBody => {
 const installServerBridge = (): void => {
   const bridge: TServerBridge = {
     getServerInfo: () => getServerInfoService(),
+    getWebAppManifest: () => getWebAppManifestService(),
     authenticateUser: async (input, context) =>
       unwrap(await authenticateUserService(input, context)),
     createOidcLogin: async (context) =>
