@@ -70,8 +70,11 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
   const Icon = categoryIconMap[category] || DocumentIcon;
 
   return (
-    <div className="group relative flex w-48 flex-col overflow-hidden rounded-lg border border-border bg-background transition-all duration-200 hover:border-primary/50 hover:shadow-md">
-      <div className="relative h-32">
+    <div
+      data-attachment-preview
+      className="group relative flex w-70 flex-col overflow-hidden rounded-lg bg-background transition-all duration-200"
+    >
+      <div className="relative h-40">
         {hasPreview ? (
           <>
             {isImage && (
@@ -113,25 +116,21 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-1 px-2 py-1.5">
-        <div className="flex flex-col overflow-hidden">
-          <span
-            className="truncate text-xs font-medium text-foreground"
-            title={name}
-          >
-            {name}
-          </span>
-          <span className="text-[10px] text-muted-foreground">
-            {filesize(size)}
-          </span>
-        </div>
+      <div className="flex flex-col gap-0.5 px-3 py-2">
+        <span
+          className="truncate text-sm font-semibold text-foreground"
+          title={name}
+        >
+          {name}
+        </span>
+        <span className="text-xs text-muted-foreground">{filesize(size)}</span>
       </div>
 
       {onRemove && (
         <Button
           size="icon"
           variant="secondary"
-          className="absolute top-1 right-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+          className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
           onClick={onRemoveClick}
         >
           <TrashIcon className="h-3 w-3" />

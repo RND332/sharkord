@@ -26,7 +26,7 @@ const categoryMap: Record<FileCategory, React.ElementType> = {
 
 const FileIcon = memo(({ extension }: TFileIconProps) => {
   const category = useMemo(() => getFileCategory(extension), [extension]);
-  const className = 'h-5 w-5 text-muted-foreground';
+  const className = 'h-6 w-6 text-muted-foreground';
 
   const Icon = categoryMap[category] || DocumentIcon;
 
@@ -64,13 +64,13 @@ const FileCard = ({
       href={href}
       target="_blank"
     >
-      <div className="flex shrink-0 items-center justify-center rounded-md bg-muted p-2 transition-colors duration-200">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted/60 transition-colors duration-200">
         <FileIcon extension={extension} />
       </div>
       <div className="flex flex-1 flex-col overflow-hidden">
         <span
           className={cn(
-            'truncate text-sm font-medium text-foreground transition-colors duration-200'
+            'truncate text-sm font-semibold text-foreground transition-colors duration-200'
           )}
         >
           {name}
