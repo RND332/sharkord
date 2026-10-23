@@ -121,17 +121,39 @@ Start-сервер и Bun-ядро собираются разными инст�
 сылками на БД:
 
 ```ts
+export interface TRequestContext {
+  origin: string;
+  ip?: string;
+  secure?: boolean;
+  cookie?: string;
+}
+
 export interface TServerBridge {
   getServerInfo(): Promise<TServerInfo>;
-  getServerSettings(): Promise<TServerSettings>;
-  authenticateUser(input: TLoginInput): Promise<TLoginResult>;
-  createOidcLogin(): Promise<TOidcLogin>;
-  consumeOidcCallback(input: TOidcCallbackInput): Promise<TOidcCallbackResult>;
-  consumeOidcHandoff(code: string): Promise<string>;
-  verifyBackchannelLogout(token: string): Promise<TOidcLogoutResult>;
+  authenticateUser(
+    input: TLoginInput,
+    context?: TRequestContext
+  ): Promise<TLoginResult>;
+  createOidcLogin(context: TRequestContext): Promise<TOidcLoginResult>;
+  consumeOidcCallback(
+    input: TOidcCallbackInput,
+    context: TRequestContext
+  ): Promise<TOidcCallbackResult>;
+  consumeOidcHandoff(
+    code: string,
+    context: TRequestContext
+  ): Promise<TOidcHandoffResult>;
+  verifyBackchannelLogout(
+    token: string,
+    context: TRequestContext
+  ): Promise<TOidcLogoutResult>;
   listPluginComponentIds(): Promise<string[]>;
 }
 ```
+
+`TRequestContext` несёт то, что сервисы не могут вычислить сами: где сервер считает, что
+живёт, кто звонит и что прислал браузер. Без него не воспроизводятся проверка state-cookie,
+`redirect_uri`, атрибут `Secure` у cookie и оба ограничителя частоты.
 
 Таксономия ошибок переезжает в `packages/shared` вместе с мостом: сейчас она живёт в
 `apps/server/src/http/helpers.ts` и размазана между хендлерами. Иначе server route в
@@ -140,8 +162,15 @@ export interface TServerBridge {
 а также функция `toHttpResponse`, которая превращает результат в `Response`.
 
 Bun-ядро реализует интерфейс один раз, при старте, и кладёт реализацию в мост.
-Start-бандр читает её через `getServerBridge()`. Мост живёт в том же процессе, поэтому
+Start-бандл читает её через `getServerBridge()`. Мост живёт в том же процессе, поэтому
 `db`, `pluginManager` и `fileManager` у обоих одни и те же объекты.
+
+Start-бандл и Bun-ядро собираются разными инструментами, поэтому в Start-бандле лежит своя
+копия `packages/shared`. Модульная переменная в такой копии не связала бы ядро и роуты: у
+них было бы два разных моста. Поэтому реализация лежит в реестре процесса, под ключом из
+глобального реестра символов (`Symbol.for`). Один ключ даёт одну ячейку в одном процессе,
+поэтому ядро и server routes читают и пишут один мост, хотя у них разные экземпляры
+пакета.
 
 Логика, которая сегодня живёт в теле хендлеров `apps/server/src/http/*.ts`, переносится в
 переиспользуемые функции `apps/server/src/helpers/`, а хендлеры и server routes становятся
