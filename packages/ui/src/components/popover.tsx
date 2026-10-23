@@ -46,12 +46,10 @@ type TPopoverProps = Omit<
 };
 
 function Popover({ onOpenChange, ...props }: TPopoverProps) {
-  const [elementAnchor, setElementAnchor] = React.useState<TPopoverAnchor | null>(
-    null
-  );
-  const [virtualAnchor, setVirtualAnchor] = React.useState<TPopoverAnchor | null>(
-    null
-  );
+  const [elementAnchor, setElementAnchor] =
+    React.useState<TPopoverAnchor | null>(null);
+  const [virtualAnchor, setVirtualAnchor] =
+    React.useState<TPopoverAnchor | null>(null);
   const eventHandlers = React.useRef<TPopoverEventHandlers>({});
 
   // the virtual anchor wins over the element one, the app registers it to
@@ -239,9 +237,10 @@ function PopoverAnchor({
     [setElementAnchor, virtualRef]
   );
 
-  const child = asChild && React.isValidElement(children)
-    ? (children as React.ReactElement<Record<string, unknown>>)
-    : null;
+  const child =
+    asChild && React.isValidElement(children)
+      ? (children as React.ReactElement<Record<string, unknown>>)
+      : null;
 
   // the composed ref keeps its identity, so the anchor is not detached and
   // attached again on every render

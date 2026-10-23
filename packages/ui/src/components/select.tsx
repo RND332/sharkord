@@ -64,8 +64,10 @@ function Select({
   ...props
 }: TSelectProps) {
   const contentItems = React.useMemo(() => collectItems(children), [children]);
-  const resolvedItems = (items ??
-    contentItems) as Record<string, React.ReactNode>;
+  const resolvedItems = (items ?? contentItems) as Record<
+    string,
+    React.ReactNode
+  >;
 
   return (
     <SelectItemsContext.Provider value={resolvedItems}>
