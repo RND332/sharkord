@@ -33,14 +33,6 @@ const useUploadFiles = (
   const [files, setFiles] = useState<TTempFile[]>([]);
   const filesRef = useRef<TTempFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadingSize, setUploadingSize] = useState(0);
-  const [uploadSpeed, setUploadSpeed] = useState(0);
-  const loadedPerFileRef = useRef<Record<string, number>>({});
-  const totalLoadedRef = useRef(0);
-  const speedSampleRef = useRef<{ time: number; loaded: number }>({
-    time: 0,
-    loaded: 0
-  });
   const [pendingUploads, setPendingUploads] = useState<TDisplayItem[]>([]);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const previewUrlsRef = useRef<Record<string, string>>({});
@@ -116,10 +108,6 @@ const useUploadFiles = (
     setPreviewUrls({});
     setDisplayOrder([]);
     setUploading(false);
-    setUploadingSize(0);
-    setUploadSpeed(0);
-    loadedPerFileRef.current = {};
-    totalLoadedRef.current = 0;
     pendingToFileRef.current = {};
   }, []);
 
@@ -185,15 +173,6 @@ const useUploadFiles = (
       if (!withinLimit.length) return;
 
       setUploading(true);
-      setUploadSpeed(0);
-
-      speedSampleRef.current = { time: Date.now(), loaded: 0 };
-      loadedPerFileRef.current = {};
-      totalLoadedRef.current = 0;
-
-      const total = withinLimit.reduce((acc, file) => acc + file.size, 0);
-
-      setUploadingSize((size) => size + total);
 
       // create pending entries with preview URLs for each file
       const pendingEntries: TDisplayItem[] = withinLimit.map((file, i) => {
@@ -225,27 +204,6 @@ const useUploadFiles = (
               p.id === pendingId ? { ...p, progress: progress.percent } : p
             )
           );
-
-          const prevLoaded = loadedPerFileRef.current[pendingId] ?? 0;
-
-          loadedPerFileRef.current[pendingId] = progress.loaded;
-          totalLoadedRef.current += progress.loaded - prevLoaded;
-
-          const now = Date.now();
-          const sample = speedSampleRef.current;
-          const elapsed = now - sample.time;
-
-          if (elapsed >= 500) {
-            const bytesPerSec =
-              ((totalLoadedRef.current - sample.loaded) / elapsed) * 1000;
-
-            setUploadSpeed(bytesPerSec);
-
-            speedSampleRef.current = {
-              time: now,
-              loaded: totalLoadedRef.current
-            };
-          }
         };
 
         const result = await uploadFile(file, { onProgress });
@@ -287,10 +245,6 @@ const useUploadFiles = (
       await Promise.all(uploadPromises);
 
       setUploading(false);
-      setUploadingSize((size) => size - total);
-      setUploadSpeed(0);
-      loadedPerFileRef.current = {};
-      totalLoadedRef.current = 0;
     },
     [takeAllowedFiles, settings?.storageUploadMaxFileSize]
   );
@@ -450,8 +404,6 @@ const useUploadFiles = (
       removeFile,
       clearFiles,
       uploading,
-      uploadingSize,
-      uploadSpeed,
       openFileDialog,
       fileInputProps
     }),
@@ -461,8 +413,6 @@ const useUploadFiles = (
       removeFile,
       clearFiles,
       uploading,
-      uploadingSize,
-      uploadSpeed,
       openFileDialog,
       fileInputProps
     ]

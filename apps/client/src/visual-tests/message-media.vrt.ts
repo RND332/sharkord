@@ -56,10 +56,10 @@ const pasteImage = async (name: string) => {
     new ClipboardEvent('paste', { clipboardData: dataTransfer, bubbles: true })
   );
 
-  const uploading = page.getByText(/Uploading files/);
+  const progress = page.getByRole('progressbar');
 
-  await expect.element(uploading).toBeVisible();
-  await expect.element(uploading).not.toBeInTheDocument();
+  await expect.element(progress).toBeVisible();
+  await expect.element(progress).not.toBeInTheDocument();
 };
 
 test('a media attachment is shown once and not repeated by an attachment block', async () => {
@@ -104,10 +104,10 @@ test('a document attachment keeps its attachment block', async () => {
     new ClipboardEvent('paste', { clipboardData: dataTransfer, bubbles: true })
   );
 
-  const uploading = page.getByText(/Uploading files/);
+  const progress = page.getByRole('progressbar');
 
-  await expect.element(uploading).toBeVisible();
-  await expect.element(uploading).not.toBeInTheDocument();
+  await expect.element(progress).toBeVisible();
+  await expect.element(progress).not.toBeInTheDocument();
 
   const send = page.getByRole('button', { name: 'Send message' });
 
