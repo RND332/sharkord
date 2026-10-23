@@ -1,5 +1,6 @@
 import { ControlsBar } from '@/components/channel-view/voice/controls-bar';
 import { UserControl } from '@/components/left-sidebar/user-control';
+import { TestId } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -192,6 +193,39 @@ test('dismissing audio settings by clicking elsewhere preserves the clicked focu
   await input.click();
   await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
   await expect.element(input).toHaveFocus();
+});
+
+test('the device menu opens from the sidebar without leaving the screen', async () => {
+  host = document.createElement('div');
+  document.body.append(host);
+  root = createRoot(host);
+  root.render(
+    createElement(
+      'div',
+      {
+        'data-testid': TestId.LEFT_SIDEBAR,
+        style: {
+          position: 'fixed',
+          left: '0px',
+          bottom: '0px',
+          width: '240px'
+        }
+      },
+      createElement(UserControl)
+    )
+  );
+  await page
+    .getByRole('button', { name: 'muteMic', exact: true })
+    .click({ button: 'right' });
+  await expect.element(page.getByRole('dialog')).toBeVisible();
+  const panel = page.getByRole('dialog').element();
+  const bounds = panel.getBoundingClientRect();
+  const sidebar = document.querySelector(
+    `[data-testid="${TestId.LEFT_SIDEBAR}"]`
+  )!;
+  const sidebarLeft = sidebar.getBoundingClientRect().left;
+  expect(bounds.left).toBe(sidebarLeft + 8);
+  expect(bounds.right).toBeLessThanOrEqual(window.innerWidth);
 });
 
 test.each(['toolbar', 'sidebar'] as const)(
