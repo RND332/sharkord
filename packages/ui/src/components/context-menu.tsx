@@ -121,6 +121,7 @@ function ContextMenuSubContent({
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner
+        className="z-50"
         side={side}
         align={align}
         sideOffset={sideOffset}
@@ -130,7 +131,7 @@ function ContextMenuSubContent({
         <ContextMenuPrimitive.Popup
           data-slot="context-menu-sub-content"
           className={cn(
-            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
+            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 min-w-[8rem] origin-(--transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
             className
           )}
           {...props}
@@ -160,6 +161,7 @@ function ContextMenuContent({
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Positioner
+        className="z-50"
         side={side}
         align={align}
         sideOffset={sideOffset}
@@ -169,7 +171,7 @@ function ContextMenuContent({
         <ContextMenuPrimitive.Popup
           data-slot="context-menu-content"
           className={cn(
-            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
+            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
             className
           )}
           {...props}
@@ -224,15 +226,17 @@ function ContextMenuItem({
 
 type TContextMenuCheckboxItemProps = Omit<
   React.ComponentProps<typeof ContextMenuPrimitive.CheckboxItem>,
-  'onSelect'
+  'onSelect' | 'onCheckedChange'
 > & {
   onSelect?: (event: Event) => void;
+  onCheckedChange?: (checked: boolean) => void;
 };
 
 function ContextMenuCheckboxItem({
   className,
   children,
   checked,
+  onCheckedChange,
   onSelect,
   onClick,
   ...props
@@ -245,6 +249,7 @@ function ContextMenuCheckboxItem({
         className
       )}
       checked={checked}
+      onCheckedChange={onCheckedChange}
       onClick={(event) => {
         onClick?.(event);
 
@@ -253,7 +258,11 @@ function ContextMenuCheckboxItem({
           onSelect(selectEvent);
 
           if (selectEvent.defaultPrevented) {
+            // the radix item toggled the checkbox even when the select was
+            // prevented, so the toggle is kept and only the base ui handler
+            // is skipped
             event.preventBaseUIHandler();
+            onCheckedChange?.(checked !== true);
           }
         }
       }}
@@ -318,11 +327,13 @@ function ContextMenuLabel({
   className,
   inset,
   ...props
-}: React.ComponentProps<typeof ContextMenuPrimitive.GroupLabel> & {
+}: React.ComponentProps<'div'> & {
   inset?: boolean;
 }) {
+  // the base ui group label needs a group around it and hides itself from the
+  // assistive technology, so the label stays a plain heading of the menu
   return (
-    <ContextMenuPrimitive.GroupLabel
+    <div
       data-slot="context-menu-label"
       data-inset={inset}
       className={cn(

@@ -137,6 +137,7 @@ function DropdownMenuContent({
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
+        className="z-50"
         side={side}
         align={align}
         sideOffset={sideOffset}
@@ -146,7 +147,7 @@ function DropdownMenuContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
+            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
             className
           )}
           {...props}
@@ -207,15 +208,17 @@ function DropdownMenuItem({
 
 type TDropdownMenuCheckboxItemProps = Omit<
   React.ComponentProps<typeof MenuPrimitive.CheckboxItem>,
-  'onSelect'
+  'onSelect' | 'onCheckedChange'
 > & {
   onSelect?: (event: Event) => void;
+  onCheckedChange?: (checked: boolean) => void;
 };
 
 function DropdownMenuCheckboxItem({
   className,
   children,
   checked,
+  onCheckedChange,
   onSelect,
   onClick,
   ...props
@@ -228,6 +231,7 @@ function DropdownMenuCheckboxItem({
         className
       )}
       checked={checked}
+      onCheckedChange={onCheckedChange}
       onClick={(event) => {
         onClick?.(event);
 
@@ -236,7 +240,11 @@ function DropdownMenuCheckboxItem({
           onSelect(selectEvent);
 
           if (selectEvent.defaultPrevented) {
+            // the radix item toggled the checkbox even when the select was
+            // prevented, so the toggle is kept and only the base ui handler
+            // is skipped
             event.preventBaseUIHandler();
+            onCheckedChange?.(checked !== true);
           }
         }
       }}
@@ -312,11 +320,13 @@ function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.GroupLabel> & {
+}: React.ComponentProps<'div'> & {
   inset?: boolean;
 }) {
+  // the base ui group label needs a group around it and hides itself from the
+  // assistive technology, so the label stays a plain heading of the menu
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
@@ -407,6 +417,7 @@ function DropdownMenuSubContent({
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
+        className="z-50"
         side={side}
         align={align}
         sideOffset={sideOffset}
@@ -416,7 +427,7 @@ function DropdownMenuSubContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-sub-content"
           className={cn(
-            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
+            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 min-w-[8rem] origin-(--transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
             className
           )}
           {...props}

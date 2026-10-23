@@ -16,14 +16,69 @@ type TSelectProps = Omit<
   onOpenChange?: (open: boolean) => void;
 };
 
-function Select({ onValueChange, onOpenChange, ...props }: TSelectProps) {
+// the base ui select only knows the label of the selected item through the
+// items of the root, so the labels of the rendered items are collected here
+const collectItems = (
+  children: React.ReactNode
+): Record<string, React.ReactNode> => {
+  const items: Record<string, React.ReactNode> = {};
+
+  const visit = (nodes: React.ReactNode) => {
+    React.Children.forEach(nodes, (child) => {
+      if (!React.isValidElement(child)) {
+        return;
+      }
+
+      const element = child as React.ReactElement<{
+        value?: unknown;
+        children?: React.ReactNode;
+      }>;
+
+      if (element.type === SelectItem) {
+        if (typeof element.props.value === 'string') {
+          items[element.props.value] = element.props.children;
+        }
+
+        return;
+      }
+
+      visit(element.props.children);
+    });
+  };
+
+  visit(children);
+
+  return items;
+};
+
+const SelectItemsContext = React.createContext<Record<
+  string,
+  React.ReactNode
+> | null>(null);
+
+function Select({
+  onValueChange,
+  onOpenChange,
+  children,
+  items,
+  ...props
+}: TSelectProps) {
+  const contentItems = React.useMemo(() => collectItems(children), [children]);
+  const resolvedItems = (items ??
+    contentItems) as Record<string, React.ReactNode>;
+
   return (
-    <SelectPrimitive.Root
-      data-slot="select"
-      {...props}
-      onValueChange={(value) => onValueChange?.(value as string)}
-      onOpenChange={(open) => onOpenChange?.(open)}
-    />
+    <SelectItemsContext.Provider value={resolvedItems}>
+      <SelectPrimitive.Root
+        data-slot="select"
+        items={resolvedItems}
+        {...props}
+        onValueChange={(value) => onValueChange?.(value as string)}
+        onOpenChange={(open) => onOpenChange?.(open)}
+      >
+        {children}
+      </SelectPrimitive.Root>
+    </SelectItemsContext.Provider>
   );
 }
 
@@ -34,9 +89,35 @@ function SelectGroup({
 }
 
 function SelectValue({
+  placeholder,
+  children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {
-  return <SelectPrimitive.Value data-slot="select-value" {...props} />;
+  const items = React.useContext(SelectItemsContext);
+
+  return (
+    <SelectPrimitive.Value
+      data-slot="select-value"
+      placeholder={placeholder}
+      {...props}
+    >
+      {(value: unknown) => {
+        if (typeof children === 'function') {
+          return children(value);
+        }
+
+        if (value === undefined || value === null || value === '') {
+          return placeholder ?? children ?? null;
+        }
+
+        // the radix value node only held the text of the matching item, a
+        // value without an item stayed empty
+        const label = typeof value === 'string' ? items?.[value] : undefined;
+
+        return label ?? children ?? null;
+      }}
+    </SelectPrimitive.Value>
+  );
 }
 
 function SelectTrigger({
@@ -92,6 +173,7 @@ function SelectContent({
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
+        className="z-50"
         alignItemWithTrigger={position === 'item-aligned'}
         side={side}
         align={align}
@@ -102,7 +184,7 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            'relative z-50 max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-[7px] border border-line bg-nav text-popover-foreground shadow-xl data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95',
+            'relative max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-[7px] border border-line bg-nav text-popover-foreground shadow-xl data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95',
             position === 'popper' &&
               'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
             className
