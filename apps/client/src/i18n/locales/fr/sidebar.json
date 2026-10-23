@@ -70,6 +70,7 @@
   "openDirectMessages": "Ouvrir les messages privés",
   "closeDirectMessages": "Fermer les messages privés",
   "openChat": "Ouvrir le chat textuel",
+  "configureChannel": "Configurer le salon",
   "editLabel": "Modifier",
   "deleteLabel": "Supprimer",
   "deleteChannelTitle": "Supprimer le canal",
