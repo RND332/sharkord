@@ -8,6 +8,7 @@ import {
 } from '@dnd-kit/sortable';
 import { Permission } from '@dodecagon/shared';
 import { HashtagIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
+import { ClientOnly } from '@tanstack/react-router';
 import { memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChannelDragPreviewContext, categoryDndId } from './helpers';
@@ -80,6 +81,9 @@ const SidebarDnd = memo(({ children }: TSidebarDndProps) => {
     [categoryIds]
   );
 
+  // the overlay is portaled into the body, which the server does not have
+  const portalTarget = typeof document !== 'undefined' ? document.body : null;
+
   return (
     <DndContext
       sensors={sensors}
@@ -98,17 +102,21 @@ const SidebarDnd = memo(({ children }: TSidebarDndProps) => {
           {children}
         </SortableContext>
       </ChannelDragPreviewContext.Provider>
-      {createPortal(
-        <DragOverlay>
-          {draggedItem?.type === 'channel' && (
-            <ChannelDragOverlay channelId={draggedItem.channelId} />
-          )}
-          {draggedItem?.type === 'category' && (
-            <CategoryDragOverlay categoryId={draggedItem.categoryId} />
-          )}
-        </DragOverlay>,
-        document.body
-      )}
+      <ClientOnly>
+        {portalTarget
+          ? createPortal(
+              <DragOverlay>
+                {draggedItem?.type === 'channel' && (
+                  <ChannelDragOverlay channelId={draggedItem.channelId} />
+                )}
+                {draggedItem?.type === 'category' && (
+                  <CategoryDragOverlay categoryId={draggedItem.categoryId} />
+                )}
+              </DragOverlay>,
+              portalTarget
+            )
+          : null}
+      </ClientOnly>
     </DndContext>
   );
 });

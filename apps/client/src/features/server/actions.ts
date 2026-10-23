@@ -295,19 +295,23 @@ export const markChannelAsRead = async (
   }
 };
 
-window.useToken = async (token: string) => {
-  const trpc = getTRPCClient();
+// the server imports the module too, so the debug api is exposed by the client
+// entry point instead of while the module is imported
+export const exposeServerDebugApi = () => {
+  window.useToken = async (token: string) => {
+    const trpc = getTRPCClient();
 
-  try {
-    await trpc.others.useSecretToken.mutate({ token });
+    try {
+      await trpc.others.useSecretToken.mutate({ token });
 
-    toast.success(i18n.t('common:nowServerOwner'));
-  } catch {
-    toast.error(i18n.t('common:invalidAccessToken'));
-  }
-};
+      toast.success(i18n.t('common:nowServerOwner'));
+    } catch {
+      toast.error(i18n.t('common:invalidAccessToken'));
+    }
+  };
 
-window.dodecagonDebug = {
-  ...window.dodecagonDebug,
-  openSoundsModal: () => openDialog(Dialog.SOUNDS)
+  window.dodecagonDebug = {
+    ...window.dodecagonDebug,
+    openSoundsModal: () => openDialog(Dialog.SOUNDS)
+  };
 };

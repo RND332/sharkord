@@ -1,6 +1,7 @@
 import { getTheme, type TTheme } from '@/components/theme-provider/themes';
 import { useTheme } from '@/components/theme-provider/use-theme';
 import { Button, Switch } from '@dodecagon/ui';
+import { ClientOnly } from '@tanstack/react-router';
 import { memo, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +51,8 @@ export const Themes = memo(() => {
     },
     [resolvedTheme.id, setTheme]
   );
+  // the toast is portaled into the body, which the server does not have
+  const portalTarget = typeof document !== 'undefined' ? document.body : null;
   return (
     <div className="space-y-6">
       <ThemePreview theme={preview} />
@@ -66,15 +69,18 @@ export const Themes = memo(() => {
           />
         </label>
       </div>
-      {previewId &&
-        createPortal(
-          <ThemePreviewToast
-            theme={preview}
-            onApply={handleApply}
-            onCancel={handleCancel}
-          />,
-          document.body
-        )}
+      <ClientOnly>
+        {previewId && portalTarget
+          ? createPortal(
+              <ThemePreviewToast
+                theme={preview}
+                onApply={handleApply}
+                onCancel={handleCancel}
+              />,
+              portalTarget
+            )
+          : null}
+      </ClientOnly>
       <ThemeCatalog selectedId={preview.id} onPreview={handlePreview} />
       <p className="text-xs text-muted-foreground">{t('themesColorsOnly')}</p>
     </div>

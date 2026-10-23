@@ -34,9 +34,13 @@ let isCleaningUp = false;
 // Firefox fires WebSocket onClose during page refresh; Chrome does not. When navigating away,
 // we must not clear auto-login localStorage or it will be lost on refresh in Firefox.
 let isNavigatingAway = false;
-window.addEventListener('beforeunload', () => {
-  isNavigatingAway = true;
-});
+
+// the server imports the module too and it has no page to listen on
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    isNavigatingAway = true;
+  });
+}
 
 const isTerminalClose = (code: number) =>
   code === DisconnectCode.KICKED || code === DisconnectCode.BANNED;

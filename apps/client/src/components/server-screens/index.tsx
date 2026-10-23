@@ -1,7 +1,15 @@
 import { closeServerScreens } from '@/features/server-screens/actions';
 import { useServerScreenInfo } from '@/features/server-screens/hooks';
 import { memoizeImport, warmImportsWhenIdle } from '@/helpers/prefetch';
-import { createElement, lazy, memo, Suspense, type ComponentType } from 'react';
+import {
+  createElement,
+  lazy,
+  memo,
+  Suspense,
+  useEffect,
+  useState,
+  type ComponentType
+} from 'react';
 import { createPortal } from 'react-dom';
 import { ServerScreen } from './screens';
 
@@ -31,11 +39,19 @@ const ScreensMap = {
 
 const ServerScreensProvider = memo(() => {
   const { isOpen, props, openServerScreen } = useServerScreenInfo();
+
+  // the portal root belongs to the document shell, so it is only known once the
+  // tree is mounted
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalRoot(document.getElementById('portal'));
+  }, []);
+
   if (!isOpen || !openServerScreen || !ScreensMap[openServerScreen])
     return null;
 
   const Screen = ScreensMap[openServerScreen];
-  const portalRoot = document.getElementById('portal');
   if (!portalRoot) return null;
 
   return createPortal(
