@@ -39,7 +39,7 @@ const User = memo(({ userId, name, banned }: TUserProps) => {
         <UserAvatar userId={userId} className="h-8 w-8 shrink-0" />
         <span
           className={cn(
-            'text-sm text-foreground truncate',
+            'text-sm text-foreground truncate select-text',
             banned && 'line-through text-muted-foreground'
           )}
         >
