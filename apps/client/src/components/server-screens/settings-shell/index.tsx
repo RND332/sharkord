@@ -276,9 +276,10 @@ const SettingsShell = memo(
                     <IconButton
                       icon={XMarkIcon}
                       variant="ghost"
+                      size="lg"
                       aria-label={t('close')}
                       onClick={handleClose}
-                      className="pointer-events-auto"
+                      className="pointer-events-auto rounded-full border border-line"
                     />
                   </div>
                 </div>
