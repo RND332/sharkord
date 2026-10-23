@@ -110,6 +110,12 @@ const useScrollController = ({
       return;
     }
 
+    // the first page is still on its way, an empty container sits at the top
+    // and would ask for a page that the initial load already brings
+    if (messages.length === 0) {
+      return;
+    }
+
     if (container.scrollTop <= SCROLL_THRESHOLD) {
       onScroll();
     }
