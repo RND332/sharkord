@@ -1,104 +1,11 @@
-import type { TJoinedSettings, TWebAppManifest } from '@dodecagon/shared';
 import http from 'http';
-import { imageSizeFromFile } from 'image-size/fromFile';
-import path from 'path';
-import { getSettings } from '../db/queries/server';
-import { PUBLIC_PATH } from '../helpers/paths';
-
-const DEFAULT_ICONS: TWebAppManifest['icons'] = [
-  { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-  { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
-];
-
-const imageSizeCache = new Map<
-  string,
-  { width: number; height: number } | undefined
->();
-
-const getImageSize = async (filePath: string, cacheKey: string) => {
-  if (imageSizeCache.has(cacheKey)) {
-    return imageSizeCache.get(cacheKey);
-  }
-
-  const size = await readImageSize(filePath);
-
-  imageSizeCache.set(cacheKey, size);
-
-  return size;
-};
-
-const readImageSize = async (filePath: string) => {
-  try {
-    const size = await imageSizeFromFile(filePath);
-
-    if (!size.width || !size.height) {
-      return undefined;
-    }
-
-    return {
-      width: size.width,
-      height: size.height
-    };
-  } catch {
-    // ignore
-  }
-
-  return undefined;
-};
-
-const getIcons = async (settings: TJoinedSettings) => {
-  if (!settings.logo) {
-    return DEFAULT_ICONS;
-  }
-
-  const logoPath = path.join(PUBLIC_PATH, settings.logo.name);
-  const logoSrc = `/public/${encodeURIComponent(settings.logo.name)}`;
-
-  if (settings.logo.mimeType === 'image/svg+xml') {
-    return [
-      {
-        src: logoSrc,
-        sizes: 'any',
-        type: settings.logo.mimeType,
-        purpose: 'any'
-      }
-    ];
-  }
-
-  const logoSize = await getImageSize(logoPath, settings.logo.name);
-  const isSquare = logoSize && logoSize.width === logoSize.height;
-
-  if (!isSquare) {
-    return DEFAULT_ICONS;
-  }
-
-  return [
-    {
-      src: logoSrc,
-      sizes: `${logoSize.width}x${logoSize.height}`,
-      type: settings.logo.mimeType,
-      purpose: 'any'
-    }
-  ];
-};
+import { getWebAppManifestService } from '../helpers/services/manifest';
 
 const manifestRouteHandler = async (
   _req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
-  const settings = await getSettings();
-  const icons = await getIcons(settings);
-
-  const manifest: TWebAppManifest = {
-    name: settings.name,
-    short_name: settings.name.slice(0, 12),
-    description: settings.description ?? '',
-    start_url: '/',
-    display: 'standalone',
-    background_color: '#15171C',
-    theme_color: '#15171C',
-    icons
-  };
+  const manifest = await getWebAppManifestService();
 
   res.writeHead(200, {
     'Content-Type': 'application/manifest+json',

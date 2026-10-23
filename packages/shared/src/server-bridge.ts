@@ -1,4 +1,4 @@
-import type { TServerInfo } from './types';
+import type { TServerInfo, TWebAppManifest } from './types';
 
 // the parts of the request the services cannot work out on their own: where the
 // server believes it lives, who the caller is and what the browser sent along
@@ -47,6 +47,7 @@ export interface TOidcLogoutResult {
 
 export interface TServerBridge {
   getServerInfo(): Promise<TServerInfo>;
+  getWebAppManifest(): Promise<TWebAppManifest>;
   authenticateUser(
     input: TLoginInput,
     context?: TRequestContext
