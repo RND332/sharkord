@@ -3,30 +3,16 @@ import { useDemoVisibility } from '@/components/voice-provider/demo-visibility-c
 import { useVoiceStats } from '@/components/voice-provider/stats-context';
 import { useVolumeControl } from '@/components/voice-provider/volume-control-context';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
-import {
-  useOwnUserId,
-  useUserById,
-  useUsers
-} from '@/features/server/users/hooks';
+import { useOwnUserId, useUserById } from '@/features/server/users/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { useStreamQualityData } from '@/hooks/use-stream-quality-data';
 import { cn } from '@/lib/utils';
 import { StreamKind } from '@dodecagon/shared';
-import { Popover, PopoverContent, PopoverTrigger } from '@dodecagon/ui';
-import { EyeIcon, PlayIcon } from '@heroicons/react/20/solid';
+import { PlayIcon } from '@heroicons/react/20/solid';
 import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent as ReactMouseEvent
-} from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { UserAvatar } from '../../user-avatar';
 import { CardPinButton } from './card-pin-button';
 import { CardTheme } from './card-theme';
 import { cardControlClass, cardControlsClass, cardDensity } from './helpers';
@@ -50,7 +36,6 @@ type TScreenShareCardProps = {
   className?: string;
   showPinControls: boolean;
   isAnyCardPinned?: boolean;
-  viewerIds?: number[];
 };
 
 const SCREEN_SHARE_SHELL_CLASS =
@@ -67,14 +52,11 @@ const ScreenShareCard = memo(
     onUnpin,
     className,
     showPinControls = true,
-    isAnyCardPinned = false,
-    viewerIds = []
+    isAnyCardPinned = false
   }: TScreenShareCardProps) => {
     const { t } = useTranslation('common');
     const user = useUserById(userId);
-    const users = useUsers();
     const ownUserId = useOwnUserId();
-    const [viewersOpen, setViewersOpen] = useState(false);
     const { devices } = useDevices();
     const { isViewingDemo, viewDemo, stopViewingDemo } = useDemoVisibility();
     const [watchState, setWatchState] = useState<'idle' | 'loading' | 'error'>(
@@ -117,25 +99,6 @@ const ScreenShareCard = memo(
       onPin,
       cardId
     ]);
-    const viewerCount = viewerIds.length;
-    const shownViewerIds = viewerIds.slice(0, 4);
-    const overflowViewerCount = Math.max(
-      0,
-      viewerCount - shownViewerIds.length
-    );
-    const viewerNames = useMemo(
-      () => new Map(users.map((viewer) => [viewer.id, viewer.name])),
-      [users]
-    );
-    const onViewersOpenChange = useCallback(
-      (open: boolean) => setViewersOpen(open),
-      []
-    );
-    const onViewersPointerDown = useCallback(
-      (event: ReactMouseEvent<HTMLButtonElement>) => event.stopPropagation(),
-      []
-    );
-
     const { getUserScreenVolumeKey } = useVolumeControl();
     const isOwnUser = ownUserId === userId;
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
@@ -258,71 +221,6 @@ const ScreenShareCard = memo(
       }
     }, [stopViewingDemo, userId, isPinned, onUnpin, resetZoom, t]);
 
-    // The trigger stays visible with an empty roster: the Paper design keeps the
-    // eye and the count on screen, so the roster is always reachable.
-    const viewerIndicator = (
-      <div className="absolute right-2 top-2 z-10">
-        <Popover open={viewersOpen} onOpenChange={onViewersOpenChange}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              onMouseDown={onViewersPointerDown}
-              aria-label={t('screenShareViewers', { count: viewerCount })}
-              className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/65 px-1.5 text-[13px] font-medium leading-[17px] text-white transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-            >
-              {viewerCount > 0 && (
-                <span className="flex -space-x-1.5">
-                  {shownViewerIds.map((viewerId) => (
-                    <UserAvatar
-                      key={viewerId}
-                      userId={viewerId}
-                      className="size-[22px] ring-2 ring-black/70"
-                      showStatusBadge={false}
-                    />
-                  ))}
-                </span>
-              )}
-              {overflowViewerCount > 0 && (
-                <span className="tabular-nums text-white/80">
-                  +{overflowViewerCount}
-                </span>
-              )}
-              <EyeIcon aria-hidden="true" className="size-3.5" />
-              <span className="tabular-nums">{viewerCount}</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            sideOffset={8}
-            className="w-[272px] gap-0 p-0"
-          >
-            <div className="border-b border-line px-3 py-2 text-xs font-semibold text-muted-foreground">
-              {t('watching')} · {viewerCount}
-            </div>
-            {viewerCount === 0 ? (
-              <p className="px-3 py-2 text-sm text-muted-foreground">
-                {t('noOneWatching')}
-              </p>
-            ) : (
-              <div className="max-h-[294px] overflow-y-auto p-1">
-                {viewerIds.map((viewerId) => (
-                  <div
-                    key={viewerId}
-                    className="flex h-11 items-center gap-2 rounded-md px-2 text-sm"
-                  >
-                    <UserAvatar userId={viewerId} className="size-8" />
-                    <span className="truncate">
-                      {viewerNames.get(viewerId) ?? t('unknownUser')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
-    );
-
     if (!user || devices.voiceOnlyMode) return null;
 
     let watchLabel = t('watchStream');
@@ -365,7 +263,6 @@ const ScreenShareCard = memo(
                 {t('unableWatchStream')}
               </p>
             )}
-            {viewerIndicator}
             <div className={cn(SCREEN_SHARE_CAPTION_CLASS, 'text-foreground')}>
               <ComputerDesktopIcon
                 aria-hidden="true"
@@ -430,8 +327,6 @@ const ScreenShareCard = memo(
           )}
           <CardTheme />
 
-          {viewerIndicator}
-
           <video
             ref={screenShareRef}
             autoPlay
@@ -455,8 +350,6 @@ const ScreenShareCard = memo(
             <div
               className={cn(
                 'absolute top-0 right-0 z-10 justify-end',
-                // the viewers trigger always occupies the top-right corner
-                'top-9',
                 density.inset,
                 'flex opacity-0 pointer-events-none group-hover/screen-share-card:opacity-100 group-hover/screen-share-card:pointer-events-auto group-focus-within/screen-share-card:opacity-100 group-focus-within/screen-share-card:pointer-events-auto',
                 'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
