@@ -61,6 +61,49 @@ const pasteFile = async (name: string, sizeInBytes: number) => {
   );
 };
 
+const controlRects = async () => {
+  await composerEditor();
+
+  const attach = page.getByRole('button', { name: 'Attach files' }).element();
+  const editor = page.getByTestId(TestId.MESSAGE_COMPOSE_EDITOR).element();
+  const emoji = page.getByRole('button', { name: 'Add emoji' }).element();
+
+  return {
+    attach: attach.getBoundingClientRect(),
+    editor: editor.getBoundingClientRect(),
+    emoji: emoji.getBoundingClientRect()
+  };
+};
+
+test('the composer controls keep their place when an attachment is added', async () => {
+  const before = await controlRects();
+
+  await pasteFile('stable-layout.txt', 64);
+
+  const preview = page.getByText('stable-layout.txt', { exact: true });
+
+  await expect.element(preview).toBeVisible();
+
+  const after = await controlRects();
+
+  expect(after.attach.top).toBe(before.attach.top);
+  expect(after.attach.bottom).toBe(before.attach.bottom);
+  expect(after.editor.top).toBe(before.editor.top);
+  expect(after.editor.bottom).toBe(before.editor.bottom);
+  expect(after.emoji.top).toBe(before.emoji.top);
+  expect(after.emoji.bottom).toBe(before.emoji.bottom);
+
+  const progress = page.getByRole('progressbar');
+
+  await expect.element(progress).not.toBeInTheDocument();
+
+  const card = document.querySelector('[data-attachment-preview]');
+
+  card?.querySelector('button')?.click();
+
+  await expect.element(preview).not.toBeInTheDocument();
+});
+
 test('the composer shows the pasted attachment in a discord like card', async () => {
   await pasteFile('design-notes.txt', 64);
 
