@@ -339,7 +339,6 @@ const ScreenShareCard = memo(
       return (
         <VoiceCardContextMenu
           demo={{ isViewing: viewing, onToggle: handleStopWatching }}
-          pin={{ isPinned, onToggle: handlePinToggle }}
         >
           <div
             data-screen-share-card
@@ -403,7 +402,6 @@ const ScreenShareCard = memo(
               }
             : undefined
         }
-        pin={{ isPinned, onToggle: handlePinToggle }}
       >
         <div
           ref={containerRef}

@@ -4,6 +4,7 @@ import {
 } from '@/components/voice-provider/volume-control-context';
 import {
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
@@ -13,8 +14,6 @@ import {
 import {
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
-  BookmarkIcon,
-  BookmarkSlashIcon,
   EyeSlashIcon,
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
@@ -56,10 +55,6 @@ type TVoiceCardContextMenuProps = {
     isViewing: boolean;
     onToggle: () => void;
   };
-  pin?: {
-    isPinned: boolean;
-    onToggle: () => void;
-  };
 };
 
 const VoiceCardContextMenu = memo(
@@ -70,13 +65,13 @@ const VoiceCardContextMenu = memo(
     fullscreen,
     zoom,
     webcam,
-    demo,
-    pin
+    demo
   }: TVoiceCardContextMenuProps) => {
     const { t } = useTranslation('common');
-    const { getVolume, setVolume } = useVolumeControl();
+    const { getVolume, setVolume, toggleMute } = useVolumeControl();
     const sliderRef = useRef<HTMLSpanElement>(null);
     const volume = volumeKey === undefined ? 100 : getVolume(volumeKey);
+    const isMuted = volume === 0;
     const handleVolumeChange = useCallback(
       ([value]: number[]) => {
         if (volumeKey !== undefined && value !== undefined)
@@ -97,6 +92,18 @@ const VoiceCardContextMenu = memo(
     const handleSliderClick = useCallback((event: MouseEvent) => {
       event.stopPropagation();
     }, []);
+    // the mute checkbox keeps the menu open, so the volume stays adjustable
+    const handleMuteSelect = useCallback((event: Event) => {
+      event.preventDefault();
+    }, []);
+    const handleMuteCheckedChange = useCallback(
+      (checked: boolean) => {
+        if (volumeKey === undefined) return;
+        if (checked === isMuted) return;
+        toggleMute(volumeKey);
+      },
+      [volumeKey, isMuted, toggleMute]
+    );
     const fallbackVideoRef = useRef<HTMLVideoElement>(null);
     const { isSupported, isActive, togglePictureInPicture } =
       usePictureInPicture(
@@ -112,8 +119,7 @@ const VoiceCardContextMenu = memo(
       !!fullscreen ||
       !!zoom ||
       !!webcam ||
-      !!demo?.isViewing ||
-      !!pin;
+      !!demo?.isViewing;
 
     if (!hasItems) {
       return <>{children}</>;
@@ -127,28 +133,6 @@ const VoiceCardContextMenu = memo(
             <ContextMenuItem onSelect={demo.onToggle}>
               <EyeSlashIcon />
               {t('stopWatching')}
-            </ContextMenuItem>
-          )}
-          {pin && (
-            <ContextMenuItem onSelect={pin.onToggle}>
-              {pin.isPinned ? <BookmarkSlashIcon /> : <BookmarkIcon />}
-              {pin.isPinned ? t('unpinStream') : t('pinStream')}
-            </ContextMenuItem>
-          )}
-          {zoom && (
-            <ContextMenuItem onSelect={zoom.onToggle}>
-              {zoom.isEnabled ? (
-                <MagnifyingGlassMinusIcon />
-              ) : (
-                <MagnifyingGlassPlusIcon />
-              )}
-              {zoom.isEnabled ? t('disableZoom') : t('enableZoom')}
-            </ContextMenuItem>
-          )}
-          {webcam && (
-            <ContextMenuItem onSelect={webcam.onToggle}>
-              {webcam.isHidden ? <VideoCameraIcon /> : <VideoCameraSlashIcon />}
-              {webcam.isHidden ? t('showWebcam') : t('hideWebcam')}
             </ContextMenuItem>
           )}
           {volumeKey !== undefined && (
@@ -174,6 +158,31 @@ const VoiceCardContextMenu = memo(
                 onClick={handleSliderClick}
                 className="h-5 [&_[data-slot=slider-track]]:h-1 [&_[data-slot=slider-thumb]]:size-4"
               />
+            </ContextMenuItem>
+          )}
+          {volumeKey !== undefined && (
+            <ContextMenuCheckboxItem
+              checked={isMuted}
+              onCheckedChange={handleMuteCheckedChange}
+              onSelect={handleMuteSelect}
+            >
+              {t('muteStream')}
+            </ContextMenuCheckboxItem>
+          )}
+          {zoom && (
+            <ContextMenuItem onSelect={zoom.onToggle}>
+              {zoom.isEnabled ? (
+                <MagnifyingGlassMinusIcon />
+              ) : (
+                <MagnifyingGlassPlusIcon />
+              )}
+              {zoom.isEnabled ? t('disableZoom') : t('enableZoom')}
+            </ContextMenuItem>
+          )}
+          {webcam && (
+            <ContextMenuItem onSelect={webcam.onToggle}>
+              {webcam.isHidden ? <VideoCameraIcon /> : <VideoCameraSlashIcon />}
+              {webcam.isHidden ? t('showWebcam') : t('hideWebcam')}
             </ContextMenuItem>
           )}
           {showPip && (

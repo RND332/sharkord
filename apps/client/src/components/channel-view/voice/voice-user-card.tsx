@@ -159,7 +159,6 @@ const VoiceUserCard = memo(
               }
             : undefined
         }
-        pin={{ isPinned, onToggle: handlePinToggle }}
       >
         <div
           className={cn(
