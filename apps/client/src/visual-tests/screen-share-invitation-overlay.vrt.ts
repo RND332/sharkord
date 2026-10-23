@@ -299,7 +299,7 @@ test('caption pass-through preserves pinning, fullscreen and retained-stream rea
   await card.click({ button: 'right' });
   await expect
     .element(page.getByRole('menuitem', { name: 'Unpin stream', exact: true }))
-    .toBeVisible();
+    .not.toBeInTheDocument();
   await page.getByRole('menuitem', { name: 'Fullscreen', exact: true }).click();
   await expect.poll(() => document.fullscreenElement).not.toBeNull();
   expect(
