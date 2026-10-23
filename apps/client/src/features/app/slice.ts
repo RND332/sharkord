@@ -45,60 +45,100 @@ const initialState: TAppState = {
   threadSidebarOpen: false,
   threadParentMessageId: undefined,
   threadChannelId: undefined,
-  autoJoinLastChannel: getLocalStorageItemBool(
-    LocalStorageKey.AUTO_JOIN_LAST_CHANNEL,
-    false
-  ),
+  autoJoinLastChannel: false,
   selectedDmChannelId: undefined,
-  browserNotifications: getLocalStorageItemBool(
-    LocalStorageKey.BROWSER_NOTIFICATIONS,
-    false
-  ),
-  browserNotificationsForMentions: getLocalStorageItemBool(
-    LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_MENTIONS,
-    false
-  ),
-  browserNotificationsForDms: getLocalStorageItemBool(
-    LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_DMS,
-    false
-  ),
-  browserNotificationsForReplies: getLocalStorageItemBool(
-    LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_REPLIES,
-    false
-  ),
-  notificationSounds: getLocalStorageItemBool(
-    LocalStorageKey.NOTIFICATION_SOUNDS,
-    true
-  ),
-  messageSentSound: getLocalStorageItemBool(
-    LocalStorageKey.MESSAGE_SENT_SOUND,
-    true
-  ),
-  joinLeaveSounds: getLocalStorageItemBool(
-    LocalStorageKey.JOIN_LEAVE_SOUNDS,
-    true
-  ),
-  muteDeafenSounds: getLocalStorageItemBool(
-    LocalStorageKey.MUTE_DEAFEN_SOUNDS,
-    true
-  ),
-  mutedChannelIds:
-    getLocalStorageItemAsJSON<number[]>(LocalStorageKey.MUTED_CHANNEL_IDS) ??
-    [],
+  browserNotifications: false,
+  browserNotificationsForMentions: false,
+  browserNotificationsForDms: false,
+  browserNotificationsForReplies: false,
+  notificationSounds: true,
+  messageSentSound: true,
+  joinLeaveSounds: true,
+  muteDeafenSounds: true,
+  mutedChannelIds: [],
   messageJumpTarget: undefined,
-  voiceChatSidebarOpen: getLocalStorageItemBool(
-    LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
-    false
-  ),
-  voiceChatChannelId: getLocalStorageItemAsNumber(
-    LocalStorageKey.VOICE_CHAT_SIDEBAR_CHANNEL_ID
-  ),
-  pluginSlotDebug: getLocalStorageItemBool(
-    LocalStorageKey.PLUGIN_SLOT_DEBUG,
-    false
-  ),
+  voiceChatSidebarOpen: false,
+  voiceChatChannelId: undefined,
+  pluginSlotDebug: false,
   modifierKeysHeldMap: { Shift: false, Control: false, Alt: false }
 };
+
+interface TAppStorageFlags {
+  autoJoinLastChannel: boolean;
+  browserNotifications: boolean;
+  browserNotificationsForMentions: boolean;
+  browserNotificationsForDms: boolean;
+  browserNotificationsForReplies: boolean;
+  notificationSounds: boolean;
+  messageSentSound: boolean;
+  joinLeaveSounds: boolean;
+  muteDeafenSounds: boolean;
+  mutedChannelIds: number[];
+  voiceChatSidebarOpen: boolean;
+  voiceChatChannelId: number | undefined;
+  pluginSlotDebug: boolean;
+}
+
+// the storage only exists in the browser and the first render has to look the
+// same on the server, so the client hydrates the flags after the render
+export const hydrateAppFromStorage = (): {
+  type: 'app/hydrateFromStorage';
+  payload: TAppStorageFlags;
+} => ({
+  type: 'app/hydrateFromStorage',
+  payload: {
+    autoJoinLastChannel: getLocalStorageItemBool(
+      LocalStorageKey.AUTO_JOIN_LAST_CHANNEL,
+      false
+    ),
+    browserNotifications: getLocalStorageItemBool(
+      LocalStorageKey.BROWSER_NOTIFICATIONS,
+      false
+    ),
+    browserNotificationsForMentions: getLocalStorageItemBool(
+      LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_MENTIONS,
+      false
+    ),
+    browserNotificationsForDms: getLocalStorageItemBool(
+      LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_DMS,
+      false
+    ),
+    browserNotificationsForReplies: getLocalStorageItemBool(
+      LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_REPLIES,
+      false
+    ),
+    notificationSounds: getLocalStorageItemBool(
+      LocalStorageKey.NOTIFICATION_SOUNDS,
+      true
+    ),
+    messageSentSound: getLocalStorageItemBool(
+      LocalStorageKey.MESSAGE_SENT_SOUND,
+      true
+    ),
+    joinLeaveSounds: getLocalStorageItemBool(
+      LocalStorageKey.JOIN_LEAVE_SOUNDS,
+      true
+    ),
+    muteDeafenSounds: getLocalStorageItemBool(
+      LocalStorageKey.MUTE_DEAFEN_SOUNDS,
+      true
+    ),
+    mutedChannelIds:
+      getLocalStorageItemAsJSON<number[]>(LocalStorageKey.MUTED_CHANNEL_IDS) ??
+      [],
+    voiceChatSidebarOpen: getLocalStorageItemBool(
+      LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
+      false
+    ),
+    voiceChatChannelId: getLocalStorageItemAsNumber(
+      LocalStorageKey.VOICE_CHAT_SIDEBAR_CHANNEL_ID
+    ),
+    pluginSlotDebug: getLocalStorageItemBool(
+      LocalStorageKey.PLUGIN_SLOT_DEBUG,
+      false
+    )
+  }
+});
 
 const appSliceActions = {
   setAppLoading: (payload: boolean) =>
@@ -148,13 +188,32 @@ const appSliceActions = {
     ({ type: 'app/setModifierKeysHeldMap', payload }) as const
 };
 
-export type TAppAction = ReturnType<
-  (typeof appSliceActions)[keyof typeof appSliceActions]
->;
+export type TAppAction =
+  | ReturnType<(typeof appSliceActions)[keyof typeof appSliceActions]>
+  | ReturnType<typeof hydrateAppFromStorage>;
 
 const appSliceReducer = (state: TAppState, action: TAppAction): TAppState =>
   produce(state, (draft) => {
     switch (action.type) {
+      case 'app/hydrateFromStorage': {
+        draft.autoJoinLastChannel = action.payload.autoJoinLastChannel;
+        draft.browserNotifications = action.payload.browserNotifications;
+        draft.browserNotificationsForMentions =
+          action.payload.browserNotificationsForMentions;
+        draft.browserNotificationsForDms =
+          action.payload.browserNotificationsForDms;
+        draft.browserNotificationsForReplies =
+          action.payload.browserNotificationsForReplies;
+        draft.notificationSounds = action.payload.notificationSounds;
+        draft.messageSentSound = action.payload.messageSentSound;
+        draft.joinLeaveSounds = action.payload.joinLeaveSounds;
+        draft.muteDeafenSounds = action.payload.muteDeafenSounds;
+        draft.mutedChannelIds = action.payload.mutedChannelIds;
+        draft.voiceChatSidebarOpen = action.payload.voiceChatSidebarOpen;
+        draft.voiceChatChannelId = action.payload.voiceChatChannelId;
+        draft.pluginSlotDebug = action.payload.pluginSlotDebug;
+        break;
+      }
       case 'app/setAppLoading':
         draft.appLoading = action.payload;
         break;

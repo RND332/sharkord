@@ -129,24 +129,44 @@ const initialState: IServerState = {
   readStatesMap: {},
   pluginsMetadata: [],
   pluginCommands: {},
-  hideNonVideoParticipants: getLocalStorageItemBool(
-    LocalStorageKey.HIDE_NON_VIDEO_PARTICIPANTS,
-    false
-  ),
-  showUserBannersInVoice: getLocalStorageItemBool(
-    LocalStorageKey.VOICE_CHAT_SHOW_USER_BANNERS,
-    true
-  ),
+  hideNonVideoParticipants: false,
+  showUserBannersInVoice: true,
   pluginComponents: {},
   pluginTabs: {},
   pluginCapabilityAccess: [],
   activeFullscreenPluginId: undefined,
   dmsOpen: false,
-  hideOwnScreenShare: getLocalStorageItemBool(
-    LocalStorageKey.HIDE_OWN_SCREEN_SHARE,
-    false
-  )
+  hideOwnScreenShare: false
 };
+
+interface TServerStorageFlags {
+  hideNonVideoParticipants: boolean;
+  showUserBannersInVoice: boolean;
+  hideOwnScreenShare: boolean;
+}
+
+// the storage only exists in the browser and the first render has to look the
+// same on the server, so the client hydrates the flags after the render
+export const hydrateServerFromStorage = (): {
+  type: 'server/hydrateFromStorage';
+  payload: TServerStorageFlags;
+} => ({
+  type: 'server/hydrateFromStorage',
+  payload: {
+    hideNonVideoParticipants: getLocalStorageItemBool(
+      LocalStorageKey.HIDE_NON_VIDEO_PARTICIPANTS,
+      false
+    ),
+    showUserBannersInVoice: getLocalStorageItemBool(
+      LocalStorageKey.VOICE_CHAT_SHOW_USER_BANNERS,
+      true
+    ),
+    hideOwnScreenShare: getLocalStorageItemBool(
+      LocalStorageKey.HIDE_OWN_SCREEN_SHARE,
+      false
+    )
+  }
+});
 
 const serverSliceActions = {
   resetState: () => ({ type: 'server/resetState' }) as const,
@@ -333,9 +353,9 @@ const serverSliceActions = {
     ({ type: 'server/setDmsOpen', payload }) as const
 };
 
-export type TServerAction = ReturnType<
-  (typeof serverSliceActions)[keyof typeof serverSliceActions]
->;
+export type TServerAction =
+  | ReturnType<(typeof serverSliceActions)[keyof typeof serverSliceActions]>
+  | ReturnType<typeof hydrateServerFromStorage>;
 
 const serverSliceReducer = (
   state: IServerState,
@@ -344,10 +364,22 @@ const serverSliceReducer = (
   produce(state, (draft) => {
     switch (action.type) {
       case 'server/resetState': {
+        // the flags come from the storage of the user, a reset of the
+        // connection state must not drop them
         Object.assign(draft, {
           ...initialState,
-          info: draft.info
+          info: draft.info,
+          hideNonVideoParticipants: draft.hideNonVideoParticipants,
+          showUserBannersInVoice: draft.showUserBannersInVoice,
+          hideOwnScreenShare: draft.hideOwnScreenShare
         });
+        break;
+      }
+      case 'server/hydrateFromStorage': {
+        draft.hideNonVideoParticipants =
+          action.payload.hideNonVideoParticipants;
+        draft.showUserBannersInVoice = action.payload.showUserBannersInVoice;
+        draft.hideOwnScreenShare = action.payload.hideOwnScreenShare;
         break;
       }
       case 'server/setConnected': {
