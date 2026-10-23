@@ -2,12 +2,14 @@ import { getErrorMessage, OidcError } from '@dodecagon/shared';
 import type http from 'http';
 import * as client from 'openid-client';
 import type { getWsInfo } from '../../helpers/get-ws-info';
+import { buildStateCookie } from '../../helpers/oidc/cookies';
 import {
   oidcManager,
   TRANSACTION_TTL_SECONDS
 } from '../../helpers/oidc/manager';
 import { logger } from '../../logger';
-import { buildStateCookie, guardOidcRoute, redirectWithError } from './common';
+import { isSecureRequest } from '../helpers';
+import { guardOidcRoute, redirectWithError } from './common';
 
 const oidcLoginRouteHandler = async (
   req: http.IncomingMessage,
@@ -44,7 +46,11 @@ const oidcLoginRouteHandler = async (
 
     res.writeHead(302, {
       'Cache-Control': 'no-store',
-      'Set-Cookie': buildStateCookie(req, state, TRANSACTION_TTL_SECONDS),
+      'Set-Cookie': buildStateCookie(
+        state,
+        TRANSACTION_TTL_SECONDS,
+        isSecureRequest(req)
+      ),
       Location: authorizationUrl.href
     });
     res.end();

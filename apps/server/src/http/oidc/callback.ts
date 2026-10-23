@@ -4,56 +4,14 @@ import jwt from 'jsonwebtoken';
 import * as client from 'openid-client';
 import { getServerToken } from '../../db/queries/server';
 import type { getWsInfo } from '../../helpers/get-ws-info';
+import { collectClaims } from '../../helpers/oidc/claims';
+import { clearStateCookie, hasStateCookie } from '../../helpers/oidc/cookies';
 import { OidcCallbackError } from '../../helpers/oidc/error';
 import { oidcManager } from '../../helpers/oidc/manager';
-import { resolveOidcUser, type TOidcClaims } from '../../helpers/oidc/user';
+import { resolveOidcUser } from '../../helpers/oidc/user';
 import { logger } from '../../logger';
-import {
-  clearStateCookie,
-  guardOidcRoute,
-  hasStateCookie,
-  redirectWithError
-} from './common';
-
-const collectClaims = async (
-  oidcConfig: client.Configuration,
-  tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
-): Promise<{ claims: TOidcClaims; userInfoFailed: boolean }> => {
-  const idTokenClaims = tokens.claims();
-
-  if (!idTokenClaims?.sub) {
-    throw new OidcCallbackError(
-      OidcError.SERVER_ERROR,
-      'ID token is missing the sub claim'
-    );
-  }
-
-  const needsUserInfo =
-    !idTokenClaims.email ||
-    !idTokenClaims.preferred_username ||
-    !idTokenClaims.picture;
-
-  if (!needsUserInfo) {
-    return { claims: { ...idTokenClaims }, userInfoFailed: false };
-  }
-
-  try {
-    const userInfo = await client.fetchUserInfo(
-      oidcConfig,
-      tokens.access_token,
-      idTokenClaims.sub
-    );
-
-    return { claims: { ...userInfo, ...idTokenClaims }, userInfoFailed: false };
-  } catch (error) {
-    logger.warn(
-      'OIDC userinfo request failed, continuing with ID token claims only: %s',
-      getErrorMessage(error)
-    );
-
-    return { claims: { ...idTokenClaims }, userInfoFailed: true };
-  }
-};
+import { isSecureRequest } from '../helpers';
+import { guardOidcRoute, redirectWithError } from './common';
 
 const completeOidcCallback = async (
   req: http.IncomingMessage,
@@ -69,7 +27,7 @@ const completeOidcCallback = async (
     );
   }
 
-  if (!stateParam || !hasStateCookie(req, stateParam)) {
+  if (!stateParam || !hasStateCookie(req.headers.cookie, stateParam)) {
     throw new OidcCallbackError(
       OidcError.INVALID_STATE,
       'No state cookie for the state this callback carries'
@@ -170,7 +128,9 @@ const oidcCallbackRouteHandler = async (
       req,
       res,
       code,
-      state ? { 'Set-Cookie': clearStateCookie(req, state) } : {}
+      state
+        ? { 'Set-Cookie': clearStateCookie(state, isSecureRequest(req)) }
+        : {}
     );
   }
 };
