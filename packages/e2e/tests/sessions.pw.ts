@@ -267,37 +267,6 @@ test('a ban ends the session and offers no way back', async ({ browser }) => {
   }
 });
 
-test('disconnecting from the server menu logs out and clears the saved token', async ({
-  browser
-}) => {
-  const context = await browser.newContext();
-
-  try {
-    const page = await context.newPage();
-
-    await page.goto('/');
-    await page.getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH).click();
-    await page.getByTestId(TestId.CONNECT_IDENTITY_INPUT).fill('testuser');
-    await page.getByTestId(TestId.CONNECT_PASSWORD_INPUT).fill('password123');
-    await page.getByTestId(TestId.CONNECT_BUTTON).click();
-    await page.getByTestId(TestId.SERVER_VIEW).waitFor();
-
-    await page.getByTestId(TestId.SERVER_MENU_TRIGGER).click();
-    await page.getByTestId(TestId.SERVER_MENU_DISCONNECT).click();
-    await confirmDialog(page);
-
-    await expect(page.getByTestId(TestId.CONNECT_BUTTON)).toBeVisible();
-
-    const savedToken = await page.evaluate(() =>
-      localStorage.getItem('dodecagon-auto-login-token')
-    );
-
-    expect(savedToken).toBeNull();
-  } finally {
-    await context.close().catch(() => {});
-  }
-});
-
 // auto-login.pw.ts only covers a token the server refuses. a valid one has to survive the
 // reload, which is the half that would strand a user on the connect screen every refresh
 test('a refresh resumes an auto-login session without asking again', async ({
@@ -330,9 +299,9 @@ test('a refresh resumes an auto-login session without asking again', async ({
 });
 
 // the identity is written on a successful login and read back as the connect form's initial
-// value, so only a logout that unmounts the app can show whether it survives. the password is
+// value, so only a session that starts over can show whether it survives. the password is
 // deliberately never stored, and an empty field is the whole of that guarantee
-test('logging out leaves the identity prefilled and the password empty', async ({
+test('a new session keeps the identity and never the password', async ({
   browser
 }) => {
   const context = await browser.newContext();
@@ -342,17 +311,18 @@ test('logging out leaves the identity prefilled and the password empty', async (
 
     await loginAs(page, WATCHED.identity, WATCHED.password);
 
-    await page.getByTestId(TestId.SERVER_MENU_TRIGGER).click();
-    await page.getByTestId(TestId.SERVER_MENU_DISCONNECT).click();
-    await confirmDialog(page);
+    // a second tab shares the storage but not the session token, so it lands on the
+    // connect form with whatever the login left behind
+    const freshSession = await context.newPage();
 
-    await expect(page.getByTestId(TestId.CONNECT_BUTTON)).toBeVisible();
-    await expect(page.getByTestId(TestId.CONNECT_IDENTITY_INPUT)).toHaveValue(
-      WATCHED.identity
-    );
-    await expect(page.getByTestId(TestId.CONNECT_PASSWORD_INPUT)).toHaveValue(
-      ''
-    );
+    await freshSession.goto('/');
+    await expect(freshSession.getByTestId(TestId.CONNECT_BUTTON)).toBeVisible();
+    await expect(
+      freshSession.getByTestId(TestId.CONNECT_IDENTITY_INPUT)
+    ).toHaveValue(WATCHED.identity);
+    await expect(
+      freshSession.getByTestId(TestId.CONNECT_PASSWORD_INPUT)
+    ).toHaveValue('');
   } finally {
     await context.close().catch(() => {});
   }

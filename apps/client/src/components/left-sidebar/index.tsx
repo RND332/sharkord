@@ -1,3 +1,4 @@
+import { SidebarContextMenu } from '@/components/context-menus/sidebar';
 import { Dialog } from '@/components/dialogs/dialogs';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { ResizableSidebar } from '@/components/resizable-sidebar';
@@ -19,7 +20,7 @@ import { DirectMessages } from './direct-messages';
 import { DmButton } from './direct-messages/dm-button';
 import { useFollowVoiceMove, useRestoreLastSelectedChannel } from './hooks';
 import { PluginButtons } from './plugin-buttons';
-import { ServerDropdownMenu } from './server-dropdown';
+import { ServerSettingsButton } from './server-settings-button';
 import { UserControl } from './user-control';
 import { VoiceControl } from './voice-control';
 
@@ -53,38 +54,44 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       className={cn('h-full bg-nav', className)}
       data-testid={TestId.LEFT_SIDEBAR}
     >
-      <div className="flex h-12 w-full items-center justify-between border-b border-line px-4">
-        <h2
-          className="flex min-w-0 items-center text-base font-semibold text-foreground"
-          onClick={() => setSelectedChannelId(undefined)}
-          data-testid={TestId.LEFT_SIDEBAR_SERVER_NAME}
-        >
-          <span className="truncate">{serverName}</span>
-        </h2>
-        <div className="flex items-center gap-1">
-          <PluginSlotRenderer slotId={PluginSlot.TOPBAR_RIGHT} />
-          {publicSettings?.enableSearch && (
-            <Tooltip content={t('searchContent')}>
-              <IconButton
-                onClick={onSearchClick}
-                icon={MagnifyingGlassIcon}
-                variant="ghost"
-                size="sm"
-                className="size-5 p-0 [&_svg]:size-5"
-                aria-label={t('searchContent')}
-                data-testid={TestId.SEARCH_BUTTON}
-              />
-            </Tooltip>
-          )}
-          <ServerDropdownMenu />
+
+      <SidebarContextMenu>
+        <div className="flex h-12 w-full items-center gap-2 border-b border-line px-4">
+          <h2
+            className="flex min-w-0 items-center text-base font-semibold text-foreground"
+            onClick={() => setSelectedChannelId(undefined)}
+            data-testid={TestId.LEFT_SIDEBAR_SERVER_NAME}
+          >
+            <span className="truncate">{serverName}</span>
+          </h2>
+          <ServerSettingsButton />
+          <div className="ml-auto flex items-center gap-1">
+            <PluginSlotRenderer slotId={PluginSlot.TOPBAR_RIGHT} />
+            {publicSettings?.enableSearch && (
+              <Tooltip content={t('searchContent')}>
+                <IconButton
+                  onClick={onSearchClick}
+                  icon={MagnifyingGlassIcon}
+                  variant="ghost"
+                  size="sm"
+                  className="size-5 p-0 [&_svg]:size-5"
+                  aria-label={t('searchContent')}
+                  data-testid={TestId.SEARCH_BUTTON}
+                />
+              </Tooltip>
+            )}
+          </div>
+
         </div>
-      </div>
+      </SidebarContextMenu>
       {publicSettings?.directMessagesEnabled && <DmButton />}
       <PluginButtons />
-      <div className="flex-1 overflow-y-auto">
-        {publicSettings?.directMessagesEnabled && <DirectMessages />}
-        <Categories />
-      </div>
+      <SidebarContextMenu>
+        <div className="flex-1 overflow-y-auto">
+          {publicSettings?.directMessagesEnabled && <DirectMessages />}
+          <Categories />
+        </div>
+      </SidebarContextMenu>
       <div
         data-voice-dock
         className="mx-2 mb-2 flex shrink-0 flex-col overflow-hidden rounded-[10px] border border-line bg-canvas"

@@ -26,9 +26,12 @@ const submitDialog = async (page: Page, value: string) => {
 };
 
 const createCategoryWithChannel = async (page: Page) => {
-  await page.getByTestId(TestId.SERVER_MENU_TRIGGER).click();
+  // the server menu is gone: the side menu opens the same action on a right click
+  await page
+    .getByTestId(TestId.LEFT_SIDEBAR_SERVER_NAME)
+    .click({ button: 'right' });
 
-  const addCategory = page.getByTestId(TestId.SERVER_MENU_ADD_CATEGORY);
+  const addCategory = page.getByTestId(TestId.SIDEBAR_MENU_ADD_CATEGORY);
 
   await expect(addCategory).toBeVisible();
   await addCategory.click();

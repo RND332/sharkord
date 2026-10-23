@@ -30,10 +30,8 @@ export enum TestId {
   MOD_VIEW_BAN = 'mod-view-ban',
   USER_STATUS = 'user-status',
 
-  SERVER_MENU_TRIGGER = 'server-menu-trigger',
-  SERVER_MENU_ADD_CATEGORY = 'server-menu-add-category',
-  SERVER_MENU_DISCONNECT = 'server-menu-disconnect',
-  SERVER_MENU_SERVER_SETTINGS = 'server-menu-server-settings',
+  SERVER_SETTINGS_BUTTON = 'server-settings-button',
+  SIDEBAR_MENU_ADD_CATEGORY = 'sidebar-menu-add-category',
   USER_SETTINGS_TRIGGER = 'user-settings-trigger',
   SETTINGS_SIDEBAR_ENTRY = 'settings-sidebar-entry',
   INSTALLED_PLUGIN_ITEM = 'installed-plugin-item',
