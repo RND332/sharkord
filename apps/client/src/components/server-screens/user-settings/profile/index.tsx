@@ -16,14 +16,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  IconButton,
   Textarea
 } from '@dodecagon/ui';
-import {
-  CheckIcon,
-  PaintBrushIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
+import { PaintBrushIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,12 +32,16 @@ type TProfileValues = {
   banner?: TPickedImage | null;
 };
 
+// the bio is edited in place: the field stays transparent and keeps the height of
+// the resting line, so nothing around it moves when the user starts typing
+const BIO_FIELD_CLASS =
+  'block min-h-[21px] w-full resize-none border-0 bg-transparent p-0 text-sm leading-[21px] text-foreground placeholder:text-muted-foreground focus-visible:ring-0';
+
 const Profile = memo(() => {
   const { t } = useTranslation('settings');
   const ownPublicUser = useOwnPublicUser();
   const dateLocale = useDateLocale();
   const pickImage = usePickImage();
-  const [isEditingBio, setIsEditingBio] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [isBannerMenuOpen, setIsBannerMenuOpen] = useState(false);
 
@@ -101,10 +100,6 @@ const Profile = memo(() => {
 
     onChange('name', nextName);
   }, [onChange, t]);
-
-  const handleToggleBio = useCallback(() => {
-    setIsEditingBio((editing) => !editing);
-  }, []);
 
   const handleBioChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -266,37 +261,14 @@ const Profile = memo(() => {
           </div>
 
           <div className="mt-3">
-            {isEditingBio ? (
-              <div className="flex items-start gap-2">
-                <Textarea
-                  aria-label={t('bioLabel')}
-                  value={values.bio}
-                  onChange={handleBioChange}
-                  placeholder={t('bioPlaceholder')}
-                  className="min-h-[80px] w-full"
-                  autoFocus
-                />
-                <IconButton
-                  icon={CheckIcon}
-                  variant="ghost"
-                  aria-label={t('saveChanges')}
-                  onClick={handleToggleBio}
-                />
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleToggleBio}
-                className="w-full cursor-text text-left text-sm leading-[21px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {values.bio || (
-                  <span className="text-muted-foreground">
-                    {t('bioPlaceholder')}
-                  </span>
-                )}
-                <span className="sr-only">{t('editBioLabel')}</span>
-              </button>
-            )}
+            <Textarea
+              aria-label={t('bioLabel')}
+              value={values.bio}
+              onChange={handleBioChange}
+              placeholder={t('bioPlaceholder')}
+              rows={1}
+              className={BIO_FIELD_CLASS}
+            />
           </div>
 
           <div className="mt-4 border-t border-line pt-3 text-xs text-muted-foreground">
