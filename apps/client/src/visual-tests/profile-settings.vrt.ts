@@ -147,6 +147,39 @@ test('profile controls retain the Paper spacing and Miku theme without crowding 
   });
 });
 
+test('the profile banner menu opens to the right of the profile card and closes without trapping the focus', async () => {
+  openServerScreen(ServerScreen.USER_SETTINGS);
+
+  const heading = page.getByRole('heading', {
+    name: 'Profile',
+    exact: true,
+    level: 2
+  });
+
+  await expect.element(heading).toBeVisible();
+
+  const banner = page.getByRole('button', { name: 'Change banner' });
+
+  await expect.element(banner).toBeVisible();
+
+  await banner.click();
+
+  const menu = page.getByRole('menu');
+
+  await expect.element(menu).toBeVisible();
+
+  const bannerBounds = banner.element().getBoundingClientRect();
+  const menuBounds = menu.element().getBoundingClientRect();
+
+  expect(menuBounds.left).toBeGreaterThanOrEqual(bannerBounds.right);
+
+  await userEvent.keyboard('{Escape}');
+
+  await expect.element(page.getByRole('menu')).not.toBeInTheDocument();
+  await expect.element(banner).toHaveFocus();
+  await expect.element(heading).toBeVisible();
+});
+
 test('mobile profile settings keep the settings navigation reachable and keyboard accessible', async () => {
   await page.viewport(390, 844);
   const session: CDPSession = cdp();
