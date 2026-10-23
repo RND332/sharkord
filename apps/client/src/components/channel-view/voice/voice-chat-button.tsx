@@ -5,7 +5,6 @@ import {
   useHasUnreadMentions,
   useUnreadMessagesCount
 } from '@/features/server/hooks';
-import { cn } from '@/lib/utils';
 import { Button, Tooltip } from '@dodecagon/ui';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
@@ -27,7 +26,12 @@ const VoiceChatButton = memo(({ channelId }: TVoiceChatButtonProps) => {
     toggleVoiceChatSidebar(channelId);
   }, [channelId]);
 
-  const label = isVoiceChatOpen ? t('closeVoiceChat') : t('openVoiceChat');
+  // the chat of this channel is open, the panel closes it on its own
+  if (isVoiceChatOpen) {
+    return null;
+  }
+
+  const label = t('openVoiceChat');
 
   return (
     <Tooltip content={label}>
@@ -36,14 +40,9 @@ const VoiceChatButton = memo(({ channelId }: TVoiceChatButtonProps) => {
         size="icon"
         onClick={handleToggleVoiceChat}
         aria-label={label}
-        className={cn(
-          'relative size-8 rounded-md border border-line bg-nav/85 p-0 backdrop-blur hover:bg-nav',
-          isVoiceChatOpen && 'text-foreground'
-        )}
+        className="relative size-8 rounded-md border border-line bg-nav/85 p-0 backdrop-blur hover:bg-nav"
       >
-        <ChatBubbleLeftIcon
-          className={cn('size-[18px]', isVoiceChatOpen && 'fill-current')}
-        />
+        <ChatBubbleLeftIcon className="size-[18px]" />
         <UnreadCount
           count={unreadCount}
           hasMention={hasUnreadMentions}
