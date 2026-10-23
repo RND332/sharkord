@@ -1837,6 +1837,15 @@ test('category settings match the Paper design', async () => {
 
 test('plugin marketplace matches the Paper design', async () => {
   openServerScreen(ServerScreen.SERVER_SETTINGS);
+  // the updates panel renders a tall placeholder while it loads, so the page
+  // height only settles once the release check came back
+  await expect
+    .element(
+      page.getByText('Check the version running on this server.', {
+        exact: true
+      })
+    )
+    .toBeVisible();
   await page
     .getByTestId(TestId.SETTINGS_SIDEBAR_ENTRY)
     .filter({ hasText: 'Plugins' })
