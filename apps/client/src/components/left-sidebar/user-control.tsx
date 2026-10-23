@@ -44,7 +44,7 @@ const UserControl = memo(() => {
             statusBadgeClassName="right-px bottom-px size-[9px] border-accent"
           />
           <div className="flex h-[30px] min-w-0 flex-1 flex-col justify-center gap-px">
-            <span className="truncate text-[13px] font-semibold leading-4 text-foreground">
+            <span className="truncate select-text text-[13px] font-semibold leading-4 text-foreground">
               {ownPublicUser.name}
             </span>
             <span className="truncate text-xs leading-4 text-muted-foreground capitalize">
