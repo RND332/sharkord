@@ -364,4 +364,4 @@ const PaginatedList = Object.assign(
   }
 );
 
-export { PaginatedList };
+export { PaginatedList, usePaginatedList };

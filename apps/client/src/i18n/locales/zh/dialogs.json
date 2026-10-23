@@ -138,5 +138,9 @@
   "shortcutBackToVoice": "返回语音频道",
   "createCategoryDesc": "围绕一个主题组织频道。",
   "createCategoryHint": "创建分类后，可以在此添加新频道。",
-  "textInputLabel": "值"
+  "textInputLabel": "值",
+  "jumpToFile": "转到文件",
+  "sharedBy": "{{name}} 分享 · {{size}}",
+  "searchResultsRange": "第 {{from}}–{{to}} 条，共 {{total}} 条结果",
+  "escToClose": "Esc 关闭"
 }

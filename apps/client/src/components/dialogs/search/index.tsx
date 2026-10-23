@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearch } from './hooks';
 import { SearchResultFileCard } from './search-result-file';
 import { SearchResultMessageCard } from './search-result-message';
+import { SearchResultsFooter } from './search-results-footer';
 import type { TUnifiedSearchResult } from './types';
 
 const ITEMS_PER_PAGE = 12;
@@ -107,11 +108,6 @@ const SearchDialog = memo(({ isOpen, close }: TSearchDialogProps) => {
                   }}
                 </PaginatedList.List>
 
-                <PaginatedList.Pagination
-                  alwaysShow
-                  className="flex shrink-0 items-center justify-center gap-1 border-t border-border pt-3"
-                />
-
                 {truncated && (
                   <div
                     data-testid={TestId.SEARCH_TRUNCATED_NOTICE}
@@ -120,6 +116,13 @@ const SearchDialog = memo(({ isOpen, close }: TSearchDialogProps) => {
                     {t('searchTruncated')}
                   </div>
                 )}
+
+                <PaginatedList.Pagination
+                  alwaysShow
+                  className="flex shrink-0 items-center justify-center gap-1 border-t border-border pt-3"
+                />
+
+                <SearchResultsFooter />
               </PaginatedList>
             )}
           </div>
