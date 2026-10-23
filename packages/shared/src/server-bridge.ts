@@ -93,3 +93,8 @@ export const getServerBridge = (): TServerBridge => {
 
   return bridge;
 };
+
+// the start server runs in the vite process during development while the bridge
+// lives in the bun process, so the caller can fall back to the bun api
+export const tryGetServerBridge = (): TServerBridge | null =>
+  bridgeSlot[BRIDGE_KEY] ?? null;

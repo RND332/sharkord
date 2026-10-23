@@ -14,7 +14,7 @@ import {
   setSessionStorageItem
 } from '@/helpers/storage';
 import { useForm } from '@/hooks/use-form';
-import { PluginSlot, TestId } from '@dodecagon/shared';
+import { PluginSlot, TestId, type TServerInfo } from '@dodecagon/shared';
 import {
   Alert,
   AlertDescription,
@@ -44,7 +44,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOidcLogin } from './hooks/use-oidc-login';
 
-const Connect = memo(() => {
+const Connect = memo(({ info: infoProp }: { info?: TServerInfo }) => {
   const { t } = useTranslation('connect');
   const { values, r, setErrors, onChange } = useForm<{
     identity: string;
@@ -68,7 +68,10 @@ const Connect = memo(() => {
     | undefined
   >(undefined);
   const passwordId = useId();
-  const info = useInfo();
+  // the route loader brings the data of the server, the store keeps it for the
+  // screens that are rendered without a loader
+  const storeInfo = useInfo();
+  const info = infoProp ?? storeInfo;
 
   const onPasswordVisibilityToggle = useCallback(() => {
     const input = passwordRef.current;
