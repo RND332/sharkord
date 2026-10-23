@@ -4,7 +4,6 @@ import { playwright } from '@vitest/browser-playwright';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
-import pkg from './package.json';
 import { fsAllow } from './vite-fs-allow';
 
 const systemChromium =
@@ -31,7 +30,9 @@ export default defineConfig({
     dedupe: ['react', 'react-dom']
   },
   define: {
-    VITE_APP_VERSION: JSON.stringify(pkg.version),
+    // the connect screen footer shows the app version, so the screenshots use a
+    // fixed one instead of the version of the current build
+    VITE_APP_VERSION: JSON.stringify('test'),
     VITE_SENTRY_DSN: JSON.stringify(''),
     VITE_SERVER_PORT: JSON.stringify(process.env.DODECAGON_TEST_PORT || '4991')
   },
