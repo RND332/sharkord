@@ -64,7 +64,8 @@ test('dark theme uses the approved Discord palette', async () => {
     '--control-border': '#969ca5',
     '--danger-solid': '#b3263e',
     '--accent-text': '#aeb5ff',
-    '--ring': '#c2c7ff'
+    // the focus ring is gone, so the token keeps no color
+    '--ring': 'transparent'
   };
 
   for (const [token, value] of Object.entries(palette)) {

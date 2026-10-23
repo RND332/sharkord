@@ -1325,18 +1325,10 @@ test('profile settings edit a live preview that matches the user popover', async
       .element(nameButton)
       .toHaveAccessibleName('Preview name Edit name');
 
-    const bioButton = preview.getByRole('button', { name: /Edit bio/ });
-    await bioButton.click();
+    // the bio is a plain field in the preview, it saves itself
     const bioInput = preview.getByRole('textbox', { name: 'Bio' });
     await bioInput.fill('A live preview');
-    const saveBioButton = preview.getByRole('button', {
-      name: 'Save Changes',
-      exact: true
-    });
-    await saveBioButton.click();
-    await expect
-      .element(bioButton)
-      .toHaveAccessibleName('A live preview Edit bio');
+    await expect.element(bioInput).toHaveValue('A live preview');
 
     closeServerScreens();
     updateUser(ownUser.id, { banner: originalBanner });
@@ -1458,15 +1450,9 @@ test('saved profile edits stay synchronized with the user popover', async () => 
     });
     await saveNameButton.click();
 
-    const bioButton = preview.getByRole('button', { name: /Edit bio/ });
-    await bioButton.click();
+    // the bio is a plain field in the preview, it saves itself
     const bioInput = preview.getByRole('textbox', { name: 'Bio' });
     await bioInput.fill('Profile sync bio');
-    const saveBioButton = preview.getByRole('button', {
-      name: 'Save Changes',
-      exact: true
-    });
-    await saveBioButton.click();
 
     const bannerButton = preview.getByRole('button', {
       name: 'Change banner',
