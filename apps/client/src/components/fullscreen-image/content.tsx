@@ -7,8 +7,6 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-const portalRoot = document.getElementById('imagePortal')!;
-
 type TFullScreenImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   as?: React.ElementType;
 };
@@ -18,6 +16,26 @@ const FullScreenImage = memo(
     const { t } = useTranslation('common');
 
     const [open, setOpen] = useState(false);
+
+    // the portal root belongs to the document shell, so it is only known once
+    // the tree is mounted: the ref holds the node and the flag only tells the
+    // render that it is there
+    const portalRootRef = useRef<HTMLElement | null>(null);
+    const [portalRootReady, setPortalRootReady] = useState(false);
+
+    useEffect(() => {
+      const root = document.getElementById('imagePortal');
+
+      if (!root) {
+        console.error('the image portal root is missing from the document');
+
+        return;
+      }
+
+      portalRootRef.current = root;
+
+      setPortalRootReady(true);
+    }, []);
 
     const imgRef = useRef<HTMLImageElement>(null);
     const scaleRef = useRef(0.8);
@@ -142,45 +160,48 @@ const FullScreenImage = memo(
       [props.src, t]
     );
 
-    const portalContainer = open
-      ? createPortal(
-          <>
-            <div
-              className="fixed inset-0 flex justify-center items-center backdrop-blur-sm bg-black/30 z-50"
-              onClick={onClickOutside}
-            >
-              <Component
-                {...props}
-                ref={imgRef}
-                style={{
-                  transform: `scale(${scaleRef.current}) translate(${posRef.current.x}px, ${posRef.current.y}px)`,
-                  cursor: 'grab'
-                }}
-                className="p-4 max-w-full max-h-full object-contain"
-                onMouseDown={handleMouseDown}
-                draggable={false}
-                onClick={(e: React.MouseEvent<HTMLDivElement>) =>
-                  e.stopPropagation()
-                }
-              />
-              <div className="flex gap-2 absolute top-2 right-2 z-50">
-                <IconButton
-                  icon={LinkIcon}
-                  variant="ghost"
-                  onClick={onCopyLink}
+    const portalRoot = portalRootRef.current;
+
+    const portalContainer =
+      open && portalRootReady && portalRoot
+        ? createPortal(
+            <>
+              <div
+                className="fixed inset-0 flex justify-center items-center backdrop-blur-sm bg-black/30 z-50"
+                onClick={onClickOutside}
+              >
+                <Component
+                  {...props}
+                  ref={imgRef}
+                  style={{
+                    transform: `scale(${scaleRef.current}) translate(${posRef.current.x}px, ${posRef.current.y}px)`,
+                    cursor: 'grab'
+                  }}
+                  className="p-4 max-w-full max-h-full object-contain"
+                  onMouseDown={handleMouseDown}
+                  draggable={false}
+                  onClick={(e: React.MouseEvent<HTMLDivElement>) =>
+                    e.stopPropagation()
+                  }
                 />
-                <IconButton
-                  onClick={onCloseClick}
-                  icon={XMarkIcon}
-                  variant="ghost"
-                  data-testid={TestId.FULLSCREEN_IMAGE_CLOSE}
-                />
+                <div className="flex gap-2 absolute top-2 right-2 z-50">
+                  <IconButton
+                    icon={LinkIcon}
+                    variant="ghost"
+                    onClick={onCopyLink}
+                  />
+                  <IconButton
+                    onClick={onCloseClick}
+                    icon={XMarkIcon}
+                    variant="ghost"
+                    data-testid={TestId.FULLSCREEN_IMAGE_CLOSE}
+                  />
+                </div>
               </div>
-            </div>
-          </>,
-          portalRoot
-        )
-      : null;
+            </>,
+            portalRoot
+          )
+        : null;
 
     return (
       <>

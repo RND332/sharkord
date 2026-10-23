@@ -316,19 +316,24 @@ const collectVoiceDebugSnapshot = async (): Promise<TVoiceDebugSnapshot> => {
 // recorded from module load rather than from a hook: a tab that was hidden or offline when
 // the call died is the explanation, and by the time anything voice related mounts the
 // moment has passed. both are cheap and fire rarely
-window.addEventListener('online', () => {
-  pushVoiceDebugEvent('ws', 'page: network online');
-});
-
-window.addEventListener('offline', () => {
-  pushVoiceDebugEvent('ws', 'page: network offline');
-});
-
-document.addEventListener('visibilitychange', () => {
-  pushVoiceDebugEvent('ws', 'page: visibility changed', {
-    state: document.visibilityState
+// the server imports the module too and it has no page to listen on
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    pushVoiceDebugEvent('ws', 'page: network online');
   });
-});
+
+  window.addEventListener('offline', () => {
+    pushVoiceDebugEvent('ws', 'page: network offline');
+  });
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    pushVoiceDebugEvent('ws', 'page: visibility changed', {
+      state: document.visibilityState
+    });
+  });
+}
 
 export {
   clearVoiceDebugEvents,
