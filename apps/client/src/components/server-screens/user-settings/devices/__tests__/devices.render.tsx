@@ -2,11 +2,11 @@
 // own process: bun keeps the first mock.module registration of a path for the
 // whole test run, so the mocks of the other test files would leak in.
 import settingsEn from '@/i18n/locales/en/settings.json';
+import type { TPublicServerSettings } from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { Provider } from 'react-redux';
 
 const noop = () => {};
 
@@ -55,22 +55,17 @@ await i18n.init({
   interpolation: { escapeValue: false }
 });
 
-const publicSettings =
-  process.argv[2] === 'simulcast'
-    ? { webRtcSimulcastEnabled: true }
-    : undefined;
+// the panel only reads the simulcast switch, the rest of the settings stay out
+const publicSettings = (process.argv[2] === 'simulcast'
+  ? { webRtcSimulcastEnabled: true }
+  : undefined) as unknown as TPublicServerSettings | undefined;
 
-const store = {
-  getState: () => ({
-    server: {
-      publicSettings,
-      ownVoiceState: { micMuted: false, soundMuted: false },
-      currentVoiceChannelId: undefined
-    }
-  }),
-  subscribe: () => noop,
-  dispatch: noop
-};
+const { setStoreState } = await import('@/features/store');
+const { serverInitialState } = await import('@/features/server/slice');
+
+setStoreState({
+  server: { ...serverInitialState, publicSettings }
+});
 
 const { DevicesProviderContext } =
   await import('@/components/devices-provider');
@@ -117,13 +112,11 @@ const devicesContext = {
 };
 
 const html = renderToStaticMarkup(
-  <Provider store={store as never}>
-    <I18nextProvider i18n={i18n}>
-      <DevicesProviderContext.Provider value={devicesContext as never}>
-        <Devices />
-      </DevicesProviderContext.Provider>
-    </I18nextProvider>
-  </Provider>
+  <I18nextProvider i18n={i18n}>
+    <DevicesProviderContext.Provider value={devicesContext as never}>
+      <Devices />
+    </DevicesProviderContext.Provider>
+  </I18nextProvider>
 );
 
 console.log(`__MARKUP__${html}`);

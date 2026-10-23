@@ -4,8 +4,8 @@ import {
 } from '@/features/app/selectors';
 import type { IRootState } from '@/features/store';
 import { ChannelType, type TChannel } from '@dodecagon/shared';
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 
 const DEFAULT_OBJECT = {};
 

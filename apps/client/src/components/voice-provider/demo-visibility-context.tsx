@@ -1,7 +1,7 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useVoice } from '@/features/server/voice/hooks';
 import { voiceChannelStateSelector } from '@/features/server/voice/selectors';
-import type { IRootState } from '@/features/store';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import { logVoiceError } from '@/helpers/browser-logger';
 import { StreamKind } from '@dodecagon/shared';
 import {
@@ -14,7 +14,6 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import { useSelector } from 'react-redux';
 import { useVoiceEvents } from './hooks/use-voice-events';
 
 type TViewedRemoteDemos = Record<number, true>;
@@ -56,7 +55,7 @@ const DemoVisibilityProvider = memo(
     } = voice;
     const isVoiceOnlyMode = voiceOnlyModeRef.current;
     const currentVoiceChannelId = useCurrentVoiceChannelId();
-    const voiceChannelState = useSelector((state: IRootState) =>
+    const voiceChannelState = useStoreSelector((state: IRootState) =>
       currentVoiceChannelId === undefined
         ? undefined
         : voiceChannelStateSelector(state, currentVoiceChannelId)

@@ -4,8 +4,8 @@ import {
   UserStatus,
   type TJoinedPublicUser
 } from '@dodecagon/shared';
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 
 const STATUS_ORDER: Record<string, number> = {
   online: 0,

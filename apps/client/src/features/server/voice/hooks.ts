@@ -1,10 +1,9 @@
 import { useAudioLevel } from '@/components/channel-view/voice/hooks/use-audio-level';
 import { VoiceProviderContext } from '@/components/voice-provider';
-import type { IRootState } from '@/features/store';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import { getTRPCClient } from '@/lib/trpc';
 import { StreamKind } from '@dodecagon/shared';
 import { useContext, useEffect, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import { handleSubscriptionError } from '../subscription-error';
 import { useIsOwnUser } from '../users/hooks';
 import { setScreenViewers } from './actions';
@@ -22,12 +21,12 @@ import {
 } from './selectors';
 
 export const useVoiceChannelExternalStreamsList = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     voiceChannelExternalStreamsListSelector(state, channelId)
   );
 
 export const useVoiceChannelAudioExternalStreams = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     voiceChannelAudioExternalStreamsSelector(state, channelId)
   );
 
@@ -43,18 +42,20 @@ export const useVoice = () => {
   return context;
 };
 
-export const useOwnVoiceState = () => useSelector(ownVoiceStateSelector);
+export const useOwnVoiceState = () => useStoreSelector(ownVoiceStateSelector);
 
-export const usePinnedCard = () => useSelector(pinnedCardSelector);
+export const usePinnedCard = () => useStoreSelector(pinnedCardSelector);
 
 export const useVoiceMoveTargetChannelId = () =>
-  useSelector(voiceMoveTargetChannelIdSelector);
+  useStoreSelector(voiceMoveTargetChannelIdSelector);
 
 export const useVoiceReactions = (userId: number) =>
-  useSelector((state: IRootState) => voiceReactionsSelector(state, userId));
+  useStoreSelector((state: IRootState) =>
+    voiceReactionsSelector(state, userId)
+  );
 
 export const useScreenViewers = (channelId: number) => {
-  const demos = useSelector((state: IRootState) =>
+  const demos = useStoreSelector((state: IRootState) =>
     screenViewersByChannelIdSelector(state, channelId)
   );
 
@@ -81,13 +82,13 @@ export const useScreenViewers = (channelId: number) => {
 };
 
 export const useHideNonVideoParticipants = () =>
-  useSelector(hideNonVideoParticipantsSelector);
+  useStoreSelector(hideNonVideoParticipantsSelector);
 
 export const useShowUserBannersInVoice = () =>
-  useSelector(showUserBannersInVoiceSelector);
+  useStoreSelector(showUserBannersInVoiceSelector);
 
 export const useHideOwnScreenShare = () =>
-  useSelector(hideOwnScreenShareSelector);
+  useStoreSelector(hideOwnScreenShareSelector);
 
 export const useSpeakingState = (userId: number) => {
   const { remoteUserStreams, localAudioStream } = useVoice();

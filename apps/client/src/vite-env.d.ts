@@ -16,7 +16,7 @@ declare global {
 
     // libs exposed for plugins to use
     __DODECAGON_EXPOSED_LIBS__: {
-      createSelector: typeof import('@reduxjs/toolkit').createSelector;
+      createSelector: typeof import('reselect').createSelector;
       createCachedSelector: typeof import('re-reselect').createCachedSelector;
     };
 

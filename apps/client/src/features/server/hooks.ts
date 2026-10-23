@@ -1,6 +1,6 @@
+import { useStoreSelector } from '@/features/store';
 import { ChannelPermission, Permission } from '@dodecagon/shared';
 import { useCallback, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import type { IRootState } from '../store';
 import { useChannelById, useChannelPermissionsById } from './channels/hooks';
 import { channelReadStateByIdSelector } from './channels/selectors';
@@ -37,43 +37,44 @@ import {
   webRtcSimulcastEnabledSelector
 } from './selectors';
 
-export const useIsConnected = () => useSelector(connectedSelector);
+export const useIsConnected = () => useStoreSelector(connectedSelector);
 
-export const useIsReconnecting = () => useSelector(reconnectingSelector);
+export const useIsReconnecting = () => useStoreSelector(reconnectingSelector);
 
-export const useReconnectState = () => useSelector(reconnectSelector);
+export const useReconnectState = () => useStoreSelector(reconnectSelector);
 
-export const useDisconnectInfo = () => useSelector(disconnectInfoSelector);
+export const useDisconnectInfo = () => useStoreSelector(disconnectInfoSelector);
 
-export const useServerName = () => useSelector(serverNameSelector);
+export const useServerName = () => useStoreSelector(serverNameSelector);
 
-export const useTotalUnreadCount = () => useSelector(totalUnreadCountSelector);
+export const useTotalUnreadCount = () =>
+  useStoreSelector(totalUnreadCountSelector);
 
 export const usePublicServerSettings = () =>
-  useSelector(publicServerSettingsSelector);
+  useStoreSelector(publicServerSettingsSelector);
 
 export const useWebRtcSimulcastEnabled = () =>
-  useSelector(webRtcSimulcastEnabledSelector);
+  useStoreSelector(webRtcSimulcastEnabledSelector);
 
 export const useDirectMediaPolicy = () =>
-  useSelector(directMediaPolicySelector);
+  useStoreSelector(directMediaPolicySelector);
 
 export const useCurrentVoicePeers = () =>
-  useSelector(currentVoicePeersSelector);
+  useStoreSelector(currentVoicePeersSelector);
 
-export const useOwnUserRoles = () => useSelector(ownUserRolesSelector);
+export const useOwnUserRoles = () => useStoreSelector(ownUserRolesSelector);
 
 export const useHiddenPluginComponents = () =>
-  useSelector(hiddenPluginComponentsSelector);
+  useStoreSelector(hiddenPluginComponentsSelector);
 
-export const useInfo = () => useSelector(infoSelector);
+export const useInfo = () => useStoreSelector(infoSelector);
 
-export const useIsOwnUserOwner = () => useSelector(isOwnUserOwnerSelector);
+export const useIsOwnUserOwner = () => useStoreSelector(isOwnUserOwnerSelector);
 
 export const useReferenceableChannels = () =>
-  useSelector(referenceableChannelsSelector);
+  useStoreSelector(referenceableChannelsSelector);
 
-export const usePluginsEnabled = () => useSelector(pluginsEnabledSelector);
+export const usePluginsEnabled = () => useStoreSelector(pluginsEnabledSelector);
 
 export const useCan = () => {
   const ownUserRoles = useOwnUserRoles();
@@ -127,42 +128,42 @@ export const useChannelCan = (channelId: number | undefined) => {
 
 // Returns true if the user can view at least one of the channels in the category
 export const useHasVisibleChannelsInCategory = (categoryId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     hasVisibleChannelsInCategorySelector(state, categoryId)
   );
 
 export const useUserRoles = (userId: number) =>
-  useSelector((state: IRootState) => userRolesSelector(state, userId));
+  useStoreSelector((state: IRootState) => userRolesSelector(state, userId));
 
 export const useTypingUsersByChannelId = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     typingUsersByChannelIdSelector(state, channelId)
   );
 
 export const useTypingUsersByThreadId = (parentMessageId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     typingUsersByThreadIdSelector(state, parentMessageId)
   );
 
 export const useVoiceUsersByChannelId = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     voiceUsersByChannelIdSelector(state, channelId)
   );
 
-export const useOwnVoiceUser = () => useSelector(ownVoiceUserSelector);
+export const useOwnVoiceUser = () => useStoreSelector(ownVoiceUserSelector);
 
 export const useUnreadMessagesCount = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     channelReadStateByIdSelector(state, channelId)
   );
 
 export const useCategoryUnreadMessagesCount = (categoryId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     categoryUnreadMessagesCountSelector(state, categoryId)
   );
 
 export const useCategoryHasUnreadMentions = (categoryId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     categoryHasUnreadMentionsSelector(state, categoryId)
   );
 
@@ -177,22 +178,22 @@ export const useCategoryUnreadData = (categoryId: number) => {
 };
 
 export const useHasSharingScreenUsers = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     hasSharingScreenUsersSelector(state, channelId)
   );
 
 export const useHasUnreadMentions = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     hasUnreadMentionsSelector(state, channelId)
   );
 
 export const useActiveFullscreenPluginId = () =>
-  useSelector(activeFullscreenPluginIdSelector);
+  useStoreSelector(activeFullscreenPluginIdSelector);
 
-export const useDmsOpen = () => useSelector(dmsOpenSelector);
+export const useDmsOpen = () => useStoreSelector(dmsOpenSelector);
 
 export const useActiveDmChannelId = () =>
-  useSelector(activeDmChannelIdSelector);
+  useStoreSelector(activeDmChannelIdSelector);
 
 export const useUserSettingsPlugins = () =>
-  useSelector(userSettingsPluginsSelector);
+  useStoreSelector(userSettingsPluginsSelector);

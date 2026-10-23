@@ -1,5 +1,5 @@
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 import type { IRootState } from '../store';
 
 export const appLoadingSelector = (state: IRootState) => state.app.appLoading;

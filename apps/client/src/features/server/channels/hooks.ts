@@ -1,5 +1,4 @@
-import type { IRootState } from '@/features/store';
-import { useSelector } from 'react-redux';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import {
   channelByIdSelector,
   channelIdsByCategorySelector,
@@ -15,37 +14,39 @@ import {
 } from './selectors';
 
 export const useChannels = () =>
-  useSelector((state: IRootState) => channelsSelector(state));
+  useStoreSelector((state: IRootState) => channelsSelector(state));
 
 export const useChannelById = (channelId: number) =>
-  useSelector((state: IRootState) => channelByIdSelector(state, channelId));
+  useStoreSelector((state: IRootState) =>
+    channelByIdSelector(state, channelId)
+  );
 
 export const useChannelsByCategoryId = (categoryId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     channelsByCategoryIdSelector(state, categoryId)
   );
 
 export const useChannelIdsByCategory = () =>
-  useSelector(channelIdsByCategorySelector);
+  useStoreSelector(channelIdsByCategorySelector);
 
 export const useSelectedChannelId = () =>
-  useSelector(selectedChannelIdSelector);
+  useStoreSelector(selectedChannelIdSelector);
 
 export const useCurrentVoiceChannelId = () =>
-  useSelector(currentVoiceChannelIdSelector);
+  useStoreSelector(currentVoiceChannelIdSelector);
 
 export const useIsCurrentVoiceChannelSelected = () =>
-  useSelector(isCurrentVoiceChannelSelectedSelector);
+  useStoreSelector(isCurrentVoiceChannelSelectedSelector);
 
 export const useChannelPermissionsById = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     channelPermissionsByIdSelector(state, channelId)
   );
 
 export const useSelectedChannelType = () =>
-  useSelector(selectedChannelTypeSelector);
+  useStoreSelector(selectedChannelTypeSelector);
 
-export const useChannelsMap = () => useSelector(channelsMapSelector);
+export const useChannelsMap = () => useStoreSelector(channelsMapSelector);
 
 export const useDirectMessagesUnreadCount = () =>
-  useSelector(directMessagesUnreadCountSelector);
+  useStoreSelector(directMessagesUnreadCountSelector);

@@ -5,7 +5,6 @@ import settingsEn from '@/i18n/locales/en/settings.json';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { Provider } from 'react-redux';
 
 const noop = () => {};
 
@@ -50,20 +49,17 @@ const appState = {
   messageSentSound: enabled.has('sentSound')
 };
 
-const store = {
-  getState: () => ({ app: appState }),
-  subscribe: () => noop,
-  dispatch: noop
-};
+const { setStoreState } = await import('@/features/store');
+const { appInitialState } = await import('@/features/app/slice');
+
+setStoreState({ app: { ...appInitialState, ...appState } });
 
 const { Notifications } = await import('../index');
 
 const html = renderToStaticMarkup(
-  <Provider store={store as never}>
-    <I18nextProvider i18n={i18n}>
-      <Notifications />
-    </I18nextProvider>
-  </Provider>
+  <I18nextProvider i18n={i18n}>
+    <Notifications />
+  </I18nextProvider>
 );
 
 console.log(`__MARKUP__${html}`);

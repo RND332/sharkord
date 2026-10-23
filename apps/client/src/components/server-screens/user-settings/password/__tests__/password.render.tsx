@@ -5,7 +5,6 @@ import settingsEn from '@/i18n/locales/en/settings.json';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { Provider } from 'react-redux';
 
 const noop = () => {};
 
@@ -40,20 +39,19 @@ await i18n.init({
 
 const ownUserPasswordSet = process.argv[2] !== 'managed';
 
-const store = {
-  getState: () => ({ server: { ownUserPasswordSet } }),
-  subscribe: () => noop,
-  dispatch: noop
-};
+const { setStoreState } = await import('@/features/store');
+const { serverInitialState } = await import('@/features/server/slice');
+
+setStoreState({
+  server: { ...serverInitialState, ownUserPasswordSet }
+});
 
 const { Password } = await import('../index');
 
 const html = renderToStaticMarkup(
-  <Provider store={store as never}>
-    <I18nextProvider i18n={i18n}>
-      <Password />
-    </I18nextProvider>
-  </Provider>
+  <I18nextProvider i18n={i18n}>
+    <Password />
+  </I18nextProvider>
 );
 
 console.log(`__MARKUP__${html}`);

@@ -89,7 +89,8 @@ mock.module('@/features/server/channels/selectors', () => ({
   })
 }));
 mock.module('@/features/store', () => ({
-  store: { getState: () => ({}), dispatch() {} }
+  store: { getState: () => ({}), dispatch() {} },
+  useStoreSelector: (selector: (state: unknown) => unknown) => selector({})
 }));
 
 let voice: import('../index').TVoiceProvider;

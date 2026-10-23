@@ -1,13 +1,12 @@
-import type { IRootState } from '@/features/store';
-import { useSelector } from 'react-redux';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import {
   customEmojiFileByNameSelector,
   customEmojisSelector
 } from './selectors';
 
-export const useCustomEmojis = () => useSelector(customEmojisSelector);
+export const useCustomEmojis = () => useStoreSelector(customEmojisSelector);
 
 export const useCustomEmojiFile = (name: string) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     customEmojiFileByNameSelector(state, name)
   );

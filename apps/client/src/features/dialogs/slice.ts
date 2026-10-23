@@ -1,6 +1,6 @@
 import type { Dialog } from '@/components/dialogs/dialogs';
 import type { TGenericObject } from '@dodecagon/shared';
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { produce } from 'immer';
 
 export type TDialogState = {
   openDialog: Dialog | undefined;
@@ -14,28 +14,43 @@ const initialState: TDialogState = {
   isOpen: false
 };
 
-export const dialogSlice = createSlice({
-  name: 'dialog',
-  initialState,
-  reducers: {
-    resetDialogs: () => initialState,
-    openDialog: (
-      state,
-      action: PayloadAction<{ dialog: Dialog; props?: TGenericObject }>
-    ) => {
-      state.openDialog = action.payload.dialog;
-      state.props = action.payload.props || {};
-      state.isOpen = true;
-    },
-    closeDialogs: (state) => {
-      state.openDialog = undefined;
-      state.props = {};
-      state.isOpen = false;
-    }
+const dialogSliceActions = {
+  resetDialogs: () => ({ type: 'dialog/resetDialogs' }) as const,
+  openDialog: (payload: { dialog: Dialog; props?: TGenericObject }) =>
+    ({ type: 'dialog/openDialog', payload }) as const,
+  closeDialogs: () => ({ type: 'dialog/closeDialogs' }) as const
+};
+
+export type TDialogAction = ReturnType<
+  (typeof dialogSliceActions)[keyof typeof dialogSliceActions]
+>;
+
+const dialogSliceReducer = (
+  state: TDialogState,
+  action: TDialogAction
+): TDialogState => {
+  if (action.type === 'dialog/resetDialogs') {
+    return initialState;
   }
-});
 
-const dialogSliceActions = dialogSlice.actions;
-const dialogSliceReducer = dialogSlice.reducer;
+  return produce(state, (draft) => {
+    switch (action.type) {
+      case 'dialog/openDialog':
+        draft.openDialog = action.payload.dialog;
+        draft.props = action.payload.props || {};
+        draft.isOpen = true;
+        break;
+      case 'dialog/closeDialogs':
+        draft.openDialog = undefined;
+        draft.props = {};
+        draft.isOpen = false;
+        break;
+    }
+  });
+};
 
-export { dialogSliceActions, dialogSliceReducer };
+export {
+  initialState as dialogInitialState,
+  dialogSliceActions,
+  dialogSliceReducer
+};

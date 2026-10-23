@@ -1,6 +1,6 @@
+import { useStoreSelector } from '@/features/store';
 import type { TPluginUserData } from '@dodecagon/shared';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { useSelector } from 'react-redux';
 import { ownUserIdSelector } from '../users/selectors';
 import { usePluginId } from './plugin-id-context';
 import { pluginActions } from './plugin-store';
@@ -70,7 +70,7 @@ const noopSubscribe = () => () => {};
 
 const usePluginUserData = (): TPluginUserData => {
   const pluginId = usePluginId();
-  const ownUserId = useSelector(ownUserIdSelector);
+  const ownUserId = useStoreSelector(ownUserIdSelector);
   const key =
     pluginId && ownUserId !== undefined
       ? `${ownUserId}:${pluginId}`

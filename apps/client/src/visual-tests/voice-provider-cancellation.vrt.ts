@@ -6,11 +6,9 @@ import {
   type TVoiceProvider
 } from '@/components/voice-provider';
 import { setCurrentVoiceChannelId } from '@/features/server/channels/actions';
-import { store } from '@/features/store';
 import { LocalStorageKey } from '@/helpers/storage';
 import { act, createElement, useContext } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Provider as ReduxProvider } from 'react-redux';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 type TUpdateState = (state: { voiceOnlyMode: boolean }) => Promise<void>;
@@ -140,12 +138,9 @@ const mountProviders = async () => {
 
   await act(async () => {
     root!.render(
-      createElement(ReduxProvider, {
-        store,
-        children: createElement(DevicesProvider, {
-          children: createElement(VoiceProvider, {
-            children: createElement(VoiceProbe)
-          })
+      createElement(DevicesProvider, {
+        children: createElement(VoiceProvider, {
+          children: createElement(VoiceProbe)
         })
       })
     );

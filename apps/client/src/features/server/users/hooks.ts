@@ -1,5 +1,4 @@
-import type { IRootState } from '@/features/store';
-import { useSelector } from 'react-redux';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import {
   filteredUsersSelector,
   isOwnUserSelector,
@@ -14,34 +13,36 @@ import {
   userStatusSelector
 } from './selectors';
 
-export const useUsers = () => useSelector(usersSelector);
+export const useUsers = () => useStoreSelector(usersSelector);
 
-export const useOwnUserId = () => useSelector(ownUserIdSelector);
+export const useOwnUserId = () => useStoreSelector(ownUserIdSelector);
 
 export const useOwnUserPasswordSet = () =>
-  useSelector(ownUserPasswordSetSelector);
+  useStoreSelector(ownUserPasswordSetSelector);
 
 export const useIsOwnUser = (userId: number | null) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     userId !== null ? isOwnUserSelector(state, userId) : false
   );
 
 export const useUserById = (userId: number | null) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     userId !== null ? userByIdSelector(state, userId) : undefined
   );
 
 export const useOwnPublicUser = () =>
-  useSelector((state: IRootState) => ownUserSelector(state));
+  useStoreSelector((state: IRootState) => ownUserSelector(state));
 
 export const useUserStatus = (userId: number) =>
-  useSelector((state: IRootState) => userStatusSelector(state, userId));
+  useStoreSelector((state: IRootState) => userStatusSelector(state, userId));
 
-export const useUsernames = () => useSelector(usernamesSelector);
+export const useUsernames = () => useStoreSelector(usernamesSelector);
 
-export const useFilteredUsers = () => useSelector(filteredUsersSelector);
+export const useFilteredUsers = () => useStoreSelector(filteredUsersSelector);
 
-export const useOwnUserRoleIds = () => useSelector(ownUserRoleIdsSelector);
+export const useOwnUserRoleIds = () => useStoreSelector(ownUserRoleIdsSelector);
 
 export const useOwnUserHasRole = (roleId: number) =>
-  useSelector((state: IRootState) => ownUserHasRoleSelector(state, roleId));
+  useStoreSelector((state: IRootState) =>
+    ownUserHasRoleSelector(state, roleId)
+  );

@@ -1,8 +1,9 @@
-import type { IRootState } from '@/features/store';
-import { useSelector } from 'react-redux';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import { categoriesSelector, categoryByIdSelector } from './selectors';
 
-export const useCategories = () => useSelector(categoriesSelector);
+export const useCategories = () => useStoreSelector(categoriesSelector);
 
 export const useCategoryById = (categoryId: number) =>
-  useSelector((state: IRootState) => categoryByIdSelector(state, categoryId));
+  useStoreSelector((state: IRootState) =>
+    categoryByIdSelector(state, categoryId)
+  );

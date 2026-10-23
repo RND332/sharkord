@@ -3,26 +3,18 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { ThreadSidebar } from '@/components/thread-sidebar';
 import { ParentMessagePreview } from '@/components/thread-sidebar/parent-message-preview';
 import { closeThreadSidebar, openThreadSidebar } from '@/features/app/actions';
-import { appSliceReducer } from '@/features/app/slice';
-import { dialogSliceReducer } from '@/features/dialogs/slice';
-import { serverScreenSliceReducer } from '@/features/server-screens/slice';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import {
   messagesByChannelIdSelector,
   threadMessagesByParentIdSelector
 } from '@/features/server/messages/selectors';
-import {
-  serverSliceActions,
-  serverSliceReducer
-} from '@/features/server/slice';
+import { serverSliceActions } from '@/features/server/slice';
 import { store } from '@/features/store';
 import { LocalStorageKey } from '@/helpers/storage';
 import { getTRPCClient } from '@/lib/trpc';
 import { TestId, type TJoinedMessage } from '@dodecagon/shared';
-import { configureStore } from '@reduxjs/toolkit';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Provider } from 'react-redux';
 import {
   afterAll,
   afterEach,
@@ -83,22 +75,9 @@ const renderFixture = async (
   message = parent,
   threadReplies = replies
 ) => {
-  const fixtureStore = configureStore({
-    reducer: {
-      app: appSliceReducer,
-      server: serverSliceReducer,
-      dialog: dialogSliceReducer,
-      serverScreen: serverScreenSliceReducer
-    },
-    preloadedState: store.getState(),
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ serializableCheck: false })
-  });
-  fixtureStore.dispatch(
-    serverSliceActions.updateMessage({ channelId: 1, message })
-  );
-  fixtureStore.dispatch(serverSliceActions.clearThreadMessages(message.id));
-  fixtureStore.dispatch(
+  store.dispatch(serverSliceActions.updateMessage({ channelId: 1, message }));
+  store.dispatch(serverSliceActions.clearThreadMessages(message.id));
+  store.dispatch(
     serverSliceActions.addThreadMessages({
       parentMessageId: message.id,
       messages: threadReplies
@@ -109,9 +88,7 @@ const renderFixture = async (
     'position:fixed;left:0;top:0;width:500px;height:900px;background:var(--color-nav);z-index:1000';
   document.body.append(fixtureHost);
   fixtureRoot = createRoot(fixtureHost);
-  fixtureRoot.render(
-    createElement(Provider, { store: fixtureStore, children })
-  );
+  fixtureRoot.render(children);
   await settle();
   return fixtureHost;
 };
@@ -332,13 +309,10 @@ test('compact replies tolerate an invalid date while epoch zero stays machine-re
   expect(host.textContent).toContain('Unknown time');
   expect(host.textContent).not.toContain('Reply render failed');
   fixtureRoot!.render(
-    createElement(Provider, {
-      store,
-      children: createElement(MessagesGroup, {
-        group: [{ ...replies[0], createdAt: 0 }],
-        compact: true,
-        showClockTime: true
-      })
+    createElement(MessagesGroup, {
+      group: [{ ...replies[0], createdAt: 0 }],
+      compact: true,
+      showClockTime: true
     })
   );
   await settle();
