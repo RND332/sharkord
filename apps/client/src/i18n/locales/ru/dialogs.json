@@ -138,5 +138,9 @@
   "shortcutBackToVoice": "Вернуться в голосовой канал",
   "createCategoryDesc": "Объедините каналы вокруг одной темы.",
   "createCategoryHint": "Новые каналы можно будет добавить сюда после создания категории.",
-  "textInputLabel": "Значение"
+  "textInputLabel": "Значение",
+  "jumpToFile": "Перейти к файлу",
+  "sharedBy": "Загрузил {{name}} · {{size}}",
+  "searchResultsRange": "{{from}}–{{to}} из {{total}} результатов",
+  "escToClose": "Esc, чтобы закрыть"
 }

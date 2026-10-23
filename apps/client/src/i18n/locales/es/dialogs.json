@@ -138,5 +138,9 @@
   "shortcutBackToVoice": "Volver al canal de voz",
   "createCategoryDesc": "Organiza los canales en torno a un tema.",
   "createCategoryHint": "Puedes añadir canales nuevos aquí después de crear la categoría.",
-  "textInputLabel": "Valor"
+  "textInputLabel": "Valor",
+  "jumpToFile": "Ir al archivo",
+  "sharedBy": "Compartido por {{name}} · {{size}}",
+  "searchResultsRange": "{{from}}–{{to}} de {{total}} resultados",
+  "escToClose": "Esc para cerrar"
 }
