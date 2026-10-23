@@ -11,6 +11,7 @@ import type { TMessageJumpToTarget } from '@/types';
 import type { TServerInfo } from '@dodecagon/shared';
 import { toast } from 'sonner';
 import { markChannelAsRead, setInfo } from '../server/actions';
+import { getServerInfo } from '../server/server-functions';
 import { store } from '../store';
 import {
   mutedChannelIdsSelector,
@@ -67,16 +68,7 @@ const applyServerBranding = (info: TServerInfo) => {
 
 export const fetchServerInfo = async (): Promise<TServerInfo | undefined> => {
   try {
-    const url = getUrlFromServer();
-    const response = await fetch(`${url}/info`);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch server info');
-    }
-
-    const data = await response.json();
-
-    return data;
+    return await getServerInfo();
   } catch (error) {
     console.error('Error fetching server info:', error);
   }
