@@ -34,7 +34,8 @@ globalThis.document =
 
 mock.module('@/features/server/hooks', () => ({
   useServerName: () => 'ULTRABUSTER',
-  usePublicServerSettings: () => ({ enableSearch: true })
+  usePublicServerSettings: () => ({ enableSearch: true }),
+  useCan: () => () => true
 }));
 
 mock.module('@/features/dialogs/actions', () => ({ openDialog: noop }));
