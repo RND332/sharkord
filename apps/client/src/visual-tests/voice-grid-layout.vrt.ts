@@ -19,7 +19,7 @@ const cards = ['share', 'one', 'two', 'three'].map((id) =>
       style: {
         width: '100%',
         height: '100%',
-        minHeight: 100,
+        minHeight: 90,
         background: 'gray'
       }
     },
@@ -70,12 +70,13 @@ test('grid continues measuring after pinning, resizing and unpinning', async () 
   await expect.poll(columns).toBe(2);
 });
 
-test('pinned participants use the Paper 4:3 thumbnail size', async () => {
+test('pinned participants keep the 16:9 thumbnail shape', async () => {
   await render('share');
-  const thumbnail = host!.querySelector('[data-card="one"]')!;
+  const thumbnail = host!.querySelector('[data-card="one"]')!.parentElement!;
   const rect = thumbnail.getBoundingClientRect();
-  expect(rect.width).toBe(152);
-  expect(rect.height).toBe(114);
+  expect(rect.width).toBe(160);
+  expect(rect.height).toBe(90);
+  expect(rect.width / rect.height).toBeCloseTo(16 / 9);
   expect(getComputedStyle(host!.firstElementChild!).paddingTop).toBe('24px');
   expect(getComputedStyle(host!.firstElementChild!).paddingBottom).toBe('12px');
 });

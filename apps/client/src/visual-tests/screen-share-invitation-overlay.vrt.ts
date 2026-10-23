@@ -231,10 +231,10 @@ test.each([
   { view: 'grid', width: 345, height: 194, videoWidth: 343, videoHeight: 192 },
   {
     view: 'thumbnail',
-    width: 152,
-    height: 114,
-    videoWidth: 150,
-    videoHeight: 112
+    width: 160,
+    height: 90,
+    videoWidth: 158,
+    videoHeight: 88
   }
 ])(
   '$view video uses the full frame with a bounded 26px overlay',
@@ -272,15 +272,15 @@ test('grid stats describe decoded media without requiring a pin', async () => {
 
 test('compact names truncate before stats without changing thumbnail dimensions', async () => {
   compact = true;
-  await mount(152, 114);
+  await mount(160, 90);
   state.name = 'aria with a deliberately long display name';
   await attachMedia();
   const { label, badge } = caption();
-  expect(badge.getBoundingClientRect().width).toBeLessThanOrEqual(134);
+  expect(badge.getBoundingClientRect().width).toBeLessThanOrEqual(142);
   expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
   expect(getComputedStyle(label).textOverflow).toBe('ellipsis');
   expect(getComputedStyle(label).whiteSpace).toBe('nowrap');
-  expect(host!.getBoundingClientRect().height).toBe(114);
+  expect(host!.getBoundingClientRect().height).toBe(90);
   await expect
     .poll(() => label.textContent, { timeout: 3_000 })
     .toContain('640x360');
