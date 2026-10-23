@@ -2,7 +2,7 @@ import { FullScreenImage } from '@/components/fullscreen-image/content';
 import type { TDisplayItem } from '@/hooks/use-upload-files';
 import { cn } from '@/lib/utils';
 import { FileCategory, getFileCategory } from '@dodecagon/shared';
-import { Button } from '@dodecagon/ui';
+import { Button, CircularProgress } from '@dodecagon/ui';
 import {
   DocumentIcon,
   DocumentTextIcon,
@@ -22,19 +22,6 @@ const categoryIconMap: Record<FileCategory, React.ElementType> = {
   [FileCategory.DOCUMENT]: DocumentTextIcon,
   [FileCategory.OTHER]: DocumentIcon
 };
-
-type TUploadProgressBarProps = {
-  progress: number;
-};
-
-const UploadProgressBar = memo(({ progress }: TUploadProgressBarProps) => (
-  <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
-    <div
-      className="h-full bg-primary transition-all duration-200"
-      style={{ width: `${progress}%` }}
-    />
-  </div>
-));
 
 type TPreviewFileProps = {
   item: TDisplayItem;
@@ -68,6 +55,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
 
   const hasPreview = !!previewUrl && !previewError && (isImage || isVideo);
   const Icon = categoryIconMap[category] || DocumentIcon;
+  const progressTone = hasPreview ? 'text-white' : 'text-foreground';
 
   return (
     <div
@@ -91,40 +79,44 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
                 className="h-full w-full aspect-auto"
               />
             )}
-            {isUploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <span className="text-sm font-medium text-white">
-                  {progress}%
-                </span>
-              </div>
-            )}
           </>
         ) : (
+          <div className="flex h-full w-full items-center justify-center bg-muted/50">
+            <Icon className="h-10 w-10 text-muted-foreground" />
+          </div>
+        )}
+        {isUploading && (
           <div
             className={cn(
-              'flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/50',
-              isUploading && 'opacity-60'
+              'absolute inset-0 flex items-center justify-center',
+              hasPreview && 'bg-black/50'
             )}
           >
-            <Icon className="h-10 w-10 text-muted-foreground" />
-            {isUploading && (
-              <span className="text-xs font-medium text-muted-foreground">
+            <CircularProgress
+              value={progress ?? 0}
+              className={cn('size-12', progressTone)}
+            >
+              <span className={cn('text-xs font-medium', progressTone)}>
                 {progress}%
               </span>
-            )}
+            </CircularProgress>
           </div>
         )}
       </div>
 
-      <div className="flex flex-col gap-0.5 px-3 py-2">
-        <span
-          className="truncate text-sm font-semibold text-foreground"
-          title={name}
-        >
-          {name}
-        </span>
-        <span className="text-xs text-muted-foreground">{filesize(size)}</span>
-      </div>
+      {!hasPreview && (
+        <div className="flex flex-col gap-0.5 px-3 py-2">
+          <span
+            className="truncate text-sm font-semibold text-foreground"
+            title={name}
+          >
+            {name}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {filesize(size)}
+          </span>
+        </div>
+      )}
 
       {onRemove && (
         <Button
@@ -136,10 +128,8 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
           <TrashIcon className="h-3 w-3" />
         </Button>
       )}
-
-      {isUploading && <UploadProgressBar progress={progress} />}
     </div>
   );
 });
 
-export { PreviewFile, UploadProgressBar };
+export { PreviewFile };

@@ -72,6 +72,10 @@ test('the composer shows the pasted attachment in a discord like card', async ()
 
   await expect.element(uploading).not.toBeInTheDocument();
 
+  const progress = page.getByRole('progressbar');
+
+  await expect.element(progress).not.toBeInTheDocument();
+
   const card = document.querySelector('[data-attachment-preview]');
 
   expect(card).not.toBeNull();
@@ -114,11 +118,11 @@ test('the composer keeps the focus when the pasted attachment finishes uploading
 
   await pasteFile('focus-check.txt', 8 * 1024 * 1024);
 
-  const uploading = page.getByText(/Uploading files/);
+  const progress = page.getByRole('progressbar');
 
-  await expect.element(uploading).toBeVisible();
+  await expect.element(progress).toBeVisible();
 
-  await expect.element(uploading).not.toBeInTheDocument();
+  await expect.element(progress).not.toBeInTheDocument();
 
   observer.disconnect();
 

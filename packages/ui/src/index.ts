@@ -6,6 +6,7 @@ export * from './components/badge';
 export * from './components/button';
 export * from './components/calendar';
 export * from './components/card';
+export * from './components/circular-progress';
 export * from './components/color-picker';
 export * from './components/context-menu';
 export * from './components/date-picker';

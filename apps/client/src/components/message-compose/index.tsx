@@ -25,7 +25,7 @@ import {
   Permission,
   PluginSlot
 } from '@dodecagon/shared';
-import { Button, Spinner } from '@dodecagon/ui';
+import { Button } from '@dodecagon/ui';
 import {
   ArrowUturnLeftIcon,
   FaceSmileIcon,
@@ -33,7 +33,6 @@ import {
   PlusIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { filesize } from 'filesize';
 import {
   memo,
   useCallback,
@@ -153,8 +152,6 @@ const MessageCompose = memo(
       removeFile,
       clearFiles,
       uploading,
-      uploadingSize,
-      uploadSpeed,
       openFileDialog,
       fileInputProps
     } = useUploadFiles(channelId, containerRef, !canSendMessages);
@@ -290,15 +287,6 @@ const MessageCompose = memo(
                 >
                   <XMarkIcon className="size-3.5" />
                 </Button>
-              </div>
-            )}
-            {uploading && (
-              <div className="flex items-center gap-2 px-2 pt-2">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Uploading files ({filesize(uploadingSize)})
-                  {uploadSpeed > 0 && ` - ${filesize(uploadSpeed)}/s`}
-                </div>
-                <Spinner size="xxs" />
               </div>
             )}
             {displayItems.length > 0 && (
