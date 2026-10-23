@@ -43,6 +43,47 @@ const unpack = async (tgzPath: string, outDir: string) => {
   }
 };
 
+const MEDIASOUP_MACHINE: Partial<Record<Bun.Build.Target, number>> = {
+  'bun-linux-x64': 0x3e,
+  'bun-linux-arm64': 0xb7,
+  'bun-windows-x64': 0x3e,
+  'bun-darwin-arm64': 0xb7
+};
+
+const assertWorkerMatchesTarget = async (
+  workerPath: string,
+  target: Bun.Build.Target
+) => {
+  const expected = MEDIASOUP_MACHINE[target];
+
+  if (!expected) {
+    throw new Error(`Unsupported target for mediasoup binary: ${target}`);
+  }
+
+  const handle = await fs.open(workerPath, 'r');
+
+  try {
+    const header = Buffer.alloc(20);
+    await handle.read(header, 0, 20, 0);
+
+    if (header.subarray(0, 4).toString('binary') !== '\x7fELF') {
+      throw new Error(
+        `Mediasoup worker for ${target} is not an ELF file: ${workerPath}`
+      );
+    }
+
+    const machine = header.readUInt16LE(18);
+
+    if (machine !== expected) {
+      throw new Error(
+        `Mediasoup worker for ${target} has machine ${machine}, expected ${expected}: ${workerPath}`
+      );
+    }
+  } finally {
+    await handle.close();
+  }
+};
+
 const downloadMediasoupBinary = async (
   version: string,
   target: Bun.Build.Target
@@ -87,13 +128,21 @@ const downloadMediasoupBinary = async (
     'temp',
     `mediasoup-worker-${target}.tgz`
   );
+  // the four targets compile concurrently, so every target unpacks into its own
+  // folder. a shared path let one target embed another target's worker
+  const targetDir = path.join(serverCwd, 'build', 'temp', target);
 
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.mkdir(targetDir, { recursive: true });
   await fs.writeFile(targetPath, buffer);
 
-  await unpack(targetPath, path.join(serverCwd, 'build', 'temp'));
+  await unpack(targetPath, targetDir);
 
-  return fileName;
+  const workerPath = path.join(targetDir, fileName);
+
+  await assertWorkerMatchesTarget(workerPath, target);
+
+  return { name: fileName, path: workerPath };
 };
 
 const getCurrentVersion = async () => {
@@ -146,7 +195,7 @@ const compile = async ({ out, target }: TTarget) => {
     path.join(serverCwd, 'src', 'index.ts'),
     path.join(serverCwd, 'build', 'temp', 'drizzle.zip'),
     path.join(serverCwd, 'build', 'temp', 'interface.zip'),
-    path.join(serverCwd, 'build', 'temp', mediasoupBinary)
+    mediasoupBinary.path
   ];
 
   await Bun.build({
@@ -159,7 +208,7 @@ const compile = async ({ out, target }: TTarget) => {
       'process.env.DODECAGON_ENV': '"production"',
       'process.env.DODECAGON_BUILD_VERSION': `"${version}"`,
       'process.env.DODECAGON_BUILD_DATE': `"${new Date().toISOString()}"`,
-      'process.env.DODECAGON_MEDIASOUP_BIN_NAME': `"${mediasoupBinary}"`,
+      'process.env.DODECAGON_MEDIASOUP_BIN_NAME': `"${mediasoupBinary.name}"`,
       'process.env.CURRENT_VERSION': `"${version}"`
     }
   });
