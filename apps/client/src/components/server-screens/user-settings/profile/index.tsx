@@ -25,7 +25,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TProfileValues = {
@@ -45,8 +45,6 @@ const Profile = memo(() => {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const [isBannerMenuOpen, setIsBannerMenuOpen] = useState(false);
-  const isBannerHoverSuppressed = useRef(false);
-  const isBannerMenuOpenedByPointer = useRef(false);
 
   const onSave = useCallback(async (values: TProfileValues) => {
     const trpc = getTRPCClient();
@@ -88,33 +86,7 @@ const Profile = memo(() => {
 
     if (picked) onChange('banner', picked);
   }, [onChange, pickImage]);
-  const handleBannerPointerEnter = useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>) => {
-      if (event.pointerType !== 'mouse' || isBannerHoverSuppressed.current) {
-        return;
-      }
-
-      isBannerMenuOpenedByPointer.current = true;
-      setIsBannerMenuOpen(true);
-    },
-    []
-  );
-  const handleBannerPointerLeave = useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>) => {
-      if (event.pointerType !== 'mouse') return;
-      if (isBannerMenuOpen) return;
-
-      isBannerMenuOpenedByPointer.current = false;
-      isBannerHoverSuppressed.current = false;
-    },
-    [isBannerMenuOpen]
-  );
   const handleBannerMenuEscape = useCallback((event: Event) => {
-    if (isBannerMenuOpenedByPointer.current) {
-      isBannerHoverSuppressed.current = true;
-    }
-    isBannerMenuOpenedByPointer.current = false;
-    setIsBannerMenuOpen(false);
     event.stopPropagation();
   }, []);
 
@@ -186,13 +158,12 @@ const Profile = memo(() => {
         <DropdownMenu
           open={isBannerMenuOpen}
           onOpenChange={setIsBannerMenuOpen}
+          modal={false}
         >
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               data-profile-banner
-              onPointerEnter={handleBannerPointerEnter}
-              onPointerLeave={handleBannerPointerLeave}
               aria-label={t('changeBannerLabel')}
               className="group/banner relative block h-32 w-full overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               style={{ backgroundColor: values.profileColor }}
@@ -223,7 +194,8 @@ const Profile = memo(() => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            align="end"
+            side="right"
+            align="start"
             onEscapeKeyDown={handleBannerMenuEscape}
           >
             <DropdownMenuItem onClick={handleBannerPick}>
