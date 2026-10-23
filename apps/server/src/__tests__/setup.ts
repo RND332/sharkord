@@ -77,6 +77,80 @@ let tdb: BunSQLiteDatabase;
 let sqlite: Database | null = null;
 let testsBaseUrl: string;
 
+const originalFetch = globalThis.fetch;
+
+/**
+ * The test http server runs in this process, so it shares the event loop with the tests.
+ * A request the previous test started can still be in flight when the harness closes and
+ * swaps the database, and the harness waits for every request the test made to be
+ * answered first. A handler that reads the database after the swap throws against a
+ * closed connection, and the request is answered against the next test's database
+ * instead of the one it started on.
+ */
+const pendingRequests = new Set<Promise<unknown>>();
+const idleWaiters: Array<() => void> = [];
+
+const releaseRequest = (request: Promise<unknown>) => {
+  if (!pendingRequests.delete(request)) return;
+
+  if (pendingRequests.size > 0) return;
+
+  for (const waiter of idleWaiters.splice(0)) waiter();
+};
+
+/**
+ * The tests call the global fetch, so the harness counts the requests they leave in
+ * flight. A request that is still on the wire is invisible to the server, and the
+ * database it is going to read has to stay open until it has been answered.
+ */
+const trackClientRequest = (
+  input: Parameters<typeof originalFetch>[0],
+  init?: Parameters<typeof originalFetch>[1]
+): Promise<Response> => {
+  const request = originalFetch(input, init);
+
+  const url =
+    typeof input === 'string'
+      ? input
+      : input instanceof URL
+        ? input.href
+        : input.url;
+
+  if (!testsBaseUrl || !url.startsWith(testsBaseUrl)) return request;
+
+  pendingRequests.add(request);
+
+  // the response headers are the last thing a handler does, so the request is done with
+  // the database once they arrive
+  request.then(
+    () => releaseRequest(request),
+    () => releaseRequest(request)
+  );
+
+  return request;
+};
+
+const waitForAnsweredRequests = async () => {
+  if (pendingRequests.size === 0) return;
+
+  await new Promise<void>((resolve) => {
+    idleWaiters.push(resolve);
+  });
+};
+
+/**
+ * A test that puts its own fetch in place (the marketplace registry is served from a
+ * stub) hands the raw fetch back when it is done, which would take the tracker with
+ * it and leave the rest of the suite without a count of the requests in flight. The
+ * tracker is put back before every test instead of once for the whole process.
+ */
+const installFetchTracker = () => {
+  if (globalThis.fetch === (trackClientRequest as typeof globalThis.fetch))
+    return;
+
+  globalThis.fetch = trackClientRequest as typeof globalThis.fetch;
+};
+
 beforeAll(async () => {
   const server = await createHttpServer(0);
   const address = server.address();
@@ -88,9 +162,13 @@ beforeAll(async () => {
   await loadMediasoup();
 
   testsBaseUrl = `http://localhost:${address.port}`;
+
+  installFetchTracker();
 });
 
 beforeEach(() => {
+  installFetchTracker();
+
   testLogs.length = 0;
 
   clearRateLimitersForTests();
@@ -131,6 +209,12 @@ afterEach(async () => {
   // side effect inside the test that caused it
   await drainLoginsQueue();
   await drainActivityLogQueue();
+
+  // the server shares the event loop with the tests, so a request the test started can
+  // still be in flight here. closing the database under it would make the handler throw
+  // against a closed connection, and the request would be answered against the next
+  // test's database instead of the one it started on
+  await waitForAnsweredRequests();
 
   if (sqlite) {
     try {
