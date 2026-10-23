@@ -100,10 +100,13 @@ export const useSpeakingState = (userId: number) => {
   }, [remoteUserStreams, userId, isOwnUser, localAudioStream]);
 
   const { micMuted } = useOwnVoiceState();
-  const { isSpeaking } = useAudioLevel(audioStream);
+  const { isSpeaking, intensity } = useAudioLevel(audioStream);
 
   const isOwnUserAndSpeaking = isOwnUser && isSpeaking && !micMuted;
   const isActivelySpeaking = isOwnUserAndSpeaking || (!isOwnUser && isSpeaking);
 
-  return { isActivelySpeaking };
+  return {
+    isActivelySpeaking,
+    speakingIntensity: isActivelySpeaking ? intensity : 0
+  };
 };

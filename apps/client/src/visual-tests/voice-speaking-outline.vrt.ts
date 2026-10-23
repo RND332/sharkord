@@ -11,7 +11,7 @@ import '../index.css';
 const SUCCESS_BORDER = 'rgb(87, 209, 138)';
 const LINE_BORDER = 'rgb(68, 70, 77)';
 
-const speaking = vi.hoisted(() => ({ active: true }));
+const speaking = vi.hoisted(() => ({ active: true, intensity: 4 }));
 
 vi.mock('@/components/devices-provider/hooks/use-devices', () => ({
   useDevices: () => ({ devices: { voiceOnlyMode: false, playbackVolume: 100 } })
@@ -59,7 +59,8 @@ vi.mock('@/features/server/voice/hooks', () => ({
   // Mirrors the real hook: a remote participant speaks while the audio level
   // reports activity, the own user only speaks while unmuted.
   useSpeakingState: (userId: number) => ({
-    isActivelySpeaking: speaking.active && userId !== 1
+    isActivelySpeaking: speaking.active && userId !== 1,
+    speakingIntensity: speaking.intensity
   }),
   useVoice: () => ({
     remoteUserStreams: {},
@@ -145,9 +146,17 @@ const render = async (showSpeakingOutline: boolean) => {
 
 const tile = () => host!.querySelector<HTMLElement>('.group\\/voice-user-card');
 
+const avatar = () => host!.querySelector<HTMLElement>('[data-slot="avatar"]');
+
 const tileElement = () => {
   const element = tile();
   if (!element) throw new Error('the voice card is not rendered');
+  return element;
+};
+
+const avatarElement = () => {
+  const element = avatar();
+  if (!element) throw new Error('the voice card avatar is not rendered');
   return element;
 };
 
@@ -156,12 +165,17 @@ const greenBorders = () =>
     (element) => getComputedStyle(element).borderTopColor === SUCCESS_BORDER
   );
 
-afterEach(() => {
+const unmount = () => {
   root?.unmount();
   host?.remove();
   root = undefined;
   host = undefined;
+};
+
+afterEach(() => {
+  unmount();
   speaking.active = true;
+  speaking.intensity = 4;
   localStorage.removeItem('vite-ui-theme');
 });
 
@@ -197,4 +211,20 @@ test('the speaking highlight is dropped together with the hidden overlay chrome'
 
   expect(getComputedStyle(tileElement()).borderTopColor).toBe(LINE_BORDER);
   expect(greenBorders()).toHaveLength(0);
+});
+
+test('the speaking outline grows with the voice level', async () => {
+  speaking.intensity = 1;
+  await render(true);
+
+  expect(getComputedStyle(tileElement()).borderTopWidth).toBe('1px');
+  expect(getComputedStyle(avatarElement()).borderTopWidth).toBe('2px');
+
+  unmount();
+
+  speaking.intensity = 4;
+  await render(true);
+
+  expect(getComputedStyle(tileElement()).borderTopWidth).toBe('4px');
+  expect(getComputedStyle(avatarElement()).borderTopWidth).toBe('4px');
 });

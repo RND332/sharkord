@@ -51,6 +51,19 @@ type TVoiceUserCardProps = {
   showSpeakingOutline?: boolean;
 };
 
+// The speaking outline follows the voice: a quiet speaker keeps a thin
+// outline, every louder step thickens it.
+const TILE_OUTLINE_CLASSES = [
+  'border',
+  'border-[2px]',
+  'border-[3px]',
+  'border-[4px]'
+];
+const AVATAR_OUTLINE_CLASSES = ['border-2', 'border-[3px]', 'border-[4px]'];
+
+const getOutlineClass = (classes: string[], intensity: number) =>
+  classes[Math.min(Math.max(intensity, 1), classes.length) - 1];
+
 const VoiceUserCard = memo(
   ({
     userId,
@@ -73,10 +86,11 @@ const VoiceUserCard = memo(
     const showUserBanners = useShowUserBannersInVoice();
     const webRtcSimulcastEnabled = useWebRtcSimulcastEnabled();
     const { isSimulcastConsumer } = useVoice();
-    const { isActivelySpeaking } = useSpeakingState(userId);
+    const { isActivelySpeaking, speakingIntensity } = useSpeakingState(userId);
     // The overlay drops the speaking highlight together with its auto-hidden
     // chrome, so no green outline is left behind on the stage.
     const isSpeaking = isActivelySpeaking && showSpeakingOutline;
+    const speakingIntensityLevel = isSpeaking ? speakingIntensity : 0;
     const { isWebcamHidden, toggleWebcamHidden } = useRemoteWebcamVisibility();
     const webcamHidden = isWebcamHidden(userId);
     const { isViewingDemo, stopViewingDemo } = useDemoVisibility();
@@ -154,6 +168,8 @@ const VoiceUserCard = memo(
             'size-full',
             'border',
             isSpeaking ? 'border-success' : 'border-line',
+            isSpeaking &&
+              getOutlineClass(TILE_OUTLINE_CLASSES, speakingIntensityLevel),
             className
           )}
         >
@@ -194,7 +210,12 @@ const VoiceUserCard = memo(
               userId={userId}
               className={cn(
                 'pointer-events-none [&_[data-slot=avatar-fallback]]:font-semibold',
-                isSpeaking && 'border-2 border-success',
+                isSpeaking && 'border-success',
+                isSpeaking &&
+                  getOutlineClass(
+                    AVATAR_OUTLINE_CLASSES,
+                    speakingIntensityLevel
+                  ),
                 avatarClass
               )}
               showStatusBadge={false}
