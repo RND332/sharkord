@@ -1,9 +1,7 @@
-import { i18nReady } from '@/i18n';
 import { Toaster } from '@dodecagon/ui';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/inter/wght-italic.css';
 import 'prosemirror-view/style/prosemirror.css';
-import { StrictMode } from 'react';
 import { DebugInfo } from './components/debug-info/index.tsx';
 import { StoreDebug } from './components/debug/store-debug.tsx';
 import { DevicesProvider } from './components/devices-provider/index.tsx';
@@ -12,49 +10,47 @@ import { GlobalErrorBoundary } from './components/error-boundary/global-error-bo
 import { HotkeysController } from './components/hotkeys-controller/index.tsx';
 import { PluginsController } from './components/plugins-controller/index.tsx';
 import { AutoLoginController } from './components/routing/auto-login-controller.tsx';
-import { Routing } from './components/routing/index.tsx';
+import { AppScreens } from './components/routing/screens.tsx';
 import { ServerScreensProvider } from './components/server-screens/index.tsx';
 import { ThemeProvider } from './components/theme-provider/index.tsx';
-import { exposePluginStore } from './features/server/plugins/plugin-store.ts';
-import { exposeLibs, exposeReact } from './helpers/exposes.ts';
-import { initSentry } from './helpers/sentry.ts';
-import {
-  LocalStorageKey,
-  migrateLegacyStorageKeys
-} from './helpers/storage.ts';
+import { LocalStorageKey } from './helpers/storage.ts';
 import './index.css';
 
-migrateLegacyStorageKeys();
+const Shell = ({ children }: { children?: React.ReactNode }) => {
+  return (
+    <ThemeProvider
+      defaultTheme="dark"
+      storageKey={LocalStorageKey.VITE_UI_THEME}
+    >
+      <GlobalErrorBoundary>
+        <DebugInfo />
+        <Toaster />
+        <StoreDebug />
+        <HotkeysController />
+        <DevicesProvider>
+          <PluginsController />
+          <DialogsProvider />
+          <ServerScreensProvider />
+          <AutoLoginController />
+          {children}
+        </DevicesProvider>
+      </GlobalErrorBoundary>
+    </ThemeProvider>
+  );
+};
 
-initSentry(VITE_SENTRY_DSN, import.meta.env.MODE, VITE_APP_VERSION);
+// everything in here needs a browser, the root route renders it only after the
+// hydration
+export function ClientShell() {
+  return <Shell />;
+}
 
-exposeReact();
-exposeLibs();
-exposePluginStore();
-
-await i18nReady;
-
+// the tests of the interface render the app without a router, so the screens
+// are chosen the old way
 export function ClientApp() {
   return (
-    <StrictMode>
-      <ThemeProvider
-        defaultTheme="dark"
-        storageKey={LocalStorageKey.VITE_UI_THEME}
-      >
-        <GlobalErrorBoundary>
-          <DebugInfo />
-          <Toaster />
-          <StoreDebug />
-          <HotkeysController />
-          <DevicesProvider>
-            <PluginsController />
-            <DialogsProvider />
-            <ServerScreensProvider />
-            <AutoLoginController />
-            <Routing />
-          </DevicesProvider>
-        </GlobalErrorBoundary>
-      </ThemeProvider>
-    </StrictMode>
+    <Shell>
+      <AppScreens />
+    </Shell>
   );
 }

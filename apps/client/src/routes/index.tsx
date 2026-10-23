@@ -1,17 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
-  component: ClientOnlyApp
+  beforeLoad: () => {
+    // the address of the server is the screen of the sign in, the app itself
+    // lives under its own path
+    throw redirect({ to: '/connect' });
+  }
 });
-
-function ClientOnlyApp() {
-  const [app, setApp] = useState<ReactNode>(null);
-
-  useEffect(() => {
-    void import('../main').then(({ ClientApp }) => setApp(<ClientApp />));
-  }, []);
-
-  return app;
-}
