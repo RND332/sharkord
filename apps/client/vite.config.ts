@@ -19,7 +19,12 @@ export default defineConfig(({ mode }) => {
           crawlLinks: false,
           failOnError: true
         },
-        pages: [{ path: '/', prerender: { outputPath: '/index.html' } }]
+        pages: [{ path: '/', prerender: { outputPath: '/index.html' } }],
+        router: {
+          // the tests of the server routes live next to the routes and must not
+          // become routes themselves
+          routeFileIgnorePattern: '__tests__'
+        }
       }),
       react(),
       tailwindcss()
@@ -27,6 +32,12 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'esnext',
       manifest: true
+    },
+    // the start server bundle travels inside the server binary and is imported
+    // from the data directory, where node_modules cannot be resolved. every
+    // dependency has to be bundled into it
+    ssr: {
+      noExternal: true
     },
     resolve: {
       alias: {

@@ -41,12 +41,14 @@ if (values.bump && values.bump !== 'none') {
 const clientCwd = path.resolve(process.cwd(), '..', 'client');
 const serverCwd = process.cwd();
 const viteDistPath = path.join(clientCwd, 'dist', 'client');
+const startServerPath = path.join(clientCwd, 'dist', 'server');
 const buildPath = path.join(serverCwd, 'build');
 const buildTempPath = path.join(buildPath, 'temp');
 const drizzleMigrationsPath = path.join(serverCwd, 'src', 'db', 'migrations');
 const outPath = path.join(buildPath, 'out');
 const releasePath = path.join(outPath, 'release.json');
 const interfaceZipPath = path.join(buildTempPath, 'interface.zip');
+const serverZipPath = path.join(buildTempPath, 'server.zip');
 const drizzleZipPath = path.join(buildTempPath, 'drizzle.zip');
 
 await rmIfExists(buildTempPath);
@@ -73,6 +75,10 @@ console.log('Client build finished, output at:', viteDistPath);
 console.log('Creating interface.zip...');
 
 await zipDirectory(viteDistPath, interfaceZipPath);
+
+console.log('Creating server.zip...');
+
+await zipDirectory(startServerPath, serverZipPath);
 
 console.log('Creating drizzle.zip...');
 
