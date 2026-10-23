@@ -121,12 +121,12 @@ test('profile controls retain the Paper spacing and Miku theme without crowding 
     const bounds = buttonBounds[index];
     const icon = button.querySelector('svg')!;
     const iconBounds = icon.getBoundingClientRect();
-    expect(bounds.width).toBe(28);
+    expect(bounds.width).toBe(32);
     expect(bounds.height).toBe(32);
     expect(bounds.top - rowBounds.top).toBe(10);
     expect(iconBounds.width).toBe(20);
     expect(iconBounds.height).toBe(20);
-    expect(iconBounds.left - bounds.left).toBe(4);
+    expect(iconBounds.left - bounds.left).toBe(6);
     expect(iconBounds.top - bounds.top).toBe(6);
     if (index > 0) {
       expect(bounds.left - buttonBounds[index - 1].right).toBe(6);
@@ -212,7 +212,7 @@ test('mobile profile settings keep the settings navigation reachable and keyboar
   await expect.element(settings).toBeVisible();
   const settingsButton = settings.element();
   const settingsBounds = settingsButton.getBoundingClientRect();
-  expect(settingsBounds.width).toBe(28);
+  expect(settingsBounds.width).toBe(32);
   expect(settingsBounds.height).toBe(32);
   expect(settingsBounds.top).toBeGreaterThanOrEqual(0);
   expect(settingsBounds.bottom).toBeLessThanOrEqual(window.innerHeight);
