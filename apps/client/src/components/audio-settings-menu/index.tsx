@@ -3,7 +3,7 @@ import { ServerScreen } from '@/components/server-screens/screens';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { TestId } from '@dodecagon/shared';
 import {
-  Button,
+  IconButton,
   Popover,
   PopoverAnchor,
   PopoverContent,
@@ -12,7 +12,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
   Slider
 } from '@dodecagon/ui';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
@@ -51,6 +50,8 @@ const AudioSettingsMenu = memo(
     const volumeKey = isMicrophone ? 'microphoneVolume' : 'playbackVolume';
     const availableDevices = isMicrophone ? inputDevices : playbackDevices;
     const volumeLabel = t(isMicrophone ? 'microphoneVolume' : 'outputVolume');
+    const title = t(isMicrophone ? 'microphoneSettings' : 'outputSettings');
+    const deviceLabel = t(isMicrophone ? 'inputDevice' : 'outputDevice');
     const defaultLabel = settingsT(
       isMicrophone ? 'defaultMicrophone' : 'defaultOutput'
     );
@@ -153,71 +154,85 @@ const AudioSettingsMenu = memo(
           sideOffset={4}
           onCloseAutoFocus={handleCloseAutoFocus}
           onInteractOutside={handleInteractOutside}
-          aria-label={t(isMicrophone ? 'microphoneSettings' : 'outputSettings')}
-          className="w-[264px] max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-foreground shadow-lg"
+          aria-label={title}
+          className="w-[264px] max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
         >
-          <div>
-            <Select
-              value={devices[deviceKey] ?? 'default'}
-              onValueChange={handleDeviceChange}
-            >
-              <SelectTrigger
-                aria-label={t(isMicrophone ? 'inputDevice' : 'outputDevice')}
-                className="h-auto w-full gap-2 rounded-md border-0 bg-transparent p-2 text-left shadow-none hover:bg-raised [&>svg]:-rotate-90"
-              >
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="text-sm font-medium leading-5">
-                    {t(isMicrophone ? 'inputDevice' : 'outputDevice')}
-                  </span>
-                  <span className="text-[13px] leading-[18px] text-muted-foreground">
-                    <SelectValue placeholder={defaultLabel} />
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {!hasDefault && (
-                  <SelectItem value="default">{defaultLabel}</SelectItem>
-                )}
-                {availableDevices.map(
-                  (device) =>
-                    device &&
-                    device.deviceId && (
-                      <SelectItem key={device.deviceId} value={device.deviceId}>
-                        {device.label.trim() || defaultLabel}
-                      </SelectItem>
-                    )
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <Separator className="bg-line" />
-          <div className="flex flex-col gap-2 p-2">
-            <div className="flex items-center justify-between gap-3 text-sm leading-5">
-              <span id={volumeLabelId}>{volumeLabel}</span>
-              <span className="text-[13px] tabular-nums text-muted-foreground">
-                {devices[volumeKey]}%
-              </span>
+          <div className="flex flex-col">
+            <div className="flex h-10 shrink-0 items-center justify-between gap-2 p-2">
+              <h3 className="text-sm font-semibold leading-5 text-foreground">
+                {title}
+              </h3>
+              <IconButton
+                className="size-6 p-[3px] [&_svg]:size-[18px]"
+                variant="ghost"
+                size="sm"
+                icon={Cog6ToothIcon}
+                title={t('voiceSettings')}
+                aria-label={t('voiceSettings')}
+                onClick={handleVoiceSettings}
+              />
             </div>
-            <Slider
-              aria-label={volumeLabel}
-              aria-labelledby={volumeLabelId}
-              min={0}
-              max={100}
-              step={1}
-              value={[devices[volumeKey]]}
-              onValueChange={handleVolumeChange}
-              className="h-5 [&_[data-slot=slider-track]]:h-1"
-            />
+            <div className="flex w-full flex-col border-t border-line">
+              <Select
+                value={devices[deviceKey] ?? 'default'}
+                onValueChange={handleDeviceChange}
+              >
+                <SelectTrigger
+                  aria-label={deviceLabel}
+                  className="h-auto w-full gap-2 rounded-none border-0 bg-transparent p-2 text-left shadow-none hover:bg-raised [&>svg]:-rotate-90"
+                >
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="text-[13px] font-semibold leading-5 text-foreground">
+                      {deviceLabel}
+                    </span>
+                    <span className="truncate text-[12px] leading-[18px] text-muted-foreground">
+                      <SelectValue placeholder={defaultLabel} />
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {!hasDefault && (
+                    <SelectItem value="default">{defaultLabel}</SelectItem>
+                  )}
+                  {availableDevices.map(
+                    (device) =>
+                      device &&
+                      device.deviceId && (
+                        <SelectItem
+                          key={device.deviceId}
+                          value={device.deviceId}
+                        >
+                          {device.label.trim() || defaultLabel}
+                        </SelectItem>
+                      )
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex w-full flex-col gap-2 border-t border-line p-2">
+              <div className="flex items-center justify-between gap-3 text-[12px] leading-[18px]">
+                <span
+                  id={volumeLabelId}
+                  className="text-[13px] font-semibold leading-5 text-foreground"
+                >
+                  {volumeLabel}
+                </span>
+                <span className="tabular-nums text-muted-foreground">
+                  {devices[volumeKey]}%
+                </span>
+              </div>
+              <Slider
+                aria-label={volumeLabel}
+                aria-labelledby={volumeLabelId}
+                min={0}
+                max={100}
+                step={1}
+                value={[devices[volumeKey]]}
+                onValueChange={handleVolumeChange}
+                className="h-5 [&_[data-slot=slider-track]]:h-1"
+              />
+            </div>
           </div>
-          <Separator className="bg-line" />
-          <Button
-            variant="ghost"
-            onClick={handleVoiceSettings}
-            className="h-auto w-full justify-start gap-2 rounded-md p-2 text-sm font-normal"
-          >
-            <Cog6ToothIcon className="size-4 shrink-0" />
-            {t('voiceSettings')}
-          </Button>
         </PopoverContent>
       </Popover>
     );
