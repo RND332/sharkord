@@ -19,21 +19,21 @@ test.describe('Auto Login', () => {
 
     const switchButton = page
       .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
-      .locator('button[role="switch"]');
-    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
+      .locator('[role="switch"]');
+    await expect(switchButton).toHaveAttribute('data-unchecked');
   });
 
   test('should toggle the auto-login switch', async ({ page }) => {
     await page.goto('/');
 
     const autoLoginSwitch = page.getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH);
-    const switchButton = autoLoginSwitch.locator('button[role="switch"]');
+    const switchButton = autoLoginSwitch.locator('[role="switch"]');
 
     await autoLoginSwitch.click();
-    await expect(switchButton).toHaveAttribute('data-state', 'checked');
+    await expect(switchButton).toHaveAttribute('data-checked');
 
     await autoLoginSwitch.click();
-    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
+    await expect(switchButton).toHaveAttribute('data-unchecked');
   });
 
   test('should restore the auto-login switch state from localStorage', async ({
@@ -49,8 +49,8 @@ test.describe('Auto Login', () => {
 
     const switchButton = page
       .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
-      .locator('button[role="switch"]');
-    await expect(switchButton).toHaveAttribute('data-state', 'checked');
+      .locator('[role="switch"]');
+    await expect(switchButton).toHaveAttribute('data-checked');
   });
 
   test('should show the connect screen when auto-login is enabled but no token is saved', async ({
