@@ -264,6 +264,68 @@ describe('messages router', () => {
     ).toBe(true);
   });
 
+  // the file row carries the uploader so the result can say who shared it and how big it is.
+  // a file without an uploader (a plugin upload, or one whose author is gone) still comes back,
+  // it just comes back without a name
+  test('should return the author and the size of a searched file', async () => {
+    const { caller } = await initTest(1);
+
+    const messageId = await caller.messages.send({
+      channelId: 1,
+      content: 'Message carrying described files',
+      files: []
+    });
+
+    const now = Date.now();
+
+    const [authoredFile] = await tdb
+      .insert(files)
+      .values({
+        name: `authored-${now}.pdf`,
+        originalName: 'described-authored.pdf',
+        md5: `md5-authored-${now}`,
+        userId: 1,
+        size: 4321,
+        mimeType: 'application/pdf',
+        extension: 'pdf',
+        createdAt: now
+      })
+      .returning({ id: files.id });
+
+    const [anonymousFile] = await tdb
+      .insert(files)
+      .values({
+        name: `anonymous-${now}.pdf`,
+        originalName: 'described-anonymous.pdf',
+        md5: `md5-anonymous-${now}`,
+        userId: null,
+        size: 12,
+        mimeType: 'application/pdf',
+        extension: 'pdf',
+        createdAt: now
+      })
+      .returning({ id: files.id });
+
+    await tdb.insert(messageFiles).values([
+      { messageId, fileId: authoredFile!.id, createdAt: now },
+      { messageId, fileId: anonymousFile!.id, createdAt: now }
+    ]);
+
+    const result = await caller.messages.search({ query: 'described' });
+
+    const authored = result.files.find(
+      (item) => item.file.id === authoredFile!.id
+    );
+    const anonymous = result.files.find(
+      (item) => item.file.id === anonymousFile!.id
+    );
+
+    expect(authored?.authorName).toBe('Test Owner');
+    expect(authored?.file.size).toBe(4321);
+    expect(anonymous?.authorName).toBe(null);
+    expect(anonymous?.file.size).toBe(12);
+  });
+
   test('should not return private channel matches without access', async () => {
     const { caller: owner } = await initTest(1);
     const { caller: member } = await initTest(2);

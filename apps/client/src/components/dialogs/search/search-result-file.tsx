@@ -3,7 +3,9 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import type { TMessageJumpToTarget } from '@/types';
 import { Button } from '@dodecagon/ui';
 import { DocumentTextIcon, HashtagIcon } from '@heroicons/react/24/outline';
-import { memo, useCallback } from 'react';
+import { filesize } from 'filesize';
+import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TSearchResultFile } from './types';
 
 type TSearchResultFileCardProps = {
@@ -13,6 +15,10 @@ type TSearchResultFileCardProps = {
 
 const SearchResultFileCard = memo(
   ({ result, onJump }: TSearchResultFileCardProps) => {
+    const { t } = useTranslation('dialogs');
+
+    const size = useMemo(() => filesize(result.file.size), [result.file.size]);
+
     const handleJump = useCallback(() => {
       onJump({
         channelId: result.channelId,
@@ -38,6 +44,12 @@ const SearchResultFileCard = memo(
           </span>
         </div>
 
+        <div className="mt-1 truncate text-[11px] text-muted-foreground">
+          {result.authorName
+            ? t('sharedBy', { name: result.authorName, size })
+            : size}
+        </div>
+
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           <span className="inline-flex min-w-0 max-w-full items-center gap-1">
             <HashtagIcon className="h-3 w-3" />
@@ -55,7 +67,7 @@ const SearchResultFileCard = memo(
           className="mt-2"
           onClick={handleJump}
         >
-          Jump to message
+          {t('jumpToFile')}
         </Button>
       </div>
     );

@@ -138,5 +138,9 @@
   "inviteNoUseLimit": "Bez limitu použití",
   "inviteUseLimit_one": "Limit {{count}} použití",
   "inviteUseLimit_other": "Limit {{count}} použití",
-  "roleForUser": "Role pro {{name}}"
+  "roleForUser": "Role pro {{name}}",
+  "jumpToFile": "Přejít na soubor",
+  "sharedBy": "Sdílel {{name}} · {{size}}",
+  "searchResultsRange": "{{from}}–{{to}} z {{total}} výsledků",
+  "escToClose": "Esc, zavřít"
 }

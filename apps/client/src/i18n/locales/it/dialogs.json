@@ -138,5 +138,9 @@
   "inviteNoUseLimit": "Nessun limite di utilizzi",
   "inviteUseLimit_one": "Limite di {{count}} utilizzo",
   "inviteUseLimit_other": "Limite di {{count}} utilizzi",
-  "roleForUser": "Ruolo per {{name}}"
+  "roleForUser": "Ruolo per {{name}}",
+  "jumpToFile": "Vai al file",
+  "sharedBy": "Condiviso da {{name}} · {{size}}",
+  "searchResultsRange": "{{from}}–{{to}} di {{total}} risultati",
+  "escToClose": "Esc per chiudere"
 }
