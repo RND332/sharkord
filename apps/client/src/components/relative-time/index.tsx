@@ -1,3 +1,4 @@
+import { useRenderClock } from '@/helpers/render-clock';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import {
   format,
@@ -19,21 +20,21 @@ type TRelativeTimeProps = {
   children: (relativeTime: string) => ReactNode;
 };
 
-const getFormattedTime = (d: Date, dateLocale: Locale): string => {
-  const now = new Date();
-  const twentyFourHoursAgo = subHours(now, 24);
+const getFormattedTime = (d: Date, dateLocale: Locale, now: number): string => {
+  const current = new Date(now);
+  const twentyFourHoursAgo = subHours(current, 24);
 
   // past 24 hours show relative time, eg: 5 minutes ago
-  if (isWithinInterval(d, { start: twentyFourHoursAgo, end: now })) {
+  if (isWithinInterval(d, { start: twentyFourHoursAgo, end: current })) {
     return formatDistanceToNow(d, { addSuffix: true, locale: dateLocale });
   }
 
   return format(d, DEFAULT_FORMAT, { locale: dateLocale });
 };
 
-const getUpdateInterval = (date: Date): number | null => {
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
+const getUpdateInterval = (date: Date, now: number): number | null => {
+  const current = new Date(now);
+  const diffInMs = current.getTime() - date.getTime();
 
   // future dates or absolute dates don't need updates
   if (isFuture(date) || diffInMs > 24 * ONE_HOUR) {
@@ -55,6 +56,7 @@ const RelativeTime = memo(
     interval, // optional override
     children
   }: TRelativeTimeProps) => {
+    const getNow = useRenderClock();
     const dateLocale = useDateLocale();
     const parsedDate = useMemo(
       () => (typeof date === 'string' ? new Date(date) : date),
@@ -64,7 +66,8 @@ const RelativeTime = memo(
     const [, setCounter] = useState(0);
 
     useEffect(() => {
-      const updateInterval = interval ?? getUpdateInterval(parsedDate);
+      const updateInterval =
+        interval ?? getUpdateInterval(parsedDate, getNow());
 
       // if no update interval is needed, don't set up a timer
       if (updateInterval === null) {
@@ -77,9 +80,9 @@ const RelativeTime = memo(
       }, updateInterval);
 
       return () => clearInterval(timer);
-    }, [interval, parsedDate]);
+    }, [getNow, interval, parsedDate]);
 
-    return children(getFormattedTime(parsedDate, dateLocale));
+    return children(getFormattedTime(parsedDate, dateLocale, getNow()));
   }
 );
 
