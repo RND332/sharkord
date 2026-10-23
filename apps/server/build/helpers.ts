@@ -43,18 +43,20 @@ const unpack = async (tgzPath: string, outDir: string) => {
   }
 };
 
-const MEDIASOUP_MACHINE: Partial<Record<Bun.Build.Target, number>> = {
-  'bun-linux-x64': 0x3e,
-  'bun-linux-arm64': 0xb7,
-  'bun-windows-x64': 0x3e,
-  'bun-darwin-arm64': 0xb7
+const MEDIASOUP_WORKER: Partial<
+  Record<Bun.Build.Target, { kind: 'elf' | 'pe' | 'macho'; machine?: number }>
+> = {
+  'bun-linux-x64': { kind: 'elf', machine: 0x3e },
+  'bun-linux-arm64': { kind: 'elf', machine: 0xb7 },
+  'bun-windows-x64': { kind: 'pe' },
+  'bun-darwin-arm64': { kind: 'macho', machine: 0x0100000c }
 };
 
 const assertWorkerMatchesTarget = async (
   workerPath: string,
   target: Bun.Build.Target
 ) => {
-  const expected = MEDIASOUP_MACHINE[target];
+  const expected = MEDIASOUP_WORKER[target];
 
   if (!expected) {
     throw new Error(`Unsupported target for mediasoup binary: ${target}`);
@@ -63,21 +65,45 @@ const assertWorkerMatchesTarget = async (
   const handle = await fs.open(workerPath, 'r');
 
   try {
-    const header = Buffer.alloc(20);
-    await handle.read(header, 0, 20, 0);
+    const header = Buffer.alloc(32);
+    await handle.read(header, 0, 32, 0);
 
-    if (header.subarray(0, 4).toString('binary') !== '\x7fELF') {
-      throw new Error(
-        `Mediasoup worker for ${target} is not an ELF file: ${workerPath}`
-      );
-    }
+    if (expected.kind === 'elf') {
+      if (header.subarray(0, 4).toString('binary') !== '\x7fELF') {
+        throw new Error(
+          `Mediasoup worker for ${target} is not an ELF file: ${workerPath}`
+        );
+      }
 
-    const machine = header.readUInt16LE(18);
+      const machine = header.readUInt16LE(18);
 
-    if (machine !== expected) {
-      throw new Error(
-        `Mediasoup worker for ${target} has machine ${machine}, expected ${expected}: ${workerPath}`
-      );
+      if (machine !== expected.machine) {
+        throw new Error(
+          `Mediasoup worker for ${target} has machine ${machine}, expected ${expected.machine}: ${workerPath}`
+        );
+      }
+    } else if (expected.kind === 'pe') {
+      if (header.subarray(0, 2).toString('binary') !== 'MZ') {
+        throw new Error(
+          `Mediasoup worker for ${target} is not a PE file: ${workerPath}`
+        );
+      }
+    } else {
+      const magic = header.readUInt32LE(0);
+
+      if (magic !== 0xfeedfacf) {
+        throw new Error(
+          `Mediasoup worker for ${target} is not a 64 bit Mach-O file: ${workerPath}`
+        );
+      }
+
+      const cpu = header.readUInt32LE(4);
+
+      if (cpu !== expected.machine) {
+        throw new Error(
+          `Mediasoup worker for ${target} has cpu type ${cpu.toString(16)}, expected ${expected.machine?.toString(16)}: ${workerPath}`
+        );
+      }
     }
   } finally {
     await handle.close();
