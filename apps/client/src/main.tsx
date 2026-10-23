@@ -4,7 +4,6 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/inter/wght-italic.css';
 import 'prosemirror-view/style/prosemirror.css';
 import { StrictMode } from 'react';
-import { Provider } from 'react-redux';
 import { DebugInfo } from './components/debug-info/index.tsx';
 import { StoreDebug } from './components/debug/store-debug.tsx';
 import { DevicesProvider } from './components/devices-provider/index.tsx';
@@ -17,7 +16,6 @@ import { Routing } from './components/routing/index.tsx';
 import { ServerScreensProvider } from './components/server-screens/index.tsx';
 import { ThemeProvider } from './components/theme-provider/index.tsx';
 import { exposePluginStore } from './features/server/plugins/plugin-store.ts';
-import { store } from './features/store.ts';
 import { exposeLibs, exposeReact } from './helpers/exposes.ts';
 import { initSentry } from './helpers/sentry.ts';
 import {
@@ -46,17 +44,15 @@ export function ClientApp() {
         <GlobalErrorBoundary>
           <DebugInfo />
           <Toaster />
-          <Provider store={store}>
-            <StoreDebug />
-            <HotkeysController />
-            <DevicesProvider>
-              <PluginsController />
-              <DialogsProvider />
-              <ServerScreensProvider />
-              <AutoLoginController />
-              <Routing />
-            </DevicesProvider>
-          </Provider>
+          <StoreDebug />
+          <HotkeysController />
+          <DevicesProvider>
+            <PluginsController />
+            <DialogsProvider />
+            <ServerScreensProvider />
+            <AutoLoginController />
+            <Routing />
+          </DevicesProvider>
         </GlobalErrorBoundary>
       </ThemeProvider>
     </StrictMode>

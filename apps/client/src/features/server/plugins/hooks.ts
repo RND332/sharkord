@@ -1,6 +1,5 @@
-import type { IRootState } from '@/features/store';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import type { PluginSlot } from '@dodecagon/shared';
-import { useSelector } from 'react-redux';
 import {
   commandsSelector,
   flatCommandsSelector,
@@ -12,27 +11,32 @@ import {
   pluginTabsByIdSelector
 } from './selectors';
 
-export const usePluginCommands = () => useSelector(commandsSelector);
+export const usePluginCommands = () => useStoreSelector(commandsSelector);
 
-export const useFlatPluginCommands = () => useSelector(flatCommandsSelector);
+export const useFlatPluginCommands = () =>
+  useStoreSelector(flatCommandsSelector);
 
 export const usePluginComponentsBySlot = (slotId: PluginSlot) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     pluginComponentsBySlotSelector(state, slotId)
   );
 
-export const usePluginNames = () => useSelector(pluginNamesSelector);
+export const usePluginNames = () => useStoreSelector(pluginNamesSelector);
 
 export const usePluginMetadata = (pluginId: string | null | undefined) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     pluginId ? pluginMetadataByIdSelector(state, pluginId) : undefined
   );
 
 export const usePluginSlotIds = (pluginId: string) =>
-  useSelector((state: IRootState) => pluginSlotIdsSelector(state, pluginId));
+  useStoreSelector((state: IRootState) =>
+    pluginSlotIdsSelector(state, pluginId)
+  );
 
 export const usePluginTabs = (pluginId: string) =>
-  useSelector((state: IRootState) => pluginTabsByIdSelector(state, pluginId));
+  useStoreSelector((state: IRootState) =>
+    pluginTabsByIdSelector(state, pluginId)
+  );
 
 export const useFullscreenPluginIds = () =>
-  useSelector(fullscreenPluginIdsSelector);
+  useStoreSelector(fullscreenPluginIdsSelector);

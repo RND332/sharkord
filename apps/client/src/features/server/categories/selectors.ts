@@ -1,6 +1,6 @@
 import type { IRootState } from '@/features/store';
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 
 export const categoriesSelector = createSelector(
   [(state: IRootState) => state.server.categories],

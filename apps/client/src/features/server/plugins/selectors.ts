@@ -4,8 +4,8 @@ import {
   type TPluginReactComponent,
   type TPluginTab
 } from '@dodecagon/shared';
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 
 // stable empty value, so a plugin with no tabs does not re-render its view on
 // every unrelated dispatch

@@ -277,7 +277,8 @@ mock.module('@/features/server/voice/hooks', () => ({
   useSpeakingState: () => ({ isActivelySpeaking: false, speakingIntensity: 0 })
 }));
 mock.module('@/features/store', () => ({
-  store: { getState: () => ({}), dispatch() {} }
+  store: { getState: () => ({}), dispatch() {} },
+  useStoreSelector: (selector: (state: unknown) => unknown) => selector({})
 }));
 mock.module('@/helpers/audio-gate', () => ({
   clampMicrophoneDecibels: (value: number) => value,

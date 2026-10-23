@@ -6,8 +6,8 @@ import {
   type TJoinedRole,
   type TPluginStoreState
 } from '@dodecagon/shared';
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 import { selectedDmChannelIdSelector } from '../app/selectors';
 import type { IRootState } from '../store';
 import { categoriesSelector } from './categories/selectors';

@@ -3,11 +3,11 @@
 // the whole test run, so the mocks of the other test files would leak in.
 import commonEn from '@/i18n/locales/en/common.json';
 import settingsEn from '@/i18n/locales/en/settings.json';
+import { UserStatus } from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { Provider } from 'react-redux';
 
 const noop = () => {};
 
@@ -66,38 +66,39 @@ await i18n.init({
   interpolation: { escapeValue: false }
 });
 
-const store = {
-  getState: () => ({
-    server: {
-      ownUserId: 1,
-      users: [
-        {
-          id: 1,
-          name: 'RND332',
-          bio,
-          profileColor: '#5865f2',
-          avatar: null,
-          banner: null,
-          roleIds: [],
-          status: 'online',
-          createdAt: new Date('2026-06-13T00:00:00Z').getTime()
-        }
-      ]
-    }
-  }),
-  subscribe: () => noop,
-  dispatch: noop
-};
+const { setStoreState } = await import('@/features/store');
+const { serverInitialState } = await import('@/features/server/slice');
+
+setStoreState({
+  server: {
+    ...serverInitialState,
+    ownUserId: 1,
+    users: [
+      {
+        id: 1,
+        name: 'RND332',
+        bio,
+        profileColor: '#5865f2',
+        avatar: null,
+        avatarId: null,
+        banner: null,
+        bannerId: null,
+        banned: false,
+        roleIds: [],
+        status: UserStatus.ONLINE,
+        createdAt: new Date('2026-06-13T00:00:00Z').getTime()
+      }
+    ]
+  }
+});
 
 const { Profile } = await import('../index');
 const { ColorPickerPopover } = await import('../color-picker-popover');
 
 const profileHtml = renderToStaticMarkup(
-  <Provider store={store as never}>
-    <I18nextProvider i18n={i18n}>
-      <Profile />
-    </I18nextProvider>
-  </Provider>
+  <I18nextProvider i18n={i18n}>
+    <Profile />
+  </I18nextProvider>
 );
 
 const pickerHtml = renderToStaticMarkup(

@@ -1,8 +1,8 @@
 import type { IRootState } from '@/features/store';
 import { getFileUrl } from '@/helpers/get-file-url';
-import { createSelector } from '@reduxjs/toolkit';
 import type { EmojiItem } from '@tiptap/extension-emoji';
 import { createCachedSelector } from 're-reselect';
+import { createSelector } from 'reselect';
 
 export const emojisSelector = (state: IRootState) => state.server.emojis;
 

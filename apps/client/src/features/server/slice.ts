@@ -24,7 +24,7 @@ import type {
   TVoiceUserState
 } from '@dodecagon/shared';
 import { DEFAULT_MESSAGES_LIMIT } from '@dodecagon/shared';
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { produce } from 'immer';
 import { mergeMessagesChronologically } from './helpers';
 import type {
   TDisconnectInfo,
@@ -148,410 +148,544 @@ const initialState: IServerState = {
   )
 };
 
-export const serverSlice = createSlice({
-  name: 'server',
-  initialState,
-  reducers: {
-    resetState: (state) => {
-      Object.assign(state, {
-        ...initialState,
-        info: state.info
-      });
-    },
-    setConnected: (state, action: PayloadAction<boolean>) => {
-      state.connected = action.payload;
-      state.connecting = false;
-    },
-    setReconnect: (state, action: PayloadAction<TReconnectState | null>) => {
-      state.reconnect = action.payload;
-    },
-    setInfo: (state, action: PayloadAction<TServerInfo | undefined>) => {
-      state.info = action.payload;
-    },
-    setLoadingInfo: (state, action: PayloadAction<boolean>) => {
-      state.loadingInfo = action.payload;
-    },
-    setDisconnectInfo: (
-      state,
-      action: PayloadAction<TDisconnectInfo | undefined>
-    ) => {
-      state.disconnectInfo = action.payload;
-    },
-    setInitialData: (
-      state,
-      action: PayloadAction<{
-        serverId: string;
-        categories: TCategory[];
-        channels: TChannel[];
-        users: TJoinedPublicUser[];
-        ownUserId: number;
-        ownUserPasswordSet: boolean;
-        roles: TJoinedRole[];
-        emojis: TJoinedEmoji[];
-        publicSettings: TPublicServerSettings | undefined;
-        voiceMap: TVoiceMap;
-        externalStreamsMap: TExternalStreamsMap;
-        channelPermissions: TChannelUserPermissionsMap;
-        readStates: TReadStateMap;
-        pluginsMetadata: TPluginMetadata[];
-      }>
-    ) => {
-      state.connected = true;
-      state.reconnect = null;
-      state.categories = action.payload.categories;
-      state.channels = action.payload.channels;
-      state.emojis = action.payload.emojis;
-      state.users = action.payload.users;
-      state.roles = action.payload.roles;
-      state.ownUserId = action.payload.ownUserId;
-      state.ownUserPasswordSet = action.payload.ownUserPasswordSet;
-      state.publicSettings = action.payload.publicSettings;
-      state.voiceMap = action.payload.voiceMap;
-      state.externalStreamsMap = action.payload.externalStreamsMap;
-      state.serverId = action.payload.serverId;
-      state.channelPermissions = action.payload.channelPermissions;
-      state.readStatesMap = action.payload.readStates;
-      state.pluginsMetadata = action.payload.pluginsMetadata;
-    },
-    addMessages: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        messages: TJoinedMessage[];
-        isLive?: boolean;
-      }>
-    ) => {
-      const { channelId, messages, isLive } = action.payload;
+const serverSliceActions = {
+  resetState: () => ({ type: 'server/resetState' }) as const,
+  setConnected: (payload: boolean) =>
+    ({ type: 'server/setConnected', payload }) as const,
+  setReconnect: (payload: TReconnectState | null) =>
+    ({ type: 'server/setReconnect', payload }) as const,
+  setInfo: (payload: TServerInfo | undefined) =>
+    ({ type: 'server/setInfo', payload }) as const,
+  setLoadingInfo: (payload: boolean) =>
+    ({ type: 'server/setLoadingInfo', payload }) as const,
+  setDisconnectInfo: (payload: TDisconnectInfo | undefined) =>
+    ({ type: 'server/setDisconnectInfo', payload }) as const,
+  setInitialData: (payload: {
+    serverId: string;
+    categories: TCategory[];
+    channels: TChannel[];
+    users: TJoinedPublicUser[];
+    ownUserId: number;
+    ownUserPasswordSet: boolean;
+    roles: TJoinedRole[];
+    emojis: TJoinedEmoji[];
+    publicSettings: TPublicServerSettings | undefined;
+    voiceMap: TVoiceMap;
+    externalStreamsMap: TExternalStreamsMap;
+    channelPermissions: TChannelUserPermissionsMap;
+    readStates: TReadStateMap;
+    pluginsMetadata: TPluginMetadata[];
+  }) => ({ type: 'server/setInitialData', payload }) as const,
+  addMessages: (payload: {
+    channelId: number;
+    messages: TJoinedMessage[];
+    isLive?: boolean;
+  }) => ({ type: 'server/addMessages', payload }) as const,
+  updateMessage: (payload: { channelId: number; message: TJoinedMessage }) =>
+    ({ type: 'server/updateMessage', payload }) as const,
+  updateReplyCount: (payload: {
+    channelId: number;
+    messageId: number;
+    replyCount: number;
+  }) => ({ type: 'server/updateReplyCount', payload }) as const,
+  deleteMessage: (payload: { channelId: number; messageId: number }) =>
+    ({ type: 'server/deleteMessage', payload }) as const,
+  addThreadMessages: (payload: {
+    parentMessageId: number;
+    messages: TJoinedMessage[];
+  }) => ({ type: 'server/addThreadMessages', payload }) as const,
+  updateThreadMessage: (payload: {
+    parentMessageId: number;
+    message: TJoinedMessage;
+  }) => ({ type: 'server/updateThreadMessage', payload }) as const,
+  deleteThreadMessage: (payload: {
+    parentMessageId: number;
+    messageId: number;
+  }) => ({ type: 'server/deleteThreadMessage', payload }) as const,
+  setChannelMessages: (payload: {
+    channelId: number;
+    messages: TJoinedMessage[];
+    detached: boolean;
+  }) => ({ type: 'server/setChannelMessages', payload }) as const,
+  trimChannelMessages: (payload: number) =>
+    ({ type: 'server/trimChannelMessages', payload }) as const,
+  clearThreadMessages: (payload: number) =>
+    ({ type: 'server/clearThreadMessages', payload }) as const,
+  clearTypingUsers: (payload: number) =>
+    ({ type: 'server/clearTypingUsers', payload }) as const,
+  addTypingUser: (payload: { channelId: number; userId: number }) =>
+    ({ type: 'server/addTypingUser', payload }) as const,
+  removeTypingUser: (payload: { channelId: number; userId: number }) =>
+    ({ type: 'server/removeTypingUser', payload }) as const,
+  addThreadTypingUser: (payload: { parentMessageId: number; userId: number }) =>
+    ({ type: 'server/addThreadTypingUser', payload }) as const,
+  removeThreadTypingUser: (payload: {
+    parentMessageId: number;
+    userId: number;
+  }) => ({ type: 'server/removeThreadTypingUser', payload }) as const,
+  updateUser: (payload: { userId: number; user: Partial<TJoinedPublicUser> }) =>
+    ({ type: 'server/updateUser', payload }) as const,
+  addUser: (payload: TJoinedPublicUser) =>
+    ({ type: 'server/addUser', payload }) as const,
+  wipeUser: (payload: { userId: number }) =>
+    ({ type: 'server/wipeUser', payload }) as const,
+  reassignUser: (payload: { userId: number; deletedUserId: number }) =>
+    ({ type: 'server/reassignUser', payload }) as const,
+  setPublicSettings: (payload: TPublicServerSettings | undefined) =>
+    ({ type: 'server/setPublicSettings', payload }) as const,
+  updateRole: (payload: { roleId: number; role: Partial<TJoinedRole> }) =>
+    ({ type: 'server/updateRole', payload }) as const,
+  addRole: (payload: TJoinedRole) =>
+    ({ type: 'server/addRole', payload }) as const,
+  removeRole: (payload: { roleId: number }) =>
+    ({ type: 'server/removeRole', payload }) as const,
+  updateChannel: (payload: { channelId: number; channel: Partial<TChannel> }) =>
+    ({ type: 'server/updateChannel', payload }) as const,
+  addChannel: (payload: TChannel) =>
+    ({ type: 'server/addChannel', payload }) as const,
+  removeChannel: (payload: { channelId: number }) =>
+    ({ type: 'server/removeChannel', payload }) as const,
+  setSelectedChannelId: (payload: number | undefined) =>
+    ({ type: 'server/setSelectedChannelId', payload }) as const,
+  setCurrentVoiceChannelId: (payload: number | undefined) =>
+    ({ type: 'server/setCurrentVoiceChannelId', payload }) as const,
+  setVoiceMoveTargetChannelId: (payload: number | undefined) =>
+    ({ type: 'server/setVoiceMoveTargetChannelId', payload }) as const,
+  setChannelPermissions: (payload: TChannelUserPermissionsMap) =>
+    ({ type: 'server/setChannelPermissions', payload }) as const,
+  setChannelReadState: (payload: {
+    channelId: number;
+    count: number | undefined;
+  }) => ({ type: 'server/setChannelReadState', payload }) as const,
+  updateEmoji: (payload: { emojiId: number; emoji: Partial<TJoinedEmoji> }) =>
+    ({ type: 'server/updateEmoji', payload }) as const,
+  addEmoji: (payload: TJoinedEmoji) =>
+    ({ type: 'server/addEmoji', payload }) as const,
+  removeEmoji: (payload: { emojiId: number }) =>
+    ({ type: 'server/removeEmoji', payload }) as const,
+  addCategory: (payload: TCategory) =>
+    ({ type: 'server/addCategory', payload }) as const,
+  updateCategory: (payload: {
+    categoryId: number;
+    category: Partial<TCategory>;
+  }) => ({ type: 'server/updateCategory', payload }) as const,
+  removeCategory: (payload: { categoryId: number }) =>
+    ({ type: 'server/removeCategory', payload }) as const,
+  addUserToVoiceChannel: (payload: {
+    channelId: number;
+    userId: number;
+    state: TVoiceUserState;
+  }) => ({ type: 'server/addUserToVoiceChannel', payload }) as const,
+  removeUserFromVoiceChannel: (payload: {
+    channelId: number;
+    userId: number;
+  }) => ({ type: 'server/removeUserFromVoiceChannel', payload }) as const,
+  updateVoiceUserState: (payload: {
+    channelId: number;
+    userId: number;
+    newState: Partial<TVoiceUserState>;
+  }) => ({ type: 'server/updateVoiceUserState', payload }) as const,
+  addVoiceReaction: (payload: { userId: number; reaction: TVoiceReaction }) =>
+    ({ type: 'server/addVoiceReaction', payload }) as const,
+  removeVoiceReaction: (payload: { userId: number; reactionId: number }) =>
+    ({ type: 'server/removeVoiceReaction', payload }) as const,
+  updateOwnVoiceState: (payload: Partial<TVoiceUserState>) =>
+    ({ type: 'server/updateOwnVoiceState', payload }) as const,
+  setPinnedCard: (payload: TPinnedCard | undefined) =>
+    ({ type: 'server/setPinnedCard', payload }) as const,
+  setScreenViewers: (payload: TScreenViewersSnapshot) =>
+    ({ type: 'server/setScreenViewers', payload }) as const,
+  setHideNonVideoParticipants: (payload: boolean) =>
+    ({ type: 'server/setHideNonVideoParticipants', payload }) as const,
+  setShowUserBannersInVoice: (payload: boolean) =>
+    ({ type: 'server/setShowUserBannersInVoice', payload }) as const,
+  setHideOwnScreenShare: (payload: boolean) =>
+    ({ type: 'server/setHideOwnScreenShare', payload }) as const,
+  addExternalStreamToChannel: (payload: {
+    channelId: number;
+    streamId: number;
+    stream: TExternalStream;
+  }) => ({ type: 'server/addExternalStreamToChannel', payload }) as const,
+  updateExternalStreamInChannel: (payload: {
+    channelId: number;
+    streamId: number;
+    stream: TExternalStream;
+  }) => ({ type: 'server/updateExternalStreamInChannel', payload }) as const,
+  removeExternalStreamFromChannel: (payload: {
+    channelId: number;
+    streamId: number;
+  }) => ({ type: 'server/removeExternalStreamFromChannel', payload }) as const,
+  setPluginsMetadata: (payload: TPluginMetadata[]) =>
+    ({ type: 'server/setPluginsMetadata', payload }) as const,
+  setPluginCommands: (payload: TCommandsMapByPlugin) =>
+    ({ type: 'server/setPluginCommands', payload }) as const,
+  setPluginCapabilityAccess: (payload: TPluginCapabilityAccessRule[]) =>
+    ({ type: 'server/setPluginCapabilityAccess', payload }) as const,
+  setPluginTabs: (payload: TPluginTabsMap) =>
+    ({ type: 'server/setPluginTabs', payload }) as const,
+  setPluginTabsForPlugin: (payload: { pluginId: string; tabs: TPluginTab[] }) =>
+    ({ type: 'server/setPluginTabsForPlugin', payload }) as const,
+  setPluginComponents: (payload: TPluginComponentsMap) =>
+    ({ type: 'server/setPluginComponents', payload }) as const,
+  setActiveFullscreenPluginId: (payload: string | undefined) =>
+    ({ type: 'server/setActiveFullscreenPluginId', payload }) as const,
+  setDmsOpen: (payload: boolean) =>
+    ({ type: 'server/setDmsOpen', payload }) as const
+};
 
-      // a detached channel shows a window that stops short of the present, so appending a live
-      // message would put the very gap this window exists to avoid back into the list. it
-      // arrives with the rest when the user returns to the present
-      if (isLive && state.detachedChannels[channelId]) return;
+export type TServerAction = ReturnType<
+  (typeof serverSliceActions)[keyof typeof serverSliceActions]
+>;
 
-      const existing = state.messagesMap[channelId] ?? [];
-
-      // dedupe against the incoming batch rather than the loaded history: the
-      // set is the size of what just arrived, usually one message, instead of
-      // every message the channel has scrolled into memory
-      const incomingIds = new Set(messages.map((m) => m.id));
-
-      for (const message of existing) {
-        incomingIds.delete(message.id);
-
-        if (incomingIds.size === 0) break;
+const serverSliceReducer = (
+  state: IServerState,
+  action: TServerAction
+): IServerState =>
+  produce(state, (draft) => {
+    switch (action.type) {
+      case 'server/resetState': {
+        Object.assign(draft, {
+          ...initialState,
+          info: draft.info
+        });
+        break;
       }
+      case 'server/setConnected': {
+        draft.connected = action.payload;
+        draft.connecting = false;
+        break;
+      }
+      case 'server/setReconnect': {
+        draft.reconnect = action.payload;
+        break;
+      }
+      case 'server/setInfo': {
+        draft.info = action.payload;
+        break;
+      }
+      case 'server/setLoadingInfo': {
+        draft.loadingInfo = action.payload;
+        break;
+      }
+      case 'server/setDisconnectInfo': {
+        draft.disconnectInfo = action.payload;
+        break;
+      }
+      case 'server/setInitialData': {
+        draft.connected = true;
+        draft.reconnect = null;
+        draft.categories = action.payload.categories;
+        draft.channels = action.payload.channels;
+        draft.emojis = action.payload.emojis;
+        draft.users = action.payload.users;
+        draft.roles = action.payload.roles;
+        draft.ownUserId = action.payload.ownUserId;
+        draft.ownUserPasswordSet = action.payload.ownUserPasswordSet;
+        draft.publicSettings = action.payload.publicSettings;
+        draft.voiceMap = action.payload.voiceMap;
+        draft.externalStreamsMap = action.payload.externalStreamsMap;
+        draft.serverId = action.payload.serverId;
+        draft.channelPermissions = action.payload.channelPermissions;
+        draft.readStatesMap = action.payload.readStates;
+        draft.pluginsMetadata = action.payload.pluginsMetadata;
+        break;
+      }
+      case 'server/addMessages': {
+        const { channelId, messages, isLive } = action.payload;
 
-      const filtered =
-        incomingIds.size === messages.length
-          ? messages
-          : messages.filter((m) => incomingIds.has(m.id));
+        // a detached channel shows a window that stops short of the present, so appending a live
+        // message would put the very gap this window exists to avoid back into the list. it
+        // arrives with the rest when the user returns to the present
+        if (isLive && draft.detachedChannels[channelId]) return;
 
-      state.messagesMap[channelId] = mergeMessagesChronologically(
-        existing,
-        filtered
-      );
-    },
-    updateMessage: (
-      state,
-      action: PayloadAction<{ channelId: number; message: TJoinedMessage }>
-    ) => {
-      const messages = state.messagesMap[action.payload.channelId];
+        const existing = draft.messagesMap[channelId] ?? [];
 
-      if (!messages) return;
+        // dedupe against the incoming batch rather than the loaded history: the
+        // set is the size of what just arrived, usually one message, instead of
+        // every message the channel has scrolled into memory
+        const incomingIds = new Set(messages.map((m) => m.id));
 
-      const messageIndex = messages.findIndex(
-        (message) => message.id === action.payload.message.id
-      );
+        for (const message of existing) {
+          incomingIds.delete(message.id);
 
-      if (messageIndex === -1) return;
-
-      messages[messageIndex] = action.payload.message;
-    },
-    updateReplyCount: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        messageId: number;
-        replyCount: number;
-      }>
-    ) => {
-      const messages = state.messagesMap[action.payload.channelId];
-
-      if (!messages) return;
-
-      const message = messages.find((m) => m.id === action.payload.messageId);
-
-      if (!message) return;
-
-      message.replyCount = action.payload.replyCount;
-    },
-    deleteMessage: (
-      state,
-      action: PayloadAction<{ channelId: number; messageId: number }>
-    ) => {
-      const messages = state.messagesMap[action.payload.channelId];
-
-      if (!messages) return;
-
-      const remaining = messages.filter(
-        (m) => m.id !== action.payload.messageId
-      );
-
-      remaining.forEach((message) => {
-        if (message.replyToMessageId === action.payload.messageId) {
-          message.replyToMessageId = null;
-          message.replyTo = null;
+          if (incomingIds.size === 0) break;
         }
-      });
 
-      state.messagesMap[action.payload.channelId] = remaining;
-    },
+        const filtered =
+          incomingIds.size === messages.length
+            ? messages
+            : messages.filter((m) => incomingIds.has(m.id));
 
-    // THREAD MESSAGES ------------------------------------------------------------
-
-    addThreadMessages: (
-      state,
-      action: PayloadAction<{
-        parentMessageId: number;
-        messages: TJoinedMessage[];
-      }>
-    ) => {
-      const { parentMessageId, messages } = action.payload;
-      const existing = state.threadMessagesMap[parentMessageId] ?? [];
-
-      const existingIds = new Set(existing.map((m) => m.id));
-      const filtered = messages.filter((m) => !existingIds.has(m.id));
-
-      state.threadMessagesMap[parentMessageId] = mergeMessagesChronologically(
-        existing,
-        filtered
-      );
-    },
-    updateThreadMessage: (
-      state,
-      action: PayloadAction<{
-        parentMessageId: number;
-        message: TJoinedMessage;
-      }>
-    ) => {
-      const messages = state.threadMessagesMap[action.payload.parentMessageId];
-
-      if (!messages) return;
-
-      const messageIndex = messages.findIndex(
-        (message) => message.id === action.payload.message.id
-      );
-
-      if (messageIndex === -1) return;
-
-      messages[messageIndex] = action.payload.message;
-    },
-    deleteThreadMessage: (
-      state,
-      action: PayloadAction<{
-        parentMessageId: number;
-        messageId: number;
-      }>
-    ) => {
-      const messages = state.threadMessagesMap[action.payload.parentMessageId];
-
-      if (!messages) return;
-
-      state.threadMessagesMap[action.payload.parentMessageId] = messages.filter(
-        (m) => m.id !== action.payload.messageId
-      );
-    },
-    // used by the jump-to-message path when the window it fetched does not reach the newest
-    // message. merging a bounded window into what the channel already holds would leave a gap
-    // in the middle of the rendered list with nothing telling the user
-    setChannelMessages: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        messages: TJoinedMessage[];
-        detached: boolean;
-      }>
-    ) => {
-      const { channelId, messages, detached } = action.payload;
-
-      state.messagesMap[channelId] = messages;
-
-      if (detached) {
-        state.detachedChannels[channelId] = true;
-      } else {
-        delete state.detachedChannels[channelId];
+        draft.messagesMap[channelId] = mergeMessagesChronologically(
+          existing,
+          filtered
+        );
+        break;
       }
-    },
+      case 'server/updateMessage': {
+        const messages = draft.messagesMap[action.payload.channelId];
 
-    trimChannelMessages: (state, action: PayloadAction<number>) => {
-      // a detached window is dropped outright rather than trimmed: keeping its newest page
-      // would leave the channel holding a slice of old history that the next mount's page-1
-      // fetch would merge into, reopening the gap
-      if (state.detachedChannels[action.payload]) {
-        delete state.messagesMap[action.payload];
-        delete state.detachedChannels[action.payload];
+        if (!messages) return;
 
-        return;
+        const messageIndex = messages.findIndex(
+          (message) => message.id === action.payload.message.id
+        );
+
+        if (messageIndex === -1) return;
+
+        messages[messageIndex] = action.payload.message;
+        break;
       }
+      case 'server/updateReplyCount': {
+        const messages = draft.messagesMap[action.payload.channelId];
 
-      const messages = state.messagesMap[action.payload];
+        if (!messages) return;
 
-      if (!messages || messages.length <= DEFAULT_MESSAGES_LIMIT) return;
+        const message = messages.find((m) => m.id === action.payload.messageId);
 
-      state.messagesMap[action.payload] = messages.slice(
-        -DEFAULT_MESSAGES_LIMIT
-      );
-    },
+        if (!message) return;
 
-    clearThreadMessages: (state, action: PayloadAction<number>) => {
-      delete state.threadMessagesMap[action.payload];
-    },
-
-    clearTypingUsers: (state, action: PayloadAction<number>) => {
-      delete state.typingMap[action.payload];
-    },
-    addTypingUser: (
-      state,
-      action: PayloadAction<{ channelId: number; userId: number }>
-    ) => {
-      const { channelId, userId } = action.payload;
-      const typingUsers = state.typingMap[channelId] || [];
-
-      if (!typingUsers.includes(userId)) {
-        typingUsers.push(userId);
-        state.typingMap[channelId] = typingUsers;
+        message.replyCount = action.payload.replyCount;
+        break;
       }
-    },
-    removeTypingUser: (
-      state,
-      action: PayloadAction<{ channelId: number; userId: number }>
-    ) => {
-      const { channelId, userId } = action.payload;
-      const typingUsers = state.typingMap[channelId] || [];
+      case 'server/deleteMessage': {
+        const messages = draft.messagesMap[action.payload.channelId];
 
-      state.typingMap[channelId] = typingUsers.filter((id) => id !== userId);
-    },
-    addThreadTypingUser: (
-      state,
-      action: PayloadAction<{ parentMessageId: number; userId: number }>
-    ) => {
-      const { parentMessageId, userId } = action.payload;
-      const typingUsers = state.threadTypingMap[parentMessageId] || [];
+        if (!messages) return;
 
-      if (!typingUsers.includes(userId)) {
-        typingUsers.push(userId);
-        state.threadTypingMap[parentMessageId] = typingUsers;
+        const remaining = messages.filter(
+          (m) => m.id !== action.payload.messageId
+        );
+
+        remaining.forEach((message) => {
+          if (message.replyToMessageId === action.payload.messageId) {
+            message.replyToMessageId = null;
+            message.replyTo = null;
+          }
+        });
+
+        draft.messagesMap[action.payload.channelId] = remaining;
+        break;
       }
-    },
-    removeThreadTypingUser: (
-      state,
-      action: PayloadAction<{ parentMessageId: number; userId: number }>
-    ) => {
-      const { parentMessageId, userId } = action.payload;
-      const typingUsers = state.threadTypingMap[parentMessageId] || [];
+      case 'server/addThreadMessages': {
+        const { parentMessageId, messages } = action.payload;
+        const existing = draft.threadMessagesMap[parentMessageId] ?? [];
 
-      state.threadTypingMap[parentMessageId] = typingUsers.filter(
-        (id) => id !== userId
-      );
-    },
+        const existingIds = new Set(existing.map((m) => m.id));
+        const filtered = messages.filter((m) => !existingIds.has(m.id));
 
-    // USERS ------------------------------------------------------------
+        draft.threadMessagesMap[parentMessageId] = mergeMessagesChronologically(
+          existing,
+          filtered
+        );
+        break;
+      }
+      case 'server/updateThreadMessage': {
+        const messages =
+          draft.threadMessagesMap[action.payload.parentMessageId];
 
-    updateUser: (
-      state,
-      action: PayloadAction<{
-        userId: number;
-        user: Partial<TJoinedPublicUser>;
-      }>
-    ) => {
-      const index = state.users.findIndex(
-        (u) => u.id === action.payload.userId
-      );
+        if (!messages) return;
 
-      if (index === -1) return;
+        const messageIndex = messages.findIndex(
+          (message) => message.id === action.payload.message.id
+        );
 
-      state.users[index] = {
-        ...state.users[index],
-        ...action.payload.user
-      };
-    },
-    addUser: (state, action: PayloadAction<TJoinedPublicUser>) => {
-      const exists = state.users.find((u) => u.id === action.payload.id);
+        if (messageIndex === -1) return;
 
-      if (exists) return;
+        messages[messageIndex] = action.payload.message;
+        break;
+      }
+      case 'server/deleteThreadMessage': {
+        const messages =
+          draft.threadMessagesMap[action.payload.parentMessageId];
 
-      state.users.push(action.payload);
-    },
-    wipeUser: (state, action: PayloadAction<{ userId: number }>) => {
-      const { userId } = action.payload;
+        if (!messages) return;
 
-      // remove user
-      state.users = state.users.filter((u) => u.id !== userId);
+        draft.threadMessagesMap[action.payload.parentMessageId] =
+          messages.filter((m) => m.id !== action.payload.messageId);
+        break;
+      }
+      case 'server/setChannelMessages': {
+        const { channelId, messages, detached } = action.payload;
 
-      // remove user from typing states
-      for (const channelId in state.typingMap) {
-        state.typingMap[channelId] = state.typingMap[channelId].filter(
+        draft.messagesMap[channelId] = messages;
+
+        if (detached) {
+          draft.detachedChannels[channelId] = true;
+        } else {
+          delete draft.detachedChannels[channelId];
+        }
+        break;
+      }
+      case 'server/trimChannelMessages': {
+        // a detached window is dropped outright rather than trimmed: keeping its newest page
+        // would leave the channel holding a slice of old history that the next mount's page-1
+        // fetch would merge into, reopening the gap
+        if (draft.detachedChannels[action.payload]) {
+          delete draft.messagesMap[action.payload];
+          delete draft.detachedChannels[action.payload];
+
+          return;
+        }
+
+        const messages = draft.messagesMap[action.payload];
+
+        if (!messages || messages.length <= DEFAULT_MESSAGES_LIMIT) return;
+
+        draft.messagesMap[action.payload] = messages.slice(
+          -DEFAULT_MESSAGES_LIMIT
+        );
+        break;
+      }
+      case 'server/clearThreadMessages': {
+        delete draft.threadMessagesMap[action.payload];
+        break;
+      }
+      case 'server/clearTypingUsers': {
+        delete draft.typingMap[action.payload];
+        break;
+      }
+      case 'server/addTypingUser': {
+        const { channelId, userId } = action.payload;
+        const typingUsers = draft.typingMap[channelId] || [];
+
+        if (!typingUsers.includes(userId)) {
+          typingUsers.push(userId);
+          draft.typingMap[channelId] = typingUsers;
+        }
+        break;
+      }
+      case 'server/removeTypingUser': {
+        const { channelId, userId } = action.payload;
+        const typingUsers = draft.typingMap[channelId] || [];
+
+        draft.typingMap[channelId] = typingUsers.filter((id) => id !== userId);
+        break;
+      }
+      case 'server/addThreadTypingUser': {
+        const { parentMessageId, userId } = action.payload;
+        const typingUsers = draft.threadTypingMap[parentMessageId] || [];
+
+        if (!typingUsers.includes(userId)) {
+          typingUsers.push(userId);
+          draft.threadTypingMap[parentMessageId] = typingUsers;
+        }
+        break;
+      }
+      case 'server/removeThreadTypingUser': {
+        const { parentMessageId, userId } = action.payload;
+        const typingUsers = draft.threadTypingMap[parentMessageId] || [];
+
+        draft.threadTypingMap[parentMessageId] = typingUsers.filter(
           (id) => id !== userId
         );
+        break;
       }
-
-      // remove user from voice channels
-      for (const channelId in state.voiceMap) {
-        delete state.voiceMap[channelId].users[userId];
-      }
-
-      // remove user from messages and reactions
-      for (const channelId in state.messagesMap) {
-        state.messagesMap[channelId] = state.messagesMap[channelId]
-          .filter((m) => m.userId !== userId)
-          .map((m) => ({
-            ...m,
-            reactions: m.reactions.filter(
-              (reaction) => reaction.userId !== userId
-            )
-          }));
-      }
-
-      // remove user from thread messages and reactions
-      for (const parentId in state.threadMessagesMap) {
-        state.threadMessagesMap[parentId] = state.threadMessagesMap[parentId]
-          .filter((m) => m.userId !== userId)
-          .map((m) => ({
-            ...m,
-            reactions: m.reactions.filter(
-              (reaction) => reaction.userId !== userId
-            )
-          }));
-      }
-
-      // remove user from emojis
-      state.emojis = state.emojis.filter((e) => e.userId !== userId);
-    },
-    reassignUser: (
-      state,
-      action: PayloadAction<{ userId: number; deletedUserId: number }>
-    ) => {
-      const { userId, deletedUserId } = action.payload;
-
-      // remove user
-      state.users = state.users.filter((u) => u.id !== userId);
-
-      // remove user from typing states
-      for (const channelId in state.typingMap) {
-        state.typingMap[channelId] = state.typingMap[channelId].filter(
-          (id) => id !== userId
+      case 'server/updateUser': {
+        const index = draft.users.findIndex(
+          (u) => u.id === action.payload.userId
         );
-      }
 
-      // remove user from voice channels
-      for (const channelId in state.voiceMap) {
-        delete state.voiceMap[channelId].users[userId];
-      }
+        if (index === -1) return;
 
-      // reassign messages and reactions
-      for (const channelId in state.messagesMap) {
-        state.messagesMap[channelId] = state.messagesMap[channelId].map(
-          (m) => ({
+        draft.users[index] = {
+          ...draft.users[index],
+          ...action.payload.user
+        };
+        break;
+      }
+      case 'server/addUser': {
+        const exists = draft.users.find((u) => u.id === action.payload.id);
+
+        if (exists) return;
+
+        draft.users.push(action.payload);
+        break;
+      }
+      case 'server/wipeUser': {
+        const { userId } = action.payload;
+
+        // remove user
+        draft.users = draft.users.filter((u) => u.id !== userId);
+
+        // remove user from typing states
+        for (const channelId in draft.typingMap) {
+          draft.typingMap[channelId] = draft.typingMap[channelId].filter(
+            (id) => id !== userId
+          );
+        }
+
+        // remove user from voice channels
+        for (const channelId in draft.voiceMap) {
+          delete draft.voiceMap[channelId].users[userId];
+        }
+
+        // remove user from messages and reactions
+        for (const channelId in draft.messagesMap) {
+          draft.messagesMap[channelId] = draft.messagesMap[channelId]
+            .filter((m) => m.userId !== userId)
+            .map((m) => ({
+              ...m,
+              reactions: m.reactions.filter(
+                (reaction) => reaction.userId !== userId
+              )
+            }));
+        }
+
+        // remove user from thread messages and reactions
+        for (const parentId in draft.threadMessagesMap) {
+          draft.threadMessagesMap[parentId] = draft.threadMessagesMap[parentId]
+            .filter((m) => m.userId !== userId)
+            .map((m) => ({
+              ...m,
+              reactions: m.reactions.filter(
+                (reaction) => reaction.userId !== userId
+              )
+            }));
+        }
+
+        // remove user from emojis
+        draft.emojis = draft.emojis.filter((e) => e.userId !== userId);
+        break;
+      }
+      case 'server/reassignUser': {
+        const { userId, deletedUserId } = action.payload;
+
+        // remove user
+        draft.users = draft.users.filter((u) => u.id !== userId);
+
+        // remove user from typing states
+        for (const channelId in draft.typingMap) {
+          draft.typingMap[channelId] = draft.typingMap[channelId].filter(
+            (id) => id !== userId
+          );
+        }
+
+        // remove user from voice channels
+        for (const channelId in draft.voiceMap) {
+          delete draft.voiceMap[channelId].users[userId];
+        }
+
+        // reassign messages and reactions
+        for (const channelId in draft.messagesMap) {
+          draft.messagesMap[channelId] = draft.messagesMap[channelId].map(
+            (m) => ({
+              ...m,
+              userId: m.userId === userId ? deletedUserId : m.userId,
+              reactions: m.reactions.map((reaction) =>
+                reaction.userId === userId
+                  ? { ...reaction, userId: deletedUserId }
+                  : reaction
+              )
+            })
+          );
+        }
+
+        // reassign thread messages and reactions
+        for (const parentId in draft.threadMessagesMap) {
+          draft.threadMessagesMap[parentId] = draft.threadMessagesMap[
+            parentId
+          ].map((m) => ({
             ...m,
             userId: m.userId === userId ? deletedUserId : m.userId,
             reactions: m.reactions.map((reaction) =>
@@ -559,403 +693,311 @@ export const serverSlice = createSlice({
                 ? { ...reaction, userId: deletedUserId }
                 : reaction
             )
-          })
+          }));
+        }
+
+        // reassign emojis
+        draft.emojis = draft.emojis.map((e) =>
+          e.userId === userId ? { ...e, userId: deletedUserId } : e
         );
+        break;
       }
-
-      // reassign thread messages and reactions
-      for (const parentId in state.threadMessagesMap) {
-        state.threadMessagesMap[parentId] = state.threadMessagesMap[
-          parentId
-        ].map((m) => ({
-          ...m,
-          userId: m.userId === userId ? deletedUserId : m.userId,
-          reactions: m.reactions.map((reaction) =>
-            reaction.userId === userId
-              ? { ...reaction, userId: deletedUserId }
-              : reaction
-          )
-        }));
+      case 'server/setPublicSettings': {
+        draft.publicSettings = action.payload;
+        break;
       }
+      case 'server/updateRole': {
+        const index = draft.roles.findIndex(
+          (r) => r.id === action.payload.roleId
+        );
 
-      // reassign emojis
-      state.emojis = state.emojis.map((e) =>
-        e.userId === userId ? { ...e, userId: deletedUserId } : e
-      );
-    },
+        if (index === -1) return;
 
-    // SERVER SETTINGS ------------------------------------------------------------
-
-    setPublicSettings: (
-      state,
-      action: PayloadAction<TPublicServerSettings | undefined>
-    ) => {
-      state.publicSettings = action.payload;
-    },
-
-    // ROLES ------------------------------------------------------------
-
-    updateRole: (
-      state,
-      action: PayloadAction<{
-        roleId: number;
-        role: Partial<TJoinedRole>;
-      }>
-    ) => {
-      const index = state.roles.findIndex(
-        (r) => r.id === action.payload.roleId
-      );
-
-      if (index === -1) return;
-
-      state.roles[index] = {
-        ...state.roles[index],
-        ...action.payload.role
-      };
-    },
-    addRole: (state, action: PayloadAction<TJoinedRole>) => {
-      const exists = state.roles.find((r) => r.id === action.payload.id);
-
-      if (exists) return;
-
-      state.roles.push(action.payload);
-    },
-    removeRole: (state, action: PayloadAction<{ roleId: number }>) => {
-      state.roles = state.roles.filter((r) => r.id !== action.payload.roleId);
-    },
-
-    // CHANNELS ------------------------------------------------------------
-
-    updateChannel: (
-      state,
-      action: PayloadAction<{ channelId: number; channel: Partial<TChannel> }>
-    ) => {
-      const index = state.channels.findIndex(
-        (c) => c.id === action.payload.channelId
-      );
-
-      if (index === -1) return;
-
-      state.channels[index] = {
-        ...state.channels[index],
-        ...action.payload.channel
-      };
-    },
-    addChannel: (state, action: PayloadAction<TChannel>) => {
-      const exists = state.channels.find((c) => c.id === action.payload.id);
-
-      if (exists) return;
-
-      state.channels.push(action.payload);
-    },
-    removeChannel: (state, action: PayloadAction<{ channelId: number }>) => {
-      state.channels = state.channels.filter(
-        (c) => c.id !== action.payload.channelId
-      );
-    },
-    setSelectedChannelId: (
-      state,
-      action: PayloadAction<number | undefined>
-    ) => {
-      state.selectedChannelId = action.payload;
-
-      if (action.payload) {
-        state.activeFullscreenPluginId = undefined;
+        draft.roles[index] = {
+          ...draft.roles[index],
+          ...action.payload.role
+        };
+        break;
       }
-    },
-    setCurrentVoiceChannelId: (
-      state,
-      action: PayloadAction<number | undefined>
-    ) => {
-      state.currentVoiceChannelId = action.payload;
-    },
-    setVoiceMoveTargetChannelId: (
-      state,
-      action: PayloadAction<number | undefined>
-    ) => {
-      state.voiceMoveTargetChannelId = action.payload;
-    },
-    setChannelPermissions: (
-      state,
-      action: PayloadAction<TChannelUserPermissionsMap>
-    ) => {
-      state.channelPermissions = action.payload;
-    },
-    setChannelReadState: (
-      state,
-      action: PayloadAction<{ channelId: number; count: number | undefined }>
-    ) => {
-      const { channelId, count } = action.payload;
+      case 'server/addRole': {
+        const exists = draft.roles.find((r) => r.id === action.payload.id);
 
-      state.readStatesMap[channelId] = count;
-    },
+        if (exists) return;
 
-    // EMOJIS ------------------------------------------------------------
-
-    updateEmoji: (
-      state,
-      action: PayloadAction<{ emojiId: number; emoji: Partial<TJoinedEmoji> }>
-    ) => {
-      const index = state.emojis.findIndex(
-        (e) => e.id === action.payload.emojiId
-      );
-      if (index === -1) return;
-      state.emojis[index] = {
-        ...state.emojis[index],
-        ...action.payload.emoji
-      };
-    },
-    addEmoji: (state, action: PayloadAction<TJoinedEmoji>) => {
-      const exists = state.emojis.find((e) => e.id === action.payload.id);
-
-      if (exists) return;
-      state.emojis.push(action.payload);
-    },
-    removeEmoji: (state, action: PayloadAction<{ emojiId: number }>) => {
-      state.emojis = state.emojis.filter(
-        (e) => e.id !== action.payload.emojiId
-      );
-    },
-
-    // CATEGORIES ------------------------------------------------------------
-
-    addCategory: (state, action: PayloadAction<TCategory>) => {
-      const exists = state.categories.find((c) => c.id === action.payload.id);
-
-      if (exists) return;
-
-      state.categories.push(action.payload);
-    },
-    updateCategory: (
-      state,
-      action: PayloadAction<{
-        categoryId: number;
-        category: Partial<TCategory>;
-      }>
-    ) => {
-      const index = state.categories.findIndex(
-        (c) => c.id === action.payload.categoryId
-      );
-
-      if (index === -1) return;
-
-      state.categories[index] = {
-        ...state.categories[index],
-        ...action.payload.category
-      };
-    },
-    removeCategory: (state, action: PayloadAction<{ categoryId: number }>) => {
-      state.categories = state.categories.filter(
-        (c) => c.id !== action.payload.categoryId
-      );
-    },
-
-    // VOICE ------------------------------------------------------------
-
-    addUserToVoiceChannel: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        userId: number;
-        state: TVoiceUserState;
-      }>
-    ) => {
-      const { channelId, userId, state: userState } = action.payload;
-
-      if (!state.voiceMap[channelId]) {
-        state.voiceMap[channelId] = { users: {} };
+        draft.roles.push(action.payload);
+        break;
       }
-
-      state.voiceMap[channelId].users[userId] = userState;
-    },
-    removeUserFromVoiceChannel: (
-      state,
-      action: PayloadAction<{ channelId: number; userId: number }>
-    ) => {
-      const { channelId, userId } = action.payload;
-
-      if (!state.voiceMap[channelId]) return;
-
-      delete state.voiceMap[channelId].users[userId];
-    },
-    updateVoiceUserState: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        userId: number;
-        newState: Partial<TVoiceUserState>;
-      }>
-    ) => {
-      const { channelId, userId, newState } = action.payload;
-
-      if (!state.voiceMap[channelId]) return;
-      if (!state.voiceMap[channelId].users[userId]) return;
-
-      state.voiceMap[channelId].users[userId] = {
-        ...state.voiceMap[channelId].users[userId],
-        ...newState
-      };
-    },
-    addVoiceReaction: (
-      state,
-      action: PayloadAction<{ userId: number; reaction: TVoiceReaction }>
-    ) => {
-      const { userId, reaction } = action.payload;
-      const reactions = state.voiceReactions[userId];
-
-      if (!reactions) {
-        state.voiceReactions[userId] = [reaction];
-
-        return;
+      case 'server/removeRole': {
+        draft.roles = draft.roles.filter((r) => r.id !== action.payload.roleId);
+        break;
       }
+      case 'server/updateChannel': {
+        const index = draft.channels.findIndex(
+          (c) => c.id === action.payload.channelId
+        );
 
-      reactions.push(reaction);
+        if (index === -1) return;
 
-      if (reactions.length > MAX_VOICE_REACTIONS_PER_USER) reactions.shift();
-    },
-    removeVoiceReaction: (
-      state,
-      action: PayloadAction<{ userId: number; reactionId: number }>
-    ) => {
-      const { userId, reactionId } = action.payload;
-      const reactions = state.voiceReactions[userId];
-
-      if (!reactions) return;
-
-      const remaining = reactions.filter(({ id }) => id !== reactionId);
-
-      if (!remaining.length) {
-        delete state.voiceReactions[userId];
-
-        return;
+        draft.channels[index] = {
+          ...draft.channels[index],
+          ...action.payload.channel
+        };
+        break;
       }
+      case 'server/addChannel': {
+        const exists = draft.channels.find((c) => c.id === action.payload.id);
 
-      state.voiceReactions[userId] = remaining;
-    },
-    updateOwnVoiceState: (
-      state,
-      action: PayloadAction<Partial<TVoiceUserState>>
-    ) => {
-      state.ownVoiceState = {
-        ...state.ownVoiceState,
-        ...action.payload
-      };
-    },
-    setPinnedCard: (state, action: PayloadAction<TPinnedCard | undefined>) => {
-      state.pinnedCard = action.payload;
-    },
-    setScreenViewers: (
-      state,
-      action: PayloadAction<TScreenViewersSnapshot>
-    ) => {
-      state.screenViewersMap[action.payload.channelId] = action.payload.demos;
-    },
-    setHideNonVideoParticipants: (state, action: PayloadAction<boolean>) => {
-      state.hideNonVideoParticipants = action.payload;
-    },
-    setShowUserBannersInVoice: (state, action: PayloadAction<boolean>) => {
-      state.showUserBannersInVoice = action.payload;
-    },
-    setHideOwnScreenShare: (state, action: PayloadAction<boolean>) => {
-      state.hideOwnScreenShare = action.payload;
-    },
-    addExternalStreamToChannel: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        streamId: number;
-        stream: TExternalStream;
-      }>
-    ) => {
-      const { channelId, streamId, stream } = action.payload;
+        if (exists) return;
 
-      if (!state.externalStreamsMap[channelId]) {
-        state.externalStreamsMap[channelId] = {};
+        draft.channels.push(action.payload);
+        break;
       }
-
-      state.externalStreamsMap[channelId][streamId] = stream;
-    },
-    updateExternalStreamInChannel: (
-      state,
-      action: PayloadAction<{
-        channelId: number;
-        streamId: number;
-        stream: TExternalStream;
-      }>
-    ) => {
-      const { channelId, streamId, stream } = action.payload;
-
-      if (!state.externalStreamsMap[channelId]) return;
-      if (!state.externalStreamsMap[channelId][streamId]) return;
-
-      state.externalStreamsMap[channelId][streamId] = stream;
-    },
-    removeExternalStreamFromChannel: (
-      state,
-      action: PayloadAction<{ channelId: number; streamId: number }>
-    ) => {
-      const { channelId, streamId } = action.payload;
-
-      if (!state.externalStreamsMap[channelId]) return;
-
-      delete state.externalStreamsMap[channelId][streamId];
-    },
-
-    // PLUGINS ------------------------------------------------------------
-
-    setPluginsMetadata: (state, action: PayloadAction<TPluginMetadata[]>) => {
-      state.pluginsMetadata = action.payload;
-    },
-    setPluginCommands: (state, action: PayloadAction<TCommandsMapByPlugin>) => {
-      state.pluginCommands = action.payload;
-    },
-    setPluginCapabilityAccess: (
-      state,
-      action: { payload: TPluginCapabilityAccessRule[] }
-    ) => {
-      state.pluginCapabilityAccess = action.payload;
-    },
-    setPluginTabs: (state, action: { payload: TPluginTabsMap }) => {
-      state.pluginTabs = action.payload;
-    },
-    setPluginTabsForPlugin: (
-      state,
-      action: { payload: { pluginId: string; tabs: TPluginTab[] } }
-    ) => {
-      state.pluginTabs[action.payload.pluginId] = action.payload.tabs;
-    },
-    setPluginComponents: (
-      state,
-      action: PayloadAction<TPluginComponentsMap>
-    ) => {
-      state.pluginComponents = action.payload;
-    },
-    setActiveFullscreenPluginId: (
-      state,
-      action: PayloadAction<string | undefined>
-    ) => {
-      state.activeFullscreenPluginId = action.payload;
-
-      if (action.payload) {
-        state.selectedChannelId = undefined;
-        state.dmsOpen = false;
+      case 'server/removeChannel': {
+        draft.channels = draft.channels.filter(
+          (c) => c.id !== action.payload.channelId
+        );
+        break;
       }
-    },
+      case 'server/setSelectedChannelId': {
+        draft.selectedChannelId = action.payload;
 
-    // OTHERS ------------------------------------------------------------
+        if (action.payload) {
+          draft.activeFullscreenPluginId = undefined;
+        }
+        break;
+      }
+      case 'server/setCurrentVoiceChannelId': {
+        draft.currentVoiceChannelId = action.payload;
+        break;
+      }
+      case 'server/setVoiceMoveTargetChannelId': {
+        draft.voiceMoveTargetChannelId = action.payload;
+        break;
+      }
+      case 'server/setChannelPermissions': {
+        draft.channelPermissions = action.payload;
+        break;
+      }
+      case 'server/setChannelReadState': {
+        const { channelId, count } = action.payload;
 
-    setDmsOpen: (state, action: PayloadAction<boolean>) => {
-      state.dmsOpen = action.payload;
+        draft.readStatesMap[channelId] = count;
+        break;
+      }
+      case 'server/updateEmoji': {
+        const index = draft.emojis.findIndex(
+          (e) => e.id === action.payload.emojiId
+        );
+        if (index === -1) return;
+        draft.emojis[index] = {
+          ...draft.emojis[index],
+          ...action.payload.emoji
+        };
+        break;
+      }
+      case 'server/addEmoji': {
+        const exists = draft.emojis.find((e) => e.id === action.payload.id);
 
-      if (action.payload) {
-        state.selectedChannelId = undefined;
-        state.activeFullscreenPluginId = undefined;
+        if (exists) return;
+        draft.emojis.push(action.payload);
+        break;
+      }
+      case 'server/removeEmoji': {
+        draft.emojis = draft.emojis.filter(
+          (e) => e.id !== action.payload.emojiId
+        );
+        break;
+      }
+      case 'server/addCategory': {
+        const exists = draft.categories.find((c) => c.id === action.payload.id);
+
+        if (exists) return;
+
+        draft.categories.push(action.payload);
+        break;
+      }
+      case 'server/updateCategory': {
+        const index = draft.categories.findIndex(
+          (c) => c.id === action.payload.categoryId
+        );
+
+        if (index === -1) return;
+
+        draft.categories[index] = {
+          ...draft.categories[index],
+          ...action.payload.category
+        };
+        break;
+      }
+      case 'server/removeCategory': {
+        draft.categories = draft.categories.filter(
+          (c) => c.id !== action.payload.categoryId
+        );
+        break;
+      }
+      case 'server/addUserToVoiceChannel': {
+        const { channelId, userId, state: userState } = action.payload;
+
+        if (!draft.voiceMap[channelId]) {
+          draft.voiceMap[channelId] = { users: {} };
+        }
+
+        draft.voiceMap[channelId].users[userId] = userState;
+        break;
+      }
+      case 'server/removeUserFromVoiceChannel': {
+        const { channelId, userId } = action.payload;
+
+        if (!draft.voiceMap[channelId]) return;
+
+        delete draft.voiceMap[channelId].users[userId];
+        break;
+      }
+      case 'server/updateVoiceUserState': {
+        const { channelId, userId, newState } = action.payload;
+
+        if (!draft.voiceMap[channelId]) return;
+        if (!draft.voiceMap[channelId].users[userId]) return;
+
+        draft.voiceMap[channelId].users[userId] = {
+          ...draft.voiceMap[channelId].users[userId],
+          ...newState
+        };
+        break;
+      }
+      case 'server/addVoiceReaction': {
+        const { userId, reaction } = action.payload;
+        const reactions = draft.voiceReactions[userId];
+
+        if (!reactions) {
+          draft.voiceReactions[userId] = [reaction];
+
+          return;
+        }
+
+        reactions.push(reaction);
+
+        if (reactions.length > MAX_VOICE_REACTIONS_PER_USER) reactions.shift();
+        break;
+      }
+      case 'server/removeVoiceReaction': {
+        const { userId, reactionId } = action.payload;
+        const reactions = draft.voiceReactions[userId];
+
+        if (!reactions) return;
+
+        const remaining = reactions.filter(({ id }) => id !== reactionId);
+
+        if (!remaining.length) {
+          delete draft.voiceReactions[userId];
+
+          return;
+        }
+
+        draft.voiceReactions[userId] = remaining;
+        break;
+      }
+      case 'server/updateOwnVoiceState': {
+        draft.ownVoiceState = {
+          ...draft.ownVoiceState,
+          ...action.payload
+        };
+        break;
+      }
+      case 'server/setPinnedCard': {
+        draft.pinnedCard = action.payload;
+        break;
+      }
+      case 'server/setScreenViewers': {
+        draft.screenViewersMap[action.payload.channelId] = action.payload.demos;
+        break;
+      }
+      case 'server/setHideNonVideoParticipants': {
+        draft.hideNonVideoParticipants = action.payload;
+        break;
+      }
+      case 'server/setShowUserBannersInVoice': {
+        draft.showUserBannersInVoice = action.payload;
+        break;
+      }
+      case 'server/setHideOwnScreenShare': {
+        draft.hideOwnScreenShare = action.payload;
+        break;
+      }
+      case 'server/addExternalStreamToChannel': {
+        const { channelId, streamId, stream } = action.payload;
+
+        if (!draft.externalStreamsMap[channelId]) {
+          draft.externalStreamsMap[channelId] = {};
+        }
+
+        draft.externalStreamsMap[channelId][streamId] = stream;
+        break;
+      }
+      case 'server/updateExternalStreamInChannel': {
+        const { channelId, streamId, stream } = action.payload;
+
+        if (!draft.externalStreamsMap[channelId]) return;
+        if (!draft.externalStreamsMap[channelId][streamId]) return;
+
+        draft.externalStreamsMap[channelId][streamId] = stream;
+        break;
+      }
+      case 'server/removeExternalStreamFromChannel': {
+        const { channelId, streamId } = action.payload;
+
+        if (!draft.externalStreamsMap[channelId]) return;
+
+        delete draft.externalStreamsMap[channelId][streamId];
+        break;
+      }
+      case 'server/setPluginsMetadata': {
+        draft.pluginsMetadata = action.payload;
+        break;
+      }
+      case 'server/setPluginCommands': {
+        draft.pluginCommands = action.payload;
+        break;
+      }
+      case 'server/setPluginCapabilityAccess': {
+        draft.pluginCapabilityAccess = action.payload;
+        break;
+      }
+      case 'server/setPluginTabs': {
+        draft.pluginTabs = action.payload;
+        break;
+      }
+      case 'server/setPluginTabsForPlugin': {
+        draft.pluginTabs[action.payload.pluginId] = action.payload.tabs;
+        break;
+      }
+      case 'server/setPluginComponents': {
+        draft.pluginComponents = action.payload;
+        break;
+      }
+      case 'server/setActiveFullscreenPluginId': {
+        draft.activeFullscreenPluginId = action.payload;
+
+        if (action.payload) {
+          draft.selectedChannelId = undefined;
+          draft.dmsOpen = false;
+        }
+        break;
+      }
+      case 'server/setDmsOpen': {
+        draft.dmsOpen = action.payload;
+
+        if (action.payload) {
+          draft.selectedChannelId = undefined;
+          draft.activeFullscreenPluginId = undefined;
+        }
+        break;
       }
     }
-  }
-});
+  });
 
-const serverSliceActions = serverSlice.actions;
-const serverSliceReducer = serverSlice.reducer;
-
-export { serverSliceActions, serverSliceReducer };
+export {
+  initialState as serverInitialState,
+  serverSliceActions,
+  serverSliceReducer
+};

@@ -1,10 +1,10 @@
-import { createSelector } from '@reduxjs/toolkit';
 import { createCachedSelector } from 're-reselect';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as ReactDOMClient from 'react-dom/client';
 import * as ReactJSXDev from 'react/jsx-dev-runtime';
 import * as ReactJSX from 'react/jsx-runtime';
+import { createSelector } from 'reselect';
 
 const exposeLibs = () => {
   window.__DODECAGON_EXPOSED_LIBS__ = {

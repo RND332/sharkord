@@ -1,4 +1,4 @@
-import type { IRootState } from '@/features/store';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import { getTRPCClient } from '@/lib/trpc';
 import {
   DEFAULT_MESSAGES_LIMIT,
@@ -7,7 +7,6 @@ import {
 } from '@dodecagon/shared';
 import { isSameDay } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
 import {
   addMessages,
   addThreadMessages,
@@ -28,7 +27,7 @@ import {
 } from './selectors';
 
 export const useMessagesByChannelId = (channelId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     messagesByChannelIdSelector(state, channelId)
   );
 
@@ -199,7 +198,7 @@ const usePaginatedMessages = (
 export const useMessages = (channelId: number) => {
   const messages = useMessagesByChannelId(channelId);
   const inited = useRef(false);
-  const detachedFromPresent = useSelector((state: IRootState) =>
+  const detachedFromPresent = useStoreSelector((state: IRootState) =>
     isChannelDetachedSelector(state, channelId)
   );
 
@@ -299,7 +298,7 @@ export const useMessages = (channelId: number) => {
 };
 
 export const useThreadMessagesByParentId = (parentMessageId: number) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     threadMessagesByParentIdSelector(state, parentMessageId)
   );
 
@@ -342,7 +341,7 @@ export const useParentMessage = (
   messageId: number | undefined,
   channelId: number | undefined
 ) =>
-  useSelector((state: IRootState) =>
+  useStoreSelector((state: IRootState) =>
     messageId && channelId
       ? parentMessageByIdSelector(state, messageId, channelId)
       : undefined

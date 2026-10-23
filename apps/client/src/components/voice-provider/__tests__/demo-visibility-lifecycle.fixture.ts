@@ -44,9 +44,8 @@ mock.module('@/features/server/voice/hooks', () => ({
 mock.module('@/features/server/voice/selectors', () => ({
   voiceChannelStateSelector: () => voiceChannelState
 }));
-mock.module('@/features/store', () => ({}));
-mock.module('react-redux', () => ({
-  useSelector: (selector: (state: unknown) => unknown) => selector({})
+mock.module('@/features/store', () => ({
+  useStoreSelector: (selector: (state: unknown) => unknown) => selector({})
 }));
 mock.module('@/helpers/browser-logger', () => ({
   logVoiceError: () => {}

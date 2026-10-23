@@ -1,6 +1,5 @@
-import type { IRootState } from '@/features/store';
+import { useStoreSelector, type IRootState } from '@/features/store';
 import { useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import {
   appLoadingSelector,
   autoJoinLastChannelSelector,
@@ -25,57 +24,66 @@ import {
   voiceChatSidebarDataSelector
 } from './selectors';
 
-export const useIsAppLoading = () => useSelector(appLoadingSelector);
+export const useIsAppLoading = () => useStoreSelector(appLoadingSelector);
 
-export const useIsAutoConnecting = () => useSelector(isAutoConnectingSelector);
+export const useIsAutoConnecting = () =>
+  useStoreSelector(isAutoConnectingSelector);
 
-export const useIsPluginsLoading = () => useSelector(loadingPluginsSelector);
+export const useIsPluginsLoading = () =>
+  useStoreSelector(loadingPluginsSelector);
 
 export const useModViewOpen = () => {
-  const isOpen = useSelector(modViewOpenSelector);
-  const userId = useSelector(modViewUserIdSelector);
+  const isOpen = useStoreSelector(modViewOpenSelector);
+  const userId = useStoreSelector(modViewUserIdSelector);
 
   return useMemo(() => ({ isOpen, userId }), [isOpen, userId]);
 };
 
-export const useThreadSidebar = () => useSelector(threadSidebarDataSelector);
+export const useThreadSidebar = () =>
+  useStoreSelector(threadSidebarDataSelector);
 
 export const useAutoJoinLastChannel = () =>
-  useSelector(autoJoinLastChannelSelector);
+  useStoreSelector(autoJoinLastChannelSelector);
 
 export const useSelectedDmChannelId = () =>
-  useSelector(selectedDmChannelIdSelector);
+  useStoreSelector(selectedDmChannelIdSelector);
 
 export const useBrowserNotifications = () =>
-  useSelector(browserNotificationsSelector);
+  useStoreSelector(browserNotificationsSelector);
 
 export const useBrowserNotificationsForMentions = () =>
-  useSelector(browserNotificationsForMentionsSelector);
+  useStoreSelector(browserNotificationsForMentionsSelector);
 
 export const useBrowserNotificationsForDms = () =>
-  useSelector(browserNotificationsForDmsSelector);
+  useStoreSelector(browserNotificationsForDmsSelector);
 
 export const useMessageJumpTarget = () =>
-  useSelector(messageJumpTargetSelector);
+  useStoreSelector(messageJumpTargetSelector);
 
 export const useBrowserNotificationsForReplies = () =>
-  useSelector(browserNotificationsForRepliesSelector);
+  useStoreSelector(browserNotificationsForRepliesSelector);
 
 export const useVoiceChatSidebar = () =>
-  useSelector(voiceChatSidebarDataSelector);
+  useStoreSelector(voiceChatSidebarDataSelector);
 
-export const usePluginSlotDebug = () => useSelector(pluginSlotDebugSelector);
+export const usePluginSlotDebug = () =>
+  useStoreSelector(pluginSlotDebugSelector);
 
-export const useIsShiftHeld = () => useSelector(isShiftHeldSelector);
+export const useIsShiftHeld = () => useStoreSelector(isShiftHeldSelector);
 
 export const useNotificationSounds = () =>
-  useSelector(notificationSoundsSelector);
+  useStoreSelector(notificationSoundsSelector);
 
-export const useMessageSentSound = () => useSelector(messageSentSoundSelector);
+export const useMessageSentSound = () =>
+  useStoreSelector(messageSentSoundSelector);
 
-export const useJoinLeaveSounds = () => useSelector(joinLeaveSoundsSelector);
+export const useJoinLeaveSounds = () =>
+  useStoreSelector(joinLeaveSoundsSelector);
 
-export const useMuteDeafenSounds = () => useSelector(muteDeafenSoundsSelector);
+export const useMuteDeafenSounds = () =>
+  useStoreSelector(muteDeafenSoundsSelector);
 
 export const useIsChannelMuted = (channelId: number) =>
-  useSelector((state: IRootState) => isChannelMutedSelector(state, channelId));
+  useStoreSelector((state: IRootState) =>
+    isChannelMutedSelector(state, channelId)
+  );

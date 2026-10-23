@@ -1,11 +1,9 @@
 import { DialogsProvider } from '@/components/dialogs';
 import { VoiceControl } from '@/components/left-sidebar/voice-control';
 import { resetDialogs } from '@/features/dialogs/actions';
-import { store } from '@/features/store';
 import { i18n } from '@/i18n';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Provider } from 'react-redux';
 import { afterEach, expect, test, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import '../index.css';
@@ -66,8 +64,7 @@ test('advanced diagnostics from Wi-Fi stats mounts the real dialog with focus an
   document.body.append(host);
   root = createRoot(host);
   root.render(
-    createElement(Provider, {
-      store,
+    createElement('div', {
       children: [
         createElement(VoiceControl, { key: 'dock' }),
         createElement(DialogsProvider, { key: 'dialogs' })

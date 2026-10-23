@@ -5,7 +5,6 @@ import settingsEn from '@/i18n/locales/en/settings.json';
 import i18next from 'i18next';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { Provider } from 'react-redux';
 
 const noop = () => {};
 
@@ -38,35 +37,24 @@ await i18n.init({
   interpolation: { escapeValue: false }
 });
 
-const store = {
-  getState: () => ({
-    app: { modViewOpen: false, modViewUserId: undefined },
-    dialog: { isOpen: false }
-  }),
-  subscribe: () => noop,
-  dispatch: noop
-};
-
 const { UserIcon } = await import('@heroicons/react/24/outline');
 const { SettingsShell } = await import('../index');
 
 const html = renderToStaticMarkup(
-  <Provider store={store as never}>
-    <I18nextProvider i18n={i18n}>
-      <SettingsShell
-        title="User settings"
-        close={noop}
-        entries={[
-          {
-            id: 'profile',
-            label: 'Profile',
-            icon: UserIcon,
-            content: <div>Profile content</div>
-          }
-        ]}
-      />
-    </I18nextProvider>
-  </Provider>
+  <I18nextProvider i18n={i18n}>
+    <SettingsShell
+      title="User settings"
+      close={noop}
+      entries={[
+        {
+          id: 'profile',
+          label: 'Profile',
+          icon: UserIcon,
+          content: <div>Profile content</div>
+        }
+      ]}
+    />
+  </I18nextProvider>
 );
 
 console.log(`__MARKUP__${html}`);
