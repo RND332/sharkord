@@ -46,6 +46,7 @@ import {
   channelDndId
 } from './helpers';
 import { useChannelDragPreview } from './use-sidebar-dnd';
+import { VoiceChannelActions } from './voice-channel-actions';
 import { VoiceUser } from './voice-user';
 
 type TVoiceProps = Omit<TItemWrapperProps, 'children'> & {
@@ -114,7 +115,7 @@ const Voice = memo(
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={cn(props.className, {
+          className={cn('group relative', props.className, {
             'ring-1 ring-primary bg-accent/40': isDragOver
           })}
         >
@@ -127,13 +128,19 @@ const Voice = memo(
           </span>
 
           {users.length > 0 && (
-            <span className="text-xs leading-4 text-muted-foreground">
+            <span className="text-xs leading-4 text-muted-foreground transition-opacity group-hover:opacity-0">
               {users.length}
             </span>
           )}
           {unreadCount > 0 && (
-            <UnreadCount count={unreadCount} hasMention={hasUnreadMentions} />
+            <UnreadCount
+              count={unreadCount}
+              hasMention={hasUnreadMentions}
+              className="transition-opacity group-hover:opacity-0"
+            />
           )}
+
+          <VoiceChannelActions channelId={channel.id} />
         </ItemWrapper>
         {channel.type === 'VOICE' && (
           <div className="mt-0.5" onContextMenu={(e) => e.stopPropagation()}>
@@ -301,31 +308,31 @@ const Channel = memo(
           opacity: isDragging ? 0.5 : 1
         }}
       >
-        <ChannelContextMenu channelId={channelId}>
-          <div>
-            {channel.type === 'TEXT' && (
+        {channel.type === 'TEXT' && (
+          <ChannelContextMenu channelId={channelId}>
+            <div>
               <Text
                 channel={channel}
                 isSelected={isSelected}
                 onClick={onClick}
                 dragHandleProps={{ ...attributes, ...listeners }}
               />
-            )}
-            {channel.type === 'VOICE' && (
-              <Voice
-                channel={channel}
-                isSelected={isSelected}
-                onClick={onClick}
-                dragHandleProps={{ ...attributes, ...listeners }}
-                disabled={
-                  !isConnectedVoiceChannel &&
-                  (!channelCan(ChannelPermission.JOIN) ||
-                    !can(Permission.JOIN_VOICE_CHANNELS))
-                }
-              />
-            )}
-          </div>
-        </ChannelContextMenu>
+            </div>
+          </ChannelContextMenu>
+        )}
+        {channel.type === 'VOICE' && (
+          <Voice
+            channel={channel}
+            isSelected={isSelected}
+            onClick={onClick}
+            dragHandleProps={{ ...attributes, ...listeners }}
+            disabled={
+              !isConnectedVoiceChannel &&
+              (!channelCan(ChannelPermission.JOIN) ||
+                !can(Permission.JOIN_VOICE_CHANNELS))
+            }
+          />
+        )}
       </div>
     );
   }

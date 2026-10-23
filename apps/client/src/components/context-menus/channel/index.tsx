@@ -1,15 +1,12 @@
 import { ServerScreen } from '@/components/server-screens/screens';
-import {
-  openVoiceChatSidebar,
-  toggleChannelMuted
-} from '@/features/app/actions';
+import { toggleChannelMuted } from '@/features/app/actions';
 import { useIsChannelMuted } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
 import { useCan } from '@/features/server/hooks';
 import { getTRPCClient } from '@/lib/trpc';
-import { ChannelType, Permission } from '@dodecagon/shared';
+import { Permission } from '@dodecagon/shared';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -38,12 +35,7 @@ const ChannelContextMenu = memo(
       Permission.MANAGE_CHANNELS,
       Permission.MANAGE_CHANNEL_PERMISSIONS
     ]);
-    const isVoiceChannel = channel?.type === ChannelType.VOICE;
     const isMuted = useIsChannelMuted(channelId);
-
-    const onOpenChat = useCallback(() => {
-      openVoiceChatSidebar(channelId);
-    }, [channelId]);
 
     const onToggleMuteClick = useCallback(() => {
       toggleChannelMuted(channelId);
@@ -81,11 +73,6 @@ const ChannelContextMenu = memo(
         <ContextMenuContent>
           <ContextMenuLabel>{channel?.name}</ContextMenuLabel>
           <ContextMenuSeparator />
-          {isVoiceChannel && (
-            <ContextMenuItem onClick={onOpenChat}>
-              {t('openChat')}
-            </ContextMenuItem>
-          )}
           <ContextMenuItem onClick={onToggleMuteClick}>
             {isMuted ? t('unmuteChannel') : t('muteChannel')}
           </ContextMenuItem>

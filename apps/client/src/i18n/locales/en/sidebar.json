@@ -72,6 +72,7 @@
   "openDirectMessages": "Open Direct Messages",
   "closeDirectMessages": "Close Direct Messages",
   "openChat": "Open Text Chat",
+  "configureChannel": "Configure channel",
   "editLabel": "Edit",
   "deleteLabel": "Delete",
   "deleteChannelTitle": "Delete Channel",
