@@ -374,22 +374,24 @@ Start-сервер в разработке живёт в процессе Vite, 
 
 ## 7. Порядок коммитов
 
-Один PR, одна ветка, последовательность коммитов, каждый из которых собирается:
+Один PR, одна ветка, последовательность коммитов, каждый из которых собирается. Полный
+расклад по шагам лежит в плане `docs/superpowers/plans/2026-10-23-tanstack-start-migration.md`.
 
-1. `refactor: add the server bridge and the shared service functions` - мост и выделение
-   логики из хендлеров в хелперы.
-2. `feat: run the tanstack start server inside the bun process` - вшивка `server.zip`,
-   распаковка, импорт, диспетчер, который отдаёт Start-обработчику часть путей.
-3. `refactor: move the http surface to the start server routes` - перенос `/info`,
-   `/manifest.json`, `/login`, `/oidc/*`, `/plugin-components`, `/healthz`.
-4. `feat: add the server functions and the route loaders` - `getServerInfo`,
-   `getPluginComponents`, загрузчики роутов.
-5. `refactor: route the screens through the tanstack router` - роуты `/`, `/connect`,
-   `/app`, `/disconnected`, переходы вместо переключателя стора.
-6. `refactor: make the client render on the server` - стор на запрос, i18n на запрос,
-   фиксированное время, детерминированная случайность, гарды браузерных API.
-7. `test: cover the start server routes and the hydration` - новые тесты.
-8. `docs: describe the tanstack start migration` - эта спека.
+1. `refactor: add the server bridge and the shared service functions`
+2. `feat: run the tanstack start server inside the bun process`
+3. `feat: route the interface and the api paths through the start server`
+4. `feat: serve the server info and the manifest from the start server`
+5. `feat: serve the login and the oidc flow from the start server`
+6. `feat: add the server functions and the connect loader`
+7. `refactor: give the store an instance per request`
+8. `refactor: resolve the language and the clock per request`
+9. `refactor: guard the browser apis so the client renders on the server`
+10. `refactor: route the screens through the tanstack router`
+11. `test: cover the start server routes and the built bundle`
+
+Порядок не совпадает с порядком «снизу вверх»: сначала мост и упаковка, потом
+поверхность API, потом состояние на запрос, и только потом экраны. Так каждый
+промежуточный коммит оставляет работающее приложение, а не сломанное.
 
 ## 8. Что остаётся открытым
 
