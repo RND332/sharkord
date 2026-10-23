@@ -52,7 +52,11 @@ test('card volume is adjusted with pointer and keyboard without dismissing the m
     .getByRole('button', { name: 'Participant' })
     .click({ button: 'right' });
   await expect.element(slider).toHaveAttribute('aria-valuenow', '1');
-  await slider.click();
+  // the base ui slider keeps the focusable range input hidden, the visible
+  // thumb carries the pointer
+  const thumb = slider.element()?.closest('[data-slot="slider-thumb"]');
+
+  (thumb as HTMLElement | null)?.click();
   await expect.element(page.getByRole('menu')).toBeVisible();
 });
 

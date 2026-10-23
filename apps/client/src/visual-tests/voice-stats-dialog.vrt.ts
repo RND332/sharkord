@@ -91,12 +91,12 @@ test('advanced diagnostics from Wi-Fi stats mounts the real dialog with focus an
   await expect
     .poll(() => dialog.element().contains(document.activeElement))
     .toBe(true);
-  expect(getComputedStyle(document.body).pointerEvents).toBe('none');
+  // the base ui dialog marks the rest of the app as inert instead of taking
+  // the pointer events of the body away
+  expect(host?.hasAttribute('data-base-ui-inert')).toBe(true);
   await userEvent.keyboard('{Escape}');
   await expect.element(dialog).not.toBeInTheDocument();
-  await expect
-    .poll(() => getComputedStyle(document.body).pointerEvents)
-    .not.toBe('none');
+  await expect.poll(() => host?.hasAttribute('data-base-ui-inert')).toBe(false);
   await stats.click();
   await expect
     .element(page.getByRole('heading', { name: 'Transport Statistics' }))

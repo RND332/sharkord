@@ -151,8 +151,8 @@ test.describe('a kicked user', () => {
       await expect(
         reopened
           .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
-          .locator('button[role="switch"]')
-      ).toHaveAttribute('data-state', 'unchecked');
+          .locator('[role="switch"]')
+      ).toHaveAttribute('data-unchecked');
 
       const savedToken = await reopened.evaluate(() =>
         localStorage.getItem('dodecagon-auto-login-token')

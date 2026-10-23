@@ -102,7 +102,11 @@ test('audio controls open compact device settings on right click without togglin
   const slider = page.getByRole('slider');
   await expect.element(slider).toHaveAccessibleName('microphoneVolume');
   await expect.element(slider).toHaveAttribute('aria-valuenow', '75');
-  await slider.click();
+  // the base ui slider keeps the focusable range input hidden, the visible
+  // thumb carries the pointer
+  await page
+    .elementLocator(slider.element()?.closest('[data-slot="slider-thumb"]')!)
+    .click();
   await userEvent.keyboard('{Home}');
   expect(saveDevices).toHaveBeenCalled();
   const update = saveDevices.mock.lastCall![0];
@@ -126,7 +130,11 @@ test('audio controls open compact device settings on right click without togglin
   await expect
     .element(page.getByRole('slider'))
     .toHaveAttribute('aria-valuenow', '60');
-  await page.getByRole('slider').click();
+  await page
+    .elementLocator(
+      page.getByRole('slider').element()?.closest('[data-slot="slider-thumb"]')!
+    )
+    .click();
   await userEvent.keyboard('{End}');
   const outputUpdate = saveDevices.mock.lastCall![0];
   expect(outputUpdate({ microphoneVolume: 75, playbackVolume: 60 })).toEqual({
