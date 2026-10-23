@@ -6,6 +6,18 @@ const ANALYZER_MIN_DECIBELS = -90;
 const ANALYZER_MAX_DECIBELS = -10;
 const ANALYZER_SMOOTHING_TIME_CONSTANT = 0.85;
 const SPEAKING_THRESHOLD = 8;
+const MAX_SPEAKING_INTENSITY = 4;
+
+// The louder somebody talks, the bolder their speaking outline gets. Every
+// doubling of the level is one step, so the outline follows the voice instead
+// of the microphone gain.
+const getSpeakingIntensity = (normalizedLevel: number): number => {
+  if (normalizedLevel <= SPEAKING_THRESHOLD) return 0;
+
+  const step = Math.floor(Math.log2(normalizedLevel / SPEAKING_THRESHOLD));
+
+  return Math.min(MAX_SPEAKING_INTENSITY, step + 1);
+};
 
 // Chrome caps the number of live AudioContexts per page, so every participant
 // would starve the others once the call grows. One shared context analyses all
@@ -43,12 +55,14 @@ const releaseSharedAudioContext = () => {
 
 const useAudioLevel = (audioStream: MediaStream | undefined) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [intensity, setIntensity] = useState(0);
   const animationFrameRef = useRef<number | null>(null);
   const ownVoiceUser = useOwnVoiceUser();
 
   useEffect(() => {
     if (!audioStream || ownVoiceUser?.state.soundMuted) {
       setIsSpeaking(false);
+      setIntensity(0);
       return;
     }
 
@@ -92,8 +106,10 @@ const useAudioLevel = (audioStream: MediaStream | undefined) => {
 
       const rms = Math.sqrt(sum / dataArray.length);
       const normalizedLevel = Math.min(100, (rms / 255) * 100);
+      const nextIntensity = getSpeakingIntensity(normalizedLevel);
 
-      setIsSpeaking(normalizedLevel > SPEAKING_THRESHOLD);
+      setIsSpeaking(nextIntensity > 0);
+      setIntensity(nextIntensity);
 
       animationFrameRef.current = requestAnimationFrame(checkAudioLevel);
     };
@@ -110,10 +126,11 @@ const useAudioLevel = (audioStream: MediaStream | undefined) => {
       releaseSharedAudioContext();
 
       setIsSpeaking(false);
+      setIntensity(0);
     };
   }, [audioStream, ownVoiceUser?.state.soundMuted]);
 
-  return { isSpeaking };
+  return { isSpeaking, intensity };
 };
 
 export { useAudioLevel };

@@ -274,7 +274,7 @@ mock.module('@/features/server/voice/hooks', () => ({
   useHideNonVideoParticipants: () => false,
   useShowUserBannersInVoice: () => false,
   useHideOwnScreenShare: () => false,
-  useSpeakingState: () => false
+  useSpeakingState: () => ({ isActivelySpeaking: false, speakingIntensity: 0 })
 }));
 mock.module('@/features/store', () => ({
   store: { getState: () => ({}), dispatch() {} }
