@@ -7,7 +7,12 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { PluginSlot, type TJoinedMessage } from '@dodecagon/shared';
+import {
+  FileCategory,
+  getFileCategory,
+  PluginSlot,
+  type TJoinedMessage
+} from '@dodecagon/shared';
 import { Tooltip } from '@dodecagon/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,6 +96,22 @@ const MessageRenderer = memo(
       [message, allMedia]
     );
 
+    // the media already shows the files it was built from, so the attachment
+    // block would only repeat them
+    const filesToShow = useMemo(
+      () =>
+        message.files.filter((file) => {
+          const category = getFileCategory(file.extension);
+
+          return (
+            category !== FileCategory.IMAGE &&
+            category !== FileCategory.VIDEO &&
+            category !== FileCategory.AUDIO
+          );
+        }),
+      [message.files]
+    );
+
     return (
       <div className="flex flex-col gap-1">
         <div
@@ -149,9 +170,9 @@ const MessageRenderer = memo(
           props={pluginProps}
         />
 
-        {message.files.length > 0 && !disableFiles && (
+        {filesToShow.length > 0 && !disableFiles && (
           <div className="flex gap-1 flex-wrap">
-            {message.files.map((file) => (
+            {filesToShow.map((file) => (
               <FileCard
                 key={file.id}
                 name={file.originalName}
