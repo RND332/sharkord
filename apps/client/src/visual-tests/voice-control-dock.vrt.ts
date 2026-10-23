@@ -84,7 +84,11 @@ vi.mock('@/features/store', () => ({
         );
       };
     }
-  }
+  },
+  useStoreSelector: (selector: (state: unknown) => unknown) =>
+    selector({
+      server: { currentVoiceChannelId: state.voiceChannelId }
+    })
 }));
 vi.mock('@/features/server/voice/hooks', () => ({
   useVoice: () => ({
