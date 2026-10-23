@@ -1,6 +1,7 @@
 import { useDevices } from '@/components/devices-provider/hooks/use-devices';
 import { ServerScreen } from '@/components/server-screens/screens';
 import { openServerScreen } from '@/features/server-screens/actions';
+import { TestId } from '@dodecagon/shared';
 import {
   Button,
   Popover,
@@ -19,6 +20,7 @@ import {
   memo,
   useCallback,
   useId,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -31,6 +33,8 @@ type TAudioSettingsMenuProps = {
   kind: 'microphone' | 'output';
   children: ReactNode;
 };
+
+const POPOVER_WIDTH = 264;
 
 const AudioSettingsMenu = memo(
   ({ kind, children }: TAudioSettingsMenuProps) => {
@@ -52,6 +56,34 @@ const AudioSettingsMenu = memo(
     );
     const hasDefault = availableDevices.some(
       (device) => device?.deviceId === 'default'
+    );
+
+    // the menu opens from the sidebar like the connection stats one, so it
+    // never reaches over the edge of the screen
+    const popoverAnchor = useMemo(
+      () => ({
+        current: {
+          getBoundingClientRect: () => {
+            const trigger = anchorRef.current;
+            const reference = trigger?.getBoundingClientRect() ?? new DOMRect();
+            const sidebar =
+              trigger
+                ?.closest(`[data-testid="${TestId.LEFT_SIDEBAR}"]`)
+                ?.getBoundingClientRect() ?? reference;
+
+            return new DOMRect(
+              sidebar.left + 8,
+              reference.top,
+              POPOVER_WIDTH,
+              reference.height
+            );
+          },
+          get contextElement() {
+            return anchorRef.current ?? undefined;
+          }
+        }
+      }),
+      []
     );
 
     const handleContextMenu = useCallback((event: MouseEvent) => {
@@ -114,14 +146,15 @@ const AudioSettingsMenu = memo(
             {children}
           </span>
         </PopoverAnchor>
+        <PopoverAnchor virtualRef={popoverAnchor} />
         <PopoverContent
           side="top"
-          align="end"
-          sideOffset={8}
+          align="start"
+          sideOffset={4}
           onCloseAutoFocus={handleCloseAutoFocus}
           onInteractOutside={handleInteractOutside}
           aria-label={t(isMicrophone ? 'microphoneSettings' : 'outputSettings')}
-          className="w-66 rounded-[10px] border-line bg-panel p-1.5 text-foreground shadow-lg"
+          className="w-[264px] max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-foreground shadow-lg"
         >
           <div>
             <Select
