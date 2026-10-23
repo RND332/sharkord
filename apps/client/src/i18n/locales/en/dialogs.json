@@ -124,10 +124,6 @@
   "createCategoryDesc": "Organize channels around a topic.",
   "createCategoryHint": "New channels can be added here after you create the category.",
   "textInputLabel": "Value",
-
-  "inviteCodeLabel": "Code",
-  "inviteCodePlaceholder": "Invite code",
-  "inviteCreated": "Invite created",
   "invitePeopleTitle": "Invite people",
   "invitePeopleDesc": "Share a link to bring others in.",
   "inviteLinkLabel": "Your invite link",
@@ -141,5 +137,9 @@
   "inviteNoUseLimit": "No use limit",
   "inviteUseLimit_one": "Limit of {{count}} use",
   "inviteUseLimit_other": "Limit of {{count}} uses",
-  "roleForUser": "Role for {{name}}"
+  "roleForUser": "Role for {{name}}",
+  "jumpToFile": "Jump to file",
+  "sharedBy": "Shared by {{name}} · {{size}}",
+  "searchResultsRange": "{{from}}–{{to}} of {{total}} results",
+  "escToClose": "Esc to close"
 }

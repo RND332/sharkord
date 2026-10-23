@@ -14,6 +14,7 @@ export type TSearchResultFile = {
   messageCreatedAt: number;
   channelName: string;
   channelIsDm: boolean;
+  authorName: string | null;
 };
 
 export type TUnifiedSearchResult =
