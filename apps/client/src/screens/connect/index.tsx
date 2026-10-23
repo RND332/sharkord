@@ -209,12 +209,7 @@ const Connect = memo(() => {
   return (
     <div className="relative flex h-full flex-col items-center justify-center bg-canvas px-6 py-12">
       <header className="absolute inset-x-0 top-0 flex h-16 items-center justify-between border-b border-line bg-rail px-7">
-        <div className="flex items-center gap-[9px]">
-          <img src="/mark.svg" alt="" className="size-5 shrink-0" />
-          <span className="text-[17px] font-bold tracking-tight">
-            dodecagon
-          </span>
-        </div>
+        <span className="text-[17px] font-bold tracking-tight">dodecagon</span>
         <LanguageSwitcher
           variant="full"
           className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
