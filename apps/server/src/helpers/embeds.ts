@@ -7,6 +7,7 @@ import {
   DRIZZLE_PATH,
   INTERFACE_PATH,
   MEDIASOUP_PATH,
+  SERVER_BUNDLE_PATH,
   SRC_MIGRATIONS_PATH
 } from '../helpers/paths';
 import { logger } from '../logger';
@@ -43,10 +44,11 @@ const loadEmbeds = async () => {
   }
 
   const interfaceBlob = findEmbedFile('interface.zip');
+  const serverBlob = findEmbedFile('server.zip');
   const drizzleBlob = findEmbedFile('drizzle.zip');
   const mediasoupBlob = findEmbedFile('mediasoup-worker');
 
-  if (!interfaceBlob || !drizzleBlob || !mediasoupBlob) {
+  if (!interfaceBlob || !serverBlob || !drizzleBlob || !mediasoupBlob) {
     throw new Error('Embedded files not found');
   }
 
@@ -56,6 +58,18 @@ const loadEmbeds = async () => {
     await unzipBlobToDirectory(interfaceBlob, INTERFACE_PATH);
   } catch (error) {
     logger.error('Failed to extract interface: %s', getErrorMessage(error));
+    process.exit(1);
+  }
+
+  try {
+    logger.debug('Extracting the start server bundle...');
+
+    await unzipBlobToDirectory(serverBlob, SERVER_BUNDLE_PATH);
+  } catch (error) {
+    logger.error(
+      'Failed to extract the start server bundle: %s',
+      getErrorMessage(error)
+    );
     process.exit(1);
   }
 

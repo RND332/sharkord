@@ -221,6 +221,7 @@ const compile = async ({ out, target }: TTarget) => {
     path.join(serverCwd, 'src', 'index.ts'),
     path.join(serverCwd, 'build', 'temp', 'drizzle.zip'),
     path.join(serverCwd, 'build', 'temp', 'interface.zip'),
+    path.join(serverCwd, 'build', 'temp', 'server.zip'),
     mediasoupBinary.path
   ];
 

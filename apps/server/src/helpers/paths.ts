@@ -46,6 +46,11 @@ const PUBLIC_PATH = path.join(DATA_PATH, 'public');
 const TMP_PATH = path.join(DATA_PATH, 'tmp');
 const UPLOADS_PATH = path.join(DATA_PATH, 'uploads');
 const INTERFACE_PATH = path.resolve(DATA_PATH, 'interface', SERVER_VERSION);
+const SERVER_BUNDLE_PATH = path.resolve(
+  DATA_PATH,
+  'server-bundle',
+  SERVER_VERSION
+);
 const DRIZZLE_PATH = path.resolve(DATA_PATH, 'drizzle');
 const MEDIASOUP_PATH = path.resolve(DATA_PATH, 'mediasoup');
 const CONFIG_INI_PATH = path.resolve(DATA_PATH, 'config.ini');
@@ -66,6 +71,7 @@ export {
   PLUGINS_DATA_PATH,
   PLUGINS_PATH,
   PUBLIC_PATH,
+  SERVER_BUNDLE_PATH,
   SRC_MIGRATIONS_PATH,
   TMP_PATH,
   UPLOADS_PATH
