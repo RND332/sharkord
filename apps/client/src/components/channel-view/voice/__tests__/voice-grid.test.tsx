@@ -22,6 +22,13 @@ const renderPinnedGrid = () =>
     </I18nextProvider>
   );
 
+const renderGrid = () =>
+  renderToStaticMarkup(
+    <I18nextProvider i18n={i18n}>
+      <VoiceGrid tileAspectRatio={16 / 9}>{cards}</VoiceGrid>
+    </I18nextProvider>
+  );
+
 test('the participant thumbnails keep the 16:9 shape of the stage tiles', () => {
   const html = renderPinnedGrid();
 
@@ -35,4 +42,10 @@ test('the participant thumbnails keep the 16:9 shape of the stage tiles', () => 
   // the old 4:3 thumbnail box is gone
   expect(html).not.toContain('w-38');
   expect(html).not.toContain('h-[114px]');
+});
+
+test('the stage keeps a top band for the chat button', () => {
+  // the button floats at the top of the stage, so the tiles start below it
+  expect(renderPinnedGrid()).toContain('pt-12');
+  expect(renderGrid()).toContain('pt-12');
 });

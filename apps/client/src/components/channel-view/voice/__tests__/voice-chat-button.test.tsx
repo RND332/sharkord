@@ -27,20 +27,24 @@ describe('VoiceChatButton', () => {
     const html = renderVoiceChatButton('closed');
 
     expect(html).toContain('aria-label="Open Voice Chat"');
-    expect(html).toContain('data-slot="tooltip-trigger"');
   });
 
   test('should not render the button while the chat of the channel is open', () => {
     const html = renderVoiceChatButton('open');
 
     expect(html).not.toContain('aria-label="Open Voice Chat"');
-    expect(html).not.toContain('data-slot="tooltip-trigger"');
   });
 
   test('should render the button while the chat of another channel is open', () => {
     const html = renderVoiceChatButton('other');
 
     expect(html).toContain('aria-label="Open Voice Chat"');
-    expect(html).toContain('data-slot="tooltip-trigger"');
+  });
+
+  test('should not render a tooltip over the button', () => {
+    const html = renderVoiceChatButton('closed');
+
+    expect(html).not.toContain('data-slot="tooltip-trigger"');
+    expect(html).not.toContain('data-slot="tooltip-content"');
   });
 });

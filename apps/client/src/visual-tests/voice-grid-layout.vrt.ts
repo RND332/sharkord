@@ -77,7 +77,8 @@ test('pinned participants keep the 16:9 thumbnail shape', async () => {
   expect(rect.width).toBe(160);
   expect(rect.height).toBe(90);
   expect(rect.width / rect.height).toBeCloseTo(16 / 9);
-  expect(getComputedStyle(host!.firstElementChild!).paddingTop).toBe('24px');
+  // the top band holds the stage actions, so the demo starts below them
+  expect(getComputedStyle(host!.firstElementChild!).paddingTop).toBe('48px');
   expect(getComputedStyle(host!.firstElementChild!).paddingBottom).toBe('12px');
 });
 

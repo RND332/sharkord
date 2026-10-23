@@ -5,7 +5,7 @@ import {
   useHasUnreadMentions,
   useUnreadMessagesCount
 } from '@/features/server/hooks';
-import { Button, Tooltip } from '@dodecagon/ui';
+import { Button } from '@dodecagon/ui';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,22 +34,20 @@ const VoiceChatButton = memo(({ channelId }: TVoiceChatButtonProps) => {
   const label = t('openVoiceChat');
 
   return (
-    <Tooltip content={label}>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleToggleVoiceChat}
-        aria-label={label}
-        className="relative size-8 rounded-md border border-line bg-nav/85 p-0 backdrop-blur hover:bg-nav"
-      >
-        <ChatBubbleLeftIcon className="size-[18px]" />
-        <UnreadCount
-          count={unreadCount}
-          hasMention={hasUnreadMentions}
-          className="absolute -right-1.5 -top-1.5 ml-0 h-4 min-w-4 px-1 text-[10px] leading-none"
-        />
-      </Button>
-    </Tooltip>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={handleToggleVoiceChat}
+      aria-label={label}
+      className="relative size-8 rounded-md border border-line bg-nav/85 p-0 backdrop-blur hover:bg-nav"
+    >
+      <ChatBubbleLeftIcon className="size-[18px]" />
+      <UnreadCount
+        count={unreadCount}
+        hasMention={hasUnreadMentions}
+        className="absolute -right-1.5 -top-1.5 ml-0 h-4 min-w-4 px-1 text-[10px] leading-none"
+      />
+    </Button>
   );
 });
 
