@@ -17,7 +17,8 @@ type TPopoverEventHandlers = {
 
 type TPopoverContextValue = {
   anchor: TPopoverAnchor | null;
-  setAnchor: (anchor: TPopoverAnchor | null) => void;
+  setElementAnchor: (anchor: TPopoverAnchor | null) => void;
+  setVirtualAnchor: (anchor: TPopoverAnchor | null) => void;
   eventHandlers: React.RefObject<TPopoverEventHandlers>;
 };
 
@@ -45,8 +46,17 @@ type TPopoverProps = Omit<
 };
 
 function Popover({ onOpenChange, ...props }: TPopoverProps) {
-  const [anchor, setAnchor] = React.useState<TPopoverAnchor | null>(null);
+  const [elementAnchor, setElementAnchor] = React.useState<TPopoverAnchor | null>(
+    null
+  );
+  const [virtualAnchor, setVirtualAnchor] = React.useState<TPopoverAnchor | null>(
+    null
+  );
   const eventHandlers = React.useRef<TPopoverEventHandlers>({});
+
+  // the virtual anchor wins over the element one, the app registers it to
+  // place the popup next to a region the dom does not own
+  const anchor = virtualAnchor ?? elementAnchor;
 
   const handleOpenChange = React.useCallback(
     (open: boolean, details: PopoverRoot.ChangeEventDetails) => {
@@ -74,7 +84,7 @@ function Popover({ onOpenChange, ...props }: TPopoverProps) {
   );
 
   const contextValue = React.useMemo<TPopoverContextValue>(
-    () => ({ anchor, setAnchor, eventHandlers }),
+    () => ({ anchor, setElementAnchor, setVirtualAnchor, eventHandlers }),
     [anchor]
   );
 
@@ -169,6 +179,7 @@ function PopoverContent({
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
+        className="z-50"
         anchor={context?.anchor as unknown as TPopoverPositionerProps['anchor']}
         side={side}
         align={align}
@@ -180,7 +191,7 @@ function PopoverContent({
           data-slot="popover-content"
           finalFocus={finalFocus}
           className={cn(
-            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden',
+            'bg-popover text-popover-foreground data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 data-[ending-style]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-72 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden',
             className
           )}
           {...props}
@@ -206,15 +217,16 @@ function PopoverAnchor({
   ...props
 }: TPopoverAnchorProps) {
   const context = React.useContext(PopoverContext);
-  const setAnchor = context?.setAnchor;
+  const setElementAnchor = context?.setElementAnchor;
+  const setVirtualAnchor = context?.setVirtualAnchor;
 
   React.useEffect(() => {
     if (!virtualRef) {
       return;
     }
 
-    setAnchor?.(virtualRef.current);
-  }, [setAnchor, virtualRef]);
+    setVirtualAnchor?.(virtualRef.current);
+  }, [setVirtualAnchor, virtualRef]);
 
   const setElement = React.useCallback(
     (node: HTMLElement | null) => {
@@ -222,25 +234,35 @@ function PopoverAnchor({
         return;
       }
 
-      setAnchor?.(node);
+      setElementAnchor?.(node);
     },
-    [setAnchor, virtualRef]
+    [setElementAnchor, virtualRef]
+  );
+
+  const child = asChild && React.isValidElement(children)
+    ? (children as React.ReactElement<Record<string, unknown>>)
+    : null;
+
+  // the composed ref keeps its identity, so the anchor is not detached and
+  // attached again on every render
+  const anchorRef = React.useMemo(
+    () =>
+      composeRefs(
+        child?.props.ref as React.Ref<HTMLElement> | undefined,
+        setElement
+      ),
+    [child?.props.ref, setElement]
   );
 
   if (virtualRef) {
     return null;
   }
 
-  if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<Record<string, unknown>>;
-
+  if (child) {
     return React.cloneElement(child, {
       'data-slot': 'popover-anchor',
       ...props,
-      ref: composeRefs(
-        child.props.ref as React.Ref<HTMLElement> | undefined,
-        setElement
-      )
+      ref: anchorRef
     });
   }
 
