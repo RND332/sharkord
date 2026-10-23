@@ -107,8 +107,6 @@ const trackClientRequest = (
   input: Parameters<typeof originalFetch>[0],
   init?: Parameters<typeof originalFetch>[1]
 ): Promise<Response> => {
-  const request = originalFetch(input, init);
-
   const url =
     typeof input === 'string'
       ? input
@@ -116,7 +114,21 @@ const trackClientRequest = (
         ? input.href
         : input.url;
 
-  if (!testsBaseUrl || !url.startsWith(testsBaseUrl)) return request;
+  if (!testsBaseUrl || !url.startsWith(testsBaseUrl)) {
+    return originalFetch(input, init);
+  }
+
+  // bun's node:http closes the keep alive socket of a streamed response every so often,
+  // and the fetch client keeps that closed socket in its pool. the next request written
+  // on it fails with ECONNRESET, which lands on whatever test runs next. asking the
+  // server to close the connection after every response leaves no socket in the pool
+  const headers = new Headers(
+    init?.headers ?? (input instanceof Request ? input.headers : undefined)
+  );
+
+  headers.set('Connection', 'close');
+
+  const request = originalFetch(input, { ...init, headers });
 
   pendingRequests.add(request);
 
