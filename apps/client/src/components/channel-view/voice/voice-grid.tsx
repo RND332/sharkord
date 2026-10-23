@@ -120,7 +120,8 @@ const VoiceGrid = memo(
       return (
         <div
           className={cn(
-            'flex h-full flex-col gap-3 bg-rail px-7 pt-6 pb-3',
+            // the top band keeps the stage actions clear of the pinned card
+            'flex h-full flex-col gap-3 bg-rail px-7 pt-12 pb-3',
             className
           )}
         >
@@ -198,7 +199,8 @@ const VoiceGrid = memo(
             0,
             Math.min(
               (containerSize.width - 56 - (gridCols - 1) * 12) / gridCols,
-              ((containerSize.height - 48 - (rows - 1) * 12) / rows) *
+              // the vertical padding of the grid below
+              ((containerSize.height - 72 - (rows - 1) * 12) / rows) *
                 tileAspectRatio
             )
           )
@@ -211,7 +213,10 @@ const VoiceGrid = memo(
     return (
       <div
         ref={containerRef}
-        className={cn('grid size-full gap-3 bg-rail px-7 py-6', className)}
+        className={cn(
+          'grid size-full gap-3 bg-rail px-7 pt-12 pb-6',
+          className
+        )}
         style={{
           gridTemplateColumns: `repeat(${gridCols}, ${tileWidth !== undefined ? `${tileWidth}px` : '1fr'})`,
           gridTemplateRows: `repeat(${rows}, ${tileHeight !== undefined ? `${tileHeight}px` : '1fr'})`,
