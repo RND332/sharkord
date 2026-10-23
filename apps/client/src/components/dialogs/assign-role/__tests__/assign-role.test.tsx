@@ -53,7 +53,11 @@ test('the selected role stays distinct from the available ones', () => {
   expect(selectedMarkup).toContain('border-accent bg-raised text-accent-text');
   expect(selectedMarkup).toContain('border-control-border bg-input-surface');
 
-  const checkedCard = selectedMarkup.split('<input type="radio"')[1];
+  // the card of the checked radio is the one that carries the check icon, the
+  // dom writes the attributes of the input in its own order
+  const checkedCard = selectedMarkup
+    .split('<input')
+    .find((part) => part.includes('checked=""'));
 
   expect(checkedCard).toContain('<svg');
 });

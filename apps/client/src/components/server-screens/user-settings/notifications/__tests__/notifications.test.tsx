@@ -84,6 +84,9 @@ describe('Notifications', () => {
     const html = renderNotifications('sentSound');
 
     expect(html).toContain('Message Sent Sound');
-    expect(html.match(/<button[^>]*disabled=""/g)?.length).toBe(1);
+    const disabledSwitches =
+      html.match(/<span[^>]*data-disabled=""[^>]*role="switch"[^>]*>/g) ?? [];
+
+    expect(disabledSwitches).toHaveLength(1);
   });
 });

@@ -10,6 +10,7 @@ import { DEFAULT_PROFILE_COLOR, getTrpcError } from '@dodecagon/shared';
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Button,
   Dialog,
   DialogContent,
@@ -26,7 +27,6 @@ import {
   ArrowUpTrayIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { AvatarImage } from '@radix-ui/react-avatar';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

@@ -1,13 +1,64 @@
+import type { DialogRoot } from '@base-ui/react/dialog';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-function Dialog({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+type TDialogEventHandlers = {
+  onInteractOutside?: (event: Event) => void;
+};
+
+type TDialogContextValue = {
+  eventHandlers: React.RefObject<TDialogEventHandlers>;
+};
+
+const DialogContext = React.createContext<TDialogContextValue | null>(null);
+
+type TDialogProps = Omit<
+  React.ComponentProps<typeof DialogPrimitive.Root>,
+  'onOpenChange'
+> & {
+  onOpenChange?: (open: boolean) => void;
+};
+
+function Dialog({ onOpenChange, ...props }: TDialogProps) {
+  const eventHandlers = React.useRef<TDialogEventHandlers>({});
+
+  const handleOpenChange = React.useCallback(
+    (open: boolean, details: DialogRoot.ChangeEventDetails) => {
+      if (!open && details.reason === 'outside-press') {
+        const handler = eventHandlers.current.onInteractOutside;
+
+        if (handler) {
+          handler(details.event);
+
+          if (details.event.defaultPrevented) {
+            details.cancel();
+            return;
+          }
+        }
+      }
+
+      onOpenChange?.(open);
+    },
+    [onOpenChange]
+  );
+
+  const contextValue = React.useMemo<TDialogContextValue>(
+    () => ({ eventHandlers }),
+    [eventHandlers]
+  );
+
+  return (
+    <DialogContext.Provider value={contextValue}>
+      <DialogPrimitive.Root
+        data-slot="dialog"
+        {...props}
+        onOpenChange={handleOpenChange}
+      />
+    </DialogContext.Provider>
+  );
 }
 
 function DialogTrigger({
@@ -31,12 +82,12 @@ function DialogClose({
 function DialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof DialogPrimitive.Backdrop>) {
   return (
-    <DialogPrimitive.Overlay
+    <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-rail/80',
+        'data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 fixed inset-0 z-50 bg-rail/80',
         className
       )}
       {...props}
@@ -44,21 +95,42 @@ function DialogOverlay({
   );
 }
 
+type TDialogContentProps = React.ComponentProps<
+  typeof DialogPrimitive.Popup
+> & {
+  close?: () => void;
+  onInteractOutside?: (event: Event) => void;
+};
+
 function DialogContent({
   className,
   children,
   close,
+  onInteractOutside,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  close?: () => void;
-}) {
+}: TDialogContentProps) {
+  const context = React.useContext(DialogContext);
+  const eventHandlers = context?.eventHandlers;
+
+  React.useEffect(() => {
+    if (!eventHandlers) {
+      return;
+    }
+
+    eventHandlers.current = { onInteractOutside };
+
+    return () => {
+      eventHandlers.current = {};
+    };
+  }, [eventHandlers, onInteractOutside]);
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
-      <DialogPrimitive.Content
+      <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          'bg-canvas data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-hidden rounded-[12px] border border-line p-6 shadow-2xl duration-150 sm:max-w-[410px]',
+          'bg-canvas data-[open]:animate-in data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[open]:fade-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-hidden rounded-[12px] border border-line p-6 shadow-2xl duration-150 sm:max-w-[410px]',
           className
         )}
         {...props}
@@ -74,7 +146,7 @@ function DialogContent({
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
-      </DialogPrimitive.Content>
+      </DialogPrimitive.Popup>
     </DialogPortal>
   );
 }

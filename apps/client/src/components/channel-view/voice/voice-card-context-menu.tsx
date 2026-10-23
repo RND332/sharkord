@@ -81,8 +81,10 @@ const VoiceCardContextMenu = memo(
     );
     const handleVolumeSelect = useCallback((event: Event) => {
       event.preventDefault();
-      const thumb =
-        sliderRef.current?.querySelector<HTMLElement>('[role="slider"]');
+      // the base ui thumb holds the focusable range input
+      const thumb = sliderRef.current?.querySelector<HTMLElement>(
+        'input[type="range"]'
+      );
       thumb?.focus();
     }, []);
     const handleSliderKeyDown = useCallback((event: KeyboardEvent) => {

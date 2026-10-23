@@ -204,7 +204,7 @@ const PluginView = memo(({ plugin }: TPluginViewProps) => {
               key={tab.id}
               value={tab.id}
               data-tab={tab.id}
-              className="data-[state=active]:font-semibold"
+              className="data-[active]:font-semibold"
             >
               {tab.label}
             </TabsTrigger>

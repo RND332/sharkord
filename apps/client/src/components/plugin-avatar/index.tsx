@@ -1,8 +1,7 @@
 import { getInitialsFromName } from '@/helpers/get-initials-from-name';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '@dodecagon/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@dodecagon/ui';
 import { CpuChipIcon } from '@heroicons/react/24/outline';
-import { AvatarImage } from '@radix-ui/react-avatar';
 import { memo } from 'react';
 
 type TPluginAvatarProps = {

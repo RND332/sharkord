@@ -29,7 +29,7 @@ const renderDevices = (argument?: string) => {
 
 const isSwitchDisabled = (html: string, label: string) =>
   new RegExp(
-    `<button[^>]*disabled=""[^>]*aria-label="${label.replace(/[()]/g, '\\$&')}"`
+    `<span[^>]*data-disabled=""[^>]*aria-label="${label.replace(/[()]/g, '\\$&')}"`
   ).test(html);
 
 describe('Devices', () => {

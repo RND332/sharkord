@@ -3,38 +3,13 @@
 // the whole test run, so the mocks of the other test files would leak in.
 import commonEn from '@/i18n/locales/en/common.json';
 import settingsEn from '@/i18n/locales/en/settings.json';
+import { renderInDom } from '@/test-utils/dom-render';
 import { UserStatus } from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 
 const noop = () => {};
-
-globalThis.window =
-  globalThis.window ??
-  ({
-    addEventListener: noop,
-    removeEventListener: noop,
-    location: { href: 'http://localhost' }
-  } as unknown as Window & typeof globalThis);
-
-globalThis.document =
-  globalThis.document ??
-  ({
-    addEventListener: noop,
-    removeEventListener: noop,
-    head: { appendChild: noop },
-    body: { appendChild: noop },
-    createElement: () => ({ style: {}, setAttribute: noop, appendChild: noop }),
-    createTextNode: () => ({}),
-    getElementsByTagName: () => [{ appendChild: noop }]
-  } as unknown as Document);
-
-mock.module('@radix-ui/react-portal', () => ({
-  Portal: ({ children }: { children: unknown }) => children,
-  PortalProvider: ({ children }: { children: unknown }) => children
-}));
 
 const bio = process.argv[2] ?? '';
 
@@ -95,13 +70,13 @@ setStoreState({
 const { Profile } = await import('../index');
 const { ColorPickerPopover } = await import('../color-picker-popover');
 
-const profileHtml = renderToStaticMarkup(
+const profileHtml = await renderInDom(
   <I18nextProvider i18n={i18n}>
     <Profile />
   </I18nextProvider>
 );
 
-const pickerHtml = renderToStaticMarkup(
+const pickerHtml = await renderInDom(
   <ColorPickerPopover
     open
     onOpenChange={noop}
@@ -113,7 +88,7 @@ const pickerHtml = renderToStaticMarkup(
   </ColorPickerPopover>
 );
 
-const closedPickerHtml = renderToStaticMarkup(
+const closedPickerHtml = await renderInDom(
   <ColorPickerPopover
     open={false}
     onOpenChange={noop}

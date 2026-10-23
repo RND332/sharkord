@@ -54,7 +54,7 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
 
   // tooltip composition can override the reaction popover's data-state.
   const barClass = cn(
-    'relative focus-within:opacity-100 has-[[data-state=open]]:opacity-100 has-[[aria-expanded=true]]:opacity-100',
+    'relative focus-within:opacity-100 has-[[data-popup-open]]:opacity-100 has-[[aria-expanded=true]]:opacity-100',
     isActive ? 'opacity-100' : 'opacity-0'
   );
 
@@ -72,7 +72,7 @@ const ControlsBar = memo(({ channelId, isActive }: TControlsBarProps) => {
       <div
         data-voice-controls
         className={cn(
-          'flex items-center gap-1.5 rounded-full bg-nav p-[5px] focus-within:pointer-events-auto has-[[data-state=open]]:pointer-events-auto has-[[aria-expanded=true]]:pointer-events-auto',
+          'flex items-center gap-1.5 rounded-full bg-nav p-[5px] focus-within:pointer-events-auto has-[[data-popup-open]]:pointer-events-auto has-[[aria-expanded=true]]:pointer-events-auto',
           isActive ? 'pointer-events-auto' : 'pointer-events-none'
         )}
       >

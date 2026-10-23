@@ -241,7 +241,7 @@ const VoiceUserCard = memo(
                 'absolute top-0 right-0 z-10 justify-end',
                 density.inset,
                 'flex opacity-0 pointer-events-none group-hover/voice-user-card:opacity-100 group-hover/voice-user-card:pointer-events-auto group-focus-within/voice-user-card:opacity-100 group-focus-within/voice-user-card:pointer-events-auto',
-                'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
+                'has-[[data-popup-open]]:opacity-100 has-[[data-popup-open]]:pointer-events-auto'
               )}
             >
               <div className={cardControlsClass(isCompact)}>
