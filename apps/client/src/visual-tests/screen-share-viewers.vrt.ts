@@ -1,8 +1,6 @@
-import { ScreenShareCard } from '@/components/channel-view/voice/screen-share-card';
+import { StreamViewersList } from '@/components/channel-view/voice/stream-viewers-list';
 import { ThemeProvider } from '@/components/theme-provider';
-import { VolumeControlProvider } from '@/components/voice-provider/volume-control-context';
 import { i18n } from '@/i18n';
-import { StreamKind } from '@dodecagon/shared';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -17,9 +15,6 @@ const users = [
   { id: 6, name: 'rnd332' }
 ];
 
-vi.mock('@/components/devices-provider/hooks/use-devices', () => ({
-  useDevices: () => ({ devices: { voiceOnlyMode: false, playbackVolume: 100 } })
-}));
 vi.mock('@/features/server/users/hooks', () => ({
   useUserById: (userId: number) => users.find((user) => user.id === userId),
   useUsers: () => users,
@@ -34,40 +29,6 @@ vi.mock('@/features/server/hooks', async (importOriginal) => ({
   useChannelCan: () => () => true,
   usePublicServerSettings: () => undefined,
   useHiddenPluginComponents: () => []
-}));
-vi.mock('@/components/voice-provider/demo-visibility-context', () => {
-  const isViewingDemo = () => false;
-  return {
-    useDemoVisibility: () => ({
-      viewedRemoteDemos: {},
-      isViewingDemo,
-      viewDemo: async () => {},
-      stopViewingDemo: async () => {}
-    })
-  };
-});
-vi.mock('@/features/server/voice/hooks', () => ({
-  usePinnedCard: () => undefined,
-  useVoice: () => ({
-    remoteUserStreams: {},
-    externalStreams: {},
-    localAudioStream: undefined,
-    localVideoStream: undefined,
-    localScreenShareStream: undefined,
-    ownVoiceState: { soundMuted: false },
-    getOrCreateRefs: () => ({
-      screenShareRef: { current: null },
-      screenShareAudioRef: { current: null },
-      videoRef: { current: null },
-      audioRef: { current: null },
-      externalVideoRef: { current: null },
-      externalAudioRef: { current: null }
-    }),
-    getConsumerCodec: () => undefined,
-    getStreamQuality: () => ({ mode: 'auto' }),
-    getStreamQualityLayers: () => [],
-    isSimulcastConsumer: () => false
-  })
 }));
 
 let root: Root | undefined;
@@ -85,20 +46,7 @@ const mount = async (viewerIds: number[]) => {
     createElement(
       ThemeProvider,
       null,
-      createElement(
-        VolumeControlProvider,
-        null,
-        createElement(ScreenShareCard, {
-          userId: 2,
-          cardId: 'screen-share-2',
-          viewerIds,
-          isPinned: false,
-          isAnyCardPinned: false,
-          showPinControls: true,
-          onPin: () => {},
-          onUnpin: () => {}
-        })
-      )
+      createElement(StreamViewersList, { viewerIds })
     )
   );
   await document.fonts.ready;
@@ -150,5 +98,3 @@ test('keeps the watcher control reachable with an empty roster', async () => {
   await expect.element(page.getByText('Watching · 0')).toBeVisible();
   await expect.element(page.getByText('No one is watching yet.')).toBeVisible();
 });
-
-void StreamKind;

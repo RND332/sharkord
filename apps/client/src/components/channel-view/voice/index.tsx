@@ -5,18 +5,16 @@ import { useOwnUserId } from '@/features/server/users/hooks';
 import {
   useHideNonVideoParticipants,
   useHideOwnScreenShare,
-  useScreenViewers,
   useVoiceChannelExternalStreamsList
 } from '@/features/server/voice/hooks';
-import { cn } from '@/lib/utils';
 import { memo, useMemo } from 'react';
 import { ControlsBar } from './controls-bar';
 import { ExternalStreamCard } from './external-stream-card';
 import { useMouseActivity } from './hooks/use-mouse-activity';
 import { usePinCardController } from './hooks/use-pin-card-controller';
 import { ScreenShareCard } from './screen-share-card';
-import { VoiceChatButton } from './voice-chat-button';
 import { VoiceGrid } from './voice-grid';
+import { VoiceStageActions } from './voice-stage-actions';
 import { VoiceUserCard } from './voice-user-card';
 
 type TChannelProps = {
@@ -26,7 +24,6 @@ type TChannelProps = {
 const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const voiceUsers = useVoiceUsersByChannelId(channelId);
   const externalStreams = useVoiceChannelExternalStreamsList(channelId);
-  const screenViewers = useScreenViewers(channelId);
   const { pinnedCard, pinCard, unpinCard, isPinned } = usePinCardController();
   const hideNonVideoParticipants = useHideNonVideoParticipants();
   const hideOwnScreenShare = useHideOwnScreenShare();
@@ -96,7 +93,6 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
             onPin={pinCard}
             onUnpin={unpinCard}
             showPinControls
-            viewerIds={screenViewers[voiceUser.id]?.viewerIds ?? []}
           />
         );
       }
@@ -139,7 +135,6 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     hideOwnScreenShare,
     ownUserId,
     viewedRemoteDemos,
-    screenViewers,
     isAnyCardPinned,
     isChatButtonVisible
   ]);
@@ -167,14 +162,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
       <VoiceGrid pinnedCardId={pinnedCard?.id} tileAspectRatio={16 / 9}>
         {cards}
       </VoiceGrid>
-      <div
-        className={cn(
-          'absolute right-3 top-3 z-10 transition-opacity duration-200 focus-within:pointer-events-auto focus-within:opacity-100',
-          isChatButtonVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
-        )}
-      >
-        <VoiceChatButton channelId={channelId} />
-      </div>
+      <VoiceStageActions channelId={channelId} isActive={isChatButtonVisible} />
       <ControlsBar channelId={channelId} isActive={isChatButtonVisible} />
     </div>
   );
