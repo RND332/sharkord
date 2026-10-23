@@ -23,6 +23,7 @@ import {
   type IServerState,
   type TServerAction
 } from './server/slice';
+import { useStore } from './store-context';
 
 export interface IRootState {
   app: TAppState;
@@ -33,6 +34,13 @@ export interface IRootState {
 
 export type TRootAction =
   TAppAction | TDialogAction | TServerAction | TServerScreenAction;
+
+export interface IStore {
+  getState(): IRootState;
+  dispatch(action: TRootAction): void;
+  subscribe(listener: () => void): () => void;
+  setState(nextState: Partial<IRootState>): void;
+}
 
 const isAppAction = (action: TRootAction): action is TAppAction =>
   action.type.startsWith('app/');
@@ -73,45 +81,57 @@ const rootReducer = (
   return { app, server, dialog, serverScreen };
 };
 
-const listeners = new Set<() => void>();
+// every request on the server gets its own instance, so the state of one
+// request never leaks into another one
+export const createStore = (): IStore => {
+  const listeners = new Set<() => void>();
 
-let state: IRootState = {
-  app: appInitialState,
-  server: serverInitialState,
-  dialog: dialogInitialState,
-  serverScreen: serverScreenInitialState
-};
-
-const getState = () => state;
-
-const dispatch = (action: TRootAction) => {
-  const nextState = rootReducer(state, action);
-
-  if (nextState === state) return;
-
-  state = nextState;
-
-  for (const listener of listeners) listener();
-};
-
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-
-  return () => {
-    listeners.delete(listener);
+  let state: IRootState = {
+    app: appInitialState,
+    server: serverInitialState,
+    dialog: dialogInitialState,
+    serverScreen: serverScreenInitialState
   };
+
+  const getState = () => state;
+
+  const dispatch = (action: TRootAction) => {
+    const nextState = rootReducer(state, action);
+
+    if (nextState === state) return;
+
+    state = nextState;
+
+    for (const listener of listeners) listener();
+  };
+
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+
+  const setState = (nextState: Partial<IRootState>) => {
+    state = { ...state, ...nextState };
+  };
+
+  return { getState, dispatch, subscribe, setState };
 };
 
-export const store = { getState, dispatch, subscribe };
+// the code that runs outside of React reads the client instance
+export const store = createStore();
 
 // the render tests put the state they need into the store directly
 export const setStoreState = (nextState: Partial<IRootState>) => {
-  state = { ...state, ...nextState };
+  store.setState(nextState);
 };
 
 // the selector reads the state the component needs, the component only
 // re-renders when that value changes
 export const useStoreSelector = <T>(selector: (state: IRootState) => T): T => {
+  const currentStore = useStore();
   const cache = useRef<{
     state: IRootState;
     selector: (state: IRootState) => T;
@@ -119,7 +139,7 @@ export const useStoreSelector = <T>(selector: (state: IRootState) => T): T => {
   } | null>(null);
 
   const getSnapshot = useCallback(() => {
-    const currentState = getState();
+    const currentState = currentStore.getState();
     const cached = cache.current;
 
     if (
@@ -134,7 +154,7 @@ export const useStoreSelector = <T>(selector: (state: IRootState) => T): T => {
     cache.current = { state: currentState, selector, value };
 
     return value;
-  }, [selector]);
+  }, [currentStore, selector]);
 
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return useSyncExternalStore(currentStore.subscribe, getSnapshot, getSnapshot);
 };
