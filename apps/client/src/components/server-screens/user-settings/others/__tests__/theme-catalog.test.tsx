@@ -67,6 +67,14 @@ test('the selected Miku theme stays marked in the catalog', () => {
   expect(catalogMarkup).toContain('aria-pressed="true"');
 });
 
+test('the catalog does not mention where the imported palettes come from', () => {
+  const { catalogMarkup } = runRender();
+
+  expect(catalogMarkup).not.toContain('Oh My Pi');
+  expect(catalogMarkup).not.toContain('oh-my-pi');
+  expect(catalogMarkup).not.toContain('Palette source');
+});
+
 test('the chat preview and the preview toast keep working', () => {
   const { previewMarkup, toastMarkup, sectionMarkup } = runRender();
 
