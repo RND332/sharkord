@@ -169,6 +169,7 @@ const MessageCompose = memo(
       if (
         (isEmptyMessage(message) && !files.length) ||
         !canSendMessages ||
+        uploading ||
         sendingRef.current
       ) {
         return;
@@ -191,7 +192,7 @@ const MessageCompose = memo(
       if (success) {
         clearFiles();
       }
-    }, [message, files, canSendMessages, onSend, clearFiles, t]);
+    }, [message, files, canSendMessages, uploading, onSend, clearFiles, t]);
 
     const focusInputOnBackdropClick = useCallback(
       (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -323,7 +324,7 @@ const MessageCompose = memo(
               onSubmit={handleSend}
               onTyping={onTyping}
               onArrowUp={onArrowUp}
-              disabled={uploading || !canSendMessages}
+              disabled={!canSendMessages}
               readOnly={sending}
               commands={pluginCommands}
             />
@@ -344,7 +345,7 @@ const MessageCompose = memo(
                 variant="ghost"
                 className="size-8 p-1.5"
                 aria-label={t('addEmoji')}
-                disabled={uploading || !canSendMessages}
+                disabled={!canSendMessages}
               >
                 <FaceSmileIcon className="size-5" />
               </Button>
