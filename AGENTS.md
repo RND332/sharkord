@@ -218,8 +218,8 @@ Plain `bun test` at the root will fail.
 How server tests work:
 
 - `src/__tests__/mock-db.ts`, `prepare.ts` and `setup.ts` are preloaded. Each test gets a
-  **fresh in-memory SQLite db**, migrated and seeded — tests are isolated, no cleanup
-  needed between them.
+  **fresh in-memory SQLite db**, copied from the image the suite migrated and seeded once
+  — tests are isolated, no cleanup needed between them.
 - Call routes through a real tRPC caller: `const { caller } = await initTest(userId)` from
   `src/__tests__/helpers.ts` (defaults to user 1, an admin; user 2 is the low-permission
   user used for permission checks). HTTP routes are tested against a real server on
