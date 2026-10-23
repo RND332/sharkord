@@ -54,16 +54,14 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       data-testid={TestId.LEFT_SIDEBAR}
     >
       <div className="flex h-12 w-full items-center justify-between border-b border-line px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
+        <h2
+          className="flex min-w-0 items-center gap-2.5 text-base font-semibold text-foreground"
+          onClick={() => setSelectedChannelId(undefined)}
+          data-testid={TestId.LEFT_SIDEBAR_SERVER_NAME}
+        >
           <img src="/mark.svg" alt="" className="size-6 shrink-0" />
-          <h2
-            className="truncate text-base font-semibold text-foreground"
-            onClick={() => setSelectedChannelId(undefined)}
-            data-testid={TestId.LEFT_SIDEBAR_SERVER_NAME}
-          >
-            {serverName}
-          </h2>
-        </div>
+          <span className="truncate">{serverName}</span>
+        </h2>
         <div className="flex items-center gap-1">
           <PluginSlotRenderer slotId={PluginSlot.TOPBAR_RIGHT} />
           {publicSettings?.enableSearch && (
