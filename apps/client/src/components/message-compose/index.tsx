@@ -202,6 +202,10 @@ const MessageCompose = memo(
 
     const chatActionsProps = useMemo(() => ({ channelId }), [channelId]);
 
+    // the previews keep the offset of the attach button and its gap, so they
+    // stay aligned with the input area now that they sit above the controls
+    const attachmentsClassName = 'ml-[46px] flex gap-1 flex-wrap px-4 pt-4';
+
     const insertEmoji = useCallback((emoji: TEmojiItem) => {
       tiptapRef.current?.insertEmoji(emoji);
     }, []);
@@ -253,7 +257,7 @@ const MessageCompose = memo(
 
         <div
           className={cn(
-            'compose-scroll-row flex flex-1 cursor-text items-start gap-[14px] overflow-y-auto rounded-md bg-raised',
+            'compose-scroll-row flex flex-1 cursor-text flex-col overflow-y-auto rounded-md bg-raised',
             isThread
               ? 'min-h-[44px] px-3 py-0 [&_.ProseMirror]:px-0! [&_.ProseMirror]:py-2.5! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-2.5! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-muted-foreground'
               : 'min-h-[52px] px-4 [&_.ProseMirror]:px-0! [&_.ProseMirror]:py-4! [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-5! [&_.tiptap+div]:px-0! [&_.tiptap+div]:py-4! [&_.tiptap+div]:text-sm [&_.tiptap+div]:leading-5 [&_.tiptap+div]:text-muted-foreground',
@@ -261,95 +265,99 @@ const MessageCompose = memo(
           )}
           onClick={focusInputOnBackdropClick}
         >
-          <Button
-            size="icon"
-            variant="ghost"
-            className="mt-2.5 size-8 shrink-0 p-1.5 sticky top-2.5"
-            aria-label={t('attachFiles')}
-            disabled={uploading || !canUploadFiles}
-            onClick={openFileDialog}
-          >
-            <PlusIcon className="size-5" />
-          </Button>
-          <div className="flex min-w-0 flex-1 flex-col">
-            {replyTarget && (
-              <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/40 mx-2 mt-3 px-2 py-1 text-xs">
-                <div className="min-w-0 flex items-center gap-1.5 text-muted-foreground">
-                  <ArrowUturnLeftIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span>{t('replyingTo', { username: replyAuthorName })}</span>
+          {displayItems.length > 0 && (
+            <div data-compose-attachments className={attachmentsClassName}>
+              {displayItems.map((item) => (
+                <PreviewFile
+                  key={item.id}
+                  item={item}
+                  onRemove={
+                    item.file
+                      ? () => onRemoveFileClick(item.file!.id)
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
+          )}
+          <div data-compose-controls className="flex items-start gap-[14px]">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="mt-2.5 size-8 shrink-0 p-1.5 sticky top-2.5"
+              aria-label={t('attachFiles')}
+              disabled={uploading || !canUploadFiles}
+              onClick={openFileDialog}
+            >
+              <PlusIcon className="size-5" />
+            </Button>
+            <div className="flex min-w-0 flex-1 flex-col">
+              {replyTarget && (
+                <div className="flex items-center justify-between rounded-md border border-border/60 bg-secondary/40 mx-2 mt-3 px-2 py-1 text-xs">
+                  <div className="min-w-0 flex items-center gap-1.5 text-muted-foreground">
+                    <ArrowUturnLeftIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {t('replyingTo', { username: replyAuthorName })}
+                    </span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-6 shrink-0 p-[5px]"
+                    onClick={onCancelReply}
+                    title={t('cancelReply')}
+                  >
+                    <XMarkIcon className="size-3.5" />
+                  </Button>
                 </div>
+              )}
+              <TiptapInput
+                ref={tiptapRef}
+                value={message}
+                placeholder={placeholder}
+                onChange={onMessageChange}
+                onSubmit={handleSend}
+                onTyping={onTyping}
+                onArrowUp={onArrowUp}
+                disabled={!canSendMessages}
+                readOnly={sending}
+                commands={pluginCommands}
+              />
+            </div>
+
+            <input {...fileInputProps} />
+            <div className="flex items-start gap-2 pt-2.5 shrink-0 sticky top-0">
+              {showPluginSlot && (
+                <PluginSlotRenderer
+                  slotId={PluginSlot.CHAT_ACTIONS}
+                  props={chatActionsProps}
+                />
+              )}
+
+              <EmojiPicker onEmojiSelect={insertEmoji}>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="size-6 shrink-0 p-[5px]"
-                  onClick={onCancelReply}
-                  title={t('cancelReply')}
+                  className="size-8 p-1.5"
+                  aria-label={t('addEmoji')}
+                  disabled={!canSendMessages}
                 >
-                  <XMarkIcon className="size-3.5" />
+                  <FaceSmileIcon className="size-5" />
                 </Button>
-              </div>
-            )}
-            {displayItems.length > 0 && (
-              <div className="flex gap-1 flex-wrap px-4 pt-4">
-                {displayItems.map((item) => (
-                  <PreviewFile
-                    key={item.id}
-                    item={item}
-                    onRemove={
-                      item.file
-                        ? () => onRemoveFileClick(item.file!.id)
-                        : undefined
-                    }
-                  />
-                ))}
-              </div>
-            )}
-            <TiptapInput
-              ref={tiptapRef}
-              value={message}
-              placeholder={placeholder}
-              onChange={onMessageChange}
-              onSubmit={handleSend}
-              onTyping={onTyping}
-              onArrowUp={onArrowUp}
-              disabled={!canSendMessages}
-              readOnly={sending}
-              commands={pluginCommands}
-            />
-          </div>
-
-          <input {...fileInputProps} />
-          <div className="flex items-start gap-2 pt-2.5 shrink-0 sticky top-0">
-            {showPluginSlot && (
-              <PluginSlotRenderer
-                slotId={PluginSlot.CHAT_ACTIONS}
-                props={chatActionsProps}
-              />
-            )}
-
-            <EmojiPicker onEmojiSelect={insertEmoji}>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8 p-1.5"
-                aria-label={t('addEmoji')}
-                disabled={!canSendMessages}
-              >
-                <FaceSmileIcon className="size-5" />
-              </Button>
-            </EmojiPicker>
-            {(!isEmptyMessage(message) || displayItems.length > 0) && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8 p-2"
-                aria-label={t('sendMessage')}
-                onClick={handleSend}
-                disabled={uploading || sending || !canSendMessages}
-              >
-                <PaperAirplaneIcon className="h-4 w-4" />
-              </Button>
-            )}
+              </EmojiPicker>
+              {(!isEmptyMessage(message) || displayItems.length > 0) && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8 p-2"
+                  aria-label={t('sendMessage')}
+                  onClick={handleSend}
+                  disabled={uploading || sending || !canSendMessages}
+                >
+                  <PaperAirplaneIcon className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
