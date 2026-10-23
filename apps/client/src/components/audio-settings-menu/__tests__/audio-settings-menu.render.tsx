@@ -3,50 +3,12 @@
 // the whole test run, so the mocks of the other test files would leak in.
 import audioEn from '@/i18n/locales/en/audio.json';
 import settingsEn from '@/i18n/locales/en/settings.json';
+import { renderInDom } from '@/test-utils/dom-render';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 
 const noop = () => {};
-
-globalThis.window =
-  globalThis.window ??
-  ({
-    addEventListener: noop,
-    removeEventListener: noop,
-    location: { href: 'http://localhost' },
-    getComputedStyle: () => ({ getPropertyValue: () => '' })
-  } as unknown as Window & typeof globalThis);
-
-globalThis.document =
-  globalThis.document ??
-  ({
-    addEventListener: noop,
-    removeEventListener: noop,
-    head: { appendChild: noop },
-    body: { appendChild: noop, style: {} },
-    documentElement: { clientWidth: 1024, clientHeight: 768, style: {} },
-    createElement: () => ({ style: {}, setAttribute: noop, appendChild: noop }),
-    createTextNode: () => ({}),
-    getElementsByTagName: () => [{ appendChild: noop }]
-  } as unknown as Document);
-
-// the popover content lives in a radix portal, which the server renderer
-// drops, so the popover primitives are mocked to render their children inline
-mock.module('@radix-ui/react-popover', () => ({
-  Root: ({ children }: { children?: React.ReactNode }) => children,
-  Trigger: ({ children }: { children?: React.ReactNode }) => children,
-  Portal: ({ children }: { children?: React.ReactNode }) => children,
-  Anchor: ({ children }: { children?: React.ReactNode }) => children,
-  Content: ({
-    children,
-    className
-  }: {
-    children?: React.ReactNode;
-    className?: string;
-  }) => <div className={className}>{children}</div>
-}));
 
 mock.module('@/features/server-screens/actions', () => ({
   openServerScreen: noop
@@ -82,14 +44,25 @@ const devicesContext = {
   loadDevices: async () => {}
 };
 
-const html = renderToStaticMarkup(
+// the popup opens from the context menu of its anchor, so the event is
+// dispatched on the mounted anchor to open it before the markup is read
+const openThePopup = () => {
+  const anchor = document.querySelector('span[data-slot="popover-anchor"]');
+
+  anchor?.dispatchEvent(
+    new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+  );
+};
+
+const html = await renderInDom(
   <I18nextProvider i18n={i18n}>
     <DevicesProviderContext.Provider value={devicesContext as never}>
       <AudioSettingsMenu kind={kind}>
         <button type="button">trigger</button>
       </AudioSettingsMenu>
     </DevicesProviderContext.Provider>
-  </I18nextProvider>
+  </I18nextProvider>,
+  openThePopup
 );
 
 console.log(`__MARKUP__${html}`);

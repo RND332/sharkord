@@ -140,7 +140,8 @@ const AudioSettingsMenu = memo(
           <span
             ref={anchorRef}
             className="inline-flex shrink-0"
-            data-state={open ? 'open' : 'closed'}
+            // the anchor carries the open state for the surrounding controls bar
+            data-popup-open={open ? '' : undefined}
             onContextMenu={handleContextMenu}
             onKeyDown={handleKeyDown}
           >
@@ -155,7 +156,7 @@ const AudioSettingsMenu = memo(
           onCloseAutoFocus={handleCloseAutoFocus}
           onInteractOutside={handleInteractOutside}
           aria-label={title}
-          className="w-[264px] max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
+          className="w-[264px] max-h-(--available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
         >
           <div className="flex flex-col">
             <div className="flex h-10 shrink-0 items-center justify-between gap-2 p-2">

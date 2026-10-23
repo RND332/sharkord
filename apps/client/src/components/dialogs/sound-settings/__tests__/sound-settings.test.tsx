@@ -64,12 +64,10 @@ describe('SoundSettingsDialog', () => {
   test('should show the stored choices on the switches', () => {
     const html = renderSoundSettings('joinLeave');
 
-    const switches = html
-      .split('<button')
-      .filter((part) => part.includes('role="switch"'));
+    const switches = html.match(/<span[^>]*role="switch"[^>]*>/g) ?? [];
 
     expect(switches).toHaveLength(2);
-    expect(switches[0]).toContain('data-state="checked"');
-    expect(switches[1]).toContain('data-state="unchecked"');
+    expect(switches[0]).toContain('data-checked');
+    expect(switches[1]).toContain('data-unchecked');
   });
 });

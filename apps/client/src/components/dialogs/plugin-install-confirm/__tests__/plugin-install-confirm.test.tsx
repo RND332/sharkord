@@ -65,7 +65,9 @@ describe('PluginInstallConfirmDialog', () => {
     expect(html).toContain(
       'text-[13px] font-bold leading-4 uppercase tracking-[0.07em] text-subtle-foreground'
     );
-    expect(html).toContain('Install &quot;Polls&quot; plugin?');
+    // the dom keeps the quotes of the title as they are, the server renderer
+    // escaped them
+    expect(html).toContain('Install "Polls" plugin?');
     expect(html).toContain('Review the risks before adding it.');
   });
 

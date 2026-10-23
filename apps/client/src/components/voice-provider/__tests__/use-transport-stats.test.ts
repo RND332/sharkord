@@ -9,6 +9,9 @@ import type { TransportStatsData } from '../hooks/use-transport-stats';
 let state: TransportStatsData;
 let stateWrites = 0;
 let cleanups: (() => void)[] = [];
+// the react mock stays registered for the whole test run, so the effects of
+// the other components would run inside their render and break them
+let insideTheHook = false;
 mock.module('react', () => ({
   ...React,
   useCallback: (callback: unknown) => callback,
@@ -28,6 +31,10 @@ mock.module('react', () => ({
     ];
   },
   useEffect: (effect: () => (() => void) | void) => {
+    if (!insideTheHook) {
+      return;
+    }
+
     const cleanup = effect();
     if (cleanup) cleanups.push(cleanup);
   }
@@ -41,7 +48,22 @@ mock.module('@/helpers/browser-logger', () => ({
 const pingServer = mock(async (): Promise<null> => null);
 const trpc = { others: { ping: { query: pingServer } } };
 mock.module('@/lib/trpc', () => ({ getTRPCClient: () => trpc }));
-const { useTransportStats } = await import('../hooks/use-transport-stats');
+const { useTransportStats: useTransportStatsHook } =
+  await import('../hooks/use-transport-stats');
+
+// only the hook under test owns the effects, the rest of the test run shares
+// the react mock with the components it renders
+const useTransportStats = (
+  ...args: Parameters<typeof useTransportStatsHook>
+) => {
+  insideTheHook = true;
+
+  try {
+    return useTransportStatsHook(...args);
+  } finally {
+    insideTheHook = false;
+  }
+};
 
 const deferred = <T>() => {
   let resolve!: (value: T) => void;

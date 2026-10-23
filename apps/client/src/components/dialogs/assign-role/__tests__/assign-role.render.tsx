@@ -1,5 +1,6 @@
 import dialogsEn from '@/i18n/locales/en/dialogs.json';
 import permissionsEn from '@/i18n/locales/en/permissions.json';
+import { renderInDom } from '@/test-utils/dom-render';
 import {
   Permission,
   type TJoinedRole,
@@ -8,7 +9,6 @@ import {
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { createElement, type ReactNode } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 
 const buildRole = (id: number, name: string, permissions: Permission[] = []) =>
@@ -33,38 +33,6 @@ const ROLES: TJoinedRole[] = [
 
 const LONG_ROLE_NAME =
   'Community support specialist with a deliberately very long role name';
-
-(globalThis as unknown as { window: unknown }).window = {
-  addEventListener: () => {},
-  removeEventListener: () => {},
-  getComputedStyle: () => ({
-    getPropertyValue: () => '',
-    paddingLeft: '0',
-    paddingRight: '0'
-  }),
-  location: { host: 'discord.rnd332.com', protocol: 'https:' }
-};
-
-(globalThis as unknown as { document: unknown }).document = {
-  addEventListener: () => {},
-  removeEventListener: () => {},
-  head: { appendChild: () => {} },
-  body: { appendChild: () => {}, removeChild: () => {} },
-  documentElement: { clientWidth: 1024, clientHeight: 768, style: {} },
-  createElement: () => ({
-    setAttribute: () => {},
-    style: {},
-    appendChild: () => {}
-  }),
-  createTextNode: () => ({}),
-  getElementsByTagName: () => [],
-  getElementById: () => null
-};
-
-mock.module('@radix-ui/react-portal', () => ({
-  Portal: ({ children }: { children: unknown }) => children,
-  PortalProvider: ({ children }: { children: unknown }) => children
-}));
 
 mock.module('@/features/server/roles/hooks', () => ({
   useRoleById: () => undefined,
@@ -123,7 +91,7 @@ const buildUser = (roleIds: number[]) =>
     roleIds
   }) as unknown as TJoinedUser;
 
-const dialogMarkup = renderToStaticMarkup(
+const dialogMarkup = await renderInDom(
   withI18n(
     createElement(AssignRoleDialog, {
       isOpen: true,
@@ -134,7 +102,7 @@ const dialogMarkup = renderToStaticMarkup(
   )
 );
 
-const selectedMarkup = renderToStaticMarkup(
+const selectedMarkup = await renderInDom(
   withI18n(
     createElement(RoleAssignment, {
       label: 'Role for aria',
@@ -145,7 +113,7 @@ const selectedMarkup = renderToStaticMarkup(
   )
 );
 
-const longNameMarkup = renderToStaticMarkup(
+const longNameMarkup = await renderInDom(
   withI18n(
     createElement(RoleAssignment, {
       label: 'Role for aria',
@@ -156,7 +124,7 @@ const longNameMarkup = renderToStaticMarkup(
   )
 );
 
-const emptyMarkup = renderToStaticMarkup(
+const emptyMarkup = await renderInDom(
   withI18n(
     createElement(AssignRoleDialog, {
       isOpen: true,

@@ -1,9 +1,9 @@
 import dialogsEn from '@/i18n/locales/en/dialogs.json';
+import { renderInDom } from '@/test-utils/dom-render';
 import type { TJoinedRole } from '@dodecagon/shared';
 import { mock } from 'bun:test';
 import i18next from 'i18next';
 import { createElement, type ReactNode } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 
 const ROLES: TJoinedRole[] = [
@@ -43,38 +43,6 @@ Object.defineProperty(globalThis.navigator, 'clipboard', {
     }
   }
 });
-
-(globalThis as unknown as { window: unknown }).window = {
-  addEventListener: () => {},
-  removeEventListener: () => {},
-  getComputedStyle: () => ({
-    getPropertyValue: () => '',
-    paddingLeft: '0',
-    paddingRight: '0'
-  }),
-  location: { host: 'discord.rnd332.com', protocol: 'https:' }
-};
-
-(globalThis as unknown as { document: unknown }).document = {
-  addEventListener: () => {},
-  removeEventListener: () => {},
-  head: { appendChild: () => {} },
-  body: { appendChild: () => {}, removeChild: () => {} },
-  documentElement: { clientWidth: 1024, clientHeight: 768, style: {} },
-  createElement: () => ({
-    setAttribute: () => {},
-    style: {},
-    appendChild: () => {}
-  }),
-  createTextNode: () => ({}),
-  getElementsByTagName: () => [],
-  getElementById: () => null
-};
-
-mock.module('@radix-ui/react-portal', () => ({
-  Portal: ({ children }: { children: unknown }) => children,
-  PortalProvider: ({ children }: { children: unknown }) => children
-}));
 
 mock.module('@/features/server/roles/hooks', () => ({
   useRoleById: () => undefined,
@@ -133,7 +101,7 @@ const inDialog = (children: ReactNode) =>
     createElement(DialogContent, null, children)
   );
 
-const setupMarkup = renderToStaticMarkup(
+const setupMarkup = await renderInDom(
   withI18n(
     createElement(CreateInviteDialog, {
       isOpen: true,
@@ -143,7 +111,7 @@ const setupMarkup = renderToStaticMarkup(
   )
 );
 
-const readyLinkMarkup = renderToStaticMarkup(
+const readyLinkMarkup = await renderInDom(
   withI18n(
     inDialog(
       createElement(InviteReadyLink, {
@@ -158,7 +126,7 @@ const readyLinkMarkup = renderToStaticMarkup(
   )
 );
 
-const defaultReadyLinkMarkup = renderToStaticMarkup(
+const defaultReadyLinkMarkup = await renderInDom(
   withI18n(
     inDialog(
       createElement(InviteReadyLink, {

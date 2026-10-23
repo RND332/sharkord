@@ -27,14 +27,14 @@ const Plugins = memo(({ plugins, loading, refetch }: TPluginsProps) => {
           <TabsTrigger
             value="installed"
             disabled={!pluginsEnabled}
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
+            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-muted-foreground data-[active]:border-primary data-[active]:bg-transparent data-[active]:font-bold data-[active]:text-foreground"
           >
             {t('installedTab')}
           </TabsTrigger>
           <TabsTrigger
             value="marketplace"
             disabled={!pluginsEnabled}
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-bold data-[state=active]:text-foreground"
+            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-muted-foreground data-[active]:border-primary data-[active]:bg-transparent data-[active]:font-bold data-[active]:text-foreground"
           >
             {t('marketplaceTab')}
           </TabsTrigger>

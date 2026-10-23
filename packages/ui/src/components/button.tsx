@@ -1,4 +1,4 @@
-import { Slot } from '@radix-ui/react-slot';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
@@ -45,15 +45,19 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot : 'button';
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+  return useRender({
+    render: asChild
+      ? (React.Children.only(props.children) as React.ReactElement)
+      : undefined,
+    defaultTagName: 'button',
+    props: {
+      'data-slot': 'button',
+      className: cn(buttonVariants({ variant, size, className })),
+      ...props,
+      // keep the native button free of an implicit type, the radix slot had none
+      type: props.type
+    }
+  });
 }
 
 export { Button, buttonVariants };

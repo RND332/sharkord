@@ -352,7 +352,7 @@ const ScreenShareCard = memo(
                 'absolute top-0 right-0 z-10 justify-end',
                 density.inset,
                 'flex opacity-0 pointer-events-none group-hover/screen-share-card:opacity-100 group-hover/screen-share-card:pointer-events-auto group-focus-within/screen-share-card:opacity-100 group-focus-within/screen-share-card:pointer-events-auto',
-                'has-[[data-state=open]]:opacity-100 has-[[data-state=open]]:pointer-events-auto'
+                'has-[[data-popup-open]]:opacity-100 has-[[data-popup-open]]:pointer-events-auto'
               )}
             >
               <div className={cardControlsClass(isCompact)}>

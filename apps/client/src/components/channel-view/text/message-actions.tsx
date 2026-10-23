@@ -165,7 +165,7 @@ const MessageActions = memo(
     return (
       <div
         data-message-actions
-        className="absolute right-0 -top-6 z-10 hidden group-hover:flex [&:has([data-state=open])]:flex items-center gap-0.5 rounded-lg shadow-lg border border-border p-1 transition-all bg-background"
+        className="absolute right-0 -top-6 z-10 hidden group-hover:flex [&:has([data-popup-open])]:flex items-center gap-0.5 rounded-lg shadow-lg border border-border p-1 transition-all bg-background"
       >
         <Protect permission={Permission.REACT_TO_MESSAGES}>
           {recentEmojisToShow.length > 0 && (

@@ -223,7 +223,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
         side="top"
         align="start"
         sideOffset={4}
-        className="w-[264px] max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
+        className="w-[264px] max-h-(--available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
       >
         <div className="flex flex-col">
           <div className="flex h-10 shrink-0 items-center justify-between gap-2 p-2">
