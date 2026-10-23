@@ -80,7 +80,7 @@ const MessagesGroup = memo(
           />
         )}
         <div className="flex min-w-0 flex-col gap-1 w-full">
-          <div className="flex gap-[9px] items-baseline select-none">
+          <div className="flex gap-[9px] items-baseline">
             <span
               className={cn(
                 'text-sm font-semibold leading-5',

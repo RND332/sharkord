@@ -163,7 +163,33 @@ const MessageActions = memo(
     }, [messageId, t]);
 
     return (
-      <div className="gap-1 absolute right-0 -top-6 z-10 hidden group-hover:flex [&:has([data-state=open])]:flex items-center space-x-1 rounded-lg shadow-lg border border-border p-2 transition-all bg-background">
+      <div
+        data-message-actions
+        className="absolute right-0 -top-6 z-10 hidden group-hover:flex [&:has([data-state=open])]:flex items-center gap-0.5 rounded-lg shadow-lg border border-border p-1 transition-all bg-background"
+      >
+        <Protect permission={Permission.REACT_TO_MESSAGES}>
+          {recentEmojisToShow.length > 0 && (
+            <div className="flex items-center gap-0.5 border-r pr-0.5">
+              {recentEmojisToShow.map((emoji) => (
+                <QuickReactionButton
+                  key={emoji.name}
+                  emoji={emoji}
+                  onSelect={onEmojiSelect}
+                />
+              ))}
+            </div>
+          )}
+
+          <EmojiPicker onEmojiSelect={onEmojiSelect}>
+            <IconButton
+              size="sm"
+              variant="ghost"
+              icon={FaceSmileIcon}
+              title={t('addReaction')}
+            />
+          </EmojiPicker>
+        </Protect>
+
         {onReply && (
           <IconButton
             size="sm"
@@ -219,26 +245,6 @@ const MessageActions = memo(
           slotId={PluginSlot.MESSAGE_ACTIONS}
           props={pluginProps}
         />
-
-        <Protect permission={Permission.REACT_TO_MESSAGES}>
-          <div className="flex items-center space-x-0.5 border-l pl-1 gap-1">
-            {recentEmojisToShow.map((emoji) => (
-              <QuickReactionButton
-                key={emoji.name}
-                emoji={emoji}
-                onSelect={onEmojiSelect}
-              />
-            ))}
-
-            <EmojiPicker onEmojiSelect={onEmojiSelect}>
-              <IconButton
-                variant="ghost"
-                icon={FaceSmileIcon}
-                title={t('addReaction')}
-              />
-            </EmojiPicker>
-          </div>
-        </Protect>
       </div>
     );
   }
