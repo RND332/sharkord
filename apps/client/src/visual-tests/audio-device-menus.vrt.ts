@@ -104,9 +104,15 @@ test('audio controls open compact device settings on right click without togglin
   await expect.element(slider).toHaveAttribute('aria-valuenow', '75');
   // the base ui slider keeps the focusable range input hidden, the visible
   // thumb carries the pointer
-  await page
-    .elementLocator(slider.element()?.closest('[data-slot="slider-thumb"]')!)
-    .click();
+  const thumb = slider
+    .element()
+    ?.closest<HTMLElement>('[data-slot="slider-thumb"]');
+
+  if (!thumb) {
+    throw new Error('the slider thumb is missing');
+  }
+
+  await page.elementLocator(thumb).click();
   await userEvent.keyboard('{Home}');
   expect(saveDevices).toHaveBeenCalled();
   const update = saveDevices.mock.lastCall![0];
@@ -130,11 +136,16 @@ test('audio controls open compact device settings on right click without togglin
   await expect
     .element(page.getByRole('slider'))
     .toHaveAttribute('aria-valuenow', '60');
-  await page
-    .elementLocator(
-      page.getByRole('slider').element()?.closest('[data-slot="slider-thumb"]')!
-    )
-    .click();
+  const outputThumb = page
+    .getByRole('slider')
+    .element()
+    ?.closest<HTMLElement>('[data-slot="slider-thumb"]');
+
+  if (!outputThumb) {
+    throw new Error('the output slider thumb is missing');
+  }
+
+  await page.elementLocator(outputThumb).click();
   await userEvent.keyboard('{End}');
   const outputUpdate = saveDevices.mock.lastCall![0];
   expect(outputUpdate({ microphoneVolume: 75, playbackVolume: 60 })).toEqual({
