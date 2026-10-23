@@ -211,7 +211,7 @@ const TextChannel = memo((props: TChannelProps) => {
         data-messages-container
         className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-6 pb-2"
       >
-        {loading ? (
+        {loading && !messages.length ? (
           <div className="flex h-full items-center justify-center">
             <Spinner size="sm" />
           </div>
