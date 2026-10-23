@@ -1292,11 +1292,6 @@ test('profile settings edit a live preview that matches the user popover', async
     await expect
       .element(page.getByText('Profile color', { exact: true }))
       .toBeVisible();
-    const profileColorButton = page.getByRole('button', {
-      name: 'Profile color',
-      exact: true
-    });
-    await profileColorButton.click();
     const profileColorInput = page.getByRole('textbox', {
       name: 'Profile color',
       exact: true
@@ -1483,11 +1478,6 @@ test('saved profile edits stay synchronized with the user popover', async () => 
       exact: true
     });
     await changeColorMenuItem.click();
-    const profileColorButton = page.getByRole('button', {
-      name: 'Profile color',
-      exact: true
-    });
-    await profileColorButton.click();
     const profileColorInput = page.getByRole('textbox', {
       name: 'Profile color',
       exact: true
