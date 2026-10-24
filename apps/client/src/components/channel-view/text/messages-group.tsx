@@ -61,7 +61,7 @@ const MessagesGroup = memo(
       <div
         data-message-group
         className={cn(
-          'flex min-w-0 max-w-dvw gap-4 py-2',
+          'flex min-w-0 max-w-dvw gap-4 py-2 select-text',
           compact &&
             'gap-3 py-1.5 [&_.msg-content]:text-[14px]! [&_.msg-content]:leading-[22px]! [&_[data-slot=avatar]]:size-7!'
         )}
