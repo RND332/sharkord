@@ -1,21 +1,12 @@
 import { cn } from '@/lib/utils';
-import { Tooltip } from '@dodecagon/ui';
-import { ChevronDownIcon, UsersIcon } from '@heroicons/react/24/outline';
-import {
-  isValidElement,
-  memo,
-  useCallback,
-  useMemo,
-  useState,
-  type ReactNode
-} from 'react';
-import { useTranslation } from 'react-i18next';
+import { isValidElement, memo, useMemo, type ReactNode } from 'react';
 import { useContainerSize } from './hooks/use-container-size';
 
 type TVoiceGridProps = {
   children: ReactNode[];
   pinnedCardId?: string;
   tileAspectRatio?: number;
+  participantsHidden?: boolean;
   className?: string;
 };
 
@@ -30,14 +21,14 @@ const FOCUSED_AVATAR_CLASS = '[--voice-avatar-size:160px]';
 const FOCUSED_TILE_MARGIN = 32;
 
 const VoiceGrid = memo(
-  ({ children, pinnedCardId, tileAspectRatio, className }: TVoiceGridProps) => {
+  ({
+    children,
+    pinnedCardId,
+    tileAspectRatio,
+    participantsHidden = false,
+    className
+  }: TVoiceGridProps) => {
     const { containerRef, containerSize } = useContainerSize();
-    const [hideParticipants, setHideParticipants] = useState(false);
-    const { t } = useTranslation();
-
-    const handleToggleParticipants = useCallback(() => {
-      setHideParticipants((hidden) => !hidden);
-    }, []);
 
     const calculateOptimalGrid = (
       totalCards: number,
@@ -147,51 +138,15 @@ const VoiceGrid = memo(
             >
               {focusedCard}
             </div>
-            {stripCards.length > 0 && (
-              <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 z-2 pointer-events-none">
-                <Tooltip
-                  content={
-                    hideParticipants
-                      ? t('showParticipants')
-                      : t('hideParticipants')
-                  }
-                >
-                  <button
-                    className={cn(
-                      'inline-flex h-8 w-16 items-center justify-center gap-1.5 rounded-full',
-                      'pointer-events-auto border border-white/12 bg-black/80 shadow-xl transition-colors',
-                      'hover:bg-black/90',
-                      hideParticipants
-                        ? 'inline-flex'
-                        : 'hidden group-hover/voice-stage:inline-flex'
-                    )}
-                    onClick={handleToggleParticipants}
-                    aria-label={
-                      hideParticipants
-                        ? t('showParticipants')
-                        : t('hideParticipants')
-                    }
-                  >
-                    <ChevronDownIcon
-                      className={cn(
-                        'size-3.5 transition-transform duration-300 ease-in-out',
-                        hideParticipants && 'rotate-180'
-                      )}
-                    />
-                    <UsersIcon className="size-5" />
-                  </button>
-                </Tooltip>
-              </div>
-            )}
           </div>
           {stripCards.length > 0 && (
             <div
-              inert={hideParticipants}
-              aria-hidden={hideParticipants}
+              inert={participantsHidden}
+              aria-hidden={participantsHidden}
               className={cn(
                 'flex h-[90px] shrink-0 justify-center-safe gap-3 overflow-x-auto',
                 'transition-[max-height,opacity] duration-300 ease-in-out',
-                hideParticipants
+                participantsHidden
                   ? 'max-h-0 opacity-0'
                   : 'max-h-[90px] opacity-100'
               )}

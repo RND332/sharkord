@@ -67,7 +67,8 @@ const GRID_AVATAR_CLASS =
   'size-[var(--voice-avatar-size,80px)] [&_[data-slot=avatar-fallback]]:text-[length:calc(var(--voice-avatar-size,80px)_*_0.4)]';
 const PINNED_AVATAR_CLASS =
   'size-[var(--voice-avatar-size,128px)] [&_[data-slot=avatar-fallback]]:text-[length:calc(var(--voice-avatar-size,128px)_*_0.4)]';
-const COMPACT_AVATAR_CLASS = 'size-16 [&_[data-slot=avatar-fallback]]:text-xl';
+const COMPACT_AVATAR_CLASS =
+  'size-[72px] [&_[data-slot=avatar-fallback]]:text-2xl';
 
 const getOutlineClass = (classes: string[], intensity: number) =>
   classes[Math.min(Math.max(intensity, 1), classes.length) - 1];
