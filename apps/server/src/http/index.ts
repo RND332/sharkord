@@ -55,7 +55,13 @@ const START_PATHS = new Set([
   '/oidc/backchannel-logout'
 ]);
 
-const isStartPath = (pathname: string) => START_PATHS.has(pathname);
+// the server functions of the browser travel to the start server under their own
+// prefix, the exact paths of the set do not cover them
+const START_PATH_PREFIXES = ['/_serverFn'];
+
+const isStartPath = (pathname: string) =>
+  START_PATHS.has(pathname) ||
+  START_PATH_PREFIXES.some((prefix) => hasPrefixPathSegment(pathname, prefix));
 
 // parsed once per request and handed to every handler, so nothing below re-parses the url
 // or re-resolves the client ip
