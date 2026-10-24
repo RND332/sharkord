@@ -71,16 +71,26 @@ const AudioSettingsMenu = memo(
           getBoundingClientRect: () => {
             const trigger = anchorRef.current;
             const reference = trigger?.getBoundingClientRect() ?? new DOMRect();
-            const sidebar =
-              trigger
-                ?.closest(`[data-testid="${TestId.LEFT_SIDEBAR}"]`)
-                ?.getBoundingClientRect() ?? reference;
+            const sidebarElement = trigger?.closest(
+              `[data-testid="${TestId.LEFT_SIDEBAR}"]`
+            );
 
-            const bottom = sidebar.height ? sidebar.bottom : reference.bottom;
+            // the dock trigger opens at the fixed anchor of the network stats,
+            // the stage trigger keeps opening right above its own button
+            if (!sidebarElement) {
+              return new DOMRect(
+                reference.left + 8,
+                reference.top,
+                POPOVER_WIDTH,
+                reference.height
+              );
+            }
+
+            const sidebar = sidebarElement.getBoundingClientRect();
 
             return new DOMRect(
               sidebar.left + 8,
-              bottom - POPOVER_BOTTOM_OFFSET,
+              sidebar.bottom - POPOVER_BOTTOM_OFFSET,
               POPOVER_WIDTH,
               0
             );
