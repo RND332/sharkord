@@ -60,14 +60,15 @@ afterEach(() => {
   localStorage.removeItem('vite-ui-theme');
 });
 
-test('shows up to four watchers with an overflow count and the full roster on demand', async () => {
+test('shows up to three watchers with an overflow count and the full roster on demand', async () => {
   await mount([2, 3, 4, 5, 6]);
 
   const trigger = page.getByRole('button', { name: '5 viewers' });
   await expect.element(trigger).toBeVisible();
-  expect(host!.querySelectorAll('[data-slot="avatar"]')).toHaveLength(4);
-  expect(trigger.element().textContent).toContain('+1');
-  expect(trigger.element().textContent).toContain('5');
+  expect(host!.querySelectorAll('[data-slot="avatar"]')).toHaveLength(3);
+  expect(trigger.element().textContent).toContain('+2');
+  // the count is part of the accessible name, not a painted number
+  expect(trigger.element().textContent).not.toContain('5');
 
   await trigger.click();
   await expect.element(page.getByText('Watching · 5')).toBeVisible();
@@ -87,14 +88,11 @@ test('shows up to four watchers with an overflow count and the full roster on de
   await expect.element(page.getByText('Watching · 5')).not.toBeInTheDocument();
 });
 
-test('keeps the watcher control reachable with an empty roster', async () => {
+test('renders no watcher control without viewers', async () => {
   await mount([]);
 
-  const trigger = page.getByRole('button', { name: '0 viewers' });
-  await expect.element(trigger).toBeVisible();
+  // the design shows the roster only when someone is watching: an empty chip
+  // would be a control without content
   expect(host!.querySelectorAll('[data-slot="avatar"]')).toHaveLength(0);
-
-  await trigger.click();
-  await expect.element(page.getByText('Watching · 0')).toBeVisible();
-  await expect.element(page.getByText('No one is watching yet.')).toBeVisible();
+  expect(host!.querySelector('button')).toBeNull();
 });

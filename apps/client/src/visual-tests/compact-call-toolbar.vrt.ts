@@ -153,11 +153,12 @@ test.each([1188, 375])(
     const rect = toolbar.getBoundingClientRect();
     const hostRect = host!.getBoundingClientRect();
     const participantRect = participant.getBoundingClientRect();
-    expect(rect.width).toBe(300);
+    expect(rect.width).toBe(280);
     expect(rect.height).toBe(50);
     expect(getComputedStyle(toolbar).padding).toBe('5px');
     expect(getComputedStyle(toolbar).gap).toBe('6px');
     expect(getComputedStyle(toolbar).backgroundColor).toBe('rgb(43, 45, 49)');
+    expect(getComputedStyle(toolbar).borderRadius).toBe('12px');
     expect(footer.getBoundingClientRect().height).toBe(62);
     expect(hostRect.bottom - rect.bottom).toBe(12);
     expect(rect.top - participantRect.bottom).toBe(12);
@@ -167,9 +168,8 @@ test.each([1188, 375])(
     expect(buttons).toHaveLength(6);
     for (const button of buttons) {
       const buttonRect = button.getBoundingClientRect();
-      expect(buttonRect.width).toBe(
-        button.ariaLabel === 'Disconnect' ? 60 : 40
-      );
+      // every control of the toolbar is square, the disconnect too
+      expect(buttonRect.width).toBe(40);
       expect(buttonRect.height).toBe(40);
       const icon = button.querySelector('svg')!;
       expect(icon.getBoundingClientRect().width).toBe(20);
@@ -211,7 +211,7 @@ test('Miku retains its palette and compact geometry when the toolbar hides and r
   const before = rectangles();
   expect(document.documentElement.dataset.theme).toBe('hatsune-miku');
   expect(getComputedStyle(toolbar).backgroundColor).toBe('rgb(21, 28, 34)');
-  expect(toolbar.getBoundingClientRect().width).toBe(300);
+  expect(toolbar.getBoundingClientRect().width).toBe(280);
   expect(toolbar.getBoundingClientRect().height).toBe(50);
   await expect
     .poll(() => getComputedStyle(footer).opacity, { timeout: 4000 })
@@ -319,7 +319,7 @@ test('unavailable actions preserve conditional controls without overflowing', as
     .element(page.getByRole('button', { name: 'Start Video', exact: true }))
     .toBeDisabled();
   const rect = toolbar.getBoundingClientRect();
-  expect(rect.width).toBe(208);
+  expect(rect.width).toBe(188);
   expect(rect.height).toBe(50);
   expect(rect.left).toBeGreaterThanOrEqual(0);
   expect(rect.right).toBeLessThanOrEqual(375);

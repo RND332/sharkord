@@ -599,7 +599,8 @@ test('voice dock uses the compact connection summary controls', async () => {
   expect(wifi.getBoundingClientRect().height).toBe(24);
   expect(getComputedStyle(wifi).padding).toBe('0px');
   expect(wifi.querySelector('svg')!.getBoundingClientRect().height).toBe(16);
-  expect(disconnect.getBoundingClientRect().width).toBe(22);
+  // the disconnect control is square in the dock, like the microphone one
+  expect(disconnect.getBoundingClientRect().width).toBe(28);
   expect(disconnect.getBoundingClientRect().height).toBe(28);
   expect(getComputedStyle(disconnect).padding).toBe('0px');
   expect(disconnect.querySelector('svg')!.getBoundingClientRect().height).toBe(

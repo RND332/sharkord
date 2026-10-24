@@ -600,8 +600,8 @@ test('composer has no resize handle or hint and grows naturally with multiline i
     .element(page.getByRole('separator', { name: 'Resize chat input' }))
     .not.toBeInTheDocument();
   expect(document.querySelector('.cursor-row-resize')).toBeNull();
-  expect(composer.getBoundingClientRect().height).toBe(78);
-  expect(getComputedStyle(composer).paddingTop).toBe('10px');
+  expect(composer.getBoundingClientRect().height).toBe(68);
+  expect(getComputedStyle(composer).paddingTop).toBe('8px');
   expect(row.getBoundingClientRect().height).toBe(52);
   expect(getComputedStyle(row).backgroundColor).toBe('rgb(64, 66, 73)');
   expect(getComputedStyle(row).borderTopWidth).toBe('0px');
@@ -635,7 +635,7 @@ test('composer has no resize handle or hint and grows naturally with multiline i
   );
   await expect
     .poll(() => composer.getBoundingClientRect().height)
-    .toBeGreaterThan(78);
+    .toBeGreaterThan(68);
   await userEvent.keyboard('{Shift>}{Enter}{/Shift}'.repeat(40));
   await expect
     .poll(() => composer.getBoundingClientRect().height)
@@ -941,7 +941,7 @@ test('voice channel matches the Paper design', async () => {
     );
     expect(controls).not.toBeNull();
     expect(controls!.getBoundingClientRect().height).toBe(50);
-    expect(controls!.getBoundingClientRect().width).toBe(300);
+    expect(controls!.getBoundingClientRect().width).toBe(280);
     expect(getComputedStyle(controls!).padding).toBe('5px');
     expect(getComputedStyle(controls!).gap).toBe('6px');
     expect(getComputedStyle(controls!).backgroundColor).toBe('rgb(43, 45, 49)');
@@ -952,7 +952,7 @@ test('voice channel matches the Paper design', async () => {
     const disconnect = controls!.querySelector<HTMLButtonElement>(
       'button[aria-label="Disconnect"]'
     )!;
-    expect(disconnect.getBoundingClientRect().width).toBe(60);
+    expect(disconnect.getBoundingClientRect().width).toBe(40);
     expect(disconnect.getBoundingClientRect().height).toBe(40);
     expect(disconnect.querySelector('svg')!.getAttribute('fill')).toBe('none');
     const callControls = Array.from(controls!.querySelectorAll('button'));
@@ -978,9 +978,8 @@ test('voice channel matches the Paper design', async () => {
     expect(disconnect.classList.contains('active:bg-danger-solid/80')).toBe(
       true
     );
-    expect(
-      parseFloat(getComputedStyle(mute).borderRadius)
-    ).toBeGreaterThanOrEqual(20);
+    // the controls are square with the Paper radius instead of circles
+    expect(parseFloat(getComputedStyle(mute).borderRadius)).toBe(8);
     const caption = page.elementLocator(
       document.querySelector('.group\\/voice-user-card p')!
     );
