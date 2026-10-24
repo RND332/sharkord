@@ -58,4 +58,4 @@ jobs:
       # directory, so the built bundle has to work on its own
       - name: Check the start server bundle
         working-directory: apps/server
-        run: bun test src/__tests__/start-server.test.ts
+        run: bun run test:bundle
