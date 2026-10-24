@@ -1,5 +1,5 @@
 import { isSecureRequest } from '@/helpers/is-secure-request';
-import { detectLanguageFromHeader } from '@/i18n';
+import { detectLanguageFromCookie, detectLanguageFromHeader } from '@/i18n';
 import { getRequest } from '@tanstack/react-start/server';
 
 // the server has no local storage and no navigator, so the language and the
@@ -9,7 +9,11 @@ const readRequestContext = async () => {
   const url = new URL(request.url);
 
   return {
-    language: detectLanguageFromHeader(request.headers.get('accept-language')),
+    // the language of the user travels in a cookie, the header of the browser
+    // is only the guess of the server
+    language:
+      detectLanguageFromCookie(request.headers.get('cookie')) ??
+      detectLanguageFromHeader(request.headers.get('accept-language')),
     isSecure: isSecureRequest(request),
     search: url.search,
     now: Date.now()

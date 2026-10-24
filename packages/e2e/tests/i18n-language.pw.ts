@@ -10,6 +10,14 @@ test('shows the language of the user when the request carries another one', asyn
   await page.addInitScript(() => {
     localStorage.setItem('dodecagon-language', 'en');
   });
+  await page.context().addCookies([
+    {
+      name: 'dodecagon-language',
+      value: 'en',
+      domain: 'localhost',
+      path: '/'
+    }
+  ]);
   await page.setExtraHTTPHeaders({
     'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
   });
