@@ -249,8 +249,8 @@ const MessageCompose = memo(
         className={cn(
           'compose-container relative flex max-h-[35vh] shrink-0 flex-col gap-2 bg-canvas',
           isThread
-            ? 'pb-4 pl-[23px] pr-6 pt-2'
-            : 'px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-[10px]'
+            ? 'px-2 py-2'
+            : 'px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))]'
         )}
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
