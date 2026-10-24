@@ -10,6 +10,7 @@ import {
   type ReactNode
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useContainerSize } from './hooks/use-container-size';
 
 type TVoiceGridProps = {
   children: ReactNode[];
@@ -30,31 +31,12 @@ const FOCUSED_TILE_MARGIN = 32;
 
 const VoiceGrid = memo(
   ({ children, pinnedCardId, tileAspectRatio, className }: TVoiceGridProps) => {
-    const [containerSize, setContainerSize] = useState<{
-      width: number;
-      height: number;
-    } | null>(null);
+    const { containerRef, containerSize } = useContainerSize();
     const [hideParticipants, setHideParticipants] = useState(false);
     const { t } = useTranslation();
 
     const handleToggleParticipants = useCallback(() => {
       setHideParticipants((hidden) => !hidden);
-    }, []);
-
-    const containerRef = useCallback((element: HTMLDivElement | null) => {
-      if (!element) return;
-
-      const updateSize = () => {
-        const rect = element.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
-      };
-
-      updateSize();
-
-      const resizeObserver = new ResizeObserver(updateSize);
-      resizeObserver.observe(element);
-
-      return () => resizeObserver.disconnect();
     }, []);
 
     const calculateOptimalGrid = (
