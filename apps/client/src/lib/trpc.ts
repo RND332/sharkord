@@ -15,7 +15,8 @@ import {
   LocalStorageKey,
   removeLocalStorageItem,
   removeSessionStorageItem,
-  SessionStorageKey
+  SessionStorageKey,
+  setLocalStorageItemBool
 } from '@/helpers/storage';
 import { pushVoiceDebugEvent } from '@/helpers/voice-debug';
 import {
@@ -151,6 +152,11 @@ const cleanup = () => {
   // skip this when navigating away (refresh/close) - Firefox fires onClose during refresh, Chrome does not
   if (!isNavigatingAway) {
     removeLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
+
+    // the switch of the connect screen reads this flag, so it has to follow
+    // the token: without a token auto-login cannot happen and the switch must
+    // not claim that it is on
+    setLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN, false);
 
     // same reasoning, for a server that redirects straight to its identity provider
     suppressOidcAutoRedirect();
