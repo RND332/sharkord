@@ -259,7 +259,7 @@ const SettingsShell = memo(
             <main
               ref={scrollRef}
               onScroll={handleScroll}
-              className="relative flex-1 overflow-y-auto bg-canvas"
+              className="relative flex-1 overflow-y-auto bg-canvas [scrollbar-gutter:stable]"
             >
               <div className="pointer-events-none sticky top-0 z-50 h-0">
                 <div className="relative mx-auto w-full max-w-[1188px]">
