@@ -1,6 +1,4 @@
-import { LanguageSwitcher } from '@/components/language-switcher';
 import { connect, setDisconnectInfo } from '@/features/server/actions';
-import { useServerName } from '@/features/server/hooks';
 import type { TDisconnectInfo } from '@/features/server/types';
 import { getHostFromServer } from '@/helpers/get-file-url';
 import { DisconnectCode } from '@dodecagon/shared';
@@ -20,7 +18,6 @@ type TDisconnectedProps = {
 
 const Disconnected = memo(({ info }: TDisconnectedProps) => {
   const { t, i18n } = useTranslation('disconnected');
-  const serverName = useServerName();
   const host = getHostFromServer();
   const [lastAttemptAt, setLastAttemptAt] = useState(info.time);
   const [retrying, setRetrying] = useState(false);
@@ -77,17 +74,7 @@ const Disconnected = memo(({ info }: TDisconnectedProps) => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex h-12 shrink-0 items-center justify-between px-6">
-        <span className="text-sm font-semibold text-foreground">
-          {serverName}
-        </span>
-        <LanguageSwitcher
-          variant="full"
-          className="h-7 w-auto border-0 bg-transparent p-0 text-[13px] font-medium leading-[18px] text-muted-foreground [&>svg]:size-3.5"
-        />
-      </header>
-
-      <main className="flex flex-1 items-center justify-center px-6 pb-24">
+      <main className="flex flex-1 items-center justify-center px-6 py-6">
         <div className="max-w-md space-y-5 text-center">
           {disconnectType.icon && (
             <div className="flex justify-center">{disconnectType.icon}</div>

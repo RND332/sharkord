@@ -13,12 +13,6 @@ const actions = vi.hoisted(() => ({
   setDisconnectInfo: vi.fn()
 }));
 
-vi.mock('@/components/language-switcher', () => ({
-  LanguageSwitcher: () => createElement('div', {}, 'English')
-}));
-vi.mock('@/features/server/hooks', () => ({
-  useServerName: () => 'Rnd Community'
-}));
 vi.mock('@/features/server/actions', () => actions);
 
 let root: Root | undefined;
@@ -62,9 +56,6 @@ test('the lost-connection screen shows a truthful retry action, host and attempt
     .toBeVisible();
   await expect
     .element(page.getByRole('button', { name: 'Try again' }))
-    .toBeVisible();
-  await expect
-    .element(page.getByText('Rnd Community', { exact: true }))
     .toBeVisible();
   await expect
     .element(
