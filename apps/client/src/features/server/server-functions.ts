@@ -55,15 +55,3 @@ export const getServerInfo = createServerFn({ method: 'GET' }).handler(
 export const getPluginComponentIds = createServerFn({ method: 'GET' }).handler(
   readPluginComponentIds
 );
-
-// the language, the state of the connection and the time of the request belong
-// to the request, so they are read on the server and handed to the browser
-export const getRequestContext = createServerFn({ method: 'GET' }).handler(
-  async () => {
-    // the module of the request is only loaded on the server, the import stays
-    // out of the bundle of the browser
-    const { readRequestContext } = await import('./request-context');
-
-    return readRequestContext();
-  }
-);

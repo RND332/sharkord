@@ -1,7 +1,5 @@
-import {
-  getRequestContext,
-  getServerInfo
-} from '@/features/server/server-functions';
+import { getRequestContext } from '@/features/server/request-context';
+import { getServerInfo } from '@/features/server/server-functions';
 import { Connect } from '@/screens/connect';
 import { createFileRoute } from '@tanstack/react-router';
 

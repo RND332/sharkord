@@ -24,9 +24,21 @@ export default defineConfig({
     ]
   },
   resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, './src')
-    },
+    alias: [
+      // the tests run in the browser without the start server, so the server
+      // functions get a stub with the same shape
+      {
+        find: /^@tanstack\/react-start$/,
+        replacement: path.resolve(
+          import.meta.dirname,
+          './src/visual-tests/start-stub.ts'
+        )
+      },
+      {
+        find: /^@\//,
+        replacement: path.resolve(import.meta.dirname, './src') + '/'
+      }
+    ],
     dedupe: ['react', 'react-dom']
   },
   define: {

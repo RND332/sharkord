@@ -1,6 +1,6 @@
 import { Routing } from '@/components/routing';
 import { hydrateAppFromStorage } from '@/features/app/slice';
-import { getRequestContext } from '@/features/server/server-functions';
+import { getRequestContext } from '@/features/server/request-context';
 import { hydrateServerFromStorage } from '@/features/server/slice';
 import { createStore, store } from '@/features/store';
 import { StoreProvider } from '@/features/store-context';

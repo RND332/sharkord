@@ -14,8 +14,8 @@ import { AppScreens } from './components/routing/screens.tsx';
 import { ServerScreensProvider } from './components/server-screens/index.tsx';
 import { ThemeProvider } from './components/theme-provider/index.tsx';
 import { loadApp } from './features/app/actions.ts';
-import { useStrictEffect } from './hooks/use-strict-effect.ts';
 import { LocalStorageKey } from './helpers/storage.ts';
+import { useStrictEffect } from './hooks/use-strict-effect.ts';
 import './index.css';
 
 const Shell = ({ children }: { children?: React.ReactNode }) => {
