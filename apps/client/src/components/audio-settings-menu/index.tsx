@@ -76,9 +76,7 @@ const AudioSettingsMenu = memo(
                 ?.closest(`[data-testid="${TestId.LEFT_SIDEBAR}"]`)
                 ?.getBoundingClientRect() ?? reference;
 
-            const bottom = sidebar.height
-              ? sidebar.bottom
-              : reference.bottom;
+            const bottom = sidebar.height ? sidebar.bottom : reference.bottom;
 
             return new DOMRect(
               sidebar.left + 8,

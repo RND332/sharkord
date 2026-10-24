@@ -34,7 +34,10 @@ const persistDockPreferences = () => {
     LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
     voiceChatOpen
   );
-  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, membersPanelOpen);
+  setLocalStorageItemBool(
+    LocalStorageKey.RIGHT_SIDEBAR_STATE,
+    membersPanelOpen
+  );
 };
 
 export const setAppLoading = (loading: boolean) =>
@@ -112,7 +115,10 @@ export const setModViewOpen = (isOpen: boolean, userId?: number) =>
     })
   );
 
-export const openThreadSidebar = (parentMessageId: number, channelId: number) => {
+export const openThreadSidebar = (
+  parentMessageId: number,
+  channelId: number
+) => {
   store.dispatch(
     appSliceActions.setThreadSidebarOpen({
       open: true,

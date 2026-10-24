@@ -8,7 +8,11 @@ import {
   openVoiceChatSidebar,
   setMembersPanelOpen
 } from '../actions';
-import { appInitialState, appSliceReducer, hydrateAppFromStorage } from '../slice';
+import {
+  appInitialState,
+  appSliceReducer,
+  hydrateAppFromStorage
+} from '../slice';
 
 const items = new Map<string, string>();
 
@@ -85,17 +89,11 @@ const scenarios = {
     () => openVoiceChatSidebar(2),
     () => setMembersPanelOpen(true)
   ]),
-  thread: run([
-    () => openVoiceChatSidebar(2),
-    () => openThreadSidebar(5, 1)
-  ]),
+  thread: run([() => openVoiceChatSidebar(2), () => openThreadSidebar(5, 1)]),
   membersOnly: run([() => setMembersPanelOpen(true)]),
   legacyConflict: run([
     () =>
-      localStorage.setItem(
-        LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
-        'true'
-      ),
+      localStorage.setItem(LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE, 'true'),
     () => localStorage.setItem(LocalStorageKey.RIGHT_SIDEBAR_STATE, 'true')
   ])
 };

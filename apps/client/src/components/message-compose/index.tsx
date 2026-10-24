@@ -285,11 +285,11 @@ const MessageCompose = memo(
               size="icon"
               variant="ghost"
               className={cn(
-              'size-8 shrink-0 p-1.5 sticky top-2.5',
-              // the thread surface uses a smaller vertical padding, so the
-              // actions follow the text line instead of the surface padding
-              isThread ? 'mt-1' : 'mt-2.5'
-            )}
+                'size-8 shrink-0 p-1.5 sticky top-2.5',
+                // the thread surface uses a smaller vertical padding, so the
+                // actions follow the text line instead of the surface padding
+                isThread ? 'mt-1' : 'mt-2.5'
+              )}
               aria-label={t('attachFiles')}
               disabled={uploading || !canUploadFiles}
               onClick={openFileDialog}
