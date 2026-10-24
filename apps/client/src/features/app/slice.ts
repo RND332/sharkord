@@ -31,6 +31,7 @@ export interface TAppState {
   messageJumpTarget: TMessageJumpToTarget | undefined;
   voiceChatSidebarOpen: boolean;
   voiceChatChannelId: number | undefined;
+  membersPanelOpen: boolean;
   pluginSlotDebug: boolean;
   modifierKeysHeldMap: Record<string, boolean>;
 }
@@ -59,6 +60,7 @@ const initialState: TAppState = {
   messageJumpTarget: undefined,
   voiceChatSidebarOpen: false,
   voiceChatChannelId: undefined,
+  membersPanelOpen: false,
   pluginSlotDebug: false,
   modifierKeysHeldMap: { Shift: false, Control: false, Alt: false }
 };
@@ -76,6 +78,7 @@ interface TAppStorageFlags {
   mutedChannelIds: number[];
   voiceChatSidebarOpen: boolean;
   voiceChatChannelId: number | undefined;
+  membersPanelOpen: boolean;
   pluginSlotDebug: boolean;
 }
 
@@ -133,6 +136,10 @@ export const hydrateAppFromStorage = (): {
     voiceChatChannelId: getLocalStorageItemAsNumber(
       LocalStorageKey.VOICE_CHAT_SIDEBAR_CHANNEL_ID
     ),
+    membersPanelOpen: getLocalStorageItemBool(
+      LocalStorageKey.RIGHT_SIDEBAR_STATE,
+      true
+    ),
     pluginSlotDebug: getLocalStorageItemBool(
       LocalStorageKey.PLUGIN_SLOT_DEBUG,
       false
@@ -182,6 +189,8 @@ const appSliceActions = {
     ({ type: 'app/setMessageJumpTarget', payload }) as const,
   setVoiceChatSidebar: (payload: { open: boolean; channelId?: number }) =>
     ({ type: 'app/setVoiceChatSidebar', payload }) as const,
+  setMembersPanelOpen: (payload: boolean) =>
+    ({ type: 'app/setMembersPanelOpen', payload }) as const,
   setPluginSlotDebug: (payload: boolean) =>
     ({ type: 'app/setPluginSlotDebug', payload }) as const,
   setModifierKeysHeldMap: (payload: Record<string, boolean>) =>
@@ -211,7 +220,14 @@ const appSliceReducer = (state: TAppState, action: TAppAction): TAppState =>
         draft.mutedChannelIds = action.payload.mutedChannelIds;
         draft.voiceChatSidebarOpen = action.payload.voiceChatSidebarOpen;
         draft.voiceChatChannelId = action.payload.voiceChatChannelId;
+        draft.membersPanelOpen = action.payload.membersPanelOpen;
         draft.pluginSlotDebug = action.payload.pluginSlotDebug;
+
+        // only one dock can be open on the right, the voice chat that was open
+        // before the reload replaces the members panel
+        if (draft.voiceChatSidebarOpen) {
+          draft.membersPanelOpen = false;
+        }
         break;
       }
       case 'app/setAppLoading':
@@ -231,6 +247,13 @@ const appSliceReducer = (state: TAppState, action: TAppAction): TAppState =>
         draft.threadSidebarOpen = action.payload.open;
         draft.threadParentMessageId = action.payload.parentMessageId;
         draft.threadChannelId = action.payload.channelId;
+
+        // only one dock can be open on the right, the thread replaces the
+        // voice chat and the members panel
+        if (action.payload.open) {
+          draft.voiceChatSidebarOpen = false;
+          draft.membersPanelOpen = false;
+        }
         break;
       case 'app/setAutoJoinLastChannel':
         draft.autoJoinLastChannel = action.payload;
@@ -274,6 +297,27 @@ const appSliceReducer = (state: TAppState, action: TAppAction): TAppState =>
       case 'app/setVoiceChatSidebar':
         draft.voiceChatSidebarOpen = action.payload.open;
         draft.voiceChatChannelId = action.payload.channelId;
+
+        // only one dock can be open on the right, the voice chat replaces the
+        // thread and the members panel
+        if (action.payload.open) {
+          draft.threadSidebarOpen = false;
+          draft.threadParentMessageId = undefined;
+          draft.threadChannelId = undefined;
+          draft.membersPanelOpen = false;
+        }
+        break;
+      case 'app/setMembersPanelOpen':
+        draft.membersPanelOpen = action.payload;
+
+        // only one dock can be open on the right, the members panel replaces
+        // the thread and the voice chat
+        if (action.payload) {
+          draft.threadSidebarOpen = false;
+          draft.threadParentMessageId = undefined;
+          draft.threadChannelId = undefined;
+          draft.voiceChatSidebarOpen = false;
+        }
         break;
       case 'app/setPluginSlotDebug':
         draft.pluginSlotDebug = action.payload;

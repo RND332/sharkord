@@ -14,6 +14,7 @@ import { markChannelAsRead, setInfo } from '../server/actions';
 import { getServerInfo } from '../server/server-functions';
 import { store } from '../store';
 import {
+  membersPanelOpenSelector,
   mutedChannelIdsSelector,
   pluginSlotDebugSelector,
   voiceChatChannelIdSelector,
@@ -96,7 +97,7 @@ export const setModViewOpen = (isOpen: boolean, userId?: number) =>
     })
   );
 
-export const openThreadSidebar = (parentMessageId: number, channelId: number) =>
+export const openThreadSidebar = (parentMessageId: number, channelId: number) => {
   store.dispatch(
     appSliceActions.setThreadSidebarOpen({
       open: true,
@@ -104,6 +105,10 @@ export const openThreadSidebar = (parentMessageId: number, channelId: number) =>
       channelId
     })
   );
+
+  // the thread replaces the members panel, the desktop preference follows
+  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, false);
+};
 
 export const closeThreadSidebar = () =>
   store.dispatch(
@@ -237,6 +242,22 @@ export const openVoiceChatSidebar = (channelId: number) => {
     channelId.toString()
   );
   setLocalStorageItemBool(LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE, true);
+
+  // the voice chat replaces the members panel, the desktop preference follows
+  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, false);
+};
+
+export const setMembersPanelOpen = (open: boolean) => {
+  store.dispatch(appSliceActions.setMembersPanelOpen(open));
+
+  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, open);
+};
+
+export const toggleMembersPanel = () => {
+  const state = store.getState();
+  const isOpen = membersPanelOpenSelector(state);
+
+  setMembersPanelOpen(!isOpen);
 };
 
 export const closeVoiceChatSidebar = () => {
