@@ -1,6 +1,5 @@
 import { useUsers } from '@/features/server/users/hooks';
 import { Popover, PopoverContent, PopoverTrigger } from '@dodecagon/ui';
-import { EyeIcon } from '@heroicons/react/20/solid';
 import {
   memo,
   useCallback,
@@ -21,7 +20,7 @@ const StreamViewersList = memo(({ viewerIds }: TStreamViewersListProps) => {
   const [viewersOpen, setViewersOpen] = useState(false);
 
   const viewerCount = viewerIds.length;
-  const shownViewerIds = viewerIds.slice(0, 4);
+  const shownViewerIds = viewerIds.slice(0, 3);
   const overflowViewerCount = Math.max(0, viewerCount - shownViewerIds.length);
   const viewerNames = useMemo(
     () => new Map(users.map((viewer) => [viewer.id, viewer.name])),
@@ -36,8 +35,12 @@ const StreamViewersList = memo(({ viewerIds }: TStreamViewersListProps) => {
     []
   );
 
-  // The trigger stays visible with an empty roster: the Paper design keeps the
-  // eye and the count on screen, so the roster is always reachable.
+  // the design shows the roster as overlapping avatars without a capsule, so
+  // an empty roster renders nothing at all
+  if (viewerCount === 0) {
+    return null;
+  }
+
   return (
     <Popover open={viewersOpen} onOpenChange={onViewersOpenChange}>
       <PopoverTrigger asChild>
@@ -45,27 +48,23 @@ const StreamViewersList = memo(({ viewerIds }: TStreamViewersListProps) => {
           type="button"
           onMouseDown={onViewersPointerDown}
           aria-label={t('screenShareViewers', { count: viewerCount })}
-          className="flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/65 px-1.5 text-[13px] font-medium leading-[17px] text-white transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+          className="flex items-center gap-1 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
         >
-          {viewerCount > 0 && (
-            <span className="flex -space-x-1.5">
-              {shownViewerIds.map((viewerId) => (
-                <UserAvatar
-                  key={viewerId}
-                  userId={viewerId}
-                  className="size-[22px] ring-2 ring-black/70"
-                  showStatusBadge={false}
-                />
-              ))}
-            </span>
-          )}
+          <span className="flex -space-x-2">
+            {shownViewerIds.map((viewerId) => (
+              <UserAvatar
+                key={viewerId}
+                userId={viewerId}
+                className="size-7 border border-rail"
+                showStatusBadge={false}
+              />
+            ))}
+          </span>
           {overflowViewerCount > 0 && (
-            <span className="tabular-nums text-white/80">
+            <span className="flex size-7 items-center justify-center rounded-full bg-raised text-[11px] font-medium tabular-nums text-foreground">
               +{overflowViewerCount}
             </span>
           )}
-          <EyeIcon aria-hidden="true" className="size-3.5" />
-          <span className="tabular-nums">{viewerCount}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent
