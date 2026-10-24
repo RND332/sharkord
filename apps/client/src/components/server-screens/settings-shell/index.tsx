@@ -232,7 +232,7 @@ const SettingsShell = memo(
 
     return (
       <SettingsFormContext.Provider value={formSlot}>
-        <div className="flex h-dvh flex-col bg-canvas text-foreground">
+        <div className="flex h-dvh flex-col select-none bg-canvas text-foreground">
           <div className="relative flex min-h-0 flex-1">
             {isDrawerOpen && (
               <div
