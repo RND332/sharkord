@@ -20,6 +20,10 @@ type TVoiceGridProps = {
 
 const OPTIMAL_CELL_ASPECT_RATIO = 1.5;
 
+// the focused tile shows a bigger avatar than the tiles of the grid, the
+// value is read by the participant card
+const FOCUSED_AVATAR_CLASS = '[--voice-avatar-size:160px]';
+
 const VoiceGrid = memo(
   ({ children, pinnedCardId, tileAspectRatio, className }: TVoiceGridProps) => {
     const [containerSize, setContainerSize] = useState<{
@@ -126,7 +130,9 @@ const VoiceGrid = memo(
           )}
         >
           <div className="relative min-h-0 flex-1">
-            {pinnedCard}
+            <div className={cn('size-full', FOCUSED_AVATAR_CLASS)}>
+              {pinnedCard}
+            </div>
             <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 z-2 pointer-events-none">
               <Tooltip
                 content={
@@ -215,6 +221,8 @@ const VoiceGrid = memo(
         ref={containerRef}
         className={cn(
           'grid size-full gap-3 bg-rail px-7 pt-12 pb-6',
+          // a lone participant is the focused tile of the stage
+          regularCards.length === 1 && FOCUSED_AVATAR_CLASS,
           className
         )}
         style={{
