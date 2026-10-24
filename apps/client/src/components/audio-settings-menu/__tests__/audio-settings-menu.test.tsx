@@ -54,7 +54,8 @@ describe('AudioSettingsMenu', () => {
   test('should use the panel chrome of the network stats popup', () => {
     const html = renderAudioSettingsMenu('microphone');
 
-    expect(html).toContain('w-[264px]');
+    // the popup keeps the width of the voice status block it opens above
+    expect(html).toContain('w-[236px]');
     expect(html).toContain('rounded-[10px]');
     expect(html).toContain('border border-line');
     expect(html).toContain('bg-panel');
