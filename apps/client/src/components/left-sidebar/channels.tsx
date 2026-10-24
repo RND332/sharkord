@@ -127,11 +127,6 @@ const Voice = memo(
             {channel.name}
           </span>
 
-          {users.length > 0 && (
-            <span className="text-xs leading-4 text-muted-foreground transition-opacity group-hover:opacity-0">
-              {users.length}
-            </span>
-          )}
           {unreadCount > 0 && (
             <UnreadCount
               count={unreadCount}
