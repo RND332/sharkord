@@ -263,7 +263,7 @@ const SettingsShell = memo(
             >
               <div className="pointer-events-none sticky top-0 z-50 h-0">
                 <div className="relative mx-auto w-full max-w-[1188px]">
-                  <div className="absolute top-0 right-5 left-5 flex items-center justify-between md:right-8 md:left-8 md:justify-end">
+                  <div className="absolute top-3 right-5 left-5 flex items-center justify-between md:right-8 md:left-8 md:justify-end">
                     <IconButton
                       icon={Bars3Icon}
                       variant="ghost"
