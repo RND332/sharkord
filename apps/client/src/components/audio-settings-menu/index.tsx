@@ -33,7 +33,11 @@ type TAudioSettingsMenuProps = {
   children: ReactNode;
 };
 
-const POPOVER_WIDTH = 264;
+// the popup keeps the width of the voice status block and opens 142px above
+// the bottom of the sidebar, so it grows over the channel list instead of the
+// voice status block or the user toolbar
+const POPOVER_WIDTH = 236;
+const POPOVER_BOTTOM_OFFSET = 142;
 
 const AudioSettingsMenu = memo(
   ({ kind, children }: TAudioSettingsMenuProps) => {
@@ -72,11 +76,15 @@ const AudioSettingsMenu = memo(
                 ?.closest(`[data-testid="${TestId.LEFT_SIDEBAR}"]`)
                 ?.getBoundingClientRect() ?? reference;
 
+            const bottom = sidebar.height
+              ? sidebar.bottom
+              : reference.bottom;
+
             return new DOMRect(
               sidebar.left + 8,
-              reference.top,
+              bottom - POPOVER_BOTTOM_OFFSET,
               POPOVER_WIDTH,
-              reference.height
+              0
             );
           },
           get contextElement() {
@@ -156,7 +164,7 @@ const AudioSettingsMenu = memo(
           onCloseAutoFocus={handleCloseAutoFocus}
           onInteractOutside={handleInteractOutside}
           aria-label={title}
-          className="w-[264px] max-h-(--available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
+          className="w-[236px] max-h-(--available-height) overflow-y-auto rounded-[10px] border border-line bg-panel p-1.5 text-[12px] text-foreground"
         >
           <div className="flex flex-col">
             <div className="flex h-10 shrink-0 items-center justify-between gap-2 p-2">

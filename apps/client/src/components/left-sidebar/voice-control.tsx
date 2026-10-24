@@ -153,7 +153,7 @@ const VoiceControl = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-[22px] shrink-0 rounded p-0 text-muted-foreground hover:bg-raised hover:text-foreground"
+            className="size-7 shrink-0 rounded-[6px] p-0 text-muted-foreground hover:bg-raised hover:text-foreground"
             onClick={handleDisconnect}
             title={t('disconnectVoice')}
           >
