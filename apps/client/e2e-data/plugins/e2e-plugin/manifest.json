@@ -1,0 +1,8 @@
+{
+  "id": "e2e-plugin",
+  "name": "E2E Plugin",
+  "author": "Dodecagon",
+  "description": "Renders into every slot the end to end tests assert on",
+  "sdkVersion": 3,
+  "version": "1.0.0"
+}
