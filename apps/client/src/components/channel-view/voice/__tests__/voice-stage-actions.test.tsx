@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 const renderVoiceStageActions = (
-  mode: 'expanded' | 'minified' | 'unpinned'
+  mode: 'expanded' | 'minified' | 'unpinned' | 'hidden'
 ) => {
   const result = Bun.spawnSync({
     cmd: ['bun', 'run', './voice-stage-actions.render.tsx', mode],
