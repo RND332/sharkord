@@ -1,6 +1,7 @@
 import {
   setServerBridge,
   THttpServiceError,
+  type THttpError,
   type TRequestContext,
   type TServerBridge
 } from '@dodecagon/shared';
@@ -26,6 +27,23 @@ type TRouteHandlerContext = {
 type TRouteHandler = (
   ctx: TRouteHandlerContext
 ) => Response | Promise<Response>;
+
+// the start server bundle ships its own copy of the shared package, so the
+// error thrown by the bun core is not an instance of the class of this copy
+class ForeignServiceError extends Error {
+  readonly error: THttpError;
+
+  constructor(error: THttpError) {
+    super('foreign');
+
+    this.name = 'THttpServiceError';
+    this.error = error;
+
+    Object.defineProperty(this, Symbol.for('dodecagon.httpServiceError'), {
+      value: true
+    });
+  }
+}
 
 type TRouteWithHandlers = {
   options?: { server?: { handlers?: Record<string, TRouteHandler> } };
@@ -236,6 +254,31 @@ describe('the start login route', () => {
 
     expect(response.status).toBe(400);
     expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(body.errors.identity).toBe('The identity is already taken');
+  });
+
+  test('answers the login field errors of another copy of the package', async () => {
+    setServerBridge(
+      createBridge({
+        authenticateUser: async () => {
+          throw new ForeignServiceError({
+            kind: 'field',
+            errors: [
+              { field: 'identity', message: 'The identity is already taken' }
+            ]
+          });
+        }
+      })
+    );
+
+    const response = await callPost(
+      LoginRoute,
+      'http://localhost/login',
+      JSON.stringify({ identity: 'demo', password: 'secret' })
+    );
+    const body = (await response.json()) as { errors: Record<string, string> };
+
+    expect(response.status).toBe(400);
     expect(body.errors.identity).toBe('The identity is already taken');
   });
 

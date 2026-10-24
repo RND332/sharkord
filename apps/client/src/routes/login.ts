@@ -1,6 +1,6 @@
 import {
   getServerBridge,
-  THttpServiceError,
+  isHttpServiceError,
   type TLoginInput
 } from '@dodecagon/shared';
 import { createFileRoute } from '@tanstack/react-router';
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/login')({
 
           return toJsonResponse({ success: true, token: result.token }, 200);
         } catch (error) {
-          if (error instanceof THttpServiceError) {
+          if (isHttpServiceError(error)) {
             return toErrorResponse({ ok: false, error: error.error });
           }
 

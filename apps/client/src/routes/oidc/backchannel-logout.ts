@@ -1,4 +1,4 @@
-import { getServerBridge, THttpServiceError } from '@dodecagon/shared';
+import { getServerBridge, isHttpServiceError } from '@dodecagon/shared';
 import { createFileRoute } from '@tanstack/react-router';
 import { toRequestContext } from '../-request';
 import { toErrorResponse, toInternalErrorResponse } from '../-response';
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/oidc/backchannel-logout')({
             headers: { 'Cache-Control': 'no-store' }
           });
         } catch (error) {
-          if (error instanceof THttpServiceError) {
+          if (isHttpServiceError(error)) {
             return toErrorResponse({ ok: false, error: error.error });
           }
 

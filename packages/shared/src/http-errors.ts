@@ -68,6 +68,12 @@ export const toHttpResponse = <TBody>(result: THttpResult<TBody>): Response => {
   );
 };
 
+// the start server bundle ships its own copy of this package, so the class of an
+// error thrown by the bun core is not the class the server routes know. a key from
+// the global symbol registry is the same in every copy of the package inside one
+// process, so both sides read and write one slot
+const HTTP_SERVICE_ERROR_KEY = Symbol.for('dodecagon.httpServiceError');
+
 // the services report failures as data, the bridge turns them into this error so the
 // caller can tell a field error from a rate limit from a broken server
 export class THttpServiceError extends Error {
@@ -78,5 +84,14 @@ export class THttpServiceError extends Error {
 
     this.name = 'THttpServiceError';
     this.error = error;
+
+    Object.defineProperty(this, HTTP_SERVICE_ERROR_KEY, { value: true });
   }
 }
+
+// a route cannot ask the error for its class, the class of another copy of the
+// package is another class. it asks for the brand instead
+export const isHttpServiceError = (
+  value: unknown
+): value is THttpServiceError =>
+  value instanceof Error && HTTP_SERVICE_ERROR_KEY in value;
