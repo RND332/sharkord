@@ -1,4 +1,4 @@
-// Renders the connect screen header and prints the markup. The test runs this in
+// Renders the connect screen and prints the markup. The test runs this in
 // its own process: bun keeps the first mock.module registration of a path for the
 // whole test run, so the mocks of the other test files would leak in.
 import connectEn from '@/i18n/locales/en/connect.json';

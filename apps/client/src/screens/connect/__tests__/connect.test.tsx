@@ -23,18 +23,6 @@ const renderConnect = () => {
 };
 
 describe('Connect', () => {
-  test('should show the app name in the header without a logo image', () => {
-    const html = renderConnect();
-    const header = html.slice(
-      html.indexOf('<header'),
-      html.indexOf('</header>')
-    );
-
-    expect(header).toContain('dodecagon');
-    expect(header).not.toContain('<img');
-    expect(html).not.toContain('mark.svg');
-  });
-
   test('should still show the logo of the server it connects to', () => {
     const html = renderConnect();
 

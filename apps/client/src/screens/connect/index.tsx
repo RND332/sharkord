@@ -1,4 +1,3 @@
-import { LanguageSwitcher } from '@/components/language-switcher';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { connect } from '@/features/server/actions';
 import { useInfo } from '@/features/server/hooks';
@@ -260,15 +259,6 @@ const Connect = memo(
 
     return (
       <div className="relative flex h-full flex-col items-center justify-center bg-canvas px-6 py-12">
-        <header className="absolute inset-x-0 top-0 flex h-16 items-center justify-between border-b border-line bg-rail px-7">
-          <span className="text-[17px] font-bold tracking-tight">
-            dodecagon
-          </span>
-          <LanguageSwitcher
-            variant="full"
-            className="h-8 w-auto border-0 bg-transparent text-muted-foreground"
-          />
-        </header>
         <Card className="w-full max-w-[430px] gap-0 bg-nav py-8">
           <CardHeader className="pb-5">
             <CardTitle className="flex flex-row items-center gap-3.5 text-left">
