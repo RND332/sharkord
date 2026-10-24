@@ -51,6 +51,7 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       maxWidth={MAX_WIDTH}
       defaultWidth={DEFAULT_WIDTH}
       edge="right"
+      hasBorder={false}
       className={cn('h-full bg-nav', className)}
       data-testid={TestId.LEFT_SIDEBAR}
     >
