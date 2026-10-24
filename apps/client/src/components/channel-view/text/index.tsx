@@ -261,7 +261,7 @@ const TextChannel = memo((props: TChannelProps) => {
                     className="flex h-9 items-center gap-[14px]"
                   >
                     <div className="h-px flex-1 bg-line" />
-                    <span className="text-xs leading-4 font-semibold uppercase text-[#a7abb2]">
+                    <span className="text-[11px] leading-4 font-medium uppercase tracking-[0.06em] text-muted-foreground">
                       {isToday(new Date(group.messages[0].createdAt))
                         ? t('today')
                         : format(new Date(group.messages[0].createdAt), 'PPP')}
