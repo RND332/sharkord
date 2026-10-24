@@ -1,4 +1,4 @@
-import { getServerBridge, THttpServiceError } from '@dodecagon/shared';
+import { getServerBridge, isHttpServiceError } from '@dodecagon/shared';
 import { createFileRoute } from '@tanstack/react-router';
 import { readJsonBody, toRequestContext } from '../-request';
 import {
@@ -45,7 +45,7 @@ export const Route = createFileRoute('/oidc/exchange')({
             headers
           );
         } catch (error) {
-          if (error instanceof THttpServiceError) {
+          if (isHttpServiceError(error)) {
             return toErrorResponse({ ok: false, error: error.error });
           }
 
