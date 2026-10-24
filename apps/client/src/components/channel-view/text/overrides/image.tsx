@@ -1,7 +1,6 @@
 import { FullScreenImage } from '@/components/fullscreen-image/content';
 import { memo, useCallback, useState } from 'react';
 import { OverrideLayout } from './layout';
-import { LinkOverride } from './link';
 
 type TImageOverrideProps = {
   src: string;
@@ -37,8 +36,6 @@ const ImageOverride = memo(({ src, alt }: TImageOverrideProps) => {
         style={{ opacity: 0 }}
         crossOrigin="anonymous"
       />
-
-      <LinkOverride link={src} label="Open in new tab" />
     </OverrideLayout>
   );
 });
