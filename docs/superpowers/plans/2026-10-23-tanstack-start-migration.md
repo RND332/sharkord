@@ -48,7 +48,7 @@
   - `packages/shared`: `TServerBridge`, `setServerBridge(value: TServerBridge): void`, `getServerBridge(): TServerBridge`, `THttpFieldError`, `THttpError`, `toHttpResponse(result: TServiceResult): Response`.
   - `apps/server`: `installServerBridge(): void`, `getServerInfoService(): Promise<TServerInfo>`, `authenticateUserService(input: TLoginInput): Promise<TLoginResult>`, `createOidcLoginService(): Promise<TOidcLoginResult>`, `consumeOidcCallbackService(input: TOidcCallbackInput): Promise<TOidcCallbackResult>`, `consumeOidcHandoffService(code: string): Promise<string>`, `verifyBackchannelLogoutService(token: string): Promise<TOidcLogoutResult>`, `listPluginComponentIdsService(): Promise<string[]>`.
 
-- [ ] **Step 1: Описать таксономию ошибок в общем пакете**
+- [x] **Step 1: Описать таксономию ошибок в общем пакете**
 
 Создать `packages/shared/src/http-errors.ts`:
 
@@ -114,7 +114,7 @@ export const toHttpResponse = <TBody>(result: THttpResult<TBody>): Response => {
 };
 ```
 
-- [ ] **Step 2: Описать интерфейс моста**
+- [x] **Step 2: Описать интерфейс моста**
 
 Создать `packages/shared/src/server-bridge.ts`:
 
@@ -178,7 +178,7 @@ export const getServerBridge = (): TServerBridge => {
 
 Добавить оба файла в экспорт `packages/shared/src/index.ts`.
 
-- [ ] **Step 3: Вынести сервисные функции сервера**
+- [x] **Step 3: Вынести сервисные функции сервера**
 
 Каждая сервисная функция возвращает данные, а не пишет в ответ. Форма результата общая:
 
@@ -270,7 +270,7 @@ export const authenticateUserService = async (
 `apps/server/src/http/oidc/{login,callback,exchange,backchannel-logout}.ts` без записи в `res`
 и без чтения заголовков запроса: всё, что нужно, передаётся параметрами.
 
-- [ ] **Step 4: Написать тест сервисного слоя**
+- [x] **Step 4: Написать тест сервисного слоя**
 
 Создать `apps/server/src/helpers/__tests__/server-bridge.test.ts`:
 
@@ -294,7 +294,7 @@ describe('the server bridge', () => {
 });
 ```
 
-- [ ] **Step 5: Реализовать установку моста**
+- [x] **Step 5: Реализовать установку моста**
 
 Создать `apps/server/src/helpers/server-bridge.ts`:
 
@@ -325,7 +325,7 @@ export const installServerBridge = () => {
 
 В `apps/server/src/index.ts` вызвать `installServerBridge()` между `await pluginManager.init();` и `await createServers();`. Порядок загрузки импортов сверху файла не трогать.
 
-- [ ] **Step 6: Прогнать проверки и закоммитить**
+- [x] **Step 6: Прогнать проверки и закоммитить**
 
 Run: `cd apps/server && bun test src/helpers/__tests__/server-bridge.test.ts`
 Expected: PASS, 2 теста.
@@ -359,7 +359,7 @@ git commit -m "refactor: add the server bridge and the shared service functions"
   - `apps/server/src/helpers/start-server.ts`: `getStartHandler(): Promise<((request: Request) => Promise<Response>) | null>`, `closeStartServer(): Promise<void>`.
   - `apps/server/src/http/web-adapter.ts`: `toWebRequest(req: http.IncomingMessage, url: URL): Request`, `sendWebResponse(res: http.ServerResponse, response: Response): Promise<void>`.
 
-- [ ] **Step 1: Написать тест адаптера**
+- [x] **Step 1: Написать тест адаптера**
 
 Создать `apps/server/src/http/__tests__/web-adapter.test.ts`:
 
@@ -413,7 +413,7 @@ describe('the web adapter', () => {
 });
 ```
 
-- [ ] **Step 2: Реализовать адаптер**
+- [x] **Step 2: Реализовать адаптер**
 
 Создать `apps/server/src/http/web-adapter.ts`:
 
@@ -492,7 +492,7 @@ const sendWebResponse = async (
 export { sendWebResponse, toWebRequest };
 ```
 
-- [ ] **Step 3: Упаковать Start-бандл в релиз**
+- [x] **Step 3: Упаковать Start-бандл в релиз**
 
 В `apps/server/build/build.ts` рядом с созданием `interface.zip` добавить создание `server.zip` из `apps/client/dist/server`:
 
@@ -507,7 +507,7 @@ await zipDirectory(serverBundlePath, serverZipPath);
 
 В `apps/server/build/helpers.ts` в массив `entryPoints` добавить `path.join(serverCwd, 'build', 'temp', 'server.zip')`.
 
-- [ ] **Step 4: Распаковывать и поднимать Start-сервер**
+- [x] **Step 4: Распаковывать и поднимать Start-сервер**
 
 В `apps/server/src/helpers/paths.ts` добавить `SERVER_BUNDLE_PATH` рядом с `INTERFACE_PATH`, по тому же образцу: `path.resolve(DATA_PATH, 'server-bundle', SERVER_VERSION)`.
 
@@ -548,7 +548,7 @@ const getStartHandler = async (): Promise<TStartHandler | null> => {
 export { getStartHandler };
 ```
 
-- [ ] **Step 5: Прогнать проверки и закоммитить**
+- [x] **Step 5: Прогнать проверки и закоммитить**
 
 Run: `cd apps/server && bun test src/http/__tests__/web-adapter.test.ts`
 Expected: PASS, 2 теста.
@@ -575,7 +575,7 @@ Bun-сервер перестаёт быть единственным источ
 - Consumes: `getStartHandler()` из `apps/server/src/helpers/start-server.ts`, `toWebRequest` и `sendWebResponse` из `apps/server/src/http/web-adapter.ts`.
 - Produces: `apps/server/src/http/index.ts`: `START_PATHS: ReadonlySet<string>`, `isStartPath(pathname: string): boolean`.
 
-- [ ] **Step 1: Написать тест выбора пути**
+- [x] **Step 1: Написать тест выбора пути**
 
 Создать `apps/server/src/http/__tests__/dispatch.test.ts`:
 
@@ -601,7 +601,7 @@ describe('the path dispatch', () => {
 });
 ```
 
-- [ ] **Step 2: Описать множество путей Start**
+- [x] **Step 2: Описать множество путей Start**
 
 В `apps/server/src/http/index.ts` добавить:
 
@@ -625,7 +625,7 @@ const START_PATHS = new Set([
 const isStartPath = (pathname: string) => START_PATHS.has(pathname);
 ```
 
-- [ ] **Step 3: Делегировать Start-пути в обработчик**
+- [x] **Step 3: Делегировать Start-пути в обработчик**
 
 В обработчике запроса `apps/server/src/http/index.ts` поставить проверку до таблицы точных маршрутов:
 
@@ -647,7 +647,7 @@ if (startHandler && isStartPath(url.pathname)) {
 не сработает: API-пути останутся за Bun-хендлерами. Это и есть режим разработки из
 раздела 4.8 спеки, отдельного кода для него не нужно.
 
-- [ ] **Step 4: Прогнать проверки и закоммитить**
+- [x] **Step 4: Прогнать проверки и закоммитить**
 
 Run: `cd apps/server && bun test src/http/__tests__/dispatch.test.ts`
 Expected: PASS, 2 теста.
@@ -677,7 +677,7 @@ git commit -m "feat: route the interface and the api paths through the start ser
 - Consumes: `getServerBridge()` из `@dodecagon/shared`, `toHttpResponse` из `@dodecagon/shared`.
 - Produces: HTTP-ответы, совпадающие с текущими хендлерами `apps/server/src/http/{info,manifest,healthz,plugins-components}.ts`.
 
-- [ ] **Step 1: Написать тест server routes**
+- [x] **Step 1: Написать тест server routes**
 
 Создать `apps/client/src/routes/__tests__/server-routes.test.ts`:
 
@@ -757,7 +757,7 @@ describe('the start server routes', () => {
 });
 ```
 
-- [ ] **Step 2: Реализовать роут информации**
+- [x] **Step 2: Реализовать роут информации**
 
 Создать `apps/client/src/routes/info.ts`:
 
@@ -779,7 +779,7 @@ export const Route = createFileRoute('/info')({
 });
 ```
 
-- [ ] **Step 3: Реализовать остальные три роута**
+- [x] **Step 3: Реализовать остальные три роута**
 
 `apps/client/src/routes/healthz.ts` отвечает `Response.json({ status: 'ok', timestamp: Date.now() })` без обращения к мосту.
 
@@ -787,7 +787,7 @@ export const Route = createFileRoute('/info')({
 
 `apps/client/src/routes/plugin-components.ts` возвращает массив идентификаторов из `bridge.listPluginComponentIds()`.
 
-- [ ] **Step 4: Проверить, что пути не попали в клиентский бандл**
+- [x] **Step 4: Проверить, что пути не попали в клиентский бандл**
 
 Run: `cd apps/client && bun run build`
 Expected: сборка проходит, в `dist/client` нет строки `createFileRoute('/info')`, а в `dist/server` есть.
@@ -796,7 +796,7 @@ Expected: сборка проходит, в `dist/client` нет строки `c
 grep -rl "server-bridge" apps/client/dist/client || echo "клиентский бандл чист"
 ```
 
-- [ ] **Step 5: Прогнать проверки и закоммитить**
+- [x] **Step 5: Прогнать проверки и закоммитить**
 
 Run: `cd apps/client && bun test src/routes/__tests__/server-routes.test.ts`
 Expected: PASS, 2 теста.
@@ -827,7 +827,7 @@ git commit -m "feat: serve the server info and the manifest from the start serve
 - Consumes: `getServerBridge()`, `toHttpResponse`.
 - Produces: те же ответы, что у `apps/server/src/http/login.ts` и `apps/server/src/http/oidc/*`.
 
-- [ ] **Step 1: Завести тип ошибки поля в общем пакете**
+- [x] **Step 1: Завести тип ошибки поля в общем пакете**
 
 В `packages/shared/src/http-errors.ts` добавить класс:
 
@@ -844,7 +844,7 @@ export class TLoginFieldError extends Error {
 
 В `toHttpResponse` добавить ветку: если ошибка это `TLoginFieldError`, ответ `400` с телом `{ errors: { [field]: message } }`.
 
-- [ ] **Step 2: Написать тесты логина**
+- [x] **Step 2: Написать тесты логина**
 
 Дополнить `apps/client/src/routes/__tests__/server-routes.test.ts` тестом, который проверяет тело ошибки валидации:
 
@@ -881,7 +881,7 @@ test('answers the login field errors', async () => {
 });
 ```
 
-- [ ] **Step 3: Реализовать роут логина**
+- [x] **Step 3: Реализовать роут логина**
 
 Создать `apps/client/src/routes/login.ts`:
 
@@ -909,7 +909,7 @@ export const Route = createFileRoute('/login')({
 });
 ```
 
-- [ ] **Step 4: Реализовать OIDC-роуты**
+- [x] **Step 4: Реализовать OIDC-роуты**
 
 `apps/client/src/routes/oidc/login.ts` вызывает `bridge.createOidcLogin()` и отдаёт `Response` со статусом 302, заголовком `Location` и `Set-Cookie` из результата.
 
@@ -919,7 +919,7 @@ export const Route = createFileRoute('/login')({
 
 `apps/client/src/routes/oidc/backchannel-logout.ts` читает форму `logout_token`, вызывает `bridge.verifyBackchannelLogout(token)` и отдаёт пустой ответ 200 с `Cache-Control: no-store`.
 
-- [ ] **Step 5: Прогнать проверки и закоммитить**
+- [x] **Step 5: Прогнать проверки и закоммитить**
 
 Run: `cd apps/client && bun test src/routes/__tests__/server-routes.test.ts`
 Expected: PASS, 3 теста.
@@ -949,7 +949,7 @@ git commit -m "feat: serve the login and the oidc flow from the start server"
 - Consumes: `getServerBridge()`.
 - Produces: `getServerInfo(): Promise<TServerInfo>`, `getPluginComponentIds(): Promise<string[]>`.
 
-- [ ] **Step 1: Написать тест server function**
+- [x] **Step 1: Написать тест server function**
 
 Создать `apps/client/src/features/server/__tests__/server-functions.test.ts`:
 
@@ -985,7 +985,7 @@ describe('the server functions', () => {
 });
 ```
 
-- [ ] **Step 2: Создать server functions**
+- [x] **Step 2: Создать server functions**
 
 Создать `apps/client/src/features/server/server-functions.ts`:
 
@@ -1011,13 +1011,13 @@ export const getPluginComponentIds = createServerFn({ method: 'GET' }).handler(
 );
 ```
 
-- [ ] **Step 3: Перевести клиентов на server functions**
+- [x] **Step 3: Перевести клиентов на server functions**
 
 В `apps/client/src/features/app/actions.ts` функция `fetchServerInfo` становится вызовом `getServerInfo()` вместо `fetch`.
 
 В `apps/client/src/components/plugins-controller/index.tsx` вызов `GET /plugin-components` заменяется на `getPluginComponentIds()`. Сохранить порядок: список компонентов плагинов должен разрешиться до подключения к tRPC, потому что слоты плагинов могут рисоваться на экране входа.
 
-- [ ] **Step 4: Добавить загрузчик экрана подключения**
+- [x] **Step 4: Добавить загрузчик экрана подключения**
 
 Создать `apps/client/src/routes/connect.tsx` с загрузчиком, который приносит данные сервера и параметры запроса:
 
@@ -1037,7 +1037,7 @@ export const Route = createFileRoute('/connect')({
 
 Компонент `ConnectRoute` подключает экран из `apps/client/src/screens/connect/index.tsx` и передаёт ему данные загрузчика вместо чтения стора.
 
-- [ ] **Step 5: Прогнать проверки и закоммитить**
+- [x] **Step 5: Прогнать проверки и закоммитить**
 
 Run: `cd apps/client && bun test src/features/server/__tests__/server-functions.test.ts`
 Expected: PASS, 1 тест.
@@ -1067,7 +1067,7 @@ git commit -m "feat: add the server functions and the connect loader"
 - Consumes: существующие редьюсеры слайсов.
 - Produces: `IStore` с методами `getState`, `dispatch`, `subscribe`, `setState`; `createStore(initialState: IRootState): IStore`; `useStore(): IStore`; `StoreProvider`.
 
-- [ ] **Step 1: Написать тест изоляции экземпляров**
+- [x] **Step 1: Написать тест изоляции экземпляров**
 
 Создать `apps/client/src/features/__tests__/store.test.ts`:
 
@@ -1101,7 +1101,7 @@ describe('the store', () => {
 });
 ```
 
-- [ ] **Step 2: Вынести фабрику стора**
+- [x] **Step 2: Вынести фабрику стора**
 
 В `apps/client/src/features/store.ts` заменить модульный синглтон на фабрику, сохранив клиентский синглтон для кода вне React:
 
@@ -1155,7 +1155,7 @@ export const store = createStore();
 
 `setStoreState` оставить как обёртку над `store.setState`, чтобы тесты рендера продолжили работать.
 
-- [ ] **Step 3: Добавить контекст стора**
+- [x] **Step 3: Добавить контекст стора**
 
 Создать `apps/client/src/features/store-context.tsx`:
 
@@ -1182,7 +1182,7 @@ export const StoreProvider = ({
 export const useStore = (): IStore => useContext(StoreContext);
 ```
 
-- [ ] **Step 4: Перевести селектор на контекст**
+- [x] **Step 4: Перевести селектор на контекст**
 
 В `apps/client/src/features/store.ts` функция `useStoreSelector` берёт стор из `useStore()` и подписывается на него:
 
@@ -1221,7 +1221,7 @@ export const useStoreSelector = <T>(selector: (state: IRootState) => T): T => {
 };
 ```
 
-- [ ] **Step 5: Убрать чтения localStorage из initialState**
+- [x] **Step 5: Убрать чтения localStorage из initialState**
 
 В `apps/client/src/features/app/slice.ts` и `apps/client/src/features/server/slice.ts` все вызовы `getLocalStorageItemBool`, `getLocalStorageItemAsJSON` и `getLocalStorageItemAsNumber` из `initialState` убрать: на сервере эти значения всё равно недоступны, а первый рендер должен совпадать на сервере и на клиенте.
 
@@ -1245,7 +1245,7 @@ export const hydrateAppFromStorage = () => {
 
 Действие вызывается один раз в корневом роуте через `useEffect`.
 
-- [ ] **Step 6: Прогнать проверки и закоммитить**
+- [x] **Step 6: Прогнать проверки и закоммитить**
 
 Run: `cd apps/client && bun test src/features/__tests__/store.test.ts`
 Expected: PASS, 2 теста.
@@ -1279,7 +1279,7 @@ git commit -m "refactor: give the store an instance per request"
 - Consumes: `i18next`, `react-i18next`.
 - Produces: `createI18n(language: SupportedLanguage): i18n`, `useRenderClock(): () => number`, `RenderClockProvider`.
 
-- [ ] **Step 1: Написать тест языка**
+- [x] **Step 1: Написать тест языка**
 
 Создать `apps/client/src/i18n/__tests__/i18n.test.ts`:
 
@@ -1308,7 +1308,7 @@ describe('the i18n factory', () => {
 });
 ```
 
-- [ ] **Step 2: Вынести фабрику i18n**
+- [x] **Step 2: Вынести фабрику i18n**
 
 В `apps/client/src/i18n/index.ts` текущую инициализацию превратить в функцию, а клиентский синглтон оставить:
 
@@ -1353,7 +1353,7 @@ export const i18n = createI18n(initialLanguage);
 
 Событие `languageChanged` с записью в localStorage навесить только на клиентский синглтон, иначе серверный экземпляр начнёт писать в localStorage при каждом запросе.
 
-- [ ] **Step 3: Зафиксировать время рендера**
+- [x] **Step 3: Зафиксировать время рендера**
 
 Создать `apps/client/src/helpers/render-clock.ts`:
 
@@ -1385,7 +1385,7 @@ export const useRenderClock = () => {
 
 В `apps/client/src/components/relative-time/index.tsx` и `apps/client/src/components/reconnecting-overlay/use-countdown-seconds.ts` заменить `new Date()` и `Date.now()` на `useRenderClock()`.
 
-- [ ] **Step 4: Прогнать проверки и закоммитить**
+- [x] **Step 4: Прогнать проверки и закоммитить**
 
 Run: `cd apps/client && bun test src/i18n/__tests__/i18n.test.ts`
 Expected: PASS, 2 теста.
@@ -1424,7 +1424,7 @@ git commit -m "refactor: resolve the language and the clock per request"
 - Consumes: `renderToStaticMarkup` из `react-dom/server`.
 - Produces: `renderOnServer(element: ReactElement): string`, тестовая обёртка, которая импортирует дерево приложения в окружении без `window`.
 
-- [ ] **Step 1: Написать тест серверного рендера**
+- [x] **Step 1: Написать тест серверного рендера**
 
 Создать `apps/client/src/test-utils/ssr-render.tsx`:
 
@@ -1452,7 +1452,7 @@ describe('the server render', () => {
 });
 ```
 
-- [ ] **Step 2: Закрыть модульные обращения к браузеру**
+- [x] **Step 2: Закрыть модульные обращения к браузеру**
 
 В `apps/client/src/helpers/voice-debug.ts` строки 319, 323 и 327 обернуть в проверку:
 
@@ -1466,7 +1466,7 @@ if (typeof window !== 'undefined') {
 
 Так же поступить в `apps/client/src/lib/trpc.ts:37`, `apps/client/src/features/server/actions.ts:298` и `:310`, `apps/client/src/helpers/exposes.ts` и `apps/client/src/features/server/plugins/plugin-store.ts:86`.
 
-- [ ] **Step 3: Починить полноэкранное изображение**
+- [x] **Step 3: Починить полноэкранное изображение**
 
 В `apps/client/src/components/fullscreen-image/content.tsx` убрать обращение к `document` из модульной области и найти корень портала в компоненте:
 
@@ -1478,7 +1478,7 @@ useEffect(() => {
 }, []);
 ```
 
-- [ ] **Step 4: Починить отладочный вывод**
+- [x] **Step 4: Починить отладочный вывод**
 
 В `apps/client/src/helpers/is-debug.ts` строка 8 читает `window.DEBUG`. Заменить на безопасную проверку, а `apps/client/src/components/debug/store-debug.tsx` вызывает `logDebug` только когда отладка включена:
 
@@ -1488,19 +1488,19 @@ if (!isDebugEnabled()) {
 }
 ```
 
-- [ ] **Step 5: Починить порталы во время рендера**
+- [x] **Step 5: Починить порталы во время рендера**
 
 В `apps/client/src/components/left-sidebar/sidebar-dnd.tsx:110` и `apps/client/src/components/server-screens/user-settings/others/themes.tsx:76` `createPortal(..., document.body)` вызывается во время рендера. Обернуть в `<ClientOnly>` из `@tanstack/react-router`, чтобы на сервере рендерился пустой узел.
 
 В `apps/client/src/components/server-screens/index.tsx:38` `document.getElementById('portal')` перенести в `useEffect` с состоянием.
 
-- [ ] **Step 6: Починить экран подключения**
+- [x] **Step 6: Починить экран подключения**
 
 В `apps/client/src/screens/connect/index.tsx:103` `window.location.search` заменить на данные загрузчика роута, в `:309` `window.isSecureContext` заменить на признак из загрузчика.
 
 В `apps/client/src/screens/connect/hooks/use-oidc-login.ts:21-23` чтение `window.location.hash` заменить на данные загрузчика.
 
-- [ ] **Step 7: Прогнать проверки и закоммитить**
+- [x] **Step 7: Прогнать проверки и закоммитить**
 
 Run: `cd apps/client && bun test src/test-utils/__tests__/ssr-render.test.ts`
 Expected: PASS.
@@ -1533,7 +1533,7 @@ git commit -m "refactor: guard the browser apis so the client renders on the ser
 - Consumes: `useStore`, `createRouter` из `@tanstack/react-router`, `ClientOnly` из `@tanstack/react-router`.
 - Produces: роуты `/`, `/connect`, `/app`, `/disconnected`.
 
-- [ ] **Step 1: Написать тест маршрутов**
+- [x] **Step 1: Написать тест маршрутов**
 
 Создать `apps/client/src/routes/__tests__/routes.test.ts`:
 
@@ -1552,7 +1552,7 @@ describe('the routes', () => {
 });
 ```
 
-- [ ] **Step 2: Развести экраны по роутам**
+- [x] **Step 2: Развести экраны по роутам**
 
 Создать `apps/client/src/routes/app.tsx`:
 
@@ -1584,7 +1584,7 @@ export const Route = createFileRoute('/')({
 });
 ```
 
-- [ ] **Step 3: Перевести переключатель экранов на навигацию**
+- [x] **Step 3: Перевести переключатель экранов на навигацию**
 
 `apps/client/src/components/routing/index.tsx` больше не переключает экраны сам. Он наблюдает состояние стора и вызывает навигацию роутера:
 
@@ -1600,11 +1600,11 @@ useEffect(() => {
 
 Убрать рендер экранов из этого компонента, оставив в нём только заголовок документа и авторедирект OIDC.
 
-- [ ] **Step 4: Обвязать корневой роут провайдерами**
+- [x] **Step 4: Обвязать корневой роут провайдерами**
 
 В `apps/client/src/routes/__root.tsx` обернуть содержимое в `StoreProvider` и `I18nextProvider` из `react-i18next`, чтобы серверный экземпляр стора и языка доходил до всех экранов.
 
-- [ ] **Step 5: Прогнать проверки и закоммитить**
+- [x] **Step 5: Прогнать проверки и закоммитить**
 
 Сначала перегенерировать дерево роутов, иначе тест увидит старый файл:
 
@@ -1637,7 +1637,7 @@ git commit -m "refactor: route the screens through the tanstack router"
 - Consumes: собранный `apps/client/dist/server/server.js`.
 - Produces: гейт в CI, который поднимает prod-подобный сервер и проверяет API.
 
-- [ ] **Step 1: Написать тест prod-подобного сервера**
+- [x] **Step 1: Написать тест prod-подобного сервера**
 
 Создать `apps/server/src/__tests__/start-server.test.ts`:
 
@@ -1668,7 +1668,7 @@ describe('the start server bundle', () => {
 });
 ```
 
-- [ ] **Step 2: Добавить гейт в CI**
+- [x] **Step 2: Добавить гейт в CI**
 
 В `.github/workflows/ci.yml` в джоб `Build & Test` после шага `Build` добавить шаг, который поднимает собранный сервер и проверяет API:
 
@@ -1682,7 +1682,7 @@ describe('the start server bundle', () => {
         run: bun test src/__tests__/start-server.test.ts
 ```
 
-- [ ] **Step 3: Прогнать полный набор проверок**
+- [x] **Step 3: Прогнать полный набор проверок**
 
 Run: `bun run format:check`
 Expected: exit 0.
@@ -1699,12 +1699,12 @@ Expected: exit 0.
 Run: `cd apps/client && bun run test:visual`
 Expected: падения только в местах, где менялась разметка; эталоны в этом PR не обновлять.
 
-- [ ] **Step 4: Проверить diff на посторонние изменения**
+- [x] **Step 4: Проверить diff на посторонние изменения**
 
 Run: `git diff origin/master --stat`
 Expected: в изменённых файлах нет `apps/client/src/visual-tests/__screenshots__/`.
 
-- [ ] **Step 5: Закоммитить и открыть PR**
+- [x] **Step 5: Закоммитить и открыть PR**
 
 ```bash
 git add .github/workflows/ci.yml apps/server/src/__tests__ apps/client/src/visual-tests
