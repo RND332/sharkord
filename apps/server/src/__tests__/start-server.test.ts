@@ -55,9 +55,7 @@ const listBundleFiles = async (): Promise<string[]> => {
 describe('the start server bundle', () => {
   test('answers the health check through the fetch handler', async () => {
     const entry = await loadBundle();
-    const response = await entry.fetch(
-      new Request('http://localhost/healthz')
-    );
+    const response = await entry.fetch(new Request('http://localhost/healthz'));
 
     expect(response.status).toBe(200);
 
