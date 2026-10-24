@@ -1,5 +1,5 @@
 import { TestId } from '@dodecagon/shared';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test.describe('Auto Login', () => {
   test('should display the auto-login switch on the connect screen', async ({
@@ -101,11 +101,13 @@ test.describe('Auto Login', () => {
     const connectButton = page.getByTestId(TestId.CONNECT_BUTTON);
     await expect(connectButton).toBeVisible({ timeout: 10_000 });
 
-    // auto-login state should be cleared after failure
-    const autoLoginEnabled = await page.evaluate(() =>
-      localStorage.getItem('dodecagon-auto-login')
-    );
-    expect(autoLoginEnabled).toBe('false');
+    // the screen of the server is already there, the attempt of the auto login
+    // happens after the hydration, so the flag has to be waited for
+    await expect
+      .poll(() =>
+        page.evaluate(() => localStorage.getItem('dodecagon-auto-login'))
+      )
+      .toBe('false');
 
     const savedToken = await page.evaluate(() =>
       localStorage.getItem('dodecagon-auto-login-token')

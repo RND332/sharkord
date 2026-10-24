@@ -21,5 +21,8 @@ test('server-rendered document hydrates without React recoverable errors', async
   await page.goto('/');
   await expect(page.locator('#portal')).toBeAttached();
   await expect(page.locator('body')).not.toBeEmpty();
+  // the marker of the root route shows that the browser took over the html of
+  // the server, only then the errors of the hydration are complete
+  await expect(page.locator('html[data-hydrated="true"]')).toBeAttached();
   expect(hydrationErrors).toEqual([]);
 });

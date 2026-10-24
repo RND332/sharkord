@@ -53,3 +53,9 @@ jobs:
       - name: Build
         working-directory: apps/server
         run: bun run build
+
+      # the start server travels inside the binary and is imported from the data
+      # directory, so the built bundle has to work on its own
+      - name: Check the start server bundle
+        working-directory: apps/server
+        run: bun test src/__tests__/start-server.test.ts

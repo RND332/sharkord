@@ -14,6 +14,7 @@ import {
   setSessionStorageItem
 } from '@/helpers/storage';
 import { useForm } from '@/hooks/use-form';
+import { useStrictEffect } from '@/hooks/use-strict-effect';
 import { PluginSlot, TestId, type TServerInfo } from '@dodecagon/shared';
 import {
   Alert,
@@ -69,15 +70,26 @@ const Connect = memo(
     isSecureContext?: boolean;
   }) => {
     const { t } = useTranslation('connect');
+    // the storage of the browser cannot be read while the server renders the
+    // screen, so the form starts empty and takes the saved values after the
+    // hydration. otherwise the html of the server and the browser would differ
     const { values, r, setErrors, onChange } = useForm<{
       identity: string;
       password: string;
       autoLogin: boolean;
     }>({
-      identity: getLocalStorageItem(LocalStorageKey.IDENTITY) || '',
+      identity: '',
       password: '',
-      autoLogin: getLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN)
+      autoLogin: false
     });
+
+    useStrictEffect(() => {
+      onChange('identity', getLocalStorageItem(LocalStorageKey.IDENTITY) || '');
+      onChange(
+        'autoLogin',
+        getLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN)
+      );
+    }, [onChange]);
 
     const [loading, setLoading] = useState(false);
     const [passwordVisible, setPasswordVisible] = useState(false);
