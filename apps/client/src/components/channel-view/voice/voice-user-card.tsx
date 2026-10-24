@@ -61,6 +61,15 @@ const TILE_OUTLINE_CLASSES = [
 ];
 const AVATAR_OUTLINE_CLASSES = ['border-2', 'border-[3px]', 'border-[4px]'];
 
+// the focused tile doubles the avatar of the participant, the tiles of the
+// grid keep the paper size and the thumbnails of the strip stay compact
+const GRID_AVATAR_CLASS =
+  'size-[var(--voice-avatar-size,80px)] [&_[data-slot=avatar-fallback]]:text-[length:calc(var(--voice-avatar-size,80px)_*_0.4)]';
+const PINNED_AVATAR_CLASS =
+  'size-[var(--voice-avatar-size,128px)] [&_[data-slot=avatar-fallback]]:text-[length:calc(var(--voice-avatar-size,128px)_*_0.4)]';
+const COMPACT_AVATAR_CLASS =
+  'size-[72px] [&_[data-slot=avatar-fallback]]:text-2xl';
+
 const getOutlineClass = (classes: string[], intensity: number) =>
   classes[Math.min(Math.max(intensity, 1), classes.length) - 1];
 
@@ -112,11 +121,9 @@ const VoiceUserCard = memo(
       !devices.voiceOnlyMode && hasVideoStream && !webcamHidden;
     const showQualityControl =
       !isOwnUser && webRtcSimulcastEnabled && showWebcamVideo;
-    let avatarClass = 'size-20 [&_[data-slot=avatar-fallback]]:text-[32px]';
-    if (isPinned)
-      avatarClass = 'size-32 [&_[data-slot=avatar-fallback]]:text-4xl';
-    else if (isCompact)
-      avatarClass = 'size-16 [&_[data-slot=avatar-fallback]]:text-xl';
+    let avatarClass = GRID_AVATAR_CLASS;
+    if (isPinned) avatarClass = PINNED_AVATAR_CLASS;
+    else if (isCompact) avatarClass = COMPACT_AVATAR_CLASS;
 
     const handlePinToggle = useCallback(() => {
       if (isPinned) {

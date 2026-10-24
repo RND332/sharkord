@@ -1,53 +1,34 @@
 import { cn } from '@/lib/utils';
-import { Tooltip } from '@dodecagon/ui';
-import { ChevronDownIcon, UsersIcon } from '@heroicons/react/24/outline';
-import {
-  isValidElement,
-  memo,
-  useCallback,
-  useMemo,
-  useState,
-  type ReactNode
-} from 'react';
-import { useTranslation } from 'react-i18next';
+import { isValidElement, memo, useMemo, type ReactNode } from 'react';
+import { useContainerSize } from './hooks/use-container-size';
 
 type TVoiceGridProps = {
   children: ReactNode[];
   pinnedCardId?: string;
   tileAspectRatio?: number;
+  participantsHidden?: boolean;
   className?: string;
 };
 
 const OPTIMAL_CELL_ASPECT_RATIO = 1.5;
 
+// the focused tile shows a bigger avatar than the tiles of the grid, the
+// value is read by the participant card
+const FOCUSED_AVATAR_CLASS = '[--voice-avatar-size:160px]';
+
+// the focused tile keeps a margin around it, so it never touches the edges
+// of the stage
+const FOCUSED_TILE_MARGIN = 32;
+
 const VoiceGrid = memo(
-  ({ children, pinnedCardId, tileAspectRatio, className }: TVoiceGridProps) => {
-    const [containerSize, setContainerSize] = useState<{
-      width: number;
-      height: number;
-    } | null>(null);
-    const [hideParticipants, setHideParticipants] = useState(false);
-    const { t } = useTranslation();
-
-    const handleToggleParticipants = useCallback(() => {
-      setHideParticipants((hidden) => !hidden);
-    }, []);
-
-    const containerRef = useCallback((element: HTMLDivElement | null) => {
-      if (!element) return;
-
-      const updateSize = () => {
-        const rect = element.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
-      };
-
-      updateSize();
-
-      const resizeObserver = new ResizeObserver(updateSize);
-      resizeObserver.observe(element);
-
-      return () => resizeObserver.disconnect();
-    }, []);
+  ({
+    children,
+    pinnedCardId,
+    tileAspectRatio,
+    participantsHidden = false,
+    className
+  }: TVoiceGridProps) => {
+    const { containerRef, containerSize } = useContainerSize();
 
     const calculateOptimalGrid = (
       totalCards: number,
@@ -116,65 +97,61 @@ const VoiceGrid = memo(
       return { pinnedCard: null, regularCards: childArray };
     }, [children, pinnedCardId]);
 
-    if (pinnedCardId && pinnedCard) {
+    // a pinned card and a lone participant share the focused stage: the tile
+    // keeps its shape in the middle of the stage and the other participants
+    // stay below it
+    let focusedCard = pinnedCard;
+    const stripCards = pinnedCard ? regularCards : [];
+    if (!focusedCard && regularCards.length === 1) {
+      focusedCard = regularCards[0];
+    }
+
+    if (focusedCard) {
+      const ratio = tileAspectRatio ?? 16 / 9;
+      const focusedWidth = containerSize
+        ? Math.max(
+            0,
+            Math.min(
+              containerSize.width - FOCUSED_TILE_MARGIN * 2,
+              (containerSize.height - FOCUSED_TILE_MARGIN * 2) * ratio
+            )
+          )
+        : undefined;
+      const focusedHeight =
+        focusedWidth !== undefined ? focusedWidth / ratio : undefined;
+
       return (
         <div
           className={cn(
-            // the top band keeps the stage actions clear of the pinned card
+            // the top band keeps the stage actions clear of the focused tile
             'flex h-full flex-col gap-3 bg-rail px-7 pt-12 pb-3',
             className
           )}
         >
-          <div className="relative min-h-0 flex-1">
-            {pinnedCard}
-            <div className="flex w-full justify-center absolute bottom-0 left-0 right-0 mb-5 z-2 pointer-events-none">
-              <Tooltip
-                content={
-                  hideParticipants
-                    ? t('showParticipants')
-                    : t('hideParticipants')
-                }
-              >
-                <button
-                  className={cn(
-                    'inline-flex h-8 w-16 items-center justify-center gap-1.5 rounded-full',
-                    'pointer-events-auto border border-white/12 bg-black/80 shadow-xl transition-colors',
-                    'hover:bg-black/90',
-                    hideParticipants
-                      ? 'inline-flex'
-                      : 'hidden group-hover/voice-stage:inline-flex'
-                  )}
-                  onClick={handleToggleParticipants}
-                  aria-label={
-                    hideParticipants
-                      ? t('showParticipants')
-                      : t('hideParticipants')
-                  }
-                >
-                  <ChevronDownIcon
-                    className={cn(
-                      'size-3.5 transition-transform duration-300 ease-in-out',
-                      hideParticipants && 'rotate-180'
-                    )}
-                  />
-                  <UsersIcon className="size-5" />
-                </button>
-              </Tooltip>
+          <div
+            ref={containerRef}
+            className="relative flex min-h-0 flex-1 items-center justify-center"
+          >
+            <div
+              className={cn('relative shrink-0', FOCUSED_AVATAR_CLASS)}
+              style={{ width: focusedWidth, height: focusedHeight }}
+            >
+              {focusedCard}
             </div>
           </div>
-          {regularCards.length > 0 && (
+          {stripCards.length > 0 && (
             <div
-              inert={hideParticipants}
-              aria-hidden={hideParticipants}
+              inert={participantsHidden}
+              aria-hidden={participantsHidden}
               className={cn(
                 'flex h-[90px] shrink-0 justify-center-safe gap-3 overflow-x-auto',
                 'transition-[max-height,opacity] duration-300 ease-in-out',
-                hideParticipants
+                participantsHidden
                   ? 'max-h-0 opacity-0'
                   : 'max-h-[90px] opacity-100'
               )}
             >
-              {regularCards.map((card, index) => (
+              {stripCards.map((card, index) => (
                 // the participant thumbnails keep the 16:9 shape of the stage
                 // tiles, so a pinned view does not change the frame of a user
                 <div key={index} className="aspect-video w-40 shrink-0">

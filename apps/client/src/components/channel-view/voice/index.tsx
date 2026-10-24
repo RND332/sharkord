@@ -7,7 +7,7 @@ import {
   useHideOwnScreenShare,
   useVoiceChannelExternalStreamsList
 } from '@/features/server/voice/hooks';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { ControlsBar } from './controls-bar';
 import { ExternalStreamCard } from './external-stream-card';
 import { useMouseActivity } from './hooks/use-mouse-activity';
@@ -32,6 +32,11 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const { devices } = useDevices();
   const { isVisible: isChatButtonVisible, stageRef } = useMouseActivity();
   const isAnyCardPinned = pinnedCard !== undefined;
+  const [participantsHidden, setParticipantsHidden] = useState(false);
+
+  const handleToggleParticipants = useCallback(() => {
+    setParticipantsHidden((hidden) => !hidden);
+  }, []);
 
   const cards = useMemo(() => {
     const cards: React.ReactNode[] = [];
@@ -159,10 +164,19 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
       ref={stageRef}
       className="group/voice-stage relative flex size-full flex-col overflow-hidden bg-rail"
     >
-      <VoiceGrid pinnedCardId={pinnedCard?.id} tileAspectRatio={16 / 9}>
+      <VoiceGrid
+        pinnedCardId={pinnedCard?.id}
+        tileAspectRatio={16 / 9}
+        participantsHidden={participantsHidden}
+      >
         {cards}
       </VoiceGrid>
-      <VoiceStageActions channelId={channelId} isActive={isChatButtonVisible} />
+      <VoiceStageActions
+        channelId={channelId}
+        isActive={isChatButtonVisible}
+        participantsHidden={participantsHidden}
+        onToggleParticipants={handleToggleParticipants}
+      />
       <ControlsBar channelId={channelId} isActive={isChatButtonVisible} />
     </div>
   );
