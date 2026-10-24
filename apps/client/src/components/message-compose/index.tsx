@@ -284,7 +284,12 @@ const MessageCompose = memo(
             <Button
               size="icon"
               variant="ghost"
-              className="mt-2.5 size-8 shrink-0 p-1.5 sticky top-2.5"
+              className={cn(
+              'size-8 shrink-0 p-1.5 sticky top-2.5',
+              // the thread surface uses a smaller vertical padding, so the
+              // actions follow the text line instead of the surface padding
+              isThread ? 'mt-1' : 'mt-2.5'
+            )}
               aria-label={t('attachFiles')}
               disabled={uploading || !canUploadFiles}
               onClick={openFileDialog}
@@ -326,7 +331,12 @@ const MessageCompose = memo(
             </div>
 
             <input {...fileInputProps} />
-            <div className="flex items-start gap-2 pt-2.5 shrink-0 sticky top-0">
+            <div
+              className={cn(
+                'flex shrink-0 items-start gap-2 sticky top-0',
+                isThread ? 'pt-1' : 'pt-2.5'
+              )}
+            >
               {showPluginSlot && (
                 <PluginSlotRenderer
                   slotId={PluginSlot.CHAT_ACTIONS}
