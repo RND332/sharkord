@@ -122,6 +122,12 @@ const detectInitialLanguage = (): SupportedLanguage => {
 
 const initialLanguage: SupportedLanguage = detectInitialLanguage();
 
+// the language of the request of the server, the cookie is the only place
+// where the server finds the choice of the user. the value is read before the
+// browser writes the cookie of the choice, the server cannot see the cookie
+// of a request that is already running
+const languageOfRequest = getLanguageCookie() ?? detectBrowserLanguage();
+
 const getLanguageCode = (value: string): string => {
   const [tag] = value.split(';');
   const [code] = tag.trim().split('-');
@@ -202,6 +208,26 @@ export const whenI18nReady = (instance: TI18nInstance): Promise<unknown> => {
 // from the header of the request
 export const getSavedLanguage = (): SupportedLanguage | null =>
   getLanguageCookie() ?? (isSavedLanguageValid ? savedLanguage : null);
+
+// the server renders every request in the language of the request, and a
+// request that is already running cannot carry the choice of the user. the
+// choice of the older versions lives in the storage of the browser only, so
+// the server needs the page again with the cookie. the page asks for itself
+// and the server renders it in the language of the user
+export const prepareLanguageCookie = (): boolean => {
+  if (typeof document === 'undefined') return false;
+  if (!isSavedLanguageValid) return false;
+
+  // the server rendered the page in the language of the request, and the
+  // choice of the user is another one
+  if (languageOfRequest === savedLanguage) return false;
+
+  setLanguageCookie(savedLanguage);
+
+  // a browser that does not keep the cookie would ask for itself again and
+  // again, so the page only asks when the cookie is really there
+  return getLanguageCookie() === savedLanguage;
+};
 
 export const getLanguageResources = (
   instance: TI18nInstance,
