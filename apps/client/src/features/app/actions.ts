@@ -18,9 +18,24 @@ import {
   mutedChannelIdsSelector,
   pluginSlotDebugSelector,
   voiceChatChannelIdSelector,
-  voiceChatSidebarDataSelector
+  voiceChatSidebarDataSelector,
+  voiceChatSidebarOpenSelector
 } from './selectors';
 import { appSliceActions } from './slice';
+
+// the stored preferences have to describe the dock that is open, a dock that
+// was replaced by another one must not come back on the next reload
+const persistDockPreferences = () => {
+  const state = store.getState();
+  const voiceChatOpen = voiceChatSidebarOpenSelector(state);
+  const membersPanelOpen = membersPanelOpenSelector(state);
+
+  setLocalStorageItemBool(
+    LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
+    voiceChatOpen
+  );
+  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, membersPanelOpen);
+};
 
 export const setAppLoading = (loading: boolean) =>
   store.dispatch(appSliceActions.setAppLoading(loading));
@@ -106,11 +121,10 @@ export const openThreadSidebar = (parentMessageId: number, channelId: number) =>
     })
   );
 
-  // the thread replaces the members panel, the desktop preference follows
-  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, false);
+  persistDockPreferences();
 };
 
-export const closeThreadSidebar = () =>
+export const closeThreadSidebar = () => {
   store.dispatch(
     appSliceActions.setThreadSidebarOpen({
       open: false,
@@ -118,6 +132,9 @@ export const closeThreadSidebar = () =>
       channelId: undefined
     })
   );
+
+  persistDockPreferences();
+};
 
 export const resetApp = () => {
   store.dispatch(
@@ -241,23 +258,8 @@ export const openVoiceChatSidebar = (channelId: number) => {
     LocalStorageKey.VOICE_CHAT_SIDEBAR_CHANNEL_ID,
     channelId.toString()
   );
-  setLocalStorageItemBool(LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE, true);
 
-  // the voice chat replaces the members panel, the desktop preference follows
-  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, false);
-};
-
-export const setMembersPanelOpen = (open: boolean) => {
-  store.dispatch(appSliceActions.setMembersPanelOpen(open));
-
-  setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, open);
-};
-
-export const toggleMembersPanel = () => {
-  const state = store.getState();
-  const isOpen = membersPanelOpenSelector(state);
-
-  setMembersPanelOpen(!isOpen);
+  persistDockPreferences();
 };
 
 export const closeVoiceChatSidebar = () => {
@@ -271,7 +273,20 @@ export const closeVoiceChatSidebar = () => {
     })
   );
 
-  setLocalStorageItemBool(LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE, false);
+  persistDockPreferences();
+};
+
+export const setMembersPanelOpen = (open: boolean) => {
+  store.dispatch(appSliceActions.setMembersPanelOpen(open));
+
+  persistDockPreferences();
+};
+
+export const toggleMembersPanel = () => {
+  const state = store.getState();
+  const isOpen = membersPanelOpenSelector(state);
+
+  setMembersPanelOpen(!isOpen);
 };
 
 export const toggleVoiceChatSidebar = (channelId: number) => {
