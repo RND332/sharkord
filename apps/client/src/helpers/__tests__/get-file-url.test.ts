@@ -47,4 +47,10 @@ describe('getFileUrl', () => {
     expect(url.searchParams.get('accessToken')).toBe('abc123');
     expect(url.searchParams.get('expires')).toBe('1700000000000');
   });
+
+  test('should keep the path relative on the server render', () => {
+    delete (globalThis as { window?: unknown }).window;
+
+    expect(getFileUrl(getFile('logo.webp'))).toBe('/public/logo.webp');
+  });
 });

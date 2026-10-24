@@ -7,12 +7,22 @@ const getHostFromServer = () => {
     return `localhost:${getDevelopmentServerPort()}`;
   }
 
+  // the server renders without a window, the browser resolves the relative
+  // paths of the page against its own origin
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
   return window.location.host;
 };
 
 const getUrlFromServer = () => {
   if (import.meta.env.MODE === 'development') {
     return `http://localhost:${getDevelopmentServerPort()}`;
+  }
+
+  if (typeof window === 'undefined') {
+    return '';
   }
 
   const host = window.location.host;
