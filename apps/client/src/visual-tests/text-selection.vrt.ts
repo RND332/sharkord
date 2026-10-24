@@ -81,6 +81,10 @@ test('the own username in the user control can be selected', async () => {
 });
 
 test('a member name in the members sidebar can be selected', async () => {
+  // only one right dock is open at a time, so the members panel is asked for
+  // explicitly instead of relying on whatever the previous test left open
+  const { setMembersPanelOpen } = await import('@/features/app/actions');
+  setMembersPanelOpen(true);
   const member = page.getByTestId(TestId.MEMBER_ITEM).first();
 
   await expect.element(member).toBeVisible();

@@ -89,7 +89,8 @@ test('audio controls open compact device settings on right click without togglin
     .element(page.getByRole('combobox'))
     .toHaveTextContent('inputDeviceStudio microphone');
   const panel = page.getByRole('dialog').element();
-  expect(panel.getBoundingClientRect().width).toBe(264);
+  // the popup keeps the width of the voice status block
+  expect(panel.getBoundingClientRect().width).toBe(236);
   expect(getComputedStyle(panel).padding).toBe('6px');
   expect(getComputedStyle(panel).borderRadius).toBe('10px');
   await page.getByRole('combobox').click();
