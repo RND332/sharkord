@@ -1,9 +1,5 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select';
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon
-} from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -193,17 +189,16 @@ function SelectContent({
           )}
           {...props}
         >
-          <SelectScrollUpButton />
           <SelectPrimitive.List
             className={cn(
               'p-1',
-              position === 'popper' &&
-                'h-[var(--anchor-height)] w-full min-w-[var(--anchor-width)] scroll-my-1'
+              // the list follows the trigger width but never its height: the
+              // popup already caps itself with the available height
+              position === 'popper' && 'min-w-[var(--anchor-width)] scroll-my-1'
             )}
           >
             {children}
           </SelectPrimitive.List>
-          <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
     </SelectPrimitive.Portal>
@@ -260,50 +255,12 @@ function SelectSeparator({
   );
 }
 
-function SelectScrollUpButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
-  return (
-    <SelectPrimitive.ScrollUpArrow
-      data-slot="select-scroll-up-button"
-      className={cn(
-        'flex cursor-default items-center justify-center py-1',
-        className
-      )}
-      {...props}
-    >
-      <ChevronUpIcon className="size-4" />
-    </SelectPrimitive.ScrollUpArrow>
-  );
-}
-
-function SelectScrollDownButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
-  return (
-    <SelectPrimitive.ScrollDownArrow
-      data-slot="select-scroll-down-button"
-      className={cn(
-        'flex cursor-default items-center justify-center py-1',
-        className
-      )}
-      {...props}
-    >
-      <ChevronDownIcon className="size-4" />
-    </SelectPrimitive.ScrollDownArrow>
-  );
-}
-
 export {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
   SelectSeparator,
   SelectTrigger,
   SelectValue
