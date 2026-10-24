@@ -7,14 +7,15 @@ import pkg from './package.json';
 import { fsAllow } from './vite-fs-allow';
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [
       tanstackStart({
         client: {
-          entry: 'src/client.tsx'
+          // the path is relative to the source folder of the project
+          entry: 'client.tsx'
         },
         prerender: {
           // the pages are rendered by the server for every request, there is
@@ -36,10 +37,9 @@ export default defineConfig(({ mode }) => {
     },
     // the start server bundle travels inside the server binary and is imported
     // from the data directory, where node_modules cannot be resolved. every
-    // dependency has to be bundled into it
-    ssr: {
-      noExternal: true
-    },
+    // dependency has to be bundled into it. the dev server keeps the packages
+    // external, there the commonjs build of react cannot be evaluated
+    ...(command === 'build' ? { ssr: { noExternal: true } } : {}),
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')

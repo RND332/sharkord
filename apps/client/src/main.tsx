@@ -13,10 +13,18 @@ import { AutoLoginController } from './components/routing/auto-login-controller.
 import { AppScreens } from './components/routing/screens.tsx';
 import { ServerScreensProvider } from './components/server-screens/index.tsx';
 import { ThemeProvider } from './components/theme-provider/index.tsx';
+import { loadApp } from './features/app/actions.ts';
+import { useStrictEffect } from './hooks/use-strict-effect.ts';
 import { LocalStorageKey } from './helpers/storage.ts';
 import './index.css';
 
 const Shell = ({ children }: { children?: React.ReactNode }) => {
+  // the app is only loaded in the browser, the server hands the screen of the
+  // route with the data of the request
+  useStrictEffect(() => {
+    loadApp();
+  }, []);
+
   return (
     <ThemeProvider
       defaultTheme="dark"

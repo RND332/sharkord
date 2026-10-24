@@ -63,6 +63,12 @@ function RootComponent() {
   }, [requestStore]);
 
   useEffect(() => {
+    // the html of the server is alive before the browser takes over, the tests
+    // of the browser have to know when the form starts to react
+    document.documentElement.dataset.hydrated = 'true';
+  }, []);
+
+  useEffect(() => {
     // the browser knows the language of the user, the server could only guess it
     // from the header of the request
     const savedLanguage = getSavedLanguage();

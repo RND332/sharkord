@@ -1,5 +1,5 @@
 import { TestId } from '@dodecagon/shared';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test.describe('Connect Screen', () => {
   test('should display the connect screen with all essential elements', async ({
