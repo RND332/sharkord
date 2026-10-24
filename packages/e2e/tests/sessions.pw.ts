@@ -148,17 +148,31 @@ test.describe('a kicked user', () => {
       await expect(
         reopened.getByTestId(TestId.CONNECT_IDENTITY_INPUT)
       ).toHaveValue(KICKED.identity);
+
+      // the auto-login attempt runs while the tab is already open, and on a slow
+      // runner it is still in flight when the connect form appears. wait for the
+      // client to settle, then look at the screen a fresh mount would show.
+      await expect
+        .poll(
+          () =>
+            reopened.evaluate(() => ({
+              flag: localStorage.getItem('dodecagon-auto-login'),
+              token: localStorage.getItem('dodecagon-auto-login-token')
+            })),
+          { timeout: 30_000 }
+        )
+        .toEqual({ flag: 'false', token: null });
+
+      await reopened.reload();
+
+      await expect(reopened.getByTestId(TestId.CONNECT_BUTTON)).toBeVisible({
+        timeout: 10_000
+      });
       await expect(
         reopened
           .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
           .locator('[role="switch"]')
       ).toHaveAttribute('data-unchecked');
-
-      const savedToken = await reopened.evaluate(() =>
-        localStorage.getItem('dodecagon-auto-login-token')
-      );
-
-      expect(savedToken).toBeNull();
     } finally {
       await savedContext.close().catch(() => {});
       await liveContext.close().catch(() => {});
