@@ -3,9 +3,9 @@ import { openVoiceChatSidebar } from '@/features/app/actions';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { useCan } from '@/features/server/hooks';
 import { Permission } from '@dodecagon/shared';
-import { IconButton, Tooltip } from '@dodecagon/ui';
+import { IconButton } from '@dodecagon/ui';
 import { ChatBubbleLeftIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getVoiceChannelActions } from './helpers';
 
@@ -16,40 +16,50 @@ type TVoiceChannelActionsProps = {
 const ChatAction = memo(({ channelId }: TVoiceChannelActionsProps) => {
   const { t } = useTranslation('sidebar');
 
-  const onChatClick = useCallback(() => {
-    openVoiceChatSidebar(channelId);
-  }, [channelId]);
+  // the action opens the chat of the channel, it must not reach the row of the
+  // channel, that would join the voice channel
+  const onChatClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+
+      openVoiceChatSidebar(channelId);
+    },
+    [channelId]
+  );
 
   return (
-    <Tooltip content={t('openChat')}>
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={ChatBubbleLeftIcon}
-        onClick={onChatClick}
-        aria-label={t('openChat')}
-      />
-    </Tooltip>
+    <IconButton
+      variant="ghost"
+      size="sm"
+      icon={ChatBubbleLeftIcon}
+      onClick={onChatClick}
+      aria-label={t('openChat')}
+    />
   );
 });
 
 const SettingsAction = memo(({ channelId }: TVoiceChannelActionsProps) => {
   const { t } = useTranslation('sidebar');
 
-  const onSettingsClick = useCallback(() => {
-    openServerScreen(ServerScreen.CHANNEL_SETTINGS, { channelId });
-  }, [channelId]);
+  // the settings of the channel open without connecting to the voice channel,
+  // so the click must not reach the row of the channel
+  const onSettingsClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+
+      openServerScreen(ServerScreen.CHANNEL_SETTINGS, { channelId });
+    },
+    [channelId]
+  );
 
   return (
-    <Tooltip content={t('configureChannel')}>
-      <IconButton
-        variant="ghost"
-        size="sm"
-        icon={Cog6ToothIcon}
-        onClick={onSettingsClick}
-        aria-label={t('configureChannel')}
-      />
-    </Tooltip>
+    <IconButton
+      variant="ghost"
+      size="sm"
+      icon={Cog6ToothIcon}
+      onClick={onSettingsClick}
+      aria-label={t('configureChannel')}
+    />
   );
 });
 
