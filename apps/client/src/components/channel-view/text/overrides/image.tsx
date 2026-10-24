@@ -27,15 +27,17 @@ const ImageOverride = memo(({ src, alt }: TImageOverrideProps) => {
 
   return (
     <OverrideLayout>
-      <FullScreenImage
-        src={src}
-        alt={alt}
-        onLoad={onLoad}
-        onError={onError}
-        className="max-w-full max-h-75 object-contain object-left w-fit"
-        style={{ opacity: 0 }}
-        crossOrigin="anonymous"
-      />
+      <div className="w-fit max-w-[400px] overflow-hidden rounded-[8px] border border-line bg-rail">
+        <FullScreenImage
+          src={src}
+          alt={alt}
+          onLoad={onLoad}
+          onError={onError}
+          className="max-h-[300px] max-w-full object-contain"
+          style={{ opacity: 0 }}
+          crossOrigin="anonymous"
+        />
+      </div>
     </OverrideLayout>
   );
 });

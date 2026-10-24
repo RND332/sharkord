@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { FileCategory, getFileCategory } from '@dodecagon/shared';
 import { Button } from '@dodecagon/ui';
 import {
@@ -26,7 +25,7 @@ const categoryMap: Record<FileCategory, React.ElementType> = {
 
 const FileIcon = memo(({ extension }: TFileIconProps) => {
   const category = useMemo(() => getFileCategory(extension), [extension]);
-  const className = 'h-6 w-6 text-muted-foreground';
+  const className = 'size-[18px] text-foreground';
 
   const Icon = categoryMap[category] || DocumentIcon;
 
@@ -60,31 +59,29 @@ const FileCard = ({
 
   return (
     <a
-      className="flex max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-2 select-none transition-all duration-200 hover:border-primary/50 hover:bg-accent hover:shadow-md"
+      className="flex h-16 w-[400px] max-w-full items-center gap-3 rounded-[8px] border border-line bg-panel px-[14px] select-none transition-colors duration-200 hover:bg-raised"
       href={href}
       target="_blank"
     >
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted/60 transition-colors duration-200">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-raised">
         <FileIcon extension={extension} />
       </div>
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <span
-          className={cn(
-            'truncate text-sm font-semibold text-foreground transition-colors duration-200'
-          )}
-        >
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 overflow-hidden">
+        <span className="truncate text-[13px] font-medium leading-[18px] text-foreground">
           {name}
         </span>
-        <span className="text-xs text-muted-foreground">{filesize(size)}</span>
+        <span className="text-[11px] leading-4 text-subtle-foreground">
+          {filesize(size)}
+        </span>
       </div>
       {onRemove && (
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 shrink-0 transition-opacity duration-200"
+          className="size-7 shrink-0 rounded-[6px] bg-raised transition-opacity duration-200"
           onClick={onRemoveClick}
         >
-          <TrashIcon className="h-4 w-4" />
+          <TrashIcon className="size-4" />
         </Button>
       )}
     </a>

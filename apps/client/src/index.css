@@ -414,8 +414,8 @@ body,
 
 .media-masonry-grid {
   --masonry-max-width: 56rem;
-  --masonry-gutter: 8px;
-  --masonry-gap: 8px;
+  --masonry-gutter: 4px;
+  --masonry-gap: 4px;
   --masonry-tile-max-height: 18rem;
 
   display: -webkit-box;
@@ -428,8 +428,8 @@ body,
 
 @media (max-width: 700px) {
   .media-masonry-grid {
-    --masonry-gutter: 12px;
-    --masonry-gap: 12px;
+    --masonry-gutter: 4px;
+    --masonry-gap: 4px;
   }
 }
 
@@ -444,6 +444,9 @@ body,
 
 .media-masonry-item {
   overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background-color: var(--rail);
 }
 
 .media-masonry-asset {
