@@ -27,7 +27,7 @@ const cards = ['share', 'one', 'two', 'three'].map((id) =>
   )
 );
 
-const render = async (pinnedCardId?: string) => {
+const render = async (pinnedCardId?: string, participantsHidden = false) => {
   if (!host) {
     host = document.createElement('div');
     host.style.cssText =
@@ -39,6 +39,7 @@ const render = async (pinnedCardId?: string) => {
     createElement(VoiceGrid, {
       pinnedCardId,
       tileAspectRatio: 16 / 9,
+      participantsHidden,
       children: cards
     })
   );
@@ -110,28 +111,24 @@ test('unpinning a stream after mount restores a two-column participant grid', as
   );
 });
 
-test('hiding participants expands the demo and keeps an unobstructed restore control', async () => {
+test('hiding participants expands the demo and collapses the participant strip', async () => {
   await render('share');
   const grid = host!.firstElementChild!;
   const pinned = grid.firstElementChild!;
   const before = pinned.getBoundingClientRect().height;
-  const hide = host!.querySelector<HTMLButtonElement>(
-    'button[aria-label="hideParticipants"]'
-  )!;
 
-  hide.click();
+  // the stage header owns the toggle, so the grid only follows the flag
+  await render('share', true);
   await expect
     .poll(() => pinned.getBoundingClientRect().height)
     .toBeGreaterThan(before);
+
   const strip = host!.querySelector<HTMLElement>('[inert]')!;
   expect(strip).not.toBeNull();
   expect(strip.getBoundingClientRect().height).toBe(0);
-  const restore = host!.querySelector<HTMLButtonElement>(
-    'button[aria-label="showParticipants"]'
-  )!;
-  expect(restore).toBeVisible();
-  expect(getComputedStyle(restore).display).not.toBe('none');
 
-  restore.focus();
-  expect(document.activeElement).toBe(restore);
+  await render('share', false);
+  await expect
+    .poll(() => strip.getBoundingClientRect().height)
+    .toBeGreaterThan(0);
 });

@@ -49,6 +49,20 @@ describe('VoiceStageActions', () => {
     expect(html).toContain('aria-label="Open Voice Chat"');
   });
 
+  test('should keep the participants toggle in the stage header', () => {
+    const html = renderVoiceStageActions('expanded');
+
+    expect(html).toContain('aria-label="Hide participants"');
+    expect(html).toContain('aria-pressed="false"');
+  });
+
+  test('should reflect the hidden participants in the toggle', () => {
+    const html = renderVoiceStageActions('hidden');
+
+    expect(html).toContain('aria-label="Show participants"');
+    expect(html).toContain('aria-pressed="true"');
+  });
+
   test('should remove the viewers list when no demo is expanded', () => {
     const html = renderVoiceStageActions('unpinned');
 

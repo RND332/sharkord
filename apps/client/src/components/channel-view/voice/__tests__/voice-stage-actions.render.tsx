@@ -86,7 +86,12 @@ const { VoiceStageActions } = await import('../voice-stage-actions');
 
 const html = renderToStaticMarkup(
   <I18nextProvider i18n={i18n}>
-    <VoiceStageActions channelId={2} isActive />
+    <VoiceStageActions
+      channelId={2}
+      isActive
+      participantsHidden={mode === 'hidden'}
+      onToggleParticipants={noop}
+    />
   </I18nextProvider>
 );
 
