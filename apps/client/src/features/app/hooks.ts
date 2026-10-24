@@ -14,6 +14,7 @@ import {
   loadingPluginsSelector,
   messageJumpTargetSelector,
   messageSentSoundSelector,
+  membersPanelOpenSelector,
   modViewOpenSelector,
   modViewUserIdSelector,
   muteDeafenSoundsSelector,
@@ -65,6 +66,9 @@ export const useBrowserNotificationsForReplies = () =>
 
 export const useVoiceChatSidebar = () =>
   useStoreSelector(voiceChatSidebarDataSelector);
+
+export const useMembersPanelOpen = () =>
+  useStoreSelector(membersPanelOpenSelector);
 
 export const usePluginSlotDebug = () =>
   useStoreSelector(pluginSlotDebugSelector);
