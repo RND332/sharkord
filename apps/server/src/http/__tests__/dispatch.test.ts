@@ -18,6 +18,13 @@ describe('the path dispatch', () => {
     expect(isStartPath('/oidc/backchannel-logout')).toBe(true);
   });
 
+  test('sends the server function calls to the start server', () => {
+    expect(isStartPath('/_serverFn/abc123')).toBe(true);
+    expect(isStartPath('/_serverFn/abc123/xyz')).toBe(true);
+    expect(isStartPath('/_serverFn')).toBe(true);
+    expect(isStartPath('/_serverFnOther')).toBe(false);
+  });
+
   test('keeps the file and the plugin paths in bun', () => {
     expect(isStartPath('/upload')).toBe(false);
     expect(isStartPath('/public/file.png')).toBe(false);
