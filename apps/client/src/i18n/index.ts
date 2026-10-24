@@ -46,6 +46,46 @@ const I18N_OPTIONS = {
   }
 };
 
+// the language of the user lives in the browser, but the server has to render
+// the page in that language, so the choice travels in a cookie next to the
+// storage of the browser
+const LANGUAGE_COOKIE = 'dodecagon-language';
+
+const isSupportedLanguage = (value: string): value is SupportedLanguage =>
+  SUPPORTED_LANGUAGES.some((l) => l.code === value);
+
+export const detectLanguageFromCookie = (
+  cookie: string | null
+): SupportedLanguage | null => {
+  if (!cookie) {
+    return null;
+  }
+
+  for (const part of cookie.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+
+    if (name === LANGUAGE_COOKIE) {
+      const value = rest.join('=');
+
+      return isSupportedLanguage(value) ? value : null;
+    }
+  }
+
+  return null;
+};
+
+const setLanguageCookie = (language: SupportedLanguage): void => {
+  if (typeof document === 'undefined') return;
+
+  document.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=31536000; samesite=lax`;
+};
+
+const getLanguageCookie = (): SupportedLanguage | null => {
+  if (typeof document === 'undefined') return null;
+
+  return detectLanguageFromCookie(document.cookie);
+};
+
 const savedLanguage = getLocalStorageItem(LocalStorageKey.LANGUAGE);
 
 const detectBrowserLanguage = (): SupportedLanguage => {
@@ -69,9 +109,18 @@ const detectBrowserLanguage = (): SupportedLanguage => {
 const isSavedLanguageValid =
   savedLanguage && SUPPORTED_LANGUAGES.some((l) => l.code === savedLanguage);
 
-const initialLanguage: SupportedLanguage = isSavedLanguageValid
-  ? savedLanguage
-  : detectBrowserLanguage();
+// the cookie of the user wins, the storage of the browser is the older place
+// of the choice and the browser itself is the last guess
+const detectInitialLanguage = (): SupportedLanguage => {
+  const cookieLanguage = getLanguageCookie();
+
+  if (cookieLanguage) return cookieLanguage;
+  if (isSavedLanguageValid) return savedLanguage;
+
+  return detectBrowserLanguage();
+};
+
+const initialLanguage: SupportedLanguage = detectInitialLanguage();
 
 const getLanguageCode = (value: string): string => {
   const [tag] = value.split(';');
@@ -110,6 +159,7 @@ const persistLanguage = (instance: TI18nInstance): void => {
 
   instance.on('languageChanged', (lng) => {
     setLocalStorageItem(LocalStorageKey.LANGUAGE, lng);
+    setLanguageCookie(lng);
   });
 };
 
@@ -149,8 +199,9 @@ export const whenI18nReady = (instance: TI18nInstance): Promise<unknown> => {
 };
 
 // the browser knows the language of the user, the server could only guess it
+// from the header of the request
 export const getSavedLanguage = (): SupportedLanguage | null =>
-  isSavedLanguageValid ? savedLanguage : null;
+  getLanguageCookie() ?? (isSavedLanguageValid ? savedLanguage : null);
 
 export const getLanguageResources = (
   instance: TI18nInstance,
@@ -178,5 +229,11 @@ export const i18nReady = clientInstance
   .init({ ...I18N_OPTIONS, lng: initialLanguage });
 
 persistLanguage(clientInstance);
+
+// the choice of the older versions lives in the storage of the browser only, the
+// server needs it in a cookie
+if (isSavedLanguageValid && !getLanguageCookie()) {
+  setLanguageCookie(savedLanguage);
+}
 
 export const i18n = clientInstance;

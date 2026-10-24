@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   createI18n,
+  detectLanguageFromCookie,
   detectLanguageFromHeader,
   getLanguageResources,
   whenI18nReady
@@ -29,6 +30,16 @@ describe('the i18n factory', () => {
     expect(detectLanguageFromHeader('ru-RU,ru;q=0.9,en;q=0.8')).toBe('ru');
     expect(detectLanguageFromHeader('de-DE,de;q=0.9')).toBe('en');
     expect(detectLanguageFromHeader(null)).toBe('en');
+  });
+
+  test('takes the language of the user from the cookie of the request', () => {
+    expect(detectLanguageFromCookie('dodecagon-language=ru')).toBe('ru');
+    expect(
+      detectLanguageFromCookie('theme=dark; dodecagon-language=pt-BR; other=1')
+    ).toBe('pt-BR');
+    expect(detectLanguageFromCookie('dodecagon-language=de')).toBeNull();
+    expect(detectLanguageFromCookie('theme=dark')).toBeNull();
+    expect(detectLanguageFromCookie(null)).toBeNull();
   });
 
   test('loads the language of the user when the resources carry another one', async () => {
