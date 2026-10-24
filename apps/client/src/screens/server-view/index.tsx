@@ -6,16 +6,19 @@ import { RightSidebar } from '@/components/right-sidebar';
 import { ThreadSidebar } from '@/components/thread-sidebar';
 import { VoiceChatSidebar } from '@/components/voice-chat-sidebar';
 import { VoiceProvider } from '@/components/voice-provider';
-import { useSelectedDmChannelId, useThreadSidebar } from '@/features/app/hooks';
+import {
+  setMembersPanelOpen,
+  toggleMembersPanel
+} from '@/features/app/actions';
+import {
+  useMembersPanelOpen,
+  useSelectedDmChannelId,
+  useThreadSidebar
+} from '@/features/app/hooks';
 import { useServerScreenInfo } from '@/features/server-screens/hooks';
 import { setDmsOpen } from '@/features/server/actions';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useDmsOpen, usePublicServerSettings } from '@/features/server/hooks';
-import {
-  getLocalStorageItemBool,
-  LocalStorageKey,
-  setLocalStorageItemBool
-} from '@/helpers/storage';
 import { useSwipeGestures } from '@/hooks/use-swipe-gestures';
 import { cn } from '@/lib/utils';
 import { Permission, TestId } from '@dodecagon/shared';
@@ -26,9 +29,7 @@ import { PreventBrowser } from './prevent-browser';
 const ServerView = memo(() => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
-  const [isDesktopRightSidebarOpen, setIsDesktopRightSidebarOpen] = useState(
-    getLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, true)
-  );
+  const membersPanelOpen = useMembersPanelOpen();
   const dmsOpen = useDmsOpen();
   const selectedDmChannelId = useSelectedDmChannelId();
   const publicSettings = usePublicServerSettings();
@@ -36,17 +37,12 @@ const ServerView = memo(() => {
   const { isOpen: isThreadSidebarOpen } = useThreadSidebar();
 
   const handleDesktopRightSidebarToggle = useCallback(() => {
-    setIsDesktopRightSidebarOpen((prev) => !prev);
-    setLocalStorageItemBool(
-      LocalStorageKey.RIGHT_SIDEBAR_STATE,
-      !isDesktopRightSidebarOpen
-    );
-  }, [isDesktopRightSidebarOpen]);
+    toggleMembersPanel();
+  }, []);
 
   const handleCloseRightSidebar = useCallback(() => {
-    setIsDesktopRightSidebarOpen(false);
     setIsMobileUsersOpen(false);
-    setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, false);
+    setMembersPanelOpen(false);
   }, []);
 
   const handleMembersShortcut = useCallback(() => {
@@ -142,7 +138,7 @@ const ServerView = memo(() => {
             isDmMode={dmsOpen}
             selectedDmChannelId={selectedDmChannelId}
             onToggleRightSidebar={handleDesktopRightSidebarToggle}
-            isRightSidebarOpen={isDesktopRightSidebarOpen}
+            isRightSidebarOpen={membersPanelOpen}
           />
 
           <VoiceChatSidebar />
@@ -157,7 +153,7 @@ const ServerView = memo(() => {
                 ? 'translate-x-0 lg:translate-x-0'
                 : 'translate-x-full lg:translate-x-0'
             )}
-            isOpen={isMobileUsersOpen || isDesktopRightSidebarOpen}
+            isOpen={isMobileUsersOpen || membersPanelOpen}
             onClose={handleCloseRightSidebar}
           />
 

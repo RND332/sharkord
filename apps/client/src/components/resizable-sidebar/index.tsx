@@ -10,6 +10,7 @@ type TResizableSidebarProps = {
   defaultWidth: number;
   edge: 'left' | 'right';
   isOpen?: boolean;
+  hasBorder?: boolean;
   className?: string;
   children: ReactNode;
   'data-testid'?: string;
@@ -23,6 +24,7 @@ const ResizableSidebar = memo(
     defaultWidth,
     edge,
     isOpen = true,
+    hasBorder = true,
     className,
     children,
     ...props
@@ -43,7 +45,7 @@ const ResizableSidebar = memo(
         ref={sidebarRef}
         className={cn(
           'flex flex-col bg-card border-border relative',
-          isLeftEdge ? 'border-l' : 'border-r',
+          hasBorder && (isLeftEdge ? 'border-l' : 'border-r'),
           !isOpen && 'w-0 border-0! overflow-hidden',
           !isLeftEdge &&
             !isResizing &&
