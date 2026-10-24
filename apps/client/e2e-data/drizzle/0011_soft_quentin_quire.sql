@@ -1,1 +1,0 @@
-ALTER TABLE `settings` ADD `only_ask_for_password_on_first_join` integer DEFAULT 0 NOT NULL;

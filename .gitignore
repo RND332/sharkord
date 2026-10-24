@@ -5,3 +5,6 @@
 /DockerCenas
 /experiments
 .direnv/
+
+# the visual tests build this data directory at runtime
+/apps/client/e2e-data

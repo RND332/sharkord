@@ -1,1 +1,0 @@
-CREATE INDEX `messages_channel_parent_created_idx` ON `messages` (`channel_id`,`parent_message_id`,`created_at`);

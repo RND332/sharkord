@@ -1,1 +1,0 @@
-ALTER TABLE `users` ADD `password_set` integer DEFAULT true NOT NULL;

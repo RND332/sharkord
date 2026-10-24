@@ -1,1 +1,0 @@
-ALTER TABLE `settings` ADD `show_welcome_dialog` integer NOT NULL DEFAULT 1;
