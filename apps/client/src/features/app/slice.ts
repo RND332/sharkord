@@ -2,7 +2,8 @@ import {
   getLocalStorageItemAsJSON,
   getLocalStorageItemAsNumber,
   getLocalStorageItemBool,
-  LocalStorageKey
+  LocalStorageKey,
+  setLocalStorageItemBool
 } from '@/helpers/storage';
 import type { TDevices, TMessageJumpToTarget } from '@/types';
 import { produce } from 'immer';
@@ -87,65 +88,78 @@ interface TAppStorageFlags {
 export const hydrateAppFromStorage = (): {
   type: 'app/hydrateFromStorage';
   payload: TAppStorageFlags;
-} => ({
-  type: 'app/hydrateFromStorage',
-  payload: {
-    autoJoinLastChannel: getLocalStorageItemBool(
-      LocalStorageKey.AUTO_JOIN_LAST_CHANNEL,
-      false
-    ),
-    browserNotifications: getLocalStorageItemBool(
-      LocalStorageKey.BROWSER_NOTIFICATIONS,
-      false
-    ),
-    browserNotificationsForMentions: getLocalStorageItemBool(
-      LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_MENTIONS,
-      false
-    ),
-    browserNotificationsForDms: getLocalStorageItemBool(
-      LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_DMS,
-      false
-    ),
-    browserNotificationsForReplies: getLocalStorageItemBool(
-      LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_REPLIES,
-      false
-    ),
-    notificationSounds: getLocalStorageItemBool(
-      LocalStorageKey.NOTIFICATION_SOUNDS,
-      true
-    ),
-    messageSentSound: getLocalStorageItemBool(
-      LocalStorageKey.MESSAGE_SENT_SOUND,
-      true
-    ),
-    joinLeaveSounds: getLocalStorageItemBool(
-      LocalStorageKey.JOIN_LEAVE_SOUNDS,
-      true
-    ),
-    muteDeafenSounds: getLocalStorageItemBool(
-      LocalStorageKey.MUTE_DEAFEN_SOUNDS,
-      true
-    ),
-    mutedChannelIds:
-      getLocalStorageItemAsJSON<number[]>(LocalStorageKey.MUTED_CHANNEL_IDS) ??
-      [],
-    voiceChatSidebarOpen: getLocalStorageItemBool(
-      LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
-      false
-    ),
-    voiceChatChannelId: getLocalStorageItemAsNumber(
-      LocalStorageKey.VOICE_CHAT_SIDEBAR_CHANNEL_ID
-    ),
-    membersPanelOpen: getLocalStorageItemBool(
-      LocalStorageKey.RIGHT_SIDEBAR_STATE,
-      true
-    ),
-    pluginSlotDebug: getLocalStorageItemBool(
-      LocalStorageKey.PLUGIN_SLOT_DEBUG,
-      false
-    )
+} => {
+  const voiceChatSidebarOpen = getLocalStorageItemBool(
+    LocalStorageKey.VOICE_CHAT_SIDEBAR_STATE,
+    false
+  );
+  const membersPanelOpen = getLocalStorageItemBool(
+    LocalStorageKey.RIGHT_SIDEBAR_STATE,
+    true
+  );
+
+  // only one dock can be open on the right, the voice chat that was open
+  // before the reload replaces the members panel, the stored preference has to
+  // follow so that the panels never come back together
+  if (voiceChatSidebarOpen && membersPanelOpen) {
+    setLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, false);
   }
-});
+
+  return {
+    type: 'app/hydrateFromStorage',
+    payload: {
+      autoJoinLastChannel: getLocalStorageItemBool(
+        LocalStorageKey.AUTO_JOIN_LAST_CHANNEL,
+        false
+      ),
+      browserNotifications: getLocalStorageItemBool(
+        LocalStorageKey.BROWSER_NOTIFICATIONS,
+        false
+      ),
+      browserNotificationsForMentions: getLocalStorageItemBool(
+        LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_MENTIONS,
+        false
+      ),
+      browserNotificationsForDms: getLocalStorageItemBool(
+        LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_DMS,
+        false
+      ),
+      browserNotificationsForReplies: getLocalStorageItemBool(
+        LocalStorageKey.BROWSER_NOTIFICATIONS_FOR_REPLIES,
+        false
+      ),
+      notificationSounds: getLocalStorageItemBool(
+        LocalStorageKey.NOTIFICATION_SOUNDS,
+        true
+      ),
+      messageSentSound: getLocalStorageItemBool(
+        LocalStorageKey.MESSAGE_SENT_SOUND,
+        true
+      ),
+      joinLeaveSounds: getLocalStorageItemBool(
+        LocalStorageKey.JOIN_LEAVE_SOUNDS,
+        true
+      ),
+      muteDeafenSounds: getLocalStorageItemBool(
+        LocalStorageKey.MUTE_DEAFEN_SOUNDS,
+        true
+      ),
+      mutedChannelIds:
+        getLocalStorageItemAsJSON<number[]>(
+          LocalStorageKey.MUTED_CHANNEL_IDS
+        ) ?? [],
+      voiceChatSidebarOpen,
+      voiceChatChannelId: getLocalStorageItemAsNumber(
+        LocalStorageKey.VOICE_CHAT_SIDEBAR_CHANNEL_ID
+      ),
+      membersPanelOpen: voiceChatSidebarOpen ? false : membersPanelOpen,
+      pluginSlotDebug: getLocalStorageItemBool(
+        LocalStorageKey.PLUGIN_SLOT_DEBUG,
+        false
+      )
+    }
+  };
+};
 
 const appSliceActions = {
   setAppLoading: (payload: boolean) =>
@@ -223,9 +237,12 @@ const appSliceReducer = (state: TAppState, action: TAppAction): TAppState =>
         draft.membersPanelOpen = action.payload.membersPanelOpen;
         draft.pluginSlotDebug = action.payload.pluginSlotDebug;
 
-        // only one dock can be open on the right, the voice chat that was open
-        // before the reload replaces the members panel
-        if (draft.voiceChatSidebarOpen) {
+        // only one dock can be open on the right, the thread and the voice
+        // chat replace the members panel, the thread replaces the voice chat
+        if (draft.threadSidebarOpen) {
+          draft.voiceChatSidebarOpen = false;
+          draft.membersPanelOpen = false;
+        } else if (draft.voiceChatSidebarOpen) {
           draft.membersPanelOpen = false;
         }
         break;
