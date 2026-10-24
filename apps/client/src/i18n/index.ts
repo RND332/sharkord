@@ -103,6 +103,16 @@ export const detectLanguageFromHeader = (
 const loadResources = (language: string, namespace: string) =>
   import(`./locales/${language}/${namespace}.json`);
 
+// the storage of the language belongs to the client, a server instance must not
+// write to it
+const persistLanguage = (instance: TI18nInstance): void => {
+  if (typeof window === 'undefined') return;
+
+  instance.on('languageChanged', (lng) => {
+    setLocalStorageItem(LocalStorageKey.LANGUAGE, lng);
+  });
+};
+
 // the resources of a language are loaded by the server and handed to the browser,
 // so the first render of the browser shows the same text as the server
 export const createI18n = (
@@ -115,6 +125,15 @@ export const createI18n = (
     .use(initReactI18next)
     .use(resourcesToBackend(loadResources))
     .init({ ...I18N_OPTIONS, lng: language, resources });
+
+  // the resources of the request are enough for the first render of the
+  // browser, so the instance is ready right away and the render matches the
+  // html of the server. the flag comes after the init: with it i18next asks the
+  // backend for the languages the resources do not carry. without it a language
+  // change finds nothing and the interface shows the raw keys
+  instance.options.partialBundledLanguages = true;
+
+  persistLanguage(instance);
 
   return instance;
 };
@@ -158,10 +177,6 @@ export const i18nReady = clientInstance
   .use(resourcesToBackend(loadResources))
   .init({ ...I18N_OPTIONS, lng: initialLanguage });
 
-// the storage of the language belongs to the client, a server instance must not
-// write to it
-clientInstance.on('languageChanged', (lng) => {
-  setLocalStorageItem(LocalStorageKey.LANGUAGE, lng);
-});
+persistLanguage(clientInstance);
 
 export const i18n = clientInstance;
